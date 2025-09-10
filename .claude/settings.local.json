@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__sequential-thinking__sequentialthinking",
+      "WebSearch",
+      "Bash(chmod:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

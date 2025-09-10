@@ -1,0 +1,120 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+
+    - name: Cache Go modules
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
+    - name: Install dependencies
+      working-directory: cli
+      run: go mod download
+
+    - name: Run tests
+      working-directory: cli
+      run: go test -v ./...
+
+    - name: Build all platforms
+      working-directory: cli
+      run: make build-all
+
+    - name: Create release archives
+      working-directory: cli
+      run: make release
+
+    - name: Generate changelog
+      id: changelog
+      run: |
+        # Generate changelog from git commits since last tag
+        PREVIOUS_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+        if [ -z "$PREVIOUS_TAG" ]; then
+          CHANGELOG=$(git log --pretty=format:"- %s" --no-merges)
+        else
+          CHANGELOG=$(git log ${PREVIOUS_TAG}..HEAD --pretty=format:"- %s" --no-merges)
+        fi
+        
+        # Escape newlines for GitHub Actions
+        CHANGELOG="${CHANGELOG//'%'/'%25'}"
+        CHANGELOG="${CHANGELOG//$'\n'/'%0A'}"
+        CHANGELOG="${CHANGELOG//$'\r'/'%0D'}"
+        
+        echo "changelog<<EOF" >> $GITHUB_OUTPUT
+        echo "$CHANGELOG" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        name: DDx ${{ github.ref_name }}
+        body: |
+          ## What's Changed
+          
+          ${{ steps.changelog.outputs.changelog }}
+          
+          ## Installation
+          
+          ### One-line install (recommended):
+          ```bash
+          curl -fsSL https://raw.githubusercontent.com/easel/ddx/main/install.sh | bash
+          ```
+          
+          ### Manual install:
+          1. Download the appropriate binary for your platform
+          2. Extract and move to a directory in your PATH:
+             ```bash
+             # Linux/macOS
+             tar -xzf ddx-linux-amd64.tar.gz
+             sudo mv ddx /usr/local/bin/
+             
+             # Windows (PowerShell)
+             Expand-Archive ddx-windows-amd64.zip
+             # Move ddx.exe to a directory in your PATH
+             ```
+          3. Verify installation: `ddx version`
+          
+          ## Platform Support
+          - ✅ Linux (x64, ARM64)
+          - ✅ macOS (Intel, Apple Silicon)
+          - ✅ Windows (x64)
+          
+          ## Full Changelog
+          https://github.com/easel/ddx/compare/${{ steps.previous_tag.outputs.tag }}...${{ github.ref_name }}
+        files: |
+          cli/build/*.tar.gz
+          cli/build/*.zip
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Update installation script
+      run: |
+        # The install.sh script will automatically use the latest release
+        echo "Release created successfully! The install script will automatically use this version."

@@ -1,0 +1,109 @@
+name: Security
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run weekly on Monday at 2 AM UTC
+    - cron: '0 2 * * 1'
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  govulncheck:
+    name: Go Vulnerability Check
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+        
+    - name: Install govulncheck
+      run: go install golang.org/x/vuln/cmd/govulncheck@latest
+      
+    - name: Run govulncheck
+      working-directory: cli
+      run: govulncheck ./...
+
+  codeql:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v2
+      with:
+        languages: go
+        
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+        
+    - name: Build
+      working-directory: cli
+      run: go build ./...
+      
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
+
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/dependency-review-action@v3
+      with:
+        base-ref: ${{ github.event.pull_request.base.sha || github.ref }}
+        head-ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+        
+    - name: Install gosec
+      run: go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest
+      
+    - name: Run gosec
+      working-directory: cli
+      run: gosec -fmt sarif -out ../gosec.sarif ./...
+      
+    - name: Upload SARIF file
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: gosec.sarif
+
+  license-check:
+    name: License Check
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+        
+    - name: Install go-licenses
+      run: go install github.com/google/go-licenses@latest
+      
+    - name: Check licenses
+      working-directory: cli
+      run: go-licenses check ./...

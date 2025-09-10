@@ -1,0 +1,47 @@
+version: 1.0
+
+# Repository configuration
+repository:
+  url: https://github.com/easel/ddx
+  branch: main
+  path: .ddx/
+
+# Resources to include by default
+includes:
+  - prompts/claude
+  - scripts/hooks
+  - templates/common
+  - patterns/error-handling
+
+# Variable overrides for templates
+overrides: {}
+
+# Template variables
+variables:
+  project_name: "{{PROJECT_NAME}}"
+  ai_model: "claude-3-opus"
+  project_description: "A new project using DDx toolkit"
+  tech_stack: "To be determined"
+  architecture_description: "Standard layered architecture"
+  key_patterns: "Error handling, logging, testing"
+  main_directory: "src"
+  config_directory: "config"
+  key_components: "Core business logic, API layer, data access"
+  build_command: "make build"
+  test_command: "make test"
+  lint_command: "make lint"
+  format_command: "make format"
+  database_choice: "PostgreSQL"
+  auth_choice: "NextAuth.js"
+
+# Git subtree configuration
+subtree:
+  enabled: true
+  auto_update: false
+  contribution_branch: "contributions"
+
+# Development preferences
+preferences:
+  auto_apply_hooks: true
+  check_updates: true
+  backup_before_update: true

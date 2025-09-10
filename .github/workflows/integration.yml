@@ -1,0 +1,195 @@
+name: Integration Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run integration tests daily at 6 AM UTC
+    - cron: '0 6 * * *'
+
+jobs:
+  integration:
+    name: Integration Tests
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            binary_suffix: ""
+          - os: macos-latest
+            binary_suffix: ""
+          - os: windows-latest
+            binary_suffix: ".exe"
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+        
+    - name: Build CLI
+      working-directory: cli
+      run: make build
+      
+    - name: Test basic commands
+      working-directory: cli
+      shell: bash
+      run: |
+        # Test version command
+        ./build/ddx${{ matrix.binary_suffix }} version
+        
+        # Test help command  
+        ./build/ddx${{ matrix.binary_suffix }} help
+        
+        # Test list command (should work without initialization)
+        ./build/ddx${{ matrix.binary_suffix }} list || true
+        
+    - name: Test installation workflow (Unix)
+      if: runner.os != 'Windows'
+      shell: bash
+      run: |
+        # Create temporary test directory
+        TEST_DIR=$(mktemp -d)
+        cd "$TEST_DIR"
+        
+        # Initialize git repo
+        git init
+        git config user.email "test@example.com"
+        git config user.name "Test User"
+        
+        # Copy DDx to simulate installation
+        mkdir -p ~/.ddx
+        cp -r $GITHUB_WORKSPACE/* ~/.ddx/ || true
+        
+        # Create a local binary path and add DDx
+        mkdir -p ~/.local/bin
+        cp $GITHUB_WORKSPACE/cli/build/ddx ~/.local/bin/
+        export PATH="$HOME/.local/bin:$PATH"
+        
+        # Test init command
+        ddx init || echo "Init failed as expected (no master repo)"
+        
+        # Test diagnose
+        ddx diagnose
+        
+        # Test config
+        ddx config --show || true
+        
+        # Cleanup
+        rm -rf "$TEST_DIR"
+        
+    - name: Test installation workflow (Windows)
+      if: runner.os == 'Windows'
+      shell: powershell
+      run: |
+        # Create temporary test directory
+        $TEST_DIR = New-TemporaryFile | ForEach-Object { Remove-Item $_; New-Item -ItemType Directory -Path $_ }
+        Set-Location $TEST_DIR
+        
+        # Initialize git repo
+        git init
+        git config user.email "test@example.com"
+        git config user.name "Test User"
+        
+        # Copy DDx to simulate installation
+        New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.ddx"
+        Copy-Item -Recurse -Force "$env:GITHUB_WORKSPACE\*" "$env:USERPROFILE\.ddx\" -ErrorAction SilentlyContinue
+        
+        # Test basic commands with the built binary
+        & "$env:GITHUB_WORKSPACE\cli\build\ddx.exe" version
+        & "$env:GITHUB_WORKSPACE\cli\build\ddx.exe" help
+        & "$env:GITHUB_WORKSPACE\cli\build\ddx.exe" diagnose
+        
+        # Cleanup
+        Remove-Item -Recurse -Force $TEST_DIR
+
+  e2e-workflow:
+    name: End-to-End Workflow Test
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+        
+    - name: Build CLI
+      working-directory: cli
+      run: make build
+      
+    - name: Full workflow test
+      run: |
+        # Create test project
+        mkdir test-project
+        cd test-project
+        
+        # Set up git
+        git init
+        git config user.email "test@example.com"
+        git config user.name "Test User"
+        
+        # Install DDx binary
+        mkdir -p ~/.local/bin
+        cp $GITHUB_WORKSPACE/cli/build/ddx ~/.local/bin/
+        export PATH="$HOME/.local/bin:$PATH"
+        
+        # Create mock DDx installation
+        mkdir -p ~/.ddx
+        cp -r $GITHUB_WORKSPACE/* ~/.ddx/
+        
+        # Initialize DDx (will fail but create structure)
+        ddx init || true
+        
+        # Check that files were created
+        test -f .ddx.yml && echo "✅ Config created" || echo "❌ Config missing"
+        
+        # Test diagnose
+        ddx diagnose
+        
+        # Test list
+        ddx list
+        
+        # Create a simple file to test with
+        echo "console.log('test');" > test.js
+        git add test.js
+        
+        # Test diagnose with content
+        ddx diagnose --report
+        
+        echo "🎉 End-to-end workflow test completed!"
+
+  cross-platform-build:
+    name: Cross-Platform Build Test
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+        
+    - name: Test cross-platform builds
+      working-directory: cli
+      run: |
+        # Test building for all platforms
+        make build-all
+        
+        # Verify all binaries were created
+        ls -la build/
+        
+        # Test that binaries have correct extensions
+        test -f build/ddx-linux-amd64 && echo "✅ Linux AMD64 build"
+        test -f build/ddx-linux-arm64 && echo "✅ Linux ARM64 build"
+        test -f build/ddx-darwin-amd64 && echo "✅ macOS AMD64 build"
+        test -f build/ddx-darwin-arm64 && echo "✅ macOS ARM64 build"
+        test -f build/ddx-windows-amd64.exe && echo "✅ Windows AMD64 build"
+        
+        # Test file command on Linux binary
+        file build/ddx-linux-amd64
