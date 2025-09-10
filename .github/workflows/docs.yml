@@ -189,7 +189,7 @@ jobs:
         config-file: '.github/markdown-link-check-config.json'
         
     - name: Check spelling
-      uses: streetsidesoftware/cspell-action@v5
+      uses: streetsidesoftware/cspell-action@v7
       with:
         files: |
           README.md
