@@ -13,7 +13,8 @@
       "Bash(SKIP_GO_LINT=1 git commit -m \"Test hooks with proper formatting\")",
       "Bash(go install:*)",
       "Bash(~/go/bin/lefthook:*)",
-      "Bash(go mod:*)"
+      "Bash(go mod:*)",
+      "Bash(git ls-tree:*)"
     ],
     "deny": [],
     "ask": []
