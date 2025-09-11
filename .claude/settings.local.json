@@ -14,7 +14,10 @@
       "Bash(go install:*)",
       "Bash(~/go/bin/lefthook:*)",
       "Bash(go mod:*)",
-      "Bash(git ls-tree:*)"
+      "Bash(git ls-tree:*)",
+      "Bash(cat:*)",
+      "Bash(go:*)",
+      "Bash(lefthook run pre-commit:*)"
     ],
     "deny": [],
     "ask": []

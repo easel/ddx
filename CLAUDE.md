@@ -73,6 +73,27 @@ The CLI uses git subtree for managing the relationship between individual projec
 - Code formatting with `go fmt`
 - Cross-platform compatibility is maintained
 
+### Pre-commit Checks
+
+The project uses Lefthook for git hooks. To run pre-commit checks manually:
+
+```bash
+# Run all pre-commit checks
+lefthook run pre-commit
+
+# Or stage files and run checks
+git add <files>
+lefthook run pre-commit
+```
+
+Pre-commit checks include:
+- Secrets detection
+- Binary file prevention
+- Debug statement detection
+- Merge conflict detection
+- DDx configuration validation
+- Go linting, formatting, building, and testing
+
 ### CLI Command Overview
 
 - `ddx init` - Initialize DDx in a project (with optional template)
