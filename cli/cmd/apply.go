@@ -6,6 +6,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
+
 	"github.com/briandowns/spinner"
 	"github.com/easel/ddx/internal/config"
 	"github.com/fatih/color"
@@ -368,7 +371,8 @@ func showAvailableResources() error {
 	for _, dir := range resourceDirs {
 		dirPath := filepath.Join(".ddx", dir)
 		if entries, err := os.ReadDir(dirPath); err == nil && len(entries) > 0 {
-			fmt.Printf("\n%s:\n", strings.Title(dir))
+			caser := cases.Title(language.English)
+			fmt.Printf("\n%s:\n", caser.String(dir))
 			for _, entry := range entries {
 				fmt.Printf("  • %s\n", entry.Name())
 			}

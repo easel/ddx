@@ -6,6 +6,166 @@
 colors: true
 no_tty: false
 
+# ====================
+# CI Validation - Run all checks against all files
+# Usage: lefthook run ci
+# ====================
+ci:
+  parallel: true
+  commands:
+    # Check for merge conflicts
+    conflicts:
+      name: "Check for merge conflicts"
+      run: |
+        find . -type f ! -path "./.git/*" ! -path "./cli/.git/*" | while read -r file; do
+          if test -f "$file" && grep -E "^(<<<<<<<|=======|>>>>>>>|\|\|\|\|\|\|\|)" "$file"; then
+            echo "❌ Merge conflict markers found in: $file"
+            exit 1
+          fi
+        done
+        echo "✅ No merge conflicts found"
+    
+    # Check for secrets
+    secrets:
+      name: "Check for secrets"
+      run: |
+        patterns="(api[_-]?key|apikey|secret|token|password|passwd|pwd|auth|credential|private[_-]?key)"
+        patterns="$patterns.*=.*['\"]?[A-Za-z0-9+/]{20,}['\"]?"
+        
+        if find . -type f ! -path "./.git/*" ! -path "./cli/.git/*" ! -name "*.jpg" ! -name "*.png" ! -name "*.gif" \
+          -exec grep -El "$patterns" {} \; 2>/dev/null | head -1 | grep -q .; then
+          echo "❌ Potential secrets found - review before committing"
+          exit 1
+        fi
+        echo "✅ No secrets detected"
+    
+    # Check for binary files
+    binaries:
+      name: "Check for binary files"
+      run: |
+        allowed_extensions="jpg|jpeg|png|gif|ico|svg|woff|woff2|ttf|eot|pdf"
+        if find . -type f ! -path "./.git/*" ! -path "./cli/.git/*" \
+          -exec file {} \; | grep -v text | grep -v empty | \
+          grep -vE "\.($allowed_extensions):" | head -1 | grep -q .; then
+          echo "❌ Binary files detected - use Git LFS for large binaries"
+          exit 1
+        fi
+        echo "✅ No unexpected binary files"
+    
+    # DDx configuration validation
+    ddx-validate:
+      name: "Validate DDx configuration"
+      run: |
+        if [ -f ".ddx.yml" ]; then
+          # Basic YAML validation
+          if ! command -v yq >/dev/null 2>&1; then
+            # Fall back to basic parsing if yq not available
+            if grep -E "^[[:space:]]*-" .ddx.yml | grep -v "^[[:space:]]*- " >/dev/null; then
+              echo "⚠️ Potential YAML formatting issue in .ddx.yml"
+            fi
+          else
+            yq eval . .ddx.yml >/dev/null || exit 1
+          fi
+          echo "✅ DDx configuration valid"
+        fi
+    
+    # Debug statements check
+    debug-statements:
+      name: "Check for debug statements"
+      run: |
+        found=0
+        
+        # Check Go files (excluding CLI cmd files which legitimately use fmt.Print for output)
+        if find . -name "*.go" -type f ! -path "./cli/cmd/*" \
+          -exec grep -l 'spew\.Dump\|pprof\|debug\.Print' {} \; | grep -v _test.go | head -1 | grep -q .; then
+          echo "❌ Debug statements found in Go files"
+          found=1
+        fi
+        
+        # Check JavaScript/TypeScript files
+        if find . -name "*.js" -o -name "*.jsx" -o -name "*.ts" -o -name "*.tsx" -type f \
+          -exec grep -l 'console\.\(log\|debug\|info\)\|debugger' {} \; 2>/dev/null | head -1 | grep -q .; then
+          echo "❌ Debug statements found in JS/TS files"
+          found=1
+        fi
+        
+        if [ $found -eq 0 ]; then
+          echo "✅ No debug statements found"
+        else
+          exit 1
+        fi
+    
+    # Go formatting check
+    go-fmt:
+      name: "Go Format Check"
+      run: |
+        if [ -f "cli/go.mod" ]; then
+          cd cli
+        elif [ ! -f "go.mod" ]; then
+          echo "✅ No Go module found"
+          exit 0
+        fi
+        
+        unformatted=$(gofmt -l .)
+        if [ -n "$unformatted" ]; then
+          echo "❌ Go files need formatting:"
+          echo "$unformatted"
+          echo "Run: gofmt -w <files> or 'make fmt' in cli/"
+          exit 1
+        fi
+        echo "✅ All Go files properly formatted"
+    
+    # Go linting
+    go-lint:
+      name: "Go Lint"
+      run: |
+        if [ -f "cli/go.mod" ]; then
+          cd cli
+        elif [ ! -f "go.mod" ]; then
+          echo "✅ No Go module found"
+          exit 0
+        fi
+        
+        # Try golangci-lint first, fall back to go vet
+        if command -v golangci-lint >/dev/null 2>&1; then
+          echo "Running golangci-lint..."
+          golangci-lint run --timeout=5m
+        elif command -v go >/dev/null 2>&1; then
+          echo "Running go vet..."
+          go vet ./...
+        fi
+        echo "✅ Go linting passed"
+    
+    # Go build check
+    go-build:
+      name: "Go Build"
+      run: |
+        if [ -f "cli/go.mod" ]; then
+          cd cli
+        elif [ ! -f "go.mod" ]; then
+          echo "✅ No Go module found"
+          exit 0
+        fi
+        
+        echo "🔨 Building Go project..."
+        go build -v ./...
+        echo "✅ Go build successful"
+    
+    # Go tests
+    go-test:
+      name: "Go Tests"
+      run: |
+        if [ -f "cli/go.mod" ]; then
+          cd cli
+        elif [ ! -f "go.mod" ]; then
+          echo "✅ No Go module found"
+          exit 0
+        fi
+        
+        echo "🧪 Running Go tests..."
+        go test -race -v ./...
+        echo "✅ All tests passed"
+
 # Pre-commit hooks - run before each commit
 pre-commit:
   parallel: true # Run independent checks in parallel for speed

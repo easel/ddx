@@ -1,6 +1,8 @@
 module github.com/easel/ddx
 
-go 1.23.0
+go 1.24.0
+
+toolchain go1.24.7
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.7
@@ -30,6 +32,6 @@ require (
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/sys v0.34.0 // indirect
 	golang.org/x/term v0.33.0 // indirect
-	golang.org/x/text v0.28.0 // indirect
+	golang.org/x/text v0.29.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 )

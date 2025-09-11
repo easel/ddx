@@ -6,6 +6,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
+
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 )
@@ -85,7 +88,8 @@ func runList(cmd *cobra.Command, args []string) error {
 		}
 
 		// Print section header
-		bold.Printf("%s:\n", strings.Title(resourceType))
+		caser := cases.Title(language.English)
+		_, _ = bold.Printf("%s:\n", caser.String(resourceType))
 
 		for _, entry := range filteredEntries {
 			itemPath := filepath.Join(resourcePath, entry.Name())

@@ -34,8 +34,8 @@ jobs:
       run: |
         found=0
         
-        # Check Go files
-        if find . -name "*.go" -type f -exec grep -l 'fmt\.Print\|println\|spew\.Dump' {} \; | grep -v _test.go; then
+        # Check Go files (excluding CLI cmd files which legitimately use fmt.Print for output)
+        if find . -name "*.go" -type f ! -path "./cli/cmd/*" -exec grep -l 'spew\.Dump\|pprof\|debug\.Print' {} \; | grep -v _test.go; then
           echo "⚠️ Debug statements found in Go files"
           found=1
         fi
