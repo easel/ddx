@@ -73,12 +73,12 @@ func Load() (*Config, error) {
 // LoadLocal loads only the local configuration
 func LoadLocal() (*Config, error) {
 	config := *DefaultConfig
-	
+
 	localConfigPath := ".ddx.yml"
 	if err := loadConfigFile(localConfigPath, &config); err != nil {
 		return nil, err
 	}
-	
+
 	return &config, nil
 }
 
@@ -88,7 +88,7 @@ func Save(config *Config) error {
 	if err != nil {
 		return err
 	}
-	
+
 	configPath := filepath.Join(home, ".ddx.yml")
 	return saveConfigFile(configPath, config)
 }
@@ -127,12 +127,12 @@ func saveConfigFile(path string, config *Config) error {
 // ReplaceVariables replaces template variables in content
 func (c *Config) ReplaceVariables(content string) string {
 	result := content
-	
+
 	// Replace {{variable}} patterns
 	for key, value := range c.Variables {
 		oldPattern := "{{" + key + "}}"
 		result = replaceAll(result, oldPattern, value)
-		
+
 		// Also handle with spaces
 		oldPattern = "{{ " + key + " }}"
 		result = replaceAll(result, oldPattern, value)

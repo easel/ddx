@@ -20,54 +20,54 @@ func HasSubtree(prefix string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	
+
 	return len(strings.TrimSpace(string(output))) > 0, nil
 }
 
 // SubtreeAdd adds a subtree
 func SubtreeAdd(prefix, repoURL, branch string) error {
-	cmd := exec.Command("git", "subtree", "add", 
-		"--prefix="+prefix, 
-		repoURL, 
-		branch, 
+	cmd := exec.Command("git", "subtree", "add",
+		"--prefix="+prefix,
+		repoURL,
+		branch,
 		"--squash")
-	
+
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("git subtree add failed: %s", string(output))
 	}
-	
+
 	return nil
 }
 
 // SubtreePull pulls updates for a subtree
 func SubtreePull(prefix, repoURL, branch string) error {
-	cmd := exec.Command("git", "subtree", "pull", 
-		"--prefix="+prefix, 
-		repoURL, 
-		branch, 
+	cmd := exec.Command("git", "subtree", "pull",
+		"--prefix="+prefix,
+		repoURL,
+		branch,
 		"--squash")
-	
+
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("git subtree pull failed: %s", string(output))
 	}
-	
+
 	return nil
 }
 
 // SubtreePush pushes subtree changes to a branch
 func SubtreePush(prefix, repoURL, branch string) error {
-	cmd := exec.Command("git", "subtree", "push", 
-		"--prefix="+prefix, 
-		repoURL, 
+	cmd := exec.Command("git", "subtree", "push",
+		"--prefix="+prefix,
+		repoURL,
 		branch)
-	
+
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("git subtree push failed: %s", string(output))
 	}
-	
+
 	return nil
 }
 
@@ -78,13 +78,13 @@ func SubtreeReset(prefix, repoURL, branch string) error {
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to remove subtree: %w", err)
 	}
-	
+
 	// Commit the removal
 	cmd = exec.Command("git", "commit", "-m", "Remove DDx subtree for reset")
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to commit subtree removal: %w", err)
 	}
-	
+
 	// Add it back fresh
 	return SubtreeAdd(prefix, repoURL, branch)
 }
@@ -93,13 +93,13 @@ func SubtreeReset(prefix, repoURL, branch string) error {
 func CheckBehind(prefix, repoURL, branch string) (int, error) {
 	// This is a simplified implementation
 	// In a real implementation, you'd want to fetch and compare commit hashes
-	
+
 	// Fetch the latest from remote
 	cmd := exec.Command("git", "fetch", repoURL, branch)
 	if err := cmd.Run(); err != nil {
 		return 0, fmt.Errorf("failed to fetch: %w", err)
 	}
-	
+
 	// Get the commit count difference
 	cmd = exec.Command("git", "rev-list", "--count", "HEAD..FETCH_HEAD", "--", prefix)
 	output, err := cmd.Output()
@@ -107,12 +107,12 @@ func CheckBehind(prefix, repoURL, branch string) (int, error) {
 		// If this fails, assume we're up to date
 		return 0, nil
 	}
-	
+
 	count, err := strconv.Atoi(strings.TrimSpace(string(output)))
 	if err != nil {
 		return 0, nil
 	}
-	
+
 	return count, nil
 }
 
@@ -123,7 +123,7 @@ func HasUncommittedChanges(path string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	
+
 	return len(strings.TrimSpace(string(output))) > 0, nil
 }
 
@@ -134,7 +134,7 @@ func GetCurrentBranch() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	
+
 	return strings.TrimSpace(string(output)), nil
 }
 
@@ -145,13 +145,13 @@ func CommitChanges(message string) error {
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to add changes: %w", err)
 	}
-	
+
 	// Commit
 	cmd = exec.Command("git", "commit", "-m", message)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("failed to commit: %s", string(output))
 	}
-	
+
 	return nil
 }

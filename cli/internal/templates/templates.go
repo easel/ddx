@@ -17,7 +17,7 @@ func Apply(templateName, targetDir string, variables map[string]string) error {
 	ddxHome := filepath.Join(home, ".ddx")
 
 	templatePath := filepath.Join(ddxHome, "templates", templateName)
-	
+
 	// Check if template exists
 	if _, err := os.Stat(templatePath); os.IsNotExist(err) {
 		return fmt.Errorf("template '%s' not found", templateName)
@@ -80,17 +80,17 @@ func processTemplateFile(sourcePath, targetPath string, variables map[string]str
 // replaceVariables replaces template variables in content
 func replaceVariables(content string, variables map[string]string) string {
 	result := content
-	
+
 	for key, value := range variables {
 		// Replace {{key}} patterns
 		result = strings.ReplaceAll(result, "{{"+key+"}}", value)
 		result = strings.ReplaceAll(result, "{{ "+key+" }}", value)
-		
+
 		// Replace ${KEY} patterns (uppercase)
 		upperKey := strings.ToUpper(key)
 		result = strings.ReplaceAll(result, "${"+upperKey+"}", value)
 	}
-	
+
 	return result
 }
 
@@ -100,24 +100,24 @@ func List() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	templatesPath := filepath.Join(home, ".ddx", "templates")
-	
+
 	if _, err := os.Stat(templatesPath); os.IsNotExist(err) {
 		return []string{}, nil
 	}
-	
+
 	entries, err := os.ReadDir(templatesPath)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var templates []string
 	for _, entry := range entries {
 		if entry.IsDir() {
 			templates = append(templates, entry.Name())
 		}
 	}
-	
+
 	return templates, nil
 }
