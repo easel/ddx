@@ -35,7 +35,9 @@ jobs:
     
     - name: Install lefthook
       run: |
-        curl -sSfL https://raw.githubusercontent.com/evilmartians/lefthook/master/install.sh | sh -s -- -b /usr/local/bin
+        # Install using Go for better reliability in CI
+        go install github.com/evilmartians/lefthook@latest
+        echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
     
     - name: Run CI validation
       run: lefthook run ci
@@ -94,7 +96,9 @@ jobs:
     
     - name: Install lefthook
       run: |
-        curl -sSfL https://raw.githubusercontent.com/evilmartians/lefthook/master/install.sh | sh -s -- -b /usr/local/bin
+        # Install using Go for better reliability in CI
+        go install github.com/evilmartians/lefthook@latest
+        echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
     
     - name: Build CLI
       run: |

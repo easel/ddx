@@ -23,7 +23,9 @@
       "Bash(find:*)",
       "Bash(git push:*)",
       "Bash(gh run watch:*)",
-      "Bash(lefthook run:*)"
+      "Bash(lefthook run:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:lefthook.dev)"
     ],
     "deny": [],
     "ask": []
