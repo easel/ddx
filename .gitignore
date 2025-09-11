@@ -1,58 +1,396 @@
+################################################################################
+# DDx Project .gitignore
+# Generated using the comprehensive gitignore evaluation guide
+################################################################################
+
+################################################################################
+# Operating System Files
+################################################################################
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Linux
+*~
+.directory
+.Trash-*
+.nfs*
+
+################################################################################
+# IDE and Editor Files
+################################################################################
+
+# JetBrains IDEs (IntelliJ, GoLand, etc.)
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+.idea_modules/
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+.history/
+
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Vim
+*.swp
+*.swo
+*.swn
+*.swm
+*~
+.*.sw[a-z]
+[._]*.s[a-v][a-z]
+[._]*.sw[a-z]
+Session.vim
+Sessionx.vim
+.netrwhist
+tags
+[._]*.un~
+
+# Emacs
+\#*\#
+.\#*
+*~
+.emacs.desktop
+.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+*.tmlanguage.cache
+*.tmPreferences.cache
+*.stTheme.cache
+
+# Other editors
+.project
+.classpath
+.settings/
+*.tmproj
+.externalToolBuilders/
+*.launch
+
+################################################################################
+# Go Language Specific
+################################################################################
+
 # Binaries
 ddx
 cli/ddx
+bin/
 *.exe
+*.exe~
 *.dll
 *.so
 *.dylib
 
-# Test binary, built with `go test -c`
+# Test files
 *.test
-
-# Output of the go coverage tool
 *.out
-coverage.html
 coverage.txt
+coverage.html
+coverage.xml
+*.cover
+*.coverprofile
+.coverage/
 
-# Go workspace file
+# Go workspace files
 go.work
 go.work.sum
 
-# Dependency directories
-vendor/
+# Dependency directories (optional - uncomment if not using vendoring)
+# vendor/
 
-# IDE files
-.idea/
-*.swp
-*.swo
-*~
-.vscode/
-*.iml
+# Go build cache
+.cache/
 
-# OS files
-.DS_Store
-Thumbs.db
+################################################################################
+# Node.js/JavaScript (for templates and web projects)
+################################################################################
 
-# Environment files
+# Dependencies
+node_modules/
+jspm_packages/
+bower_components/
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+.nuxt/
+.vuepress/dist
+.serverless/
+.fusebox/
+.dynamodb/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Testing
+coverage/
+.nyc_output/
+lib-cov
+*.lcov
+
+# Package manager files
+.npm
+.yarn
+.pnp.*
+.yarn-integrity
+
+################################################################################
+# Python (for Python templates)
+################################################################################
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+.Python
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv
+
+# Testing
+.pytest_cache/
+.tox/
+.nox/
+htmlcov/
+.hypothesis/
+
+# Type checking
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+
+################################################################################
+# Security and Credentials
+################################################################################
+
+# Environment variables
 .env
+.env.*
+!.env.example
+!.env.template
 .env.local
 .env.*.local
+
+# Credentials and keys
+*.pem
+*.key
+*.cert
+*.crt
+*.p12
+*.pfx
+id_rsa
+id_rsa.pub
+id_dsa
+id_dsa.pub
+*.ppk
+*.pub
+
+# Secrets
+secrets.yml
+secrets.yaml
+secrets.json
+credentials.json
+auth.json
+
+# Cloud provider configs
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+kubeconfig
+.aws/
+.gcp/
+.azure/
+
+# API tokens
+.npmrc
+.pypirc
+.netrc
+.dockercfg
+
+################################################################################
+# Logs and Temporary Files
+################################################################################
+
+# Log files
+*.log
+logs/
+*.log.*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+tmp/
+temp/
+cache/
+
+# Core dumps
+core
+core.*
+*.stackdump
+
+################################################################################
+# Build and Package Files
+################################################################################
+
+# Archives (add back specific ones if needed for distribution)
+*.zip
+*.tar.gz
+*.tar.bz2
+*.rar
+*.7z
+*.gz
+*.bz2
+
+# Installers
+*.dmg
+*.iso
+*.msi
+*.pkg
+*.deb
+*.rpm
+*.AppImage
+*.snap
+
+# Compiled documentation
+*.pdf
+*.chm
+
+################################################################################
+# Project-Specific
+################################################################################
+
+# DDx local configuration
+.ddx.local.yml
+.ddx.local/
 
 # Lefthook local configuration
 .lefthook-local.yml
 .lefthook-local/
 
-# Build directories
-dist/
-build/
-tmp/
+# Database files
+*.sqlite
+*.sqlite3
+*.db
 
-# DDx local configuration
-.ddx.local.yml
+# CI/CD artifacts
+artifacts/
+.buildpath
 
-# Log files
-*.log
+# Generated documentation
+docs/_build/
+site/
 
-# Temporary files
-*.tmp
-*.temp
+# Docker
+*.pid
+
+################################################################################
+# Exceptions - Files to keep
+################################################################################
+
+# Keep .gitkeep files for empty directories
+!.gitkeep
+
+# Keep example and template files
+!*.example
+!*.template
+!*.sample
+
+# Keep GitHub templates
+!.github/
+
+# Keep CI configurations
+!.gitlab-ci.yml
+!.travis.yml
+!.circleci/
+
+# Keep documentation
+!README.md
+!CONTRIBUTING.md
+!LICENSE
+!CHANGELOG.md
+!docs/
+
+# Keep configuration examples
+!config.example.*
+!settings.example.*
