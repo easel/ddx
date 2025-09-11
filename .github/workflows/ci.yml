@@ -71,7 +71,7 @@ jobs:
     - name: Build binary
       run: |
         GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} \
-          go build -v -o ../bin/ddx-${{ matrix.os }}-${{ matrix.arch }} ./...
+          go build -v -o ../bin/ddx-${{ matrix.os }}-${{ matrix.arch }} .
     
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
@@ -104,6 +104,15 @@ jobs:
       run: |
         cd cli
         go build -o ../bin/ddx
+    
+    - name: Setup DDx toolkit directory
+      run: |
+        # Create the DDx installation directory with basic structure
+        mkdir -p ~/.ddx
+        cp -r templates ~/.ddx/ || true
+        cp -r patterns ~/.ddx/ || true
+        cp -r prompts ~/.ddx/ || true
+        cp -r configs ~/.ddx/ || true
     
     - name: Test init command
       run: |
