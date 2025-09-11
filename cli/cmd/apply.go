@@ -7,10 +7,9 @@ import (
 	"strings"
 
 	"github.com/briandowns/spinner"
+	"github.com/easel/ddx/internal/config"
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
-	"github.com/easel/ddx/internal/config"
-	"github.com/easel/ddx/internal/templates"
 )
 
 var (
@@ -41,7 +40,7 @@ Examples:
 
 func init() {
 	rootCmd.AddCommand(applyCmd)
-	
+
 	applyCmd.Flags().StringVarP(&applyPath, "path", "p", ".", "Target path for application")
 	applyCmd.Flags().BoolVar(&applyDryRun, "dry-run", false, "Show what would be applied without making changes")
 }
@@ -54,7 +53,7 @@ func runApply(cmd *cobra.Command, args []string) error {
 	gray := color.New(color.FgHiBlack)
 
 	resourceName := args[0]
-	
+
 	cyan.Printf("🎯 Applying resource: %s\n\n", resourceName)
 
 	// Check if DDx is initialized
@@ -83,7 +82,7 @@ func runApply(cmd *cobra.Command, args []string) error {
 	if resourceInfo == nil {
 		s.Stop()
 		red.Printf("❌ Resource '%s' not found\n", resourceName)
-		
+
 		// Show available resources
 		yellow.Println("\n💡 Available resources:")
 		if err := showAvailableResources(); err != nil {
@@ -102,7 +101,7 @@ func runApply(cmd *cobra.Command, args []string) error {
 
 	// Apply the resource
 	s.Suffix = fmt.Sprintf(" Applying %s...", resourceInfo.Name)
-	
+
 	if err := applyResource(resourceInfo, applyPath, cfg); err != nil {
 		s.Stop()
 		return fmt.Errorf("failed to apply resource: %w", err)
@@ -135,7 +134,7 @@ func findResource(resourceName string) (*ResourceInfo, error) {
 	// Resource directories to search
 	resourceDirs := map[string]string{
 		"templates": "templates",
-		"patterns":  "patterns", 
+		"patterns":  "patterns",
 		"configs":   "configs",
 		"prompts":   "prompts",
 		"scripts":   "scripts",
@@ -146,9 +145,9 @@ func findResource(resourceName string) (*ResourceInfo, error) {
 		resourcePath := filepath.Join(".ddx", dir, resourceName)
 		if _, err := os.Stat(resourcePath); err == nil {
 			return &ResourceInfo{
-				Name: resourceName,
-				Type: resourceType,
-				Path: resourcePath,
+				Name:        resourceName,
+				Type:        resourceType,
+				Path:        resourcePath,
 				Description: getResourceDescription(resourcePath),
 			}, nil
 		}
@@ -162,9 +161,9 @@ func findResource(resourceName string) (*ResourceInfo, error) {
 				if strings.Contains(strings.ToLower(entry.Name()), strings.ToLower(resourceName)) {
 					resourcePath := filepath.Join(dirPath, entry.Name())
 					return &ResourceInfo{
-						Name: entry.Name(),
-						Type: resourceType,
-						Path: resourcePath,
+						Name:        entry.Name(),
+						Type:        resourceType,
+						Path:        resourcePath,
 						Description: getResourceDescription(resourcePath),
 					}, nil
 				}
@@ -178,9 +177,9 @@ func findResource(resourceName string) (*ResourceInfo, error) {
 		if _, err := os.Stat(resourcePath); err == nil {
 			parts := strings.Split(resourceName, "/")
 			return &ResourceInfo{
-				Name: parts[len(parts)-1],
-				Type: parts[0],
-				Path: resourcePath,
+				Name:        parts[len(parts)-1],
+				Type:        parts[0],
+				Path:        resourcePath,
 				Description: getResourceDescription(resourcePath),
 			}, nil
 		}
@@ -324,7 +323,7 @@ func showDryRun(resource *ResourceInfo, targetPath string, cfg *config.Config) e
 	}
 
 	yellow.Println("Files that would be created/updated:")
-	
+
 	if stat.IsDir() {
 		return filepath.Walk(resource.Path, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
@@ -338,7 +337,7 @@ func showDryRun(resource *ResourceInfo, targetPath string, cfg *config.Config) e
 
 			if relPath != "." && !info.IsDir() {
 				targetFile := filepath.Join(targetPath, relPath)
-				
+
 				// Check if file exists
 				if _, err := os.Stat(targetFile); err == nil {
 					gray.Printf("  ~ %s (would update)\n", targetFile)
@@ -351,7 +350,7 @@ func showDryRun(resource *ResourceInfo, targetPath string, cfg *config.Config) e
 	} else {
 		filename := filepath.Base(resource.Path)
 		targetFile := filepath.Join(targetPath, filename)
-		
+
 		if _, err := os.Stat(targetFile); err == nil {
 			gray.Printf("  ~ %s (would update)\n", targetFile)
 		} else {
@@ -365,7 +364,7 @@ func showDryRun(resource *ResourceInfo, targetPath string, cfg *config.Config) e
 // showAvailableResources shows available resources organized by type
 func showAvailableResources() error {
 	resourceDirs := []string{"templates", "patterns", "configs", "prompts", "scripts"}
-	
+
 	for _, dir := range resourceDirs {
 		dirPath := filepath.Join(".ddx", dir)
 		if entries, err := os.ReadDir(dirPath); err == nil && len(entries) > 0 {
@@ -375,6 +374,6 @@ func showAvailableResources() error {
 			}
 		}
 	}
-	
+
 	return nil
 }

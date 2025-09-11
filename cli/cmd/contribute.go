@@ -9,10 +9,10 @@ import (
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/briandowns/spinner"
-	"github.com/fatih/color"
-	"github.com/spf13/cobra"
 	"github.com/easel/ddx/internal/config"
 	"github.com/easel/ddx/internal/git"
+	"github.com/fatih/color"
+	"github.com/spf13/cobra"
 )
 
 var (
@@ -41,7 +41,7 @@ Examples:
 
 func init() {
 	rootCmd.AddCommand(contributeCmd)
-	
+
 	contributeCmd.Flags().StringVarP(&contributeMessage, "message", "m", "", "Contribution message")
 	contributeCmd.Flags().StringVar(&contributeBranch, "branch", "", "Feature branch name")
 }
@@ -145,23 +145,23 @@ func runContribute(cmd *cobra.Command, args []string) error {
 	// Show next steps
 	bold.Println("🎯 Next Steps:")
 	fmt.Println()
-	
+
 	fmt.Printf("1. %s\n", cyan.Sprint("Your changes have been pushed to a feature branch"))
 	fmt.Printf("   Branch: %s\n", yellow.Sprint(contributeBranch))
 	fmt.Printf("   Resource: %s\n", yellow.Sprint(resourcePath))
 	fmt.Println()
-	
+
 	fmt.Printf("2. %s\n", cyan.Sprint("Create a Pull Request"))
 	if cfg.Repository.URL != "" {
 		// Extract repo info from URL
 		repoURL := strings.TrimSuffix(cfg.Repository.URL, ".git")
-		fmt.Printf("   Visit: %s/compare/%s...%s\n", 
-			repoURL, 
-			cfg.Repository.Branch, 
+		fmt.Printf("   Visit: %s/compare/%s...%s\n",
+			repoURL,
+			cfg.Repository.Branch,
 			contributeBranch)
 	}
 	fmt.Println()
-	
+
 	fmt.Printf("3. %s\n", cyan.Sprint("Describe your contribution"))
 	fmt.Printf("   Title: %s\n", contributeMessage)
 	fmt.Printf("   Description: Include details about the resource and its usage\n")

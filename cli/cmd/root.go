@@ -14,7 +14,7 @@ var (
 	Version = "dev"
 	Commit  = "unknown"
 	Date    = "unknown"
-	
+
 	cfgFile string
 	verbose bool
 )

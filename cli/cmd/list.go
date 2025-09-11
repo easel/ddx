@@ -26,7 +26,7 @@ You can filter by type or search for specific items.`,
 
 func init() {
 	rootCmd.AddCommand(listCmd)
-	
+
 	listCmd.Flags().StringVarP(&listType, "type", "t", "", "Filter by type (templates|patterns|configs|prompts|scripts)")
 	listCmd.Flags().StringVarP(&listSearch, "search", "s", "", "Search for specific items")
 }
@@ -38,7 +38,7 @@ func runList(cmd *cobra.Command, args []string) error {
 	bold := color.New(color.Bold)
 
 	ddxHome := getDDxHome()
-	
+
 	// Check if DDx is installed
 	if _, err := os.Stat(ddxHome); os.IsNotExist(err) {
 		color.Red("❌ DDx not found. Please run the installation script first.")
@@ -50,7 +50,7 @@ func runList(cmd *cobra.Command, args []string) error {
 
 	// Define resource types to list
 	resourceTypes := []string{"templates", "patterns", "configs", "prompts", "scripts"}
-	
+
 	// Filter by type if specified
 	if listType != "" {
 		resourceTypes = []string{listType}
@@ -58,7 +58,7 @@ func runList(cmd *cobra.Command, args []string) error {
 
 	for _, resourceType := range resourceTypes {
 		resourcePath := filepath.Join(ddxHome, resourceType)
-		
+
 		if _, err := os.Stat(resourcePath); os.IsNotExist(err) {
 			continue
 		}
@@ -86,19 +86,19 @@ func runList(cmd *cobra.Command, args []string) error {
 
 		// Print section header
 		bold.Printf("%s:\n", strings.Title(resourceType))
-		
+
 		for _, entry := range filteredEntries {
 			itemPath := filepath.Join(resourcePath, entry.Name())
-			
+
 			// Get item info
 			info := getResourceInfo(itemPath, entry)
-			
+
 			if entry.IsDir() {
 				green.Printf("  📁 %s", entry.Name())
 			} else {
 				green.Printf("  📄 %s", entry.Name())
 			}
-			
+
 			if info != "" {
 				gray.Printf(" - %s", info)
 			}
@@ -134,7 +134,7 @@ func getResourceInfo(path string, entry os.DirEntry) string {
 				}
 			}
 		}
-		
+
 		// Count items in directory
 		if entries, err := os.ReadDir(path); err == nil {
 			return fmt.Sprintf("%d items", len(entries))
@@ -167,6 +167,6 @@ func getResourceInfo(path string, entry os.DirEntry) string {
 			}
 		}
 	}
-	
+
 	return ""
 }

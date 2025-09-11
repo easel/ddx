@@ -8,9 +8,9 @@ import (
 	"strings"
 
 	"github.com/briandowns/spinner"
+	"github.com/easel/ddx/internal/config"
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
-	"github.com/easel/ddx/internal/config"
 )
 
 var (
@@ -19,20 +19,20 @@ var (
 )
 
 type DiagnosticResult struct {
-	DDx     DDxStatus     `json:"ddx"`
-	Git     GitStatus     `json:"git"`
-	Project ProjectStatus `json:"project"`
-	AI      AIStatus      `json:"ai"`
-	Score   int           `json:"score"`
-	Issues  []string      `json:"issues"`
-	Suggestions []string  `json:"suggestions"`
+	DDx         DDxStatus     `json:"ddx"`
+	Git         GitStatus     `json:"git"`
+	Project     ProjectStatus `json:"project"`
+	AI          AIStatus      `json:"ai"`
+	Score       int           `json:"score"`
+	Issues      []string      `json:"issues"`
+	Suggestions []string      `json:"suggestions"`
 }
 
 type DDxStatus struct {
-	Installed    bool   `json:"installed"`
-	Initialized  bool   `json:"initialized"`
-	ConfigValid  bool   `json:"config_valid"`
-	Version      string `json:"version,omitempty"`
+	Installed   bool   `json:"installed"`
+	Initialized bool   `json:"initialized"`
+	ConfigValid bool   `json:"config_valid"`
+	Version     string `json:"version,omitempty"`
 }
 
 type GitStatus struct {
@@ -72,7 +72,7 @@ This command checks:
 
 func init() {
 	rootCmd.AddCommand(diagnoseCmd)
-	
+
 	diagnoseCmd.Flags().BoolVarP(&diagnoseReport, "report", "r", false, "Generate detailed report")
 	diagnoseCmd.Flags().BoolVarP(&diagnoseFix, "fix", "f", false, "Automatically fix common issues")
 }
@@ -80,9 +80,6 @@ func init() {
 func runDiagnose(cmd *cobra.Command, args []string) error {
 	cyan := color.New(color.FgCyan)
 	green := color.New(color.FgGreen)
-	yellow := color.New(color.FgYellow)
-	red := color.New(color.FgRed)
-	bold := color.New(color.Bold)
 
 	cyan.Println("🔍 Diagnosing project setup...")
 	fmt.Println()
@@ -98,16 +95,16 @@ func runDiagnose(cmd *cobra.Command, args []string) error {
 
 	// Check DDx setup
 	checkDDxSetup(result)
-	
+
 	// Check Git setup
 	checkGitSetup(result)
-	
+
 	// Check project structure
 	checkProjectStructure(result)
-	
+
 	// Check AI integration
 	checkAIIntegration(result)
-	
+
 	// Calculate overall score
 	calculateScore(result)
 
@@ -152,11 +149,11 @@ func checkDDxSetup(result *DiagnosticResult) {
 func checkGitSetup(result *DiagnosticResult) {
 	// Check if it's a git repository
 	result.Git.Repository = isGitRepository()
-	
+
 	if result.Git.Repository {
 		result.Git.Gitignore = fileExists(".gitignore")
 		result.Git.Readme = fileExists("README.md")
-		
+
 		// Check git hooks
 		hooksDir := ".git/hooks"
 		if fileExists(hooksDir) {
@@ -168,12 +165,12 @@ func checkGitSetup(result *DiagnosticResult) {
 				}
 			}
 		}
-		
+
 		// Check for DDx subtree (simplified check)
 		if out, err := exec.Command("git", "log", "--grep=git-subtree-dir: .ddx", "--oneline").Output(); err == nil {
 			result.Git.DDxSubtree = len(strings.TrimSpace(string(out))) > 0
 		}
-		
+
 	} else {
 		result.Issues = append(result.Issues, "Not a Git repository")
 		result.Suggestions = append(result.Suggestions, "Initialize Git repository with 'git init'")
@@ -223,7 +220,7 @@ func checkProjectStructure(result *DiagnosticResult) {
 
 func checkAIIntegration(result *DiagnosticResult) {
 	result.AI.ClaudeFile = fileExists("CLAUDE.md")
-	
+
 	if !result.AI.ClaudeFile {
 		result.Suggestions = append(result.Suggestions, "Create CLAUDE.md for AI context")
 	}
@@ -308,7 +305,7 @@ func displayResults(result *DiagnosticResult) {
 	// Overall score
 	bold.Println("📊 Diagnosis Results")
 	fmt.Println()
-	
+
 	scoreColor := green
 	if result.Score < 60 {
 		scoreColor = red
@@ -372,7 +369,7 @@ func displayResults(result *DiagnosticResult) {
 func autoFix(result *DiagnosticResult) error {
 	cyan := color.New(color.FgCyan)
 	green := color.New(color.FgGreen)
-	
+
 	cyan.Println("🔧 Auto-fixing issues...")
 	fmt.Println()
 
@@ -472,7 +469,7 @@ logs/
 func createBasicClaudeFile() error {
 	pwd, _ := os.Getwd()
 	projectName := filepath.Base(pwd)
-	
+
 	content := fmt.Sprintf(`# %s
 
 ## Overview
@@ -495,6 +492,6 @@ Describe the high-level architecture and key components.
 - Key context for AI assistance: 
 - Important files to review: README.md, package.json (or equivalent)
 `, projectName)
-	
+
 	return os.WriteFile("CLAUDE.md", []byte(content), 0644)
 }

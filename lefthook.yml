@@ -1,0 +1,276 @@
+# Lefthook configuration for DDx project
+# Fast, cross-platform git hooks that work on Windows, macOS, and Linux
+# https://github.com/evilmartians/lefthook
+
+# Configuration for colors and output
+colors: true
+no_tty: false
+
+# Pre-commit hooks - run before each commit
+pre-commit:
+  parallel: true # Run independent checks in parallel for speed
+  
+  commands:
+    # ====================
+    # Fast Checks (always run)
+    # ====================
+    
+    conflicts:
+      name: "Check for merge conflicts"
+      run: |
+        git diff --cached --name-only --diff-filter=ACM | while read -r file; do
+          if test -f "$file" && grep -E "^(<<<<<<<|=======|>>>>>>>|\|\|\|\|\|\|\|)" "$file"; then
+            echo "❌ Merge conflict markers found in: $file"
+            exit 1
+          fi
+        done
+      glob: "*"
+      exclude: "*.md"
+      fail_text: "Please resolve merge conflicts before committing"
+      
+    debug-statements:
+      name: "Check for debug statements"
+      run: |
+        files=$(git diff --cached --name-only --diff-filter=ACM)
+        found=0
+        
+        # Check Go files
+        echo "$files" | grep -E '\.go$' | while read -r file; do
+          if test -f "$file" && grep -E '(fmt\.Print|println|dbg!|spew\.Dump)' "$file"; then
+            echo "⚠️  Debug statement in: $file"
+            found=1
+          fi
+        done
+        
+        # Check JavaScript/TypeScript files  
+        echo "$files" | grep -E '\.(js|jsx|ts|tsx)$' | while read -r file; do
+          if test -f "$file" && grep -E '(console\.(log|debug|info)|debugger)' "$file"; then
+            echo "⚠️  Debug statement in: $file"
+            found=1
+          fi
+        done
+        
+        # Check Python files
+        echo "$files" | grep -E '\.py$' | while read -r file; do
+          if test -f "$file" && grep -E '(print\(|pdb\.set_trace|breakpoint\(\)|import pdb)' "$file"; then
+            echo "⚠️  Debug statement in: $file"
+            found=1
+          fi
+        done
+        
+        exit $found
+      fail_text: "Remove debug statements before committing (or use LEFTHOOK_EXCLUDE=debug-statements)"
+      
+    # ====================
+    # Go Checks (only run when Go files are staged)
+    # ====================
+    
+    go-fmt:
+      name: "Go Format"
+      glob: "*.go"
+      run: |
+        files=$(git diff --cached --name-only --diff-filter=ACM | grep '\.go$' || true)
+        if [ -n "$files" ]; then
+          unformatted=$(echo "$files" | xargs gofmt -l 2>/dev/null || true)
+          if [ -n "$unformatted" ]; then
+            echo "❌ Go files need formatting:"
+            echo "$unformatted"
+            echo "Run: gofmt -w <files> or 'make fmt' in cli/"
+            exit 1
+          fi
+        fi
+      skip:
+        - merge
+        - rebase
+      
+    go-lint:
+      name: "Go Lint"
+      glob: "*.go"
+      run: |
+        if [ -f "cli/go.mod" ]; then
+          cd cli
+        elif [ ! -f "go.mod" ]; then
+          exit 0
+        fi
+        
+        # Try golangci-lint first, fall back to go vet
+        if command -v golangci-lint >/dev/null 2>&1; then
+          golangci-lint run --timeout=60s --new-from-rev=HEAD~1
+        elif command -v go >/dev/null 2>&1; then
+          go vet ./...
+        fi
+      skip:
+        - merge
+        - rebase
+      
+    go-build:
+      name: "Go Build"
+      glob: "*.go"
+      run: |
+        if [ -f "cli/go.mod" ]; then
+          cd cli
+        elif [ ! -f "go.mod" ]; then
+          exit 0
+        fi
+        
+        echo "🔨 Building Go project..."
+        go build -v ./...
+      skip:
+        - merge
+        - rebase
+      
+    go-test:
+      name: "Go Tests"
+      glob: "*.go"
+      run: |
+        if [ -f "cli/go.mod" ]; then
+          cd cli
+        elif [ ! -f "go.mod" ]; then
+          exit 0
+        fi
+        
+        # Only test packages with changes
+        packages=$(git diff --cached --name-only --diff-filter=ACM | grep '\.go$' | xargs -n1 dirname | sort -u | sed 's|^cli/||' | grep -v "^\.")
+        
+        if [ -n "$packages" ]; then
+          echo "🧪 Running tests for changed packages..."
+          for pkg in $packages; do
+            if ls "$pkg"/*_test.go >/dev/null 2>&1; then
+              go test -short -v "./$pkg"
+            fi
+          done
+        fi
+      skip:
+        - merge
+        - rebase
+      env:
+        SKIP_INTEGRATION_TESTS: "true"
+      
+    # ====================
+    # Security Checks
+    # ====================
+    
+    secrets:
+      name: "Scan for secrets"
+      parallel: true
+      run: |
+        # Use gitleaks if available, otherwise basic pattern matching
+        if command -v gitleaks >/dev/null 2>&1; then
+          gitleaks protect --staged --verbose --redact
+        else
+          files=$(git diff --cached --name-only --diff-filter=ACM)
+          found=0
+          
+          # Check for common secret patterns
+          patterns=(
+            'api[_-]?key.*=.*["'\''][a-zA-Z0-9]{20,}'
+            'AKIA[0-9A-Z]{16}'  # AWS keys
+            'ghp_[a-zA-Z0-9]{36}'  # GitHub tokens
+            'sk_live_[0-9a-zA-Z]{24,}'  # Stripe keys
+            '-----BEGIN.*PRIVATE KEY'
+          )
+          
+          for pattern in "${patterns[@]}"; do
+            if echo "$files" | xargs grep -l -E "$pattern" 2>/dev/null; then
+              echo "❌ Potential secret detected (pattern: $pattern)"
+              found=1
+            fi
+          done
+          
+          # Check for sensitive filenames
+          sensitive_files=".env .env.local credentials secrets.yml private.key id_rsa"
+          for sensitive in $sensitive_files; do
+            if echo "$files" | grep -q "$sensitive"; then
+              echo "❌ Sensitive file detected: $sensitive"
+              found=1
+            fi
+          done
+          
+          exit $found
+        fi
+      exclude:
+        - "*.md"
+        - "go.sum"
+        - "package-lock.json"
+        - "*_test.go"
+      fail_text: "Secrets detected! Remove them or add to .gitleaks.toml if false positive"
+      
+    binaries:
+      name: "Check binaries"
+      run: |
+        # Check for large files and unexpected binaries
+        MAX_SIZE=5242880  # 5MB
+        files=$(git diff --cached --name-only --diff-filter=ACM)
+        found=0
+        
+        for file in $files; do
+          if [ -f "$file" ]; then
+            size=$(stat -f%z "$file" 2>/dev/null || stat -c%s "$file" 2>/dev/null || echo 0)
+            
+            # Check size
+            if [ "$size" -gt "$MAX_SIZE" ]; then
+              size_mb=$((size / 1048576))
+              echo "❌ Large file: $file (${size_mb}MB)"
+              found=1
+            fi
+            
+            # Check if binary (skip allowed extensions)
+            case "$file" in
+              *.png|*.jpg|*.jpeg|*.gif|*.svg|*.ico|*.woff|*.woff2|*.ttf|*.eot|*.pdf)
+                ;;
+              *)
+                if file "$file" 2>/dev/null | grep -q "binary\|executable"; then
+                  echo "❌ Unexpected binary: $file"
+                  found=1
+                fi
+                ;;
+            esac
+          fi
+        done
+        
+        exit $found
+      fail_text: "Binary files detected. Use Git LFS for large files or add to .gitignore"
+      
+    # ====================
+    # DDx-specific Checks
+    # ====================
+    
+    ddx-validate:
+      name: "Validate DDx"
+      run: |
+        # Only run if DDx files changed
+        if ! git diff --cached --name-only | grep -qE '(\.ddx\.yml|\.ddx/|templates/|patterns/|prompts/)'; then
+          exit 0
+        fi
+        
+        # Check if ddx command is available
+        if command -v ddx >/dev/null 2>&1; then
+          DDX_CMD="ddx"
+        elif [ -x "./cli/ddx" ]; then
+          DDX_CMD="./cli/ddx"
+        elif [ -x "./ddx" ]; then
+          DDX_CMD="./ddx"
+        else
+          echo "⚠️  DDx command not found, skipping validation"
+          exit 0
+        fi
+        
+        # Validate configuration
+        echo "🔍 Validating DDx configuration..."
+        $DDX_CMD diagnose --check
+      glob: "**/*.{yml,yaml,md}"
+      fail_text: "DDx validation failed. Run 'ddx diagnose' for details"
+
+# Optional: pre-push hooks
+pre-push:
+  commands:
+    tests:
+      name: "Run full test suite"
+      run: |
+        if [ -f "cli/go.mod" ]; then
+          cd cli && go test ./...
+        fi
+
+# Skip configuration via environment variables
+# Usage: LEFTHOOK_EXCLUDE=go-test,go-build git commit ...
+# Or: LEFTHOOK=0 git commit ... (skip all hooks)

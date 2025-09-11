@@ -5,9 +5,9 @@ import (
 	"os"
 
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/easel/ddx/internal/config"
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
-	"github.com/easel/ddx/internal/config"
 	"gopkg.in/yaml.v3"
 )
 
@@ -33,7 +33,7 @@ Local configuration takes precedence over global settings.`,
 
 func init() {
 	rootCmd.AddCommand(configCmd)
-	
+
 	configCmd.Flags().BoolVarP(&configGlobal, "global", "g", false, "Edit global configuration")
 	configCmd.Flags().BoolVarP(&configLocal, "local", "l", false, "Edit local project configuration")
 	configCmd.Flags().BoolVar(&configInit, "init", false, "Initialize configuration wizard")
@@ -42,8 +42,6 @@ func init() {
 
 func runConfig(cmd *cobra.Command, args []string) error {
 	cyan := color.New(color.FgCyan)
-	green := color.New(color.FgGreen)
-	yellow := color.New(color.FgYellow)
 	bold := color.New(color.Bold)
 
 	if configShow {
@@ -65,7 +63,7 @@ func runConfig(cmd *cobra.Command, args []string) error {
 	// Default behavior - show current config
 	cyan.Println("🔧 DDx Configuration")
 	fmt.Println()
-	
+
 	bold.Println("Current Configuration:")
 	return showCurrentConfig()
 }
@@ -84,20 +82,20 @@ func showCurrentConfig() error {
 	}
 
 	fmt.Printf("%s\n", string(yamlData))
-	
+
 	// Show configuration file sources
 	gray := color.New(color.FgHiBlack)
 	fmt.Println()
 	gray.Println("Configuration sources:")
-	
+
 	home, _ := os.UserHomeDir()
 	globalPath := home + "/.ddx.yml"
 	localPath := ".ddx.yml"
-	
+
 	if _, err := os.Stat(globalPath); err == nil {
 		gray.Printf("  • Global: %s\n", globalPath)
 	}
-	
+
 	if _, err := os.Stat(localPath); err == nil {
 		gray.Printf("  • Local:  %s\n", localPath)
 	}
@@ -109,7 +107,7 @@ func showCurrentConfig() error {
 func initConfigWizard() error {
 	cyan := color.New(color.FgCyan)
 	green := color.New(color.FgGreen)
-	
+
 	cyan.Println("🧙 DDx Configuration Wizard")
 	fmt.Println()
 
@@ -132,7 +130,7 @@ func initConfigWizard() error {
 				Message: "Select resources to include by default:",
 				Options: []string{
 					"prompts/claude",
-					"prompts/general", 
+					"prompts/general",
 					"scripts/hooks",
 					"scripts/setup",
 					"templates/common",
@@ -191,9 +189,9 @@ func editGlobalConfig() error {
 	if err != nil {
 		return err
 	}
-	
+
 	configPath := home + "/.ddx.yml"
-	
+
 	// Create default config if it doesn't exist
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		if err := config.Save(config.DefaultConfig); err != nil {
@@ -207,13 +205,13 @@ func editGlobalConfig() error {
 // editLocalConfig opens the local config file for editing
 func editLocalConfig() error {
 	configPath := ".ddx.yml"
-	
+
 	// Create default config if it doesn't exist
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		cfg := *config.DefaultConfig
 		// Set project-specific defaults
 		cfg.Variables["project_name"] = "{{PROJECT_NAME}}"
-		
+
 		if err := config.SaveLocal(&cfg); err != nil {
 			return fmt.Errorf("failed to create local configuration: %w", err)
 		}
@@ -230,10 +228,10 @@ func openEditor(filePath string) error {
 	}
 
 	fmt.Printf("Opening %s in %s...\n", filePath, editor)
-	
+
 	// Note: In a real implementation, you'd want to use exec.Command
 	// to open the editor properly. This is simplified for the example.
 	color.Yellow("Please edit the file manually: %s", filePath)
-	
+
 	return nil
 }

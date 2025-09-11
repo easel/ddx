@@ -3,7 +3,17 @@
     "allow": [
       "mcp__sequential-thinking__sequentialthinking",
       "WebSearch",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Read(///**)",
+      "Bash(./scripts/hooks/pre-commit)",
+      "Bash(git checkout:*)",
+      "Bash(gofmt:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(SKIP_GO_LINT=1 git commit -m \"Test hooks with proper formatting\")",
+      "Bash(go install:*)",
+      "Bash(~/go/bin/lefthook:*)",
+      "Bash(go mod:*)"
     ],
     "deny": [],
     "ask": []

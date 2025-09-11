@@ -7,10 +7,10 @@ import (
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/briandowns/spinner"
-	"github.com/fatih/color"
-	"github.com/spf13/cobra"
 	"github.com/easel/ddx/internal/config"
 	"github.com/easel/ddx/internal/templates"
+	"github.com/fatih/color"
+	"github.com/spf13/cobra"
 )
 
 var (
@@ -33,7 +33,7 @@ This will:
 
 func init() {
 	rootCmd.AddCommand(initCmd)
-	
+
 	initCmd.Flags().StringVarP(&initTemplate, "template", "t", "", "Use specific template")
 	initCmd.Flags().BoolVarP(&initForce, "force", "f", false, "Force initialization even if DDx already exists")
 }
@@ -57,7 +57,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 		if err := survey.AskOne(prompt, &proceed); err != nil {
 			return err
 		}
-		
+
 		if !proceed {
 			yellow.Println("Initialization cancelled.")
 			return nil
@@ -94,7 +94,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 	for _, include := range cfg.Includes {
 		sourcePath := filepath.Join(ddxHome, include)
 		targetPath := filepath.Join(localDDxPath, include)
-		
+
 		if _, err := os.Stat(sourcePath); err == nil {
 			s.Suffix = fmt.Sprintf(" Copying %s...", include)
 			if err := copyDir(sourcePath, targetPath); err != nil {
@@ -107,7 +107,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 	// Create local configuration
 	pwd, _ := os.Getwd()
 	projectName := filepath.Base(pwd)
-	
+
 	localConfig := &config.Config{
 		Version:  cfg.Version,
 		Includes: cfg.Includes,
@@ -134,7 +134,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 	s.Stop()
 	green.Println("✅ DDx initialized successfully!")
 	fmt.Println()
-	
+
 	// Show next steps
 	fmt.Println(color.New(color.Bold).Sprint("Next steps:"))
 	cyan.Printf("  ddx list          - See available resources\n")

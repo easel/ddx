@@ -3,14 +3,13 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 
 	"github.com/briandowns/spinner"
-	"github.com/fatih/color"
-	"github.com/spf13/cobra"
 	"github.com/easel/ddx/internal/config"
 	"github.com/easel/ddx/internal/git"
+	"github.com/fatih/color"
+	"github.com/spf13/cobra"
 )
 
 var (
@@ -33,7 +32,7 @@ This command:
 
 func init() {
 	rootCmd.AddCommand(updateCmd)
-	
+
 	updateCmd.Flags().BoolVar(&updateCheck, "check", false, "Check for updates without applying")
 	updateCmd.Flags().BoolVar(&updateReset, "reset", false, "Reset to master state, discarding local changes")
 }
@@ -86,7 +85,7 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 				yellow.Printf("⚠️  Could not check for updates: %v\n", err)
 				return nil
 			}
-			
+
 			if behind > 0 {
 				yellow.Printf("📦 %d updates available. Run 'ddx update' to apply.\n", behind)
 			} else {
@@ -101,7 +100,7 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 	// Perform the update
 	if hasSubtree {
 		s.Suffix = " Updating from subtree..."
-		
+
 		if updateReset {
 			// Reset to master state
 			if err := git.SubtreeReset(".ddx", cfg.Repository.URL, cfg.Repository.Branch); err != nil {
@@ -117,7 +116,7 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 		}
 	} else {
 		s.Suffix = " Creating DDx subtree..."
-		
+
 		// Create initial subtree
 		if err := git.SubtreeAdd(".ddx", cfg.Repository.URL, cfg.Repository.Branch); err != nil {
 			s.Stop()
@@ -152,7 +151,7 @@ func runPostUpdateTasks(cfg *config.Config) error {
 	for source, target := range cfg.Overrides {
 		sourcePath := filepath.Join(".ddx", source)
 		targetPath := target
-		
+
 		if _, err := os.Stat(targetPath); err == nil {
 			// Copy override
 			if err := copyFile(targetPath, sourcePath); err != nil {
@@ -177,7 +176,7 @@ func runPostUpdateTasks(cfg *config.Config) error {
 func installGitHooks() error {
 	hooksPath := ".ddx/scripts/hooks"
 	gitHooksPath := ".git/hooks"
-	
+
 	if _, err := os.Stat(hooksPath); os.IsNotExist(err) {
 		return nil // No hooks to install
 	}
@@ -189,12 +188,12 @@ func installGitHooks() error {
 	// Install pre-commit hook
 	srcHook := filepath.Join(hooksPath, "pre-commit")
 	dstHook := filepath.Join(gitHooksPath, "pre-commit")
-	
+
 	if _, err := os.Stat(srcHook); err == nil {
 		if err := copyFile(srcHook, dstHook); err != nil {
 			return err
 		}
-		
+
 		// Make it executable
 		if err := os.Chmod(dstHook, 0755); err != nil {
 			return err
