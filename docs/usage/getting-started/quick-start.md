@@ -1,6 +1,16 @@
 # Getting Started with DDx
 
+> **Last Updated**: 2025-09-11
+> **Status**: Active
+> **Owner**: DDx Team
+
+## Overview
+
 Welcome to DDx (Document-Driven Development eXperience)! This guide will help you get up and running quickly.
+
+## Context
+
+This quick start guide is for developers who want to immediately start using DDx in their projects. For more detailed setup instructions, see [[development/tools/setup]].
 
 ## Installation
 
