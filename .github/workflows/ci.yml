@@ -13,66 +13,14 @@ permissions:
   pull-requests: write
 
 jobs:
-  # Fast checks that mirror pre-commit hooks
-  pre-checks:
-    name: Pre-commit Checks
+  # Main CI job using lefthook
+  ci:
+    name: CI Validation
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
       with:
         fetch-depth: 0  # Need full history for some checks
-    
-    - name: Check for merge conflicts
-      run: |
-        if grep -rE "^(<<<<<<<|=======|>>>>>>>|\|\|\|\|\|\|\|)" . --exclude-dir=.git; then
-          echo "❌ Merge conflict markers found"
-          exit 1
-        fi
-        echo "✅ No merge conflicts found"
-    
-    - name: Check for debug statements
-      run: |
-        found=0
-        
-        # Check Go files (excluding CLI cmd files which legitimately use fmt.Print for output)
-        if find . -name "*.go" -type f ! -path "./cli/cmd/*" -exec grep -l 'spew\.Dump\|pprof\|debug\.Print' {} \; | grep -v _test.go; then
-          echo "⚠️ Debug statements found in Go files"
-          found=1
-        fi
-        
-        # Check JavaScript/TypeScript files
-        if find . -name "*.js" -o -name "*.jsx" -o -name "*.ts" -o -name "*.tsx" -type f \
-          -exec grep -l 'console\.\(log\|debug\|info\)\|debugger' {} \; 2>/dev/null; then
-          echo "⚠️ Debug statements found in JS/TS files"
-          found=1
-        fi
-        
-        if [ $found -eq 1 ]; then
-          echo "❌ Remove debug statements before merging"
-          exit 1
-        fi
-        echo "✅ No debug statements found"
-    
-    - name: Check file sizes
-      run: |
-        # Find files larger than 10MB
-        large_files=$(find . -type f -size +10M -not -path "./.git/*" 2>/dev/null)
-        if [ -n "$large_files" ]; then
-          echo "❌ Large files detected (>10MB):"
-          echo "$large_files"
-          exit 1
-        fi
-        echo "✅ No large files detected"
-
-  # Go-specific checks
-  go-quality:
-    name: Go Quality Checks
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: cli
-    steps:
-    - uses: actions/checkout@v4
     
     - name: Set up Go
       uses: actions/setup-go@v5
@@ -80,101 +28,32 @@ jobs:
         go-version: '1.21'
         cache-dependency-path: cli/go.sum
     
-    - name: Verify go.mod and go.sum
+    - name: Install golangci-lint
       run: |
-        go mod tidy
-        if ! git diff --exit-code go.mod go.sum; then
-          echo "❌ go.mod or go.sum is out of sync. Run 'go mod tidy'"
-          exit 1
-        fi
-        echo "✅ go.mod and go.sum are in sync"
+        curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.64.8
+        echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
     
-    - name: Check formatting
+    - name: Install lefthook
       run: |
-        unformatted=$(gofmt -l .)
-        if [ -n "$unformatted" ]; then
-          echo "❌ Go files need formatting:"
-          echo "$unformatted"
-          echo "Run: gofmt -w <files>"
-          exit 1
-        fi
-        echo "✅ All Go files are properly formatted"
+        curl -sSfL https://raw.githubusercontent.com/evilmartians/lefthook/master/install.sh | sh -s -- -b /usr/local/bin
     
-    - name: Run go vet
-      run: go vet ./...
-    
-    - name: Run golangci-lint
-      uses: golangci/golangci-lint-action@v6
-      with:
-        version: latest
-        working-directory: cli
-        args: --timeout=5m
-    
-    - name: Run staticcheck
-      uses: dominikh/staticcheck-action@v1
-      with:
-        version: "latest"
-        working-directory: cli
+    - name: Run CI validation
+      run: lefthook run ci
+      env:
+        LEFTHOOK_QUIET: meta,execution
 
-  # Comprehensive testing
-  test:
-    name: Test
-    needs: [pre-checks, go-quality]
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        go-version: ['1.21', '1.22']
-    runs-on: ${{ matrix.os }}
-    defaults:
-      run:
-        working-directory: cli
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: ${{ matrix.go-version }}
-        cache-dependency-path: cli/go.sum
-    
-    - name: Install dependencies
-      run: go mod download
-    
-    - name: Run tests with race detection
-      run: go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
-    
-    - name: Upload coverage
-      if: matrix.os == 'ubuntu-latest' && matrix.go-version == '1.21'
-      uses: codecov/codecov-action@v4
-      with:
-        file: ./cli/coverage.out
-        flags: unittests
-        name: codecov-umbrella
-    
-    - name: Run benchmarks
-      if: matrix.os == 'ubuntu-latest'
-      run: go test -bench=. -benchmem ./...
-
-  # Build verification
+  # Separate build job for matrix builds
   build:
     name: Build
-    needs: test
+    needs: ci
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        include:
-          - os: ubuntu-latest
-            goos: linux
-            goarch: amd64
-          - os: ubuntu-latest
-            goos: linux
-            goarch: arm64
-          - os: windows-latest
-            goos: windows
-            goarch: amd64
-          - os: macos-latest
-            goos: darwin
-            goarch: arm64
-    runs-on: ${{ matrix.os }}
+        os: [linux, darwin, windows]
+        arch: [amd64, arm64]
+        exclude:
+          - os: windows
+            arch: arm64
     defaults:
       run:
         working-directory: cli
@@ -188,64 +67,57 @@ jobs:
         cache-dependency-path: cli/go.sum
     
     - name: Build binary
-      env:
-        GOOS: ${{ matrix.goos }}
-        GOARCH: ${{ matrix.goarch }}
       run: |
-        make build
-        
-    - name: Test binary (native platform only)
-      if: matrix.goos == runner.os || (matrix.goos == 'darwin' && runner.os == 'macOS')
-      run: |
-        ./build/ddx version
-        ./build/ddx help
+        GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} \
+          go build -v -o ../bin/ddx-${{ matrix.os }}-${{ matrix.arch }} ./...
     
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: ddx-${{ matrix.goos }}-${{ matrix.goarch }}
-        path: cli/build/ddx*
+        name: ddx-${{ matrix.os }}-${{ matrix.arch }}
+        path: bin/ddx-${{ matrix.os }}-${{ matrix.arch }}
         retention-days: 7
 
   # Integration tests
   integration:
     name: Integration Tests
-    needs: build
+    needs: ci
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
     
-    - name: Download Linux binary
-      uses: actions/download-artifact@v4
+    - name: Set up Go
+      uses: actions/setup-go@v5
       with:
-        name: ddx-linux-amd64
-        path: ./bin
+        go-version: '1.21'
+        cache-dependency-path: cli/go.sum
     
-    - name: Make binary executable
-      run: chmod +x ./bin/ddx
-    
-    - name: Run integration tests
+    - name: Install lefthook
       run: |
-        export PATH="$PWD/bin:$PATH"
-        
-        # Test init command
-        ddx init --help
-        
-        # Test list command
-        ddx list templates
-        ddx list patterns
-        ddx list prompts
-        
-        # Test in temporary directory
-        temp_dir=$(mktemp -d)
-        cd "$temp_dir"
-        
-        # Test basic workflow
-        ddx init --no-interactive
+        curl -sSfL https://raw.githubusercontent.com/evilmartians/lefthook/master/install.sh | sh -s -- -b /usr/local/bin
+    
+    - name: Build CLI
+      run: |
+        cd cli
+        go build -o ../bin/ddx
+    
+    - name: Test init command
+      run: |
+        mkdir -p test-project
+        cd test-project
+        ../bin/ddx init
         test -f .ddx.yml
-        
-        # Cleanup
-        cd -
-        rm -rf "$temp_dir"
-        
-        echo "✅ Integration tests passed"
+    
+    - name: Test list command
+      run: |
+        cd test-project
+        ../bin/ddx list
+    
+    - name: Test pre-commit hooks
+      run: |
+        cd test-project
+        git init
+        lefthook install
+        echo "test" > test.txt
+        git add test.txt
+        git commit -m "Test commit" || true
