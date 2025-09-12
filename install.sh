@@ -81,18 +81,43 @@ install_cli() {
         armv7l) ARCH="arm" ;;
     esac
     
-    # Download appropriate binary
-    BINARY_NAME="ddx-${OS}-${ARCH}"
-    DOWNLOAD_URL="${DDX_REPO}/releases/latest/download/${BINARY_NAME}"
-    
-    log "Downloading ${BINARY_NAME}..."
-    
-    if command -v curl &> /dev/null; then
-        curl -fsSL "${DOWNLOAD_URL}" -o "${DDX_HOME}/ddx"
+    # Determine archive extension based on OS
+    if [ "$OS" = "windows" ]; then
+        ARCHIVE_EXT="zip"
+        BINARY_NAME="ddx.exe"
     else
-        wget -q "${DOWNLOAD_URL}" -O "${DDX_HOME}/ddx"
+        ARCHIVE_EXT="tar.gz"
+        BINARY_NAME="ddx"
     fi
     
+    # Download appropriate archive
+    ARCHIVE_NAME="ddx-${OS}-${ARCH}.${ARCHIVE_EXT}"
+    DOWNLOAD_URL="${DDX_REPO}/releases/latest/download/${ARCHIVE_NAME}"
+    
+    log "Downloading ${ARCHIVE_NAME}..."
+    
+    # Create temp directory for download
+    TEMP_DIR=$(mktemp -d)
+    trap "rm -rf ${TEMP_DIR}" EXIT
+    
+    if command -v curl &> /dev/null; then
+        curl -fsSL "${DOWNLOAD_URL}" -o "${TEMP_DIR}/${ARCHIVE_NAME}"
+    else
+        wget -q "${DOWNLOAD_URL}" -O "${TEMP_DIR}/${ARCHIVE_NAME}"
+    fi
+    
+    # Extract binary from archive
+    log "Extracting binary..."
+    cd "${TEMP_DIR}"
+    
+    if [ "$ARCHIVE_EXT" = "zip" ]; then
+        unzip -q "${ARCHIVE_NAME}"
+    else
+        tar -xzf "${ARCHIVE_NAME}"
+    fi
+    
+    # Move binary to DDx home
+    mv "${BINARY_NAME}" "${DDX_HOME}/ddx"
     chmod +x "${DDX_HOME}/ddx"
     
     # Create symlink in user's local bin or add to PATH
