@@ -1,0 +1,13 @@
+input_gates:
+  - criteria: Monitoring completed with all critical issues resolved
+    required: true
+    source: 04-monitor
+  - criteria: Clinical deployment plan approved
+    required: true
+    source: external
+  - criteria: Release validation criteria met
+    required: true
+    source: 04-monitor
+  - criteria: All regulatory compliance requirements satisfied
+    required: true
+    source: external

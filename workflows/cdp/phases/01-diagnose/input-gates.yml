@@ -1,0 +1,13 @@
+input_gates:
+  - criteria: Patient symptoms (problems) clearly identified
+    required: true
+    source: external
+  - criteria: All stakeholders (care team) available for consultation
+    required: true
+    source: external
+  - criteria: Initial scope of condition understood
+    required: true
+    source: external
+  - criteria: Clinical assessment resources allocated
+    required: true
+    source: external

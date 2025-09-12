@@ -1,0 +1,10 @@
+input_gates:
+  - criteria: Release deployed
+    required: true
+    source: 05-release
+  - criteria: Feedback channels open
+    required: true
+    source: external
+  - criteria: Metrics collection enabled
+    required: true
+    source: 05-release

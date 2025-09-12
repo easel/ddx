@@ -1,26 +1,19 @@
 name: cdp
 version: 1.0.0
-description: Clinical Development Protocol for rigorous software development following medical best practices
+description: Clinical Development Protocol for rigorous software development
 author: DDX Clinical Team
 created: 2025-01-12
 tags:
   - clinical-development
-  - medical-metaphor
   - validation-driven
   - evidence-based
   - quality-assured
 
 phases:
   - id: diagnose
+    order: 1
     name: Patient Diagnosis
     description: Comprehensive problem analysis and requirements assessment
-    artifacts:
-      - prd
-    entry_criteria:
-      - Patient symptoms (problems) clearly identified
-      - All stakeholders (care team) available for consultation
-      - Initial scope of condition understood
-      - Clinical assessment resources allocated
     exit_criteria:
       - Complete diagnostic documentation created and reviewed
       - Treatment success metrics clearly defined and measurable
@@ -32,18 +25,11 @@ phases:
       - stakeholder_clinical_review
       - technical_feasibility_assessment
     estimated_duration: 1-2 weeks
-    next: prescribe
 
   - id: prescribe
+    order: 2
     name: Treatment Planning
     description: Design comprehensive treatment approach and technical architecture
-    artifacts:
-      - architecture
-    entry_criteria:
-      - Patient diagnosis completed and validated
-      - Clinical treatment team assigned and briefed
-      - Treatment constraints and environment identified
-      - Treatment resources allocated and confirmed
     exit_criteria:
       - Comprehensive treatment plan documented with clinical protocols
       - All technology choices justified with evidence-based rationale
@@ -56,18 +42,11 @@ phases:
       - risk_mitigation_validation
       - senior_practitioner_approval
     estimated_duration: 1-2 weeks
-    next: treat
     
   - id: treat
+    order: 3
     name: Treatment Implementation
     description: Execute treatment plan with clinical precision and documentation
-    artifacts:
-      - feature-spec
-    entry_criteria:
-      - Treatment plan approved by clinical review board
-      - Implementation environment prepared and validated
-      - Clinical treatment team assigned and ready
-      - Treatment protocols established and communicated
     exit_criteria:
       - All prescribed treatments implemented according to specifications
       - Clinical peer reviews (code reviews) completed and documented
@@ -80,18 +59,11 @@ phases:
       - treatment_quality_assessment
       - unit_validation_verification
     estimated_duration: variable based on treatment complexity
-    next: monitor
     
   - id: monitor
+    order: 4
     name: Patient Monitoring
     description: Comprehensive validation and testing of treatment effectiveness
-    artifacts:
-      - test-plan
-    entry_criteria:
-      - Treatment implementation completed and documented
-      - Clinical monitoring environment configured and validated
-      - Monitoring protocols established and test data prepared
-      - Validation team assigned and briefed
     exit_criteria:
       - Comprehensive monitoring plan executed successfully
       - All critical and high-severity adverse events resolved
@@ -101,425 +73,70 @@ phases:
     validation_gates:
       - monitoring_plan_execution
       - adverse_event_resolution
-      - clinical_performance_validation
-      - patient_acceptance_verification
-    estimated_duration: 25-35% of treatment implementation time
-    next: follow_up
-    
-  - id: follow_up
-    name: Care Transition
-    description: Deploy to production with comprehensive care transition planning
-    artifacts:
-      - release
-    entry_criteria:
-      - Clinical monitoring completed and validated
-      - Production care environment prepared and verified
-      - Care transition plan approved by clinical team
-      - Emergency procedures and rollback protocols established
-    exit_criteria:
-      - Successful deployment to production care environment
-      - All clinical monitoring systems operational and validated
-      - Care transition completed with stakeholder notification
-      - Initial patient (system) vital signs within normal parameters
-      - Comprehensive care documentation accessible to ongoing care team
-    validation_gates:
-      - deployment_safety_check
-      - monitoring_system_validation
-      - care_transition_verification
-      - initial_stability_assessment
-    estimated_duration: 1-3 days
-    next: continuing_care
-    
-  - id: continuing_care
-    name: Ongoing Patient Care
-    description: Continuous monitoring and iterative care improvement
-    artifacts: []
-    entry_criteria:
-      - Production deployment stable and monitored
-      - Patient feedback mechanisms established and operational
-      - Clinical metrics collection enabled and validated
-      - Ongoing care team assigned and briefed
-    exit_criteria:
-      - Patient health metrics analyzed and documented
-      - Care improvement opportunities identified and prioritized
-      - Next treatment cycle planned and scheduled
-      - Clinical knowledge base updated with care insights
-    validation_gates:
-      - health_metrics_analysis
-      - improvement_identification
-      - next_cycle_planning
-    estimated_duration: ongoing
-    next: diagnose
-
-artifacts:
-  - id: prd
-    name: Patient Diagnosis and Treatment Requirements
-    description: Comprehensive patient assessment and treatment requirements documentation
-    type: clinical_document
-    template: prd/template.md
-    prompt: prd/prompt.md
-    examples:
-      - prd/examples/ddx-v1.md
-    required: true
-    phase: diagnose
-    clinical_standards:
-      - complete_symptom_analysis
-      - stakeholder_consultation_records
-      - measurable_outcome_criteria
-      - evidence_based_requirements
-    
-  - id: architecture
-    name: Clinical Treatment Plan and Protocols
-    description: Comprehensive treatment approach and technical architecture documentation
-    type: clinical_document
-    template: architecture/template.md
-    prompt: architecture/prompt.md
-    required: true
-    phase: prescribe
-    clinical_standards:
-      - evidence_based_technology_selection
-      - comprehensive_treatment_approach
-      - risk_assessment_and_mitigation
-      - senior_practitioner_review
-    
-  - id: feature-spec
-    name: Treatment Implementation Records
-    description: Detailed treatment implementation documentation and clinical notes
-    type: clinical_document
-    template: feature-spec/template.md
-    prompt: feature-spec/prompt.md
-    required: true
-    phase: treat
-    clinical_standards:
-      - implementation_compliance_tracking
-      - peer_review_documentation
-      - treatment_outcome_recording
-      - clinical_quality_verification
-    
-  - id: test-plan
-    name: Patient Monitoring and Assessment Plan
-    description: Comprehensive clinical validation and monitoring strategy
-    type: clinical_document
-    template: test-plan/template.md
-    prompt: test-plan/prompt.md
-    required: true
-    phase: monitor
-    clinical_standards:
-      - comprehensive_monitoring_coverage
-      - adverse_event_documentation
-      - safety_validation_protocols
-      - effectiveness_measurement
+      - safety_validation
+      - clinical_acceptance_testing
+      - effectiveness_assessment
+    estimated_duration: 20-30% of treatment duration
     
   - id: release
-    name: Care Transition Summary and Ongoing Care Plan
-    description: Treatment summary and production care transition documentation
-    type: clinical_document
-    template: release/template.md
-    prompt: release/prompt.md
-    required: true
-    phase: follow_up
-    clinical_standards:
-      - complete_treatment_summary
-      - care_transition_protocols
-      - ongoing_monitoring_plans
-      - emergency_procedure_documentation
+    order: 5
+    name: Clinical Deployment
+    description: Deploy validated treatment to production care environment
+    exit_criteria:
+      - Treatment successfully deployed to production environment
+      - All clinical monitoring and alerting systems operational
+      - Care team notified and documentation distributed
+      - Post-deployment validation completed successfully
+      - Patient handoff documentation completed
+    validation_gates:
+      - deployment_validation
+      - monitoring_system_check
+      - clinical_documentation_review
+      - production_readiness_assessment
+    estimated_duration: 1-3 days
+    
+  - id: follow-up
+    order: 6
+    name: Continuing Care
+    description: Long-term monitoring and continuous improvement
+    exit_criteria:
+      - Patient outcomes analyzed and documented
+      - Improvement opportunities identified and prioritized
+      - Lessons learned captured for protocol improvement
+      - Next treatment cycle planned if needed
+    validation_gates:
+      - outcome_analysis
+      - improvement_identification
+      - protocol_refinement
+    estimated_duration: ongoing
 
 variables:
   - name: patient_name
-    description: Name of the patient (project) under care
-    prompt: What is the patient (project) name?
+    description: Project/system name (the "patient")
+    prompt: What is the name of your patient (project)?
     required: true
     
-  - name: condition_type
-    description: Type of condition (project) being treated
-    prompt: What type of condition (project) are you treating?
+  - name: condition_severity
+    description: Criticality level of the system
+    prompt: What is the severity level of the condition?
     options:
-      - web-application
-      - mobile-app
-      - api-service
-      - library
-      - cli-tool
-      - data-system
+      - critical
+      - high
+      - moderate
+      - low
     required: true
     
-  - name: clinical_team_size
-    description: Size of clinical treatment team
-    prompt: How many practitioners are on the clinical team?
+  - name: care_team_size
+    description: Size of development team
+    prompt: How many practitioners on the care team?
     type: number
     default: 1
-
-  - name: criticality_level
-    description: Patient criticality level (system importance)
-    prompt: What is the patient's criticality level?
-    options:
-      - routine
-      - important
-      - critical
-      - life-critical
-    default: important
-    required: true
-
-validation_gates:
-  diagnostic_completeness_check:
-    phase: diagnose
-    name: Diagnostic Completeness Assessment
-    description: Verify comprehensive patient assessment is complete
-    required_approvers: 2
-    automated_checks:
-      - symptom_analysis_complete
-      - stakeholder_consultation_documented
-      - success_metrics_measurable
-    manual_reviews:
-      - clinical_team_assessment
-      - stakeholder_sign_off
-
-  stakeholder_clinical_review:
-    phase: diagnose
-    name: Stakeholder Clinical Consultation
-    description: Multi-disciplinary team review of diagnostic findings
-    required_approvers: 1
-    stakeholder_types:
-      - product_owner
-      - technical_lead
-      - end_user_representative
-    documentation_required: true
-
-  technical_feasibility_assessment:
-    phase: diagnose
-    name: Technical Feasibility Clinical Assessment
-    description: Verify treatment approach is technically viable
-    required_approvers: 1
-    automated_checks:
-      - resource_allocation_verified
-      - constraint_analysis_complete
-    reviewer_qualifications:
-      - senior_technical_practitioner
-
-  treatment_plan_review:
-    phase: prescribe
-    name: Clinical Treatment Plan Review
-    description: Comprehensive review of proposed treatment approach
-    required_approvers: 2
-    automated_checks:
-      - architecture_documentation_complete
-      - technology_choices_justified
-      - risk_assessment_documented
-    manual_reviews:
-      - senior_architect_approval
-      - security_assessment
-
-  clinical_architecture_assessment:
-    phase: prescribe
-    name: Clinical Architecture Assessment
-    description: Senior practitioner review of technical architecture
-    required_approvers: 1
-    reviewer_qualifications:
-      - senior_architect
-      - 5_years_experience_minimum
-    documentation_required: true
-
-  risk_mitigation_validation:
-    phase: prescribe
-    name: Risk Mitigation Protocol Validation
-    description: Verify all identified risks have mitigation strategies
-    automated_checks:
-      - all_risks_identified
-      - mitigation_strategies_documented
-      - contingency_plans_established
-
-  senior_practitioner_approval:
-    phase: prescribe
-    name: Senior Practitioner Treatment Approval
-    description: Final approval by senior clinical practitioner
-    required_approvers: 1
-    reviewer_qualifications:
-      - senior_practitioner
-      - project_architecture_authority
-
-  implementation_compliance_check:
-    phase: treat
-    name: Implementation Compliance Assessment
-    description: Verify treatment follows prescribed protocols
-    automated_checks:
-      - specification_compliance
-      - coding_standards_adherence
-      - documentation_completeness
-    coverage_requirements:
-      - unit_test_coverage: 85
-
-  clinical_peer_review:
-    phase: treat
-    name: Clinical Peer Review Process
-    description: Peer review of treatment implementation
-    required_approvers: 2
-    reviewer_qualifications:
-      - peer_level_or_above
-    review_criteria:
-      - code_quality_standards
-      - treatment_protocol_adherence
-      - safety_considerations
-
-  treatment_quality_assessment:
-    phase: treat
-    name: Treatment Quality Clinical Assessment
-    description: Comprehensive quality assessment of implemented treatment
-    automated_checks:
-      - code_complexity_metrics
-      - security_vulnerability_scan
-      - performance_baseline_establishment
-    quality_thresholds:
-      - cyclomatic_complexity: 10
-      - code_duplication: 5%
-
-  unit_validation_verification:
-    phase: treat
-    name: Unit-Level Validation Verification
-    description: Verify comprehensive unit-level testing
-    automated_checks:
-      - unit_tests_present
-      - unit_tests_passing
-      - test_coverage_adequate
-    coverage_requirements:
-      - line_coverage: 85%
-      - branch_coverage: 80%
-
-  monitoring_plan_execution:
-    phase: monitor
-    name: Clinical Monitoring Plan Execution
-    description: Execute comprehensive patient monitoring protocols
-    automated_checks:
-      - integration_tests_passing
-      - performance_tests_executed
-      - security_tests_completed
-    manual_checks:
-      - user_acceptance_testing
-      - accessibility_compliance
-
-  adverse_event_resolution:
-    phase: monitor
-    name: Adverse Event Resolution Verification
-    description: Verify all identified adverse events are resolved
-    severity_thresholds:
-      - critical_bugs: 0
-      - high_severity_bugs: 0
-      - medium_severity_bugs: 5_maximum
-    documentation_required: true
-
-  clinical_performance_validation:
-    phase: monitor
-    name: Clinical Performance Validation
-    description: Validate system performance meets clinical requirements
-    automated_checks:
-      - response_time_benchmarks
-      - throughput_requirements
-      - resource_utilization_limits
-    performance_thresholds:
-      - response_time: 2000ms
-      - error_rate: 0.1%
-
-  patient_acceptance_verification:
-    phase: monitor
-    name: Patient Acceptance Verification
-    description: Verify patient (user) acceptance of treatment
-    required_approvers: 1
-    stakeholder_types:
-      - end_user_representative
-      - product_owner
-    acceptance_criteria:
-      - user_acceptance_tests_passed
-      - stakeholder_sign_off_received
-
-  deployment_safety_check:
-    phase: follow_up
-    name: Deployment Safety Assessment
-    description: Pre-deployment safety and readiness assessment
-    automated_checks:
-      - production_environment_ready
-      - rollback_procedures_tested
-      - monitoring_systems_configured
-    required_approvers: 1
-
-  monitoring_system_validation:
-    phase: follow_up
-    name: Monitoring System Validation
-    description: Verify production monitoring systems are operational
-    automated_checks:
-      - monitoring_dashboards_accessible
-      - alerting_systems_functional
-      - log_aggregation_working
-    validation_period: 24_hours
-
-  care_transition_verification:
-    phase: follow_up
-    name: Care Transition Verification
-    description: Verify successful transition to ongoing care team
-    required_documentation:
-      - care_transition_summary
-      - ongoing_care_procedures
-      - emergency_contact_information
-    required_approvers: 1
-
-  initial_stability_assessment:
-    phase: follow_up
-    name: Initial Patient Stability Assessment
-    description: Assess initial system stability post-deployment
-    monitoring_period: 72_hours
-    stability_criteria:
-      - error_rate_below_threshold
-      - performance_within_parameters
-      - no_critical_alerts
-
-  health_metrics_analysis:
-    phase: continuing_care
-    name: Patient Health Metrics Analysis
-    description: Analyze ongoing system health and performance metrics
-    analysis_frequency: weekly
-    metrics_tracked:
-      - system_performance
-      - user_satisfaction
-      - error_rates
-      - security_incidents
-
-  improvement_identification:
-    phase: continuing_care
-    name: Care Improvement Identification
-    description: Identify opportunities for care and treatment improvements
-    review_frequency: monthly
-    improvement_categories:
-      - performance_optimization
-      - user_experience_enhancement
-      - security_strengthening
-      - feature_enhancement
-
-  next_cycle_planning:
-    phase: continuing_care
-    name: Next Treatment Cycle Planning
-    description: Plan next iteration of patient care and treatment
-    planning_frequency: quarterly
-    planning_elements:
-      - priority_assessment
-      - resource_allocation
-      - timeline_establishment
-      - stakeholder_communication
-
-enforcement:
-  principles:
-    - primum_non_nocere: "First, do no harm - all changes must be evaluated for potential negative impact"
-    - evidence_based_practice: "All decisions must be backed by documented evidence and rationale"
-    - comprehensive_validation: "Each phase requires complete validation before proceeding"
-    - continuous_care: "Ongoing monitoring and care throughout system lifecycle"
     
-  constraints:
-    - no_phase_skipping: "All phases must be completed in sequence with proper validation"
-    - documentation_required: "All clinical decisions and implementations must be documented"
-    - peer_review_mandatory: "All significant changes require peer clinical review"
-    - rollback_plan_required: "All deployments must have tested rollback procedures"
-
-  compliance_monitoring:
-    - automated_workflow_tracking: true
-    - manual_review_checkpoints: true
-    - audit_trail_maintenance: true
-    - compliance_reporting: monthly
+  - name: regulatory_requirements
+    description: Compliance requirements
+    prompt: Are there regulatory requirements?
+    type: boolean
+    default: false
 
 automation:
   init_command: ddx workflow init cdp
@@ -528,110 +145,78 @@ automation:
   
   hooks:
     pre_phase:
-      - validate_entry_criteria
+      - validate_clinical_entry_criteria
       - prepare_clinical_environment
-      - notify_clinical_team
+      - verify_compliance_requirements
     post_phase:
-      - validate_exit_criteria
-      - execute_validation_gates
-      - update_clinical_status
-      - notify_stakeholders
-      - archive_clinical_documentation
+      - validate_clinical_exit_criteria
+      - update_patient_record
+      - generate_clinical_reports
+      - notify_care_team
       
 integrations:
   - type: git
     events:
       - phase_complete
-      - validation_gate_passed
     actions:
       - create_clinical_branch
-      - tag_treatment_milestone
-      - archive_clinical_records
+      - tag_clinical_release
       
   - type: github
     events:
-      - care_transition_complete
+      - release_complete
     actions:
       - create_github_release
-      - update_clinical_project_board
-      - notify_care_team
-
-  - type: monitoring
+      - update_clinical_board
+      
+  - type: compliance
     events:
-      - deployment_complete
+      - validation_gate_passed
     actions:
-      - enable_patient_monitoring
-      - configure_clinical_alerts
-      - establish_health_dashboards
+      - log_compliance_event
+      - generate_audit_trail
 
-clinical_quality_gates:
-  - phase: prescribe
-    gate: clinical_architecture_review
+quality_gates:
+  - phase: diagnose
+    gate: diagnostic_review
     required_approvers: 2
-    reviewer_qualifications:
-      - senior_clinical_architect
-      - domain_expertise_required
+    clinical_level: senior
+    
+  - phase: prescribe
+    gate: treatment_plan_review
+    required_approvers: 3
+    clinical_level: lead
     
   - phase: treat
-    gate: clinical_peer_review
-    required_coverage: 85
-    review_criteria:
-      - treatment_protocol_adherence
-      - clinical_quality_standards
-      - safety_consideration_review
+    gate: implementation_review
+    required_coverage: 90
+    peer_reviews_required: 2
     
   - phase: monitor
-    gate: clinical_validation_completion
-    required_pass_rate: 95
-    adverse_event_threshold: 0_critical
+    gate: clinical_validation
+    required_pass_rate: 98
+    adverse_event_tolerance: 0
     
-  - phase: follow_up
-    gate: production_care_approval
-    required_approvers: 1
-    reviewer_qualifications:
-      - production_care_authority
+  - phase: release
+    gate: deployment_approval
+    required_approvers: 2
+    clinical_level: senior
 
-clinical_metrics:
+metrics:
   - id: treatment_cycle_time
-    description: Time from diagnosis to care transition
+    description: Time from diagnosis to deployment
     unit: days
-    target_range: 14-30
     
   - id: adverse_event_rate
-    description: Issues identified post-care transition
-    unit: count_per_treatment_cycle
-    target_threshold: 0_critical_2_high_maximum
-    
-  - id: clinical_velocity
-    description: Treatment interventions delivered per cycle
+    description: Issues found during monitoring
     unit: count
-    tracking_frequency: monthly
-
+    severity_weighted: true
+    
+  - id: clinical_effectiveness
+    description: Success rate of treatments
+    unit: percentage
+    
   - id: patient_satisfaction
-    description: End-user satisfaction with delivered treatments
-    unit: percentage
-    target_threshold: 85_minimum
-
-  - id: care_team_efficiency
-    description: Clinical team productivity and satisfaction
-    unit: percentage
-    target_threshold: 80_minimum
-
-clinical_standards:
-  documentation:
-    - comprehensive_clinical_records
-    - evidence_based_decision_documentation
-    - peer_review_documentation
-    - treatment_outcome_tracking
-
-  validation:
-    - multi_level_testing_protocols
-    - adverse_event_monitoring
-    - performance_validation
-    - security_assessment
-
-  quality_assurance:
-    - clinical_peer_review_mandatory
-    - automated_quality_checks
-    - manual_validation_checkpoints
-    - continuous_monitoring_requirements
+    description: Stakeholder satisfaction score
+    unit: score
+    scale: 1-10

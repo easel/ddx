@@ -1,0 +1,10 @@
+input_gates:
+  - criteria: Patient treatment deployed and operational
+    required: true
+    source: 05-release
+  - criteria: Patient monitoring systems active
+    required: true
+    source: 05-release
+  - criteria: Long-term care plans established
+    required: true
+    source: external

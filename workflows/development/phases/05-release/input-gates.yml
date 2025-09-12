@@ -1,0 +1,10 @@
+input_gates:
+  - criteria: Testing complete
+    required: true
+    source: 04-test
+  - criteria: Deployment plan approved
+    required: true
+    source: external
+  - criteria: Release criteria met
+    required: true
+    source: 04-test

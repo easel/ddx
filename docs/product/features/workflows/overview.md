@@ -7,54 +7,77 @@
 
 ## Executive Summary
 
-The DDX Workflow System is a comprehensive framework for managing structured, repeatable development processes. Following DDX's medical metaphor, workflows serve as "treatment protocols" - proven procedures for addressing specific development challenges through a combination of templates, prompts, patterns, and automation.
+A workflow in DDX is a sequence of phases that guide you through complex development tasks. Each phase has specific entry requirements, work to be done, and exit criteria.
+
+## Core Concept: Workflows Are Phases
+
+**A workflow is a collection of phases.** Each phase represents a distinct stage of work with three key components:
+
+### 1. Input Gates
+**Prerequisites to enter the phase**
+- Required conditions that must be satisfied
+- Dependencies from previous phases
+- Resources or approvals needed
+- Validation commands to verify readiness
+
+### 2. Work Items
+The actual work performed in a phase consists of two types:
+
+#### Artifacts (Template-Based Outputs)
+- One or more files created from **templates + a prompt**
+- Each file has a fixed structure defined by its template
+- A single prompt guides the creation of all template files
+- Examples: 
+  - PRD (might generate: overview.md, requirements.md, success-metrics.md)
+  - Architecture (might generate: system-design.md, api-spec.yml, database-schema.sql)
+  - Test Suite (might generate: test-plan.md, unit-tests/*, integration-tests/*)
+- Templates ensure consistency and completeness
+
+#### Actions (Arbitrary Operations)  
+- Operations that perform arbitrary tasks without fixed templates
+- Defined by **prompts only** (no templates)
+- Examples: "Refactor authentication across codebase", "Update all API documentation", "Generate CRUD endpoints for all models"
+- More flexible but less structured than artifacts
+
+### 3. Exit Criteria
+**Requirements to complete the phase**
+- Required artifacts must be generated
+- Actions must be completed
+- Quality gates must be passed
+- Validation checks must succeed
 
 ## System Architecture
 
-### Core Components
+### Phase-Centric Design
 
-#### 1. Workflow Engine
-- **Purpose**: Orchestrates workflow execution and phase management
-- **Location**: `cli/internal/workflow/`
-- **Responsibilities**:
-  - Workflow lifecycle management (init, execute, validate, complete)
-  - Phase transition logic and validation
-  - Artifact generation and tracking
-  - State persistence and recovery
+The entire workflow system revolves around phases. Everything else - templates, prompts, artifacts, automation - exists to support phase execution.
 
-#### 2. Template System
-- **Purpose**: Provides structural skeletons for documents and artifacts
-- **Location**: `workflows/{name}/{artifact}/template.md`
-- **Features**:
-  - Variable substitution (`{{variable}}` syntax)
-  - Conditional sections based on metadata
-  - Cross-workflow template inheritance
-  - Template validation and schema checking
+```
+Workflow
+    ↓
+phases/
+├── 01-define/
+│   ├── input-gates.yml
+│   ├── artifacts/
+│   └── actions/
+├── 02-design/
+│   ├── input-gates.yml
+│   ├── artifacts/
+│   └── actions/
+└── 03-implement/
+    ├── input-gates.yml
+    ├── artifacts/
+    └── actions/
+```
 
-#### 3. Prompt Intelligence Layer
-- **Purpose**: AI-powered guidance for filling templates
-- **Location**: `workflows/{name}/{artifact}/prompt.md`
-- **Features**:
-  - Template embedding and referencing
-  - Context-aware question generation
-  - Best practice guidance integration
-  - Multi-model compatibility (Claude, GPT, local models)
+### Phase Ordering
 
-#### 4. Phase Management
-- **Purpose**: Orchestrates workflow progression through defined phases
-- **Features**:
-  - Entry/exit criteria validation
-  - Dependency resolution
-  - Parallel phase execution support
-  - Phase rollback and recovery
+Phases are ordered using a simple numbering scheme:
+- **Sequential phases**: 01-define → 02-design → 03-implement
+- **Parallel phases**: 03a-implement, 03b-security-review (same number, different suffix)
+- **Sub-phases**: 03.1-backend, 03.2-frontend (decimal notation for sub-phases)
 
-#### 5. Artifact System
-- **Purpose**: Manages workflow outputs and deliverables
-- **Features**:
-  - Type-safe artifact definitions
-  - Version tracking and history
-  - Cross-artifact dependency management
-  - Automatic linking and referencing
+The filesystem naturally sorts phases in execution order, making workflows self-documenting.
 
 ### Data Structures
 
@@ -67,27 +90,51 @@ author: string                  # Creator identification
 tags: [string]                 # Categorization tags
 category: string               # Primary workflow category
 
-phases:                        # Ordered list of workflow phases
+phases:                        # The core of any workflow
   - id: string                 # Phase identifier
+    order: number              # Execution order (1, 2, 3...)
     name: string               # Display name
-    description: string        # Phase purpose
-    artifacts: [string]        # Required artifacts for this phase
-    entry_criteria: [string]   # Prerequisites for starting
-    exit_criteria: [string]    # Requirements for completion
-    next: string|[string]      # Next phase(s) - supports branching
-    parallel: boolean          # Can execute with other phases
-    optional: boolean          # Phase is optional
-    timeout: duration          # Maximum execution time
+    description: string        # What this phase accomplishes
+    
+    # Input gates defined in phases/{order}-{id}/input-gates.yml
+    # Artifacts discovered from phases/{order}-{id}/artifacts/
+    # Actions discovered from phases/{order}-{id}/actions/
+    
+    exit_criteria:            # Requirements for phase completion
+      - requirement: string   # What must be done
+        validation: string    # How to verify completion
+    
+    timeout: duration         # Maximum execution time
 
-artifacts:                     # Workflow output definitions
-  - id: string                 # Artifact identifier
-    name: string               # Display name
-    type: enum                 # document|code|config|data
-    template: path             # Template file path
-    prompt: path               # Prompt file path
-    required: boolean          # Must be completed
-    depends_on: [string]       # Artifact dependencies
-    validation: object         # Validation rules
+# With nested structure, artifacts and actions are defined by their location
+# in the filesystem rather than in workflow.yml
+
+# Input gates file structure (phases/{order}-{id}/input-gates.yml):
+input_gates:
+  - criteria: string           # What must be true/complete
+    validation: string         # Optional command to verify
+    source: string            # Where this comes from (prior phase, external)
+    required: boolean         # Must be satisfied to proceed
+
+# Artifact metadata (phases/{order}-{id}/artifacts/{name}/meta.yml):
+artifact:
+  name: string                # Display name
+  type: enum                  # document|code|config|data
+  templates:                  # List of template files
+    - path: templates/overview.md
+      output: docs/prd/overview.md
+    - path: templates/requirements.md  
+      output: docs/prd/requirements.md
+  required: boolean           # Must be completed
+  validation: object          # Validation rules
+
+# Action metadata (phases/{order}-{id}/actions/{name}/meta.yml):
+action:
+  name: string                # Display name
+  description: string         # What this action accomplishes
+  affects:                    # What this action modifies
+    - files: [glob]          # File patterns affected
+    - artifacts: [string]    # Artifact IDs affected
     
 variables:                     # Workflow-specific variables
   - name: string               # Variable identifier
@@ -151,22 +198,46 @@ examples:                      # Reference examples
 ```
 workflows/
 ├── {workflow-name}/
-│   ├── README.md              # Pattern documentation
-│   ├── workflow.yml           # Metadata and configuration
-│   ├── GUIDE.md              # Comprehensive usage guide
-│   ├── {artifact}/           # Each workflow artifact
-│   │   ├── README.md         # Artifact documentation
-│   │   ├── template.md       # Structural skeleton
-│   │   ├── prompt.md         # AI guidance
-│   │   ├── meta.yml          # Artifact metadata
-│   │   └── examples/         # Real-world examples
-│   │       ├── example-1.md
-│   │       └── example-2.md
-│   └── phases/               # Phase documentation
-│       ├── 01-define.md
-│       ├── 02-design.md
-│       └── 03-implement.md
+│   ├── README.md              # Workflow documentation
+│   ├── workflow.yml           # Phase definitions and configuration
+│   └── phases/               # Phases in execution order
+│       ├── 01-define/        # Phase 1: Definition
+│       │   ├── README.md     # Phase documentation
+│       │   ├── input-gates.yml  # Entry criteria
+│       │   ├── artifacts/    # Artifacts created in this phase
+│       │   │   └── prd/
+│       │   │       ├── templates/
+│       │   │       │   ├── overview.md
+│       │   │       │   ├── requirements.md
+│       │   │       │   └── metrics.md
+│       │   │       ├── prompt.md
+│       │   │       └── examples/
+│       │   └── actions/      # Actions performed in this phase
+│       │       └── gather-requirements/
+│       │           └── prompt.md
+│       ├── 02-design/        # Phase 2: Design
+│       │   ├── README.md
+│       │   ├── input-gates.yml
+│       │   ├── artifacts/
+│       │   │   └── architecture/
+│       │   │       ├── templates/
+│       │   │       │   ├── system-design.md
+│       │   │       │   └── api-spec.yml
+│       │   │       ├── prompt.md
+│       │   │       └── examples/
+│       │   └── actions/
+│       └── 03-implement/     # Phase 3: Implementation
+│           ├── README.md
+│           ├── input-gates.yml
+│           ├── artifacts/
+│           └── actions/
 ```
+
+#### Key Principles
+1. **Phase ordering through name-mangling**: Prefix directories with order numbers (01, 02, 03...)
+2. **Self-contained phases**: Each phase directory contains all its artifacts and actions
+3. **Natural hierarchy**: The filesystem structure mirrors workflow execution
+4. **Parallel phases**: Use same prefix with letter suffix (03a-implement, 03b-security-review)
 
 #### State Management
 - **Workflow State**: Stored in `.ddx/workflows/{name}/state.yml`
@@ -317,27 +388,80 @@ type ArtifactManager interface {
 - External integration status
 - State persistence health
 
+## Examples: Artifacts vs Actions
+
+### Artifact Example: Product Requirements Document
+```
+phases/01-define/artifacts/prd/
+├── templates/
+│   ├── overview.md          # Template for project overview
+│   ├── requirements.md      # Template for requirements list
+│   └── success-metrics.md   # Template for success criteria
+├── prompt.md                # Single prompt that fills all templates
+├── meta.yml                 # Artifact metadata
+└── examples/               # Example outputs
+```
+
+**meta.yml:**
+```yaml
+artifact:
+  name: Product Requirements Document
+  type: document
+  templates:
+    - path: templates/overview.md
+      output: docs/prd/overview.md
+    - path: templates/requirements.md
+      output: docs/prd/requirements.md
+    - path: templates/success-metrics.md
+      output: docs/prd/success-metrics.md
+  required: true
+```
+Result: Three structured documents, each following its template.
+
+### Action Example: Refactor Authentication
+```
+phases/03-implement/actions/refactor-auth/
+├── prompt.md               # Instructions for the refactoring
+└── meta.yml               # Action metadata
+```
+
+**meta.yml:**
+```yaml
+action:
+  name: Refactor Authentication System
+  description: Update all authentication code to use OAuth2
+  affects:
+    - files: ["src/**/*.ts", "src/**/*.js"]
+    - artifacts: []  # Doesn't affect specific artifacts
+```
+Result: Arbitrary changes across many existing files.
+
+### Key Differences
+- **Artifacts**: Templates define structure → Predictable outputs with fixed formats
+- **Actions**: No templates → Flexible operations that can do anything
+- **Location**: Both live under their respective phase directories, making ownership clear
+
 ## Implementation Priorities
 
 ### Phase 1: Core Infrastructure (MVP)
-- Basic workflow execution engine
-- Template system with variable substitution
-- Simple phase management
-- File-based artifact generation
-- CLI command structure
+- Phase execution engine with input gates and exit criteria
+- Artifact generation from templates + prompts
+- Action execution for multi-file operations
+- State management and phase transitions
+- CLI commands for workflow operations
 
 ### Phase 2: Advanced Features
 - Parallel phase execution
-- Artifact dependency management
-- AI integration for prompts
-- Validation framework
-- Error recovery mechanisms
+- Cross-phase dependencies
+- Validation framework for gates and criteria
+- Error recovery and rollback
+- Progress tracking and reporting
 
 ### Phase 3: Enterprise Features
-- Integration framework
-- Advanced security controls
+- External system integrations
+- Advanced automation hooks
 - Performance optimization
-- Monitoring and analytics
+- Analytics and metrics
 - Multi-user collaboration
 
 ## Testing Strategy

@@ -1,0 +1,13 @@
+input_gates:
+  - criteria: Treatment implementation completed and documented
+    required: true
+    source: 03-treat
+  - criteria: Clinical monitoring environment configured and validated
+    required: true
+    source: external
+  - criteria: Monitoring protocols established and test data prepared
+    required: true
+    source: external
+  - criteria: Validation team assigned and briefed
+    required: true
+    source: external

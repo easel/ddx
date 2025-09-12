@@ -11,147 +11,64 @@ tags:
 
 phases:
   - id: define
+    order: 1
     name: Product Definition
     description: Establish clear requirements and product vision
-    artifacts:
-      - prd
-    entry_criteria:
-      - Problem identified
-      - Stakeholders identified
-      - High-level scope understood
     exit_criteria:
       - PRD completed and reviewed
       - Success metrics defined
       - Stakeholder approval received
     estimated_duration: 1-2 weeks
-    next: design
 
   - id: design
+    order: 2
     name: Technical Architecture
     description: Design system architecture and make technical decisions
-    artifacts:
-      - architecture
-    entry_criteria:
-      - PRD approved
-      - Technical team assigned
-      - Constraints identified
     exit_criteria:
       - Architecture documented
       - Technology choices made
       - Design review completed
     estimated_duration: 1-2 weeks
-    next: implement
     
   - id: implement
+    order: 3
     name: Feature Implementation
     description: Build the solution according to specifications
-    artifacts:
-      - feature-spec
-    entry_criteria:
-      - Architecture approved
-      - Development environment ready
-      - Team allocated
     exit_criteria:
       - Features implemented
       - Code reviews completed
       - Unit tests passing
     estimated_duration: variable
-    next: test
     
   - id: test
+    order: 4
     name: Quality Assurance
     description: Validate implementation meets requirements
-    artifacts:
-      - test-plan
-    entry_criteria:
-      - Implementation complete
-      - Test environment available
-      - Test data prepared
     exit_criteria:
       - Test plan executed
       - Acceptance criteria met
       - Defects resolved or documented
     estimated_duration: 20-30% of implementation
-    next: release
     
   - id: release
+    order: 5
     name: Deployment
     description: Deploy solution to production
-    artifacts:
-      - release
-    entry_criteria:
-      - Testing complete
-      - Deployment plan approved
-      - Release criteria met
     exit_criteria:
       - Successfully deployed
       - Monitoring in place
       - Users notified
     estimated_duration: 1-3 days
-    next: iterate
     
   - id: iterate
+    order: 6
     name: Feedback and Iteration
     description: Gather feedback and plan improvements
-    artifacts: []
-    entry_criteria:
-      - Release deployed
-      - Feedback channels open
-      - Metrics collection enabled
     exit_criteria:
       - Feedback analyzed
       - Improvements identified
       - Next iteration planned
     estimated_duration: ongoing
-    next: define
-
-artifacts:
-  - id: prd
-    name: Product Requirements Document
-    description: Comprehensive requirements and product vision
-    type: document
-    template: prd/template.md
-    prompt: prd/prompt.md
-    examples:
-      - prd/examples/ddx-v1.md
-    required: true
-    phase: define
-    
-  - id: architecture
-    name: Architecture Decision Records
-    description: Technical architecture and design decisions
-    type: document
-    template: architecture/template.md
-    prompt: architecture/prompt.md
-    required: true
-    phase: design
-    
-  - id: feature-spec
-    name: Feature Specification
-    description: Detailed implementation specifications
-    type: document
-    template: feature-spec/template.md
-    prompt: feature-spec/prompt.md
-    required: true
-    phase: implement
-    
-  - id: test-plan
-    name: Test Plan
-    description: Comprehensive testing strategy and cases
-    type: document
-    template: test-plan/template.md
-    prompt: test-plan/prompt.md
-    required: true
-    phase: test
-    
-  - id: release
-    name: Release Notes
-    description: User-facing documentation of changes
-    type: document
-    template: release/template.md
-    prompt: release/prompt.md
-    required: true
-    phase: release
 
 variables:
   - name: project_name

@@ -1,0 +1,13 @@
+input_gates:
+  - criteria: Treatment plan approved by clinical review board
+    required: true
+    source: 02-prescribe
+  - criteria: Implementation environment prepared and validated
+    required: true
+    source: external
+  - criteria: Clinical treatment team assigned and ready
+    required: true
+    source: external
+  - criteria: Treatment protocols established and communicated
+    required: true
+    source: 02-prescribe

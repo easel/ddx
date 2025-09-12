@@ -1,0 +1,10 @@
+input_gates:
+  - criteria: PRD approved
+    required: true
+    source: 01-define
+  - criteria: Technical team assigned
+    required: true
+    source: external
+  - criteria: Constraints identified
+    required: true
+    source: 01-define
