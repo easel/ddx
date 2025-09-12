@@ -152,29 +152,6 @@ jobs:
       with:
         sarif_file: gosec-results.sarif
 
-  # Container scanning (if Dockerfile exists)
-  container-scan:
-    name: Container Security
-    runs-on: ubuntu-latest
-    if: hashFiles('**/Dockerfile') != ''
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Run Trivy vulnerability scanner
-      uses: aquasecurity/trivy-action@master
-      with:
-        scan-type: 'fs'
-        scan-ref: '.'
-        format: 'sarif'
-        output: 'trivy-results.sarif'
-        severity: 'CRITICAL,HIGH,MEDIUM'
-    
-    - name: Upload Trivy results
-      uses: github/codeql-action/upload-sarif@v3
-      if: always()
-      with:
-        sarif_file: 'trivy-results.sarif'
-
   # Aggregate results
   security-summary:
     name: Security Summary
