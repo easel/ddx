@@ -1,0 +1,236 @@
+name: development
+version: 1.0.0
+description: Iterative software development workflow from concept to deployment
+author: DDX Team
+created: 2025-01-12
+tags:
+  - software-development
+  - iterative
+  - documentation-driven
+  - ai-enhanced
+
+phases:
+  - id: define
+    name: Product Definition
+    description: Establish clear requirements and product vision
+    artifacts:
+      - prd
+    entry_criteria:
+      - Problem identified
+      - Stakeholders identified
+      - High-level scope understood
+    exit_criteria:
+      - PRD completed and reviewed
+      - Success metrics defined
+      - Stakeholder approval received
+    estimated_duration: 1-2 weeks
+    next: design
+
+  - id: design
+    name: Technical Architecture
+    description: Design system architecture and make technical decisions
+    artifacts:
+      - architecture
+    entry_criteria:
+      - PRD approved
+      - Technical team assigned
+      - Constraints identified
+    exit_criteria:
+      - Architecture documented
+      - Technology choices made
+      - Design review completed
+    estimated_duration: 1-2 weeks
+    next: implement
+    
+  - id: implement
+    name: Feature Implementation
+    description: Build the solution according to specifications
+    artifacts:
+      - feature-spec
+    entry_criteria:
+      - Architecture approved
+      - Development environment ready
+      - Team allocated
+    exit_criteria:
+      - Features implemented
+      - Code reviews completed
+      - Unit tests passing
+    estimated_duration: variable
+    next: test
+    
+  - id: test
+    name: Quality Assurance
+    description: Validate implementation meets requirements
+    artifacts:
+      - test-plan
+    entry_criteria:
+      - Implementation complete
+      - Test environment available
+      - Test data prepared
+    exit_criteria:
+      - Test plan executed
+      - Acceptance criteria met
+      - Defects resolved or documented
+    estimated_duration: 20-30% of implementation
+    next: release
+    
+  - id: release
+    name: Deployment
+    description: Deploy solution to production
+    artifacts:
+      - release
+    entry_criteria:
+      - Testing complete
+      - Deployment plan approved
+      - Release criteria met
+    exit_criteria:
+      - Successfully deployed
+      - Monitoring in place
+      - Users notified
+    estimated_duration: 1-3 days
+    next: iterate
+    
+  - id: iterate
+    name: Feedback and Iteration
+    description: Gather feedback and plan improvements
+    artifacts: []
+    entry_criteria:
+      - Release deployed
+      - Feedback channels open
+      - Metrics collection enabled
+    exit_criteria:
+      - Feedback analyzed
+      - Improvements identified
+      - Next iteration planned
+    estimated_duration: ongoing
+    next: define
+
+artifacts:
+  - id: prd
+    name: Product Requirements Document
+    description: Comprehensive requirements and product vision
+    type: document
+    template: prd/template.md
+    prompt: prd/prompt.md
+    examples:
+      - prd/examples/ddx-v1.md
+    required: true
+    phase: define
+    
+  - id: architecture
+    name: Architecture Decision Records
+    description: Technical architecture and design decisions
+    type: document
+    template: architecture/template.md
+    prompt: architecture/prompt.md
+    required: true
+    phase: design
+    
+  - id: feature-spec
+    name: Feature Specification
+    description: Detailed implementation specifications
+    type: document
+    template: feature-spec/template.md
+    prompt: feature-spec/prompt.md
+    required: true
+    phase: implement
+    
+  - id: test-plan
+    name: Test Plan
+    description: Comprehensive testing strategy and cases
+    type: document
+    template: test-plan/template.md
+    prompt: test-plan/prompt.md
+    required: true
+    phase: test
+    
+  - id: release
+    name: Release Notes
+    description: User-facing documentation of changes
+    type: document
+    template: release/template.md
+    prompt: release/prompt.md
+    required: true
+    phase: release
+
+variables:
+  - name: project_name
+    description: Name of the project
+    prompt: What is your project name?
+    required: true
+    
+  - name: project_type
+    description: Type of project
+    prompt: What type of project is this?
+    options:
+      - web-application
+      - mobile-app
+      - api-service
+      - library
+      - cli-tool
+    required: true
+    
+  - name: team_size
+    description: Size of development team
+    prompt: How many developers on the team?
+    type: number
+    default: 1
+
+automation:
+  init_command: ddx workflow init development
+  status_command: ddx workflow status development
+  validate_command: ddx workflow validate development
+  
+  hooks:
+    pre_phase:
+      - validate_entry_criteria
+      - prepare_environment
+    post_phase:
+      - validate_exit_criteria
+      - update_status
+      - notify_stakeholders
+      
+integrations:
+  - type: git
+    events:
+      - phase_complete
+    actions:
+      - create_branch
+      - tag_release
+      
+  - type: github
+    events:
+      - release_complete
+    actions:
+      - create_github_release
+      - update_project_board
+
+quality_gates:
+  - phase: design
+    gate: architecture_review
+    required_approvers: 2
+    
+  - phase: implement
+    gate: code_review
+    required_coverage: 80
+    
+  - phase: test
+    gate: test_completion
+    required_pass_rate: 95
+    
+  - phase: release
+    gate: deployment_approval
+    required_approvers: 1
+
+metrics:
+  - id: cycle_time
+    description: Time from define to release
+    unit: days
+    
+  - id: defect_rate
+    description: Defects found post-release
+    unit: count
+    
+  - id: velocity
+    description: Features delivered per iteration
+    unit: count
