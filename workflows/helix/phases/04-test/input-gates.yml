@@ -1,0 +1,11 @@
+input_gates:
+  - criteria: Implementation complete and reviewed
+    required: true
+    source: 03-implement
+    validation: Code meets quality standards
+  - criteria: Unit tests passing
+    required: true
+    source: 03-implement
+  - criteria: Documentation current
+    required: true
+    source: 03-implement

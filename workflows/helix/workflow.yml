@@ -1,0 +1,82 @@
+name: helix
+version: 1.0.0
+description: AI-assisted iterative development workflow with human-AI collaboration
+author: DDX Team
+created: 2025-01-13
+tags:
+  - ai-assisted-development
+  - iterative
+  - human-ai-collaboration
+
+variables:
+  - name: project_name
+    description: Name of the project
+    prompt: What is your project name?
+    required: true
+
+phases:
+  - id: frame
+    order: 1
+    name: Frame the Problem
+    description: Define and analyze the problem with AI assistance
+    exit_criteria:
+      - Problem statement clearly documented
+      - Success metrics defined
+      - Constraints and requirements captured
+      - Context established for AI agents
+    estimated_duration: 1-2 days
+    
+  - id: design
+    order: 2
+    name: Design the Solution
+    description: Architect the solution with AI collaboration
+    exit_criteria:
+      - System architecture documented
+      - Technology choices justified
+      - Design patterns selected
+      - Approach validated
+    estimated_duration: 1-2 days
+    
+  - id: implement
+    order: 3
+    name: Implement the System
+    description: Build the solution with AI pair programming
+    exit_criteria:
+      - Features implemented to specification
+      - Code reviewed
+      - Unit tests written and passing
+      - Documentation generated
+    estimated_duration: variable
+    
+  - id: test
+    order: 4
+    name: Test the System
+    description: Validate the system with AI-assisted testing
+    exit_criteria:
+      - Test scenarios executed
+      - Edge cases covered
+      - Performance validated
+      - Quality standards met
+    estimated_duration: 20-30% of implementation
+    
+  - id: deploy
+    order: 5
+    name: Deploy the System
+    description: Deploy with AI-guided DevOps
+    exit_criteria:
+      - Successfully deployed
+      - Monitoring configured
+      - Documentation published
+      - Deployment verified
+    estimated_duration: 1 day
+    
+  - id: iterate
+    order: 6
+    name: Iterate the Process
+    description: Gather feedback and improve with AI analysis
+    exit_criteria:
+      - Feedback analyzed
+      - Improvements identified
+      - Next iteration planned
+      - Learnings captured
+    estimated_duration: ongoing

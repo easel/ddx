@@ -1,0 +1,11 @@
+input_gates:
+  - criteria: Architecture design reviewed and approved
+    required: true
+    source: 02-design
+    validation: Design is implementable and appropriate
+  - criteria: Technology stack confirmed
+    required: true
+    source: 02-design
+  - criteria: Design patterns documented
+    required: true
+    source: 02-design
