@@ -344,6 +344,9 @@ core.*
 .ddx.local.yml
 .ddx.local/
 
+# Claude Code local settings
+.claude/settings.local.json
+
 # Lefthook local configuration
 .lefthook-local.yml
 .lefthook-local/
