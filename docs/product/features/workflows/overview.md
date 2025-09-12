@@ -46,6 +46,15 @@ The actual work performed in a phase consists of two types:
 - Quality gates must be passed
 - Validation checks must succeed
 
+### 4. Workflow Principles
+**Immutable rules that govern the entire workflow**
+- Define non-negotiable principles that shape execution
+- Enforced through input gates, templates, and actions
+- Ensure consistency across all iterations
+- Act as a "constitution" for the workflow
+
+The principles document (`principles.md`) establishes the fundamental rules that cannot be violated, regardless of project specifics. These principles are referenced by templates, checked by gates, and guide AI behavior throughout the workflow.
+
 ## System Architecture
 
 ### Phase-Centric Design
@@ -200,6 +209,7 @@ workflows/
 ├── {workflow-name}/
 │   ├── README.md              # Workflow documentation
 │   ├── workflow.yml           # Phase definitions and configuration
+│   ├── principles.md          # Immutable workflow principles
 │   └── phases/               # Phases in execution order
 │       ├── 01-define/        # Phase 1: Definition
 │       │   ├── README.md     # Phase documentation
