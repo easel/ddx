@@ -357,7 +357,7 @@ core.*
 *.db
 
 # CI/CD artifacts
-artifacts/
+# artifacts/  # Commented out - needed for workflow phase artifacts
 .buildpath
 
 # Generated documentation
