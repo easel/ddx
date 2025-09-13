@@ -1,17 +1,17 @@
 # HELIX Workflow
 
-An AI-assisted development workflow designed for iterative software development with human-AI collaboration.
+A test-driven development workflow with AI-assisted collaboration for building high-quality software iteratively.
 
 ## Overview
 
-HELIX is a structured approach to building software where human creativity and AI capabilities work together throughout the development cycle. Each phase has clear responsibilities for both human developers and AI agents.
+HELIX enforces Test-Driven Development (TDD) through a structured phase approach where tests are written BEFORE implementation. This ensures quality is built-in from the start and specifications are executable. Human creativity and AI capabilities collaborate throughout, with tests serving as the contract between design and implementation.
 
 ## Phases
 
 1. **Frame** - Define the problem and establish context
 2. **Design** - Architect the solution approach
-3. **Implement** - Build the system with AI assistance
-4. **Test** - Validate functionality and quality
+3. **Test** - Write failing tests that define system behavior (Red phase)
+4. **Build** - Implement code to make tests pass (Green phase)
 5. **Deploy** - Release to production with monitoring
 6. **Iterate** - Learn and improve for the next cycle
 
@@ -20,12 +20,12 @@ HELIX is a structured approach to building software where human creativity and A
 Each phase (except Frame) has input gates that validate the previous phase's outputs before allowing progression:
 
 - **Design** cannot start until Frame outputs are validated
-- **Implement** cannot start until Design is reviewed and approved
-- **Test** cannot start until Implementation is complete and reviewed
-- **Deploy** cannot start until all Tests pass
+- **Test** cannot start until Design is reviewed and approved
+- **Build** cannot start until Tests are written and failing (Red phase)
+- **Deploy** cannot start until all Tests pass (Green phase)
 - **Iterate** begins once the system is deployed and operational
 
-This ensures quality at each step and prevents skipping crucial validation.
+This test-first approach ensures specifications drive implementation and quality is built in from the start.
 
 ## Human-AI Collaboration
 
@@ -51,6 +51,24 @@ ddx workflow apply helix
 
 This will initialize a new project using the HELIX workflow, guiding you through each phase with appropriate templates and AI assistance.
 
+## Why Test-First?
+
+The HELIX workflow enforces writing tests before implementation because:
+
+1. **Tests ARE the Specification** - Tests define exactly what the system should do
+2. **Clear Definition of Done** - Implementation is complete when tests pass
+3. **Prevents Over-Engineering** - Only write code needed to pass tests
+4. **Built-in Quality** - Bugs are caught immediately, not later
+5. **Refactoring Safety** - Green tests provide confidence to improve code
+
+## The TDD Cycle
+
+Within the Test and Build phases, we follow the Red-Green-Refactor cycle:
+
+1. **Red** (Test Phase) - Write a failing test that defines desired behavior
+2. **Green** (Build Phase) - Write minimal code to make the test pass
+3. **Refactor** (Build Phase) - Improve code quality while keeping tests green
+
 ## The Helix Concept
 
-*Note: The workflow name comes from the double helix structure of DNA, which serves as an interesting metaphor for human-AI collaboration - two complementary strands that support each other, with connection points (quality gates) ensuring structural integrity. Like DNA, each iteration builds on the previous one, creating an ascending spiral of progress.*
+*The workflow name comes from the double helix structure of DNA, which serves as an interesting metaphor for human-AI collaboration - two complementary strands that support each other, with connection points (quality gates) ensuring structural integrity. Like DNA, each iteration builds on the previous one, creating an ascending spiral of progress.*

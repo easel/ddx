@@ -1,4 +1,8 @@
-# User Stories
+# User Stories for [FEAT-XXX] - [Feature Name]
+
+**Feature**: FEAT-XXX
+**Document Type**: User Stories Collection
+**Status**: [Draft | Review | Approved]
 
 ## Story Format
 Each story follows the format:
@@ -8,9 +12,13 @@ Each story follows the format:
 
 ## Primary User Stories
 
-### Story: [STORY_TITLE_1]
-**As a** [USER_TYPE]  
-**I want** [SPECIFIC_FUNCTIONALITY]  
+### Story US-XXX: [STORY_TITLE] [FEAT-XXX]
+**Story ID**: US-XXX
+**Feature**: FEAT-XXX
+**Priority**: [P0 | P1 | P2]
+
+**As a** [USER_TYPE]
+**I want** [SPECIFIC_FUNCTIONALITY]
 **So that** [BUSINESS_VALUE]
 
 **Acceptance Criteria:**
@@ -26,9 +34,13 @@ Each story follows the format:
 
 ---
 
-### Story: [STORY_TITLE_2]
-**As a** [USER_TYPE]  
-**I want** [SPECIFIC_FUNCTIONALITY]  
+### Story US-XXX: [STORY_TITLE] [FEAT-XXX]
+**Story ID**: US-XXX
+**Feature**: FEAT-XXX
+**Priority**: [P0 | P1 | P2]
+
+**As a** [USER_TYPE]
+**I want** [SPECIFIC_FUNCTIONALITY]
 **So that** [BUSINESS_VALUE]
 
 **Acceptance Criteria:**
@@ -76,13 +88,13 @@ Each story follows the format:
 ## Story Prioritization
 
 ### Must Have (P0)
-- [ ] [Story title] - [Brief reason]
+- [ ] US-XXX: [Story title] [FEAT-XXX] - [Brief reason]
 
 ### Should Have (P1)
-- [ ] [Story title] - [Brief reason]
+- [ ] US-XXX: [Story title] [FEAT-XXX] - [Brief reason]
 
 ### Nice to Have (P2)
-- [ ] [Story title] - [Brief reason]
+- [ ] US-XXX: [Story title] [FEAT-XXX] - [Brief reason]
 
 ---
 
@@ -99,8 +111,29 @@ graph TD
 ## Validation Scenarios
 *For each story, define how it will be validated*
 
-### Story: [STORY_TITLE]
+### Story US-XXX: [STORY_TITLE] [FEAT-XXX]
 **Validation Approach:**
 1. [Step to validate the functionality]
 2. [Expected result]
 3. [How to measure success]
+
+---
+
+## Feature Traceability
+
+### Parent Feature
+- **Feature Specification**: `docs/frame/features/FEAT-XXX-[name].md`
+
+### Related Design Artifacts
+- **Contracts**: [To be created for APIs serving these stories]
+- **Test Suites**: `tests/FEAT-XXX/acceptance/`
+
+### Story Naming Convention
+- Format: `US-[3-digit-number]`
+- Example: `US-001`, `US-002`
+- Stories are numbered sequentially across the project
+- Each story ID is unique and permanent
+
+---
+*Note: Create user stories grouped by feature. Each feature may have multiple stories.*
+*Story IDs (US-XXX) should be unique across the entire project.*

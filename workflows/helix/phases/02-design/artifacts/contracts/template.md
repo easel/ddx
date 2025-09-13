@@ -1,4 +1,10 @@
-# API Contracts
+# API Contract: [Contract Name] [FEAT-XXX]
+
+**Contract ID**: API-XXX
+**Feature**: FEAT-XXX
+**Type**: [REST | GraphQL | CLI | Library]
+**Status**: [Draft | Reviewed | Approved]
+**Version**: 1.0.0
 
 *Define all external interfaces before implementation*
 
@@ -179,3 +185,26 @@ const result = functionName(value1, value2);
 - [ ] All changes are additive only
 - [ ] No breaking changes to existing contracts
 - [ ] Version negotiation supported
+
+---
+
+## Feature Traceability
+
+### Parent Feature
+- **Feature Specification**: `docs/features/FEAT-XXX/specification.md`
+- **User Stories Implemented**: US-XXX, US-XXX
+
+### Related Artifacts
+- **ADRs**: [Related architectural decisions]
+- **Test Suites**: `tests/FEAT-XXX/contract/`
+- **Implementation**: `src/features/FEAT-XXX/api/`
+
+### Contract Naming Convention
+- Format: `[feature]-[interface-type]-contract.md`
+- Example: `auth-rest-api-contract.md`
+- Example: `payment-cli-contract.md`
+
+---
+*Note: Create one contract document per major interface.*
+*Some contracts may serve multiple features (mark as "Cross-cutting").*
+*Contract ID (API-XXX) should be unique across the project.*

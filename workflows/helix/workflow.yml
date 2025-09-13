@@ -37,27 +37,27 @@ phases:
       - Approach validated
     estimated_duration: 1-2 days
     
-  - id: implement
+  - id: test
     order: 3
-    name: Implement the System
-    description: Build the solution with AI pair programming
+    name: Write Tests First
+    description: Define system behavior through comprehensive test suites before implementation
     exit_criteria:
-      - Features implemented to specification
-      - Code reviewed
-      - Unit tests written and passing
+      - All contract tests written (failing)
+      - Integration tests defined (failing)
+      - Unit test stubs created (failing)
+      - Test coverage plan approved
+    estimated_duration: 2-3 days
+
+  - id: build
+    order: 4
+    name: Build to Pass Tests
+    description: Implement code using TDD to make all tests pass
+    exit_criteria:
+      - All tests passing (green)
+      - Code coverage targets met
+      - Code reviewed and refactored
       - Documentation generated
     estimated_duration: variable
-    
-  - id: test
-    order: 4
-    name: Test the System
-    description: Validate the system with AI-assisted testing
-    exit_criteria:
-      - Test scenarios executed
-      - Edge cases covered
-      - Performance validated
-      - Quality standards met
-    estimated_duration: 20-30% of implementation
     
   - id: deploy
     order: 5
