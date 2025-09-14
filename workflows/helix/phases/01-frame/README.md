@@ -29,7 +29,7 @@ All artifacts for this phase are located in the `artifacts/` directory. Each art
 
 #### 1. Product Requirements Document (PRD)
 **Artifact Location**: `artifacts/prd/`
-**Output Location**: `docs/frame/prd.md`
+**Output Location**: `docs/01-frame/prd.md`
 
 The business vision document that:
 - Defines the problem and opportunity
@@ -48,7 +48,7 @@ The business vision document that:
 
 #### 2. Principles Document
 **Artifact Location**: `artifacts/principles/`
-**Output Location**: `docs/frame/principles.md`
+**Output Location**: `docs/01-frame/principles.md`
 
 Technical and project constraints that will guide all development:
 - Core development principles (e.g., library-first, test-first)
@@ -58,7 +58,7 @@ Technical and project constraints that will guide all development:
 
 #### 3. User Stories
 **Artifact Location**: `artifacts/user-stories/`
-**Output Location**: `docs/frame/user-stories/US-XXX-[name].md`
+**Output Location**: `docs/01-frame/user-stories/US-XXX-[name].md`
 
 Concrete user needs with clear acceptance criteria:
 - Story format: As a [user], I want [goal], so that [value]
@@ -69,7 +69,7 @@ Concrete user needs with clear acceptance criteria:
 
 #### 4. Feature Specification
 **Artifact Location**: `artifacts/feature-specification/`
-**Output Location**: `docs/frame/features/FEAT-XXX-[name].md`
+**Output Location**: `docs/01-frame/features/FEAT-XXX-[name].md`
 
 Detailed requirements and constraints:
 - Functional requirements (what the system must do)
@@ -77,6 +77,18 @@ Detailed requirements and constraints:
 - Edge cases and error handling
 - Dependencies and assumptions
 - Explicit out-of-scope items
+
+#### 5. Feature Registry
+**Artifact Location**: `artifacts/feature-registry/`
+**Output Location**: `docs/01-frame/feature-registry.md`
+
+Centralized registry of all features:
+- Feature identification with FEAT-XXX IDs
+- Status tracking across all phases
+- Dependency management and relationships
+- Team ownership and responsibility
+- Cross-phase traceability
+- Priority categorization (P0/P1/P2)
 
 ### Actions (Prompt-Only Operations)
 

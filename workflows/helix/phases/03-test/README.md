@@ -69,7 +69,7 @@ graph TD
 
 #### 1. Test Plan
 **Artifact Location**: `artifacts/test-plan/`
-**Output Location**: `docs/test/test-plan.md`
+**Output Location**: `docs/03-test/test-plan.md`
 
 Comprehensive testing strategy (follows IEEE 829):
 - Test scope and objectives
@@ -82,7 +82,7 @@ Comprehensive testing strategy (follows IEEE 829):
 
 #### 2. Test Procedures
 **Artifact Location**: `artifacts/test-procedures/`
-**Output Location**: `docs/test/test-procedures.md`
+**Output Location**: `docs/03-test/test-procedures.md`
 
 Step-by-step test execution guide:
 - Test writing procedures for each type
@@ -268,7 +268,7 @@ The Test phase is complete and Build phase can begin when:
 5. **CI/CD Configured**: Automated test execution ready
    - Validation: Pipeline runs tests on commit
 6. **Documentation Complete**: Test plan and strategies documented
-   - Validation: `docs/test/test-plan.md` exists and is complete
+   - Validation: `docs/03-test/test-plan.md` exists and is complete
 
 ## Next Phase: Build
 

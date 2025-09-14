@@ -2,6 +2,16 @@
 
 Create comprehensive unit tests for all business logic, pure functions, and isolated components. These tests should be fast, focused, and independent, forming the foundation of the testing pyramid.
 
+## Test Output Location
+
+Generate unit tests in: `tests/unit/`
+
+Organize tests by component type:
+- `tests/unit/models/` - Data model tests
+- `tests/unit/services/` - Business logic tests
+- `tests/unit/utils/` - Utility function tests
+- `tests/unit/components/` - Component tests
+
 ## Purpose
 
 Unit tests verify that individual components work correctly in isolation. They should:

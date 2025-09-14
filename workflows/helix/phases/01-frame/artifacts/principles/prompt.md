@@ -4,7 +4,7 @@ Generate project-specific principles based on the HELIX workflow principles and 
 
 ## Storage Location
 
-Store the PRD at: `docs/product/principles.md`
+Store the principles document at: `docs/01-frame/principles.md`
 
 This central location ensures the principles are easily discoverable and remain the single source of truth for product principles.
 

@@ -2,6 +2,10 @@
 
 Execute a complete deployment to the staging environment, including building, packaging, deploying, and validating the application in a production-like setting.
 
+## Operational Action
+
+This is an operational action that performs deployment activities. It does not generate documentation files but rather executes deployment procedures and validation scripts.
+
 ## Purpose
 
 Staging deployment serves as:

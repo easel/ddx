@@ -2,6 +2,21 @@
 
 Create a complete feature specification with explicit uncertainty markers.
 
+## Storage Location
+
+Store feature specifications at: `docs/01-frame/features/FEAT-{number}-{title-with-hyphens}.md`
+
+## Naming Convention
+
+Follow this consistent format:
+- **File Format**: `FEAT-{number}-{title-with-hyphens}.md`
+- **Number**: Zero-padded 3-digit sequence (001, 002, 003...)
+- **Title**: Descriptive, lowercase with hyphens
+- **Examples**:
+  - `FEAT-001-cli-template-management.md`
+  - `FEAT-002-ai-code-assistance.md`
+  - `FEAT-003-workflow-automation.md`
+
 ## Critical Instructions
 
 ### 1. Use [NEEDS CLARIFICATION] Markers

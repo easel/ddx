@@ -2,6 +2,10 @@
 
 Transform business requirements into a concrete technical approach that bridges Frame outputs to Design artifacts.
 
+## Storage Location
+
+Store the solution design at: `docs/02-design/solution-design.md`
+
 ## Purpose
 
 The Solution Design is the critical transformation layer that:

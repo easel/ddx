@@ -2,6 +2,16 @@
 
 Create end-to-end tests that validate complete user journeys and critical business flows through the entire application stack. These tests verify that the system works correctly from the user's perspective.
 
+## Test Output Location
+
+Generate end-to-end tests in: `tests/e2e/`
+
+Organize tests by journey type:
+- `tests/e2e/critical/` - Critical path tests
+- `tests/e2e/features/` - Feature-specific flows
+- `tests/e2e/regression/` - Regression test suites
+- `tests/e2e/performance/` - Performance validation
+
 ## Purpose
 
 End-to-end tests ensure:

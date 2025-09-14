@@ -4,7 +4,7 @@ Create a comprehensive Product Requirements Document that defines the business v
 
 ## Storage Location
 
-Store the PRD at: `docs/product/prd.md`
+Store the PRD at: `docs/01-frame/prd.md`
 
 This central location ensures the PRD is easily discoverable and remains the single source of truth for product requirements.
 

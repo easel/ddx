@@ -2,6 +2,16 @@
 
 Create comprehensive security tests that validate authentication, authorization, data protection, and vulnerability prevention mechanisms. These tests ensure the application is resistant to common attacks and follows security best practices.
 
+## Test Output Location
+
+Generate security tests in: `tests/security/`
+
+Organize tests by security domain:
+- `tests/security/auth/` - Authentication tests
+- `tests/security/authz/` - Authorization tests
+- `tests/security/input/` - Input validation tests
+- `tests/security/crypto/` - Cryptography tests
+
 ## Purpose
 
 Security tests verify:

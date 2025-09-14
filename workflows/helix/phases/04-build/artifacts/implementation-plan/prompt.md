@@ -4,7 +4,7 @@ Create a comprehensive build plan that defines how to systematically implement c
 
 ## Storage Location
 
-Store the build plan at: `docs/development/build-plan.md`
+Store the build plan at: `docs/04-build/implementation-plan.md`
 
 ## Purpose
 

@@ -4,7 +4,7 @@ Create comprehensive test procedures that define how tests will be written, exec
 
 ## Storage Location
 
-Store the test procedures at: `docs/testing/test-procedures.md`
+Store the test procedures at: `docs/03-test/test-procedures.md`
 
 ## Purpose
 

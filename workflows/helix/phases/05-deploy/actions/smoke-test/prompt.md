@@ -2,6 +2,10 @@
 
 Execute rapid validation tests immediately after deployment to verify that critical system functionality is working correctly in the target environment.
 
+## Operational Action
+
+This is an operational action that executes validation tests post-deployment. It does not generate documentation files but rather runs test suites and validation scripts to verify system health.
+
 ## Purpose
 
 Smoke tests provide:

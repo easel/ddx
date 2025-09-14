@@ -76,7 +76,7 @@ graph TD
 
 #### 1. Deployment Checklist
 **Artifact Location**: `artifacts/deployment-checklist/`
-**Output Location**: `docs/deployment/checklist.md`
+**Output Location**: `docs/05-deploy/deployment-checklist.md`
 
 Comprehensive pre-flight checklist:
 - Code readiness verification
@@ -88,7 +88,7 @@ Comprehensive pre-flight checklist:
 
 #### 2. Monitoring Setup
 **Artifact Location**: `artifacts/monitoring-setup/`
-**Output Location**: `docs/monitoring/setup.md`
+**Output Location**: `docs/05-deploy/monitoring-setup.md`
 
 Observability configuration:
 - Metrics and dashboards
@@ -100,7 +100,7 @@ Observability configuration:
 
 #### 3. Runbook
 **Artifact Location**: `artifacts/runbook/`
-**Output Location**: `docs/operations/runbook.md`
+**Output Location**: `docs/05-deploy/runbook.md`
 
 Operational procedures:
 - Deployment steps

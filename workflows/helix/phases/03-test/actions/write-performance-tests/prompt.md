@@ -2,6 +2,16 @@
 
 Create performance tests that validate system responsiveness, scalability, and resource efficiency under various load conditions. These tests ensure the application meets non-functional requirements for speed and capacity.
 
+## Test Output Location
+
+Generate performance tests in: `tests/performance/`
+
+Organize tests by performance type:
+- `tests/performance/load/` - Load testing scripts
+- `tests/performance/stress/` - Stress testing scenarios
+- `tests/performance/spike/` - Spike testing configurations
+- `tests/performance/endurance/` - Endurance testing suites
+
 ## Purpose
 
 Performance tests verify:

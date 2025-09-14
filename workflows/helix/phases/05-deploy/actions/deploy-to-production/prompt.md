@@ -2,6 +2,10 @@
 
 Execute a controlled, monitored deployment to the production environment with appropriate safety measures, progressive rollout, and rollback capabilities.
 
+## Operational Action
+
+This is an operational action that performs critical production deployment activities. It does not generate documentation files but rather executes deployment procedures with safety measures and monitoring.
+
 ## Purpose
 
 Production deployment is:

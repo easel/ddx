@@ -2,6 +2,10 @@
 
 Execute an emergency rollback to restore the system to a known good state when deployment issues are detected. This procedure must be fast, reliable, and well-documented.
 
+## Operational Action
+
+This is an emergency operational action that performs system rollback procedures. It does not generate documentation files but rather executes rollback scripts and recovery procedures.
+
 ## Purpose
 
 Rollback procedures ensure:

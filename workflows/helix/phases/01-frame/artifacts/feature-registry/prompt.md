@@ -2,6 +2,10 @@
 
 Create and maintain a comprehensive registry of all features in the system.
 
+## Storage Location
+
+Store the feature registry at: `docs/01-frame/feature-registry.md`
+
 ## Purpose
 
 The Feature Registry is the single source of truth for:

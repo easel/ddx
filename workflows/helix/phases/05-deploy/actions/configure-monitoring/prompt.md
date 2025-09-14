@@ -2,6 +2,10 @@
 
 Set up comprehensive monitoring and observability infrastructure to track application health, performance, and business metrics in real-time across all environments.
 
+## Operational Action
+
+This is an operational action that configures monitoring systems and infrastructure. It does not generate documentation files but rather sets up dashboards, alerts, and monitoring configurations.
+
 ## Purpose
 
 Monitoring configuration ensures:

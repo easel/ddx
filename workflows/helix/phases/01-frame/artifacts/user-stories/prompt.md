@@ -2,6 +2,21 @@
 
 Create comprehensive user stories with testable acceptance criteria.
 
+## Storage Location
+
+Store user stories at: `docs/01-frame/user-stories/US-{number}-{title-with-hyphens}.md`
+
+## Naming Convention
+
+Follow this consistent format:
+- **File Format**: `US-{number}-{title-with-hyphens}.md`
+- **Number**: Zero-padded 3-digit sequence (001, 002, 003...)
+- **Title**: Descriptive, lowercase with hyphens
+- **Examples**:
+  - `US-001-user-login-authentication.md`
+  - `US-002-project-template-selection.md`
+  - `US-003-ai-assisted-code-generation.md`
+
 ## Core Principles
 
 ### 1. User-Centric Focus

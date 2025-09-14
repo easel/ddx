@@ -2,6 +2,16 @@
 
 Create integration tests that verify component interactions, service boundaries, and data flow between different parts of the system. Following Specification-Driven Development principles, use real services and dependencies wherever possible.
 
+## Test Output Location
+
+Generate integration tests in: `tests/integration/`
+
+Organize tests by integration type:
+- `tests/integration/api/` - API endpoint tests
+- `tests/integration/database/` - Database operation tests
+- `tests/integration/services/` - Service integration tests
+- `tests/integration/external/` - External service tests
+
 ## Purpose
 
 Integration tests verify that:

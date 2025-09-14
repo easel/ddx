@@ -2,6 +2,21 @@
 
 Define precise API contracts that will be tested before implementation.
 
+## Storage Location
+
+Store API contracts at: `docs/02-design/contracts/API-{number}-{title-with-hyphens}.md`
+
+## Naming Convention
+
+Follow this consistent format:
+- **File Format**: `API-{number}-{title-with-hyphens}.md`
+- **Number**: Zero-padded 3-digit sequence (001, 002, 003...)
+- **Title**: Descriptive, lowercase with hyphens
+- **Examples**:
+  - `API-001-cli-command-interface.md`
+  - `API-002-template-management-api.md`
+  - `API-003-ai-integration-api.md`
+
 ## Contract-First Principles
 
 ### 1. Define the Interface, Not the Implementation

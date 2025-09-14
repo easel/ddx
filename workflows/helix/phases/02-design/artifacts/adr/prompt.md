@@ -2,6 +2,21 @@
 
 Document significant architectural decisions with clear rationale and trade-offs.
 
+## Storage Location
+
+Store ADRs at: `docs/02-design/adr/ADR-{number}-{title-with-hyphens}.md`
+
+## Naming Convention
+
+Follow this consistent format:
+- **File Format**: `ADR-{number}-{title-with-hyphens}.md`
+- **Number**: Zero-padded 3-digit sequence (001, 002, 003...)
+- **Title**: Descriptive, lowercase with hyphens
+- **Examples**:
+  - `ADR-001-use-postgresql-for-primary-database.md`
+  - `ADR-002-adopt-microservices-architecture.md`
+  - `ADR-003-implement-jwt-authentication.md`
+
 ## What Deserves an ADR?
 
 Create an ADR when the decision:
