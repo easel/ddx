@@ -32,14 +32,15 @@ Based on this analysis, identify:
 
 Evaluate frameworks against these criteria (rate each 1-10):
 
-| Criteria | Weight | Description |
-|----------|--------|-------------|
-| Cross-platform | 25% | Native Windows/Mac/Linux support without emulation |
-| Performance | 20% | Execution speed, especially for large codebases |
-| Dependencies | 20% | Fewer runtime dependencies = better |
-| Ecosystem | 15% | Available pre-built hooks and community |
-| Maintainability | 10% | Ease of configuration and updates |
-| Developer UX | 10% | Clear errors, easy overrides, good documentation |
+| Criteria        | Weight | Description                                        |
+| --------------- | ------ | -------------------------------------------------- |
+| Cross-platform  | 25%    | Native Windows/Mac/Linux support without emulation |
+| Performance     | 20%    | Execution speed, especially for large codebases    |
+| Dependencies    | 20%    | Fewer runtime dependencies = better                |
+| Ecosystem       | 15%    | Available pre-built hooks and community            |
+| Maintainability | 10%    | Ease of configuration and updates                  |
+| Developer UX    | 10%    | Clear errors, easy overrides, good documentation   |
+|                 |        |                                                    |
 
 Consider these frameworks:
 1. **Lefthook** (Go) - Single binary, parallel execution
