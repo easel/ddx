@@ -1,55 +1,317 @@
 # DDx Architecture Overview
 
-> **Last Updated**: 2025-09-11
+> **Last Updated**: 2025-01-15
 > **Status**: Active
 > **Owner**: DDx Team
 
 ## Overview
 
-DDx follows a modular, extensible architecture designed to support document-driven development workflows across diverse project types.
+DDx follows a modular, extensible architecture designed to support document-driven development workflows across diverse project types. This document presents the architecture using the C4 model (Context, Container, Component, Code) for clear visualization at different abstraction levels.
 
-## Context
+## C4 Model Architecture
 
-This document provides a high-level view of the DDx system architecture. For detailed component specifications, see the individual component documentation in [[architecture/components/]].
+### Level 1: System Context Diagram
 
-## System Architecture
+The highest level view showing DDx in the context of external systems and users.
 
 ```mermaid
 graph TB
-    subgraph "DDx CLI"
-        CLI[CLI Interface]
-        CMD[Command Layer]
-        CORE[Core Logic]
-        CONFIG[Configuration]
+    subgraph "Users"
+        DEV[Developer]
+        TEAM[Development Team]
+        CONTRIB[Contributor]
     end
-    
-    subgraph "Content Repository"
-        TEMPLATES[Templates]
-        PATTERNS[Patterns]
-        PROMPTS[Prompts]
-        CONFIGS[Configs]
+
+    subgraph "DDx System"
+        DDX[DDx CLI Toolkit]
     end
-    
-    subgraph "Project Repository"
-        PROJECT[User Project]
-        DDXCONFIG[.ddx.yml]
-        SUBTREE[Git Subtree]
+
+    subgraph "External Systems"
+        GH[GitHub/GitLab]
+        NPM[NPM Registry]
+        PIP[PyPI]
+        AI[AI Services]
     end
-    
-    CLI --> CMD
-    CMD --> CORE
-    CORE --> CONFIG
-    
-    CORE --> TEMPLATES
-    CORE --> PATTERNS
-    CORE --> PROMPTS
-    CORE --> CONFIGS
-    
-    PROJECT --> DDXCONFIG
-    PROJECT --> SUBTREE
-    SUBTREE --> TEMPLATES
-    SUBTREE --> PATTERNS
+
+    DEV --> |Uses| DDX
+    TEAM --> |Collaborates via| DDX
+    CONTRIB --> |Contributes to| DDX
+
+    DDX --> |Fetches/Pushes| GH
+    DDX --> |Downloads packages| NPM
+    DDX --> |Downloads packages| PIP
+    DDX --> |Integrates with| AI
+
+    style DDX fill:#f9f,stroke:#333,stroke-width:4px
 ```
+
+### Level 2: Container Diagram
+
+Shows the high-level shape of the software architecture and how responsibilities are distributed.
+
+```mermaid
+graph TB
+    subgraph "DDx System Boundary"
+        subgraph "CLI Application [Go Binary]"
+            CLI[Command Interface<br/>Cobra Framework]
+            CORE[Core Engine<br/>Business Logic]
+            SYNC[Sync Manager<br/>Git Operations]
+            TPL[Template Engine<br/>Variable Substitution]
+            VAL[Validator<br/>Security & Quality]
+        end
+
+        subgraph "Configuration [File System]"
+            CONF[.ddx.yml<br/>Project Config]
+            STATE[Sync State<br/>JSON Database]
+            CACHE[Resource Cache<br/>Local Storage]
+        end
+
+        subgraph "Content Repository [Git]"
+            TMPL[Templates<br/>Project Boilerplates]
+            PTRN[Patterns<br/>Code Examples]
+            PRMT[Prompts<br/>AI Instructions]
+            CFG[Configs<br/>Tool Settings]
+        end
+    end
+
+    subgraph "User Project"
+        PROJ[Project Files]
+        GIT[Git Repository]
+    end
+
+    CLI --> CORE
+    CORE --> SYNC
+    CORE --> TPL
+    CORE --> VAL
+
+    CORE --> CONF
+    SYNC --> STATE
+    CORE --> CACHE
+
+    SYNC --> TMPL
+    SYNC --> PTRN
+    TPL --> PRMT
+    TPL --> CFG
+
+    CORE --> PROJ
+    SYNC --> GIT
+```
+
+### Level 3: Component Diagram - CLI Application
+
+Zooms into the CLI application container to show its internal components.
+
+```mermaid
+graph TB
+    subgraph "CLI Application Components"
+        subgraph "Command Layer"
+            INIT[init.go<br/>Initialize DDx]
+            LIST[list.go<br/>List Resources]
+            APPLY[apply.go<br/>Apply Resources]
+            UPDATE[update.go<br/>Sync Upstream]
+            CONTRIB[contribute.go<br/>Share Changes]
+            DIAG[diagnose.go<br/>Health Check]
+        end
+
+        subgraph "Core Services"
+            CFG_SVC[Config Service<br/>Viper Integration]
+            GIT_SVC[Git Service<br/>Subtree Operations]
+            TPL_SVC[Template Service<br/>Processing Engine]
+            VAL_SVC[Validation Service<br/>Input & Security]
+            ASSET_SVC[Asset Service<br/>Resource Discovery]
+        end
+
+        subgraph "Infrastructure"
+            FS[File System<br/>I/O Operations]
+            NET[Network<br/>HTTP/Git Client]
+            LOG[Logger<br/>Structured Logging]
+            ERR[Error Handler<br/>Recovery & Reporting]
+        end
+    end
+
+    INIT --> CFG_SVC
+    INIT --> GIT_SVC
+
+    LIST --> ASSET_SVC
+    LIST --> CFG_SVC
+
+    APPLY --> TPL_SVC
+    APPLY --> VAL_SVC
+    APPLY --> FS
+
+    UPDATE --> GIT_SVC
+    UPDATE --> NET
+
+    CONTRIB --> GIT_SVC
+    CONTRIB --> VAL_SVC
+
+    DIAG --> VAL_SVC
+    DIAG --> ASSET_SVC
+
+    CFG_SVC --> FS
+    GIT_SVC --> NET
+    TPL_SVC --> FS
+
+    style INIT fill:#e1f5fe
+    style LIST fill:#e1f5fe
+    style APPLY fill:#e1f5fe
+    style UPDATE fill:#e1f5fe
+    style CONTRIB fill:#e1f5fe
+    style DIAG fill:#e1f5fe
+```
+
+### Level 3: Component Diagram - Sync System
+
+Details of the synchronization subsystem.
+
+```mermaid
+graph TB
+    subgraph "Synchronization Components"
+        subgraph "Sync Manager"
+            PULL[Pull Service<br/>Fetch Updates]
+            PUSH[Push Service<br/>Contribute]
+            MERGE[Merge Engine<br/>3-Way Merge]
+            CONFLICT[Conflict Resolver<br/>Resolution Strategies]
+        end
+
+        subgraph "State Management"
+            STATE[State Tracker<br/>Sync Metadata]
+            HIST[History Logger<br/>Audit Trail]
+            BACKUP[Backup Manager<br/>Snapshots]
+        end
+
+        subgraph "Git Integration"
+            SUBTREE[Subtree Wrapper<br/>Git Commands]
+            DIFF[Diff Engine<br/>Change Detection]
+            COMMIT[Commit Builder<br/>Message Generation]
+        end
+    end
+
+    PULL --> SUBTREE
+    PULL --> MERGE
+    PULL --> STATE
+
+    PUSH --> SUBTREE
+    PUSH --> COMMIT
+    PUSH --> STATE
+
+    MERGE --> CONFLICT
+    MERGE --> DIFF
+
+    CONFLICT --> BACKUP
+
+    STATE --> HIST
+
+    style PULL fill:#fff3e0
+    style PUSH fill:#fff3e0
+    style MERGE fill:#fff3e0
+```
+
+### Level 4: Deployment Diagram
+
+Shows how DDx is deployed across different platforms.
+
+```mermaid
+graph TB
+    subgraph "Developer Machine"
+        subgraph "macOS/Linux/Windows"
+            BIN[DDx Binary<br/>~15MB]
+            CONF_LOCAL[Local Config<br/>~/.ddx/]
+            PROJ_LOCAL[Project Files]
+        end
+    end
+
+    subgraph "Version Control"
+        subgraph "GitHub/GitLab"
+            MASTER[Master Repo<br/>ddx-tools/ddx]
+            FORK[User Fork<br/>Contributions]
+            PROJ_REPO[Project Repo<br/>With Subtree]
+        end
+    end
+
+    subgraph "Package Registries"
+        BREW[Homebrew<br/>macOS]
+        APT[APT/YUM<br/>Linux]
+        CHOCO[Chocolatey<br/>Windows]
+    end
+
+    BIN --> CONF_LOCAL
+    BIN --> PROJ_LOCAL
+
+    BIN --> |Pull/Push| MASTER
+    BIN --> |Contribute| FORK
+    PROJ_LOCAL --> |Sync| PROJ_REPO
+
+    BREW --> BIN
+    APT --> BIN
+    CHOCO --> BIN
+
+    style BIN fill:#f0f4c3
+```
+
+## Data Flow Diagrams
+
+### Resource Application Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant CLI
+    participant Config
+    participant Template
+    participant Validator
+    participant FileSystem
+
+    User->>CLI: ddx apply template/nextjs
+    CLI->>Config: Load .ddx.yml
+    Config-->>CLI: Configuration data
+    CLI->>Template: Load template
+    Template-->>CLI: Template files
+    CLI->>CLI: Resolve variables
+    CLI->>Validator: Validate inputs
+    Validator-->>CLI: Validation result
+    CLI->>FileSystem: Write files
+    FileSystem-->>CLI: Success
+    CLI-->>User: Template applied
+```
+
+### Synchronization Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant CLI
+    participant Git
+    participant Upstream
+    participant Merger
+    participant State
+
+    User->>CLI: ddx update
+    CLI->>State: Check last sync
+    State-->>CLI: Last commit SHA
+    CLI->>Git: Fetch upstream
+    Git->>Upstream: Pull changes
+    Upstream-->>Git: New commits
+    Git-->>CLI: Changes fetched
+    CLI->>Merger: Merge changes
+    Merger-->>CLI: Merge result
+    CLI->>State: Update sync state
+    State-->>CLI: State saved
+    CLI-->>User: Update complete
+```
+
+## Component Interaction Matrix
+
+| Component | Interacts With | Protocol | Purpose |
+|-----------|---------------|----------|---------|
+| CLI Commands | Core Services | Function calls | Execute business logic |
+| Core Services | File System | OS APIs | Read/write files |
+| Git Service | Remote Repos | Git protocol | Sync operations |
+| Template Engine | Variables | In-memory | Substitution |
+| Validator | Security Rules | Pattern matching | Input validation |
+| Config Service | YAML Parser | Viper library | Configuration management |
+| Network Client | GitHub API | HTTPS | PR creation |
+| Logger | Output Stream | stdout/stderr | User feedback |
 
 ## Core Components
 
