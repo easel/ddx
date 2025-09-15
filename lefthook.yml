@@ -1,352 +1,159 @@
 # Lefthook configuration for DDx project
-# Fast, cross-platform git hooks that work on Windows, macOS, and Linux
+# Fast, cross-platform git hooks
 # https://github.com/evilmartians/lefthook
 
-# Configuration for colors and output
+# Configuration
 colors: true
 no_tty: false
+assertion: false
+
+# Reusable command groups
+command_groups:
+  go_checks: &go_checks
+    root: "cli/"  # Go module root
+    tags: [go, backend]
+
+  security_checks: &security_checks
+    tags: [security]
+
+  formatting_checks: &formatting_checks
+    tags: [format, style]
 
 # ====================
-# CI Validation - Run all checks against all files
-# Usage: lefthook run ci
+# Pre-commit hooks - Fast checks on staged files
 # ====================
-ci:
-  parallel: true
-  commands:
-    # Check for merge conflicts
-    conflicts:
-      name: "Check for merge conflicts"
-      run: |
-        find . -type f ! -path "./.git/*" ! -path "./cli/.git/*" | while read -r file; do
-          if test -f "$file" && grep -E "^(<<<<<<<|=======|>>>>>>>|\|\|\|\|\|\|\|)" "$file"; then
-            echo "❌ Merge conflict markers found in: $file"
-            exit 1
-          fi
-        done
-        echo "✅ No merge conflicts found"
-    
-    # Check for secrets
-    secrets:
-      name: "Check for secrets"
-      run: |
-        patterns="(api[_-]?key|apikey|secret|token|password|passwd|pwd|auth|credential|private[_-]?key)"
-        patterns="$patterns.*=.*['\"]?[A-Za-z0-9+/]{20,}['\"]?"
-        
-        if find . -type f ! -path "./.git/*" ! -path "./cli/.git/*" ! -name "*.jpg" ! -name "*.png" ! -name "*.gif" \
-          -exec grep -El "$patterns" {} \; 2>/dev/null | head -1 | grep -q .; then
-          echo "❌ Potential secrets found - review before committing"
-          exit 1
-        fi
-        echo "✅ No secrets detected"
-    
-    # Check for binary files
-    binaries:
-      name: "Check for binary files"
-      run: |
-        allowed_extensions="jpg|jpeg|png|gif|ico|svg|woff|woff2|ttf|eot|pdf"
-        if find . -type f ! -path "./.git/*" ! -path "./cli/.git/*" \
-          -exec file {} \; | grep -v text | grep -v empty | \
-          grep -vE "\.($allowed_extensions):" | head -1 | grep -q .; then
-          echo "❌ Binary files detected - use Git LFS for large binaries"
-          exit 1
-        fi
-        echo "✅ No unexpected binary files"
-    
-    # DDx configuration validation
-    ddx-validate:
-      name: "Validate DDx configuration"
-      run: |
-        if [ -f ".ddx.yml" ]; then
-          # Basic YAML validation
-          if ! command -v yq >/dev/null 2>&1; then
-            # Fall back to basic parsing if yq not available
-            if grep -E "^[[:space:]]*-" .ddx.yml | grep -v "^[[:space:]]*- " >/dev/null; then
-              echo "⚠️ Potential YAML formatting issue in .ddx.yml"
-            fi
-          else
-            yq eval . .ddx.yml >/dev/null || exit 1
-          fi
-          echo "✅ DDx configuration valid"
-        fi
-    
-    # Debug statements check
-    debug-statements:
-      name: "Check for debug statements"
-      run: |
-        found=0
-        
-        # Check Go files (excluding CLI cmd files which legitimately use fmt.Print for output)
-        if find . -name "*.go" -type f ! -path "./cli/cmd/*" \
-          -exec grep -l 'spew\.Dump\|pprof\|debug\.Print' {} \; | grep -v _test.go | head -1 | grep -q .; then
-          echo "❌ Debug statements found in Go files"
-          found=1
-        fi
-        
-        # Check JavaScript/TypeScript files
-        if find . -name "*.js" -o -name "*.jsx" -o -name "*.ts" -o -name "*.tsx" -type f \
-          -exec grep -l 'console\.\(log\|debug\|info\)\|debugger' {} \; 2>/dev/null | head -1 | grep -q .; then
-          echo "❌ Debug statements found in JS/TS files"
-          found=1
-        fi
-        
-        if [ $found -eq 0 ]; then
-          echo "✅ No debug statements found"
-        else
-          exit 1
-        fi
-    
-    # Go formatting check
-    go-fmt:
-      name: "Go Format Check"
-      run: |
-        if [ -f "cli/go.mod" ]; then
-          cd cli
-        elif [ ! -f "go.mod" ]; then
-          echo "✅ No Go module found"
-          exit 0
-        fi
-        
-        unformatted=$(gofmt -l .)
-        if [ -n "$unformatted" ]; then
-          echo "❌ Go files need formatting:"
-          echo "$unformatted"
-          echo "Run: gofmt -w <files> or 'make fmt' in cli/"
-          exit 1
-        fi
-        echo "✅ All Go files properly formatted"
-    
-    # Go linting
-    go-lint:
-      name: "Go Lint"
-      run: |
-        if [ -f "cli/go.mod" ]; then
-          cd cli
-        elif [ ! -f "go.mod" ]; then
-          echo "✅ No Go module found"
-          exit 0
-        fi
-        
-        # Try golangci-lint first, fall back to go vet
-        if command -v golangci-lint >/dev/null 2>&1; then
-          echo "Running golangci-lint..."
-          golangci-lint run --timeout=5m
-        elif command -v go >/dev/null 2>&1; then
-          echo "Running go vet..."
-          go vet ./...
-        fi
-        echo "✅ Go linting passed"
-    
-    # Go build check
-    go-build:
-      name: "Go Build"
-      run: |
-        if [ -f "cli/go.mod" ]; then
-          cd cli
-        elif [ ! -f "go.mod" ]; then
-          echo "✅ No Go module found"
-          exit 0
-        fi
-        
-        echo "🔨 Building Go project..."
-        go build -v ./...
-        echo "✅ Go build successful"
-    
-    # Go tests
-    go-test:
-      name: "Go Tests"
-      run: |
-        if [ -f "cli/go.mod" ]; then
-          cd cli
-        elif [ ! -f "go.mod" ]; then
-          echo "✅ No Go module found"
-          exit 0
-        fi
-        
-        echo "🧪 Running Go tests..."
-        go test -race -v ./...
-        echo "✅ All tests passed"
-
-# Pre-commit hooks - run before each commit
 pre-commit:
-  parallel: true # Run independent checks in parallel for speed
-  
+  parallel: true
+
   commands:
-    # ====================
-    # Fast Checks (always run)
-    # ====================
-    
+    # Conflict detection using grep on staged files only
     conflicts:
-      name: "Check for merge conflicts"
-      run: |
-        git diff --cached --name-only --diff-filter=ACM | while read -r file; do
-          if test -f "$file" && grep -E "^(<<<<<<<|=======|>>>>>>>|\|\|\|\|\|\|\|)" "$file"; then
-            echo "❌ Merge conflict markers found in: $file"
-            exit 1
-          fi
-        done
+      name: "Check merge conflicts"
+      run: 'grep -E "^<<<<<<<[ \t]|^=======$|^>>>>>>>[ \t]|^\|\|\|\|\|\|\|[ \t]" {staged_files} 2>/dev/null && exit 1 || exit 0'
       glob: "*"
-      exclude: "*.md"
-      fail_text: "Please resolve merge conflicts before committing"
-      
-    debug-statements:
-      name: "Check for debug statements"
+      exclude: "lefthook.yml"
+      fail_text: "Merge conflict markers found. Resolve conflicts before committing."
+
+    # Debug statements - using ripgrep if available, fallback to grep
+    debug-go:
+      name: "Debug statements (Go)"
+      glob: "*.go"
+      exclude: "*_test.go"
       run: |
-        files=$(git diff --cached --name-only --diff-filter=ACM)
-        found=0
-        
-        # Check Go files
-        echo "$files" | grep -E '\.go$' | while read -r file; do
-          if test -f "$file" && grep -E '(fmt\.Print|println|dbg!|spew\.Dump)' "$file"; then
-            echo "⚠️  Debug statement in: $file"
-            found=1
-          fi
-        done
-        
-        # Check JavaScript/TypeScript files  
-        echo "$files" | grep -E '\.(js|jsx|ts|tsx)$' | while read -r file; do
-          if test -f "$file" && grep -E '(console\.(log|debug|info)|debugger)' "$file"; then
-            echo "⚠️  Debug statement in: $file"
-            found=1
-          fi
-        done
-        
-        # Check Python files
-        echo "$files" | grep -E '\.py$' | while read -r file; do
-          if test -f "$file" && grep -E '(print\(|pdb\.set_trace|breakpoint\(\)|import pdb)' "$file"; then
-            echo "⚠️  Debug statement in: $file"
-            found=1
-          fi
-        done
-        
-        exit $found
-      fail_text: "Remove debug statements before committing (or use LEFTHOOK_EXCLUDE=debug-statements)"
-      
-    # ====================
-    # Go Checks (only run when Go files are staged)
-    # ====================
-    
+        if command -v rg >/dev/null 2>&1; then
+          rg -q "(fmt\.Print|println|spew\.Dump|pprof\.|debug\.Print)" {staged_files} && exit 1 || exit 0
+        else
+          grep -E "(fmt\.Print|println|spew\.Dump|pprof\.|debug\.Print)" {staged_files} 2>/dev/null && exit 1 || exit 0
+        fi
+      fail_text: "Debug statements found in Go files"
+
+    debug-js:
+      name: "Debug statements (JS/TS)"
+      glob: "*.{js,jsx,ts,tsx}"
+      run: |
+        if command -v rg >/dev/null 2>&1; then
+          rg -q "(console\.(log|debug|info)|debugger)" {staged_files} && exit 1 || exit 0
+        else
+          grep -E "(console\.(log|debug|info)|debugger)" {staged_files} 2>/dev/null && exit 1 || exit 0
+        fi
+      fail_text: "Debug statements found in JS/TS files"
+
+    debug-python:
+      name: "Debug statements (Python)"
+      glob: "*.py"
+      run: |
+        if command -v rg >/dev/null 2>&1; then
+          rg -q "(print\(|pdb\.set_trace|breakpoint\(\)|import pdb)" {staged_files} && exit 1 || exit 0
+        else
+          grep -E "(print\(|pdb\.set_trace|breakpoint\(\)|import pdb)" {staged_files} 2>/dev/null && exit 1 || exit 0
+        fi
+      fail_text: "Debug statements found in Python files"
+
+    # Go formatting - native gofmt
     go-fmt:
+      <<: *go_checks
       name: "Go Format"
-      glob: "*.go"
+      glob: "cli/**/*.go"
       run: |
-        files=$(git diff --cached --name-only --diff-filter=ACM | grep '\.go$' || true)
-        if [ -n "$files" ]; then
-          unformatted=$(echo "$files" | xargs gofmt -l 2>/dev/null || true)
-          if [ -n "$unformatted" ]; then
-            echo "❌ Go files need formatting:"
-            echo "$unformatted"
-            echo "Run: gofmt -w <files> or 'make fmt' in cli/"
-            exit 1
-          fi
+        unformatted=$(gofmt -l {staged_files})
+        if [ -n "$unformatted" ]; then
+          echo "Files need formatting: $unformatted"
+          echo "Run: gofmt -w <files>"
+          exit 1
         fi
       skip:
         - merge
         - rebase
-      
+
+    # Go linting - prefer golangci-lint over go vet
     go-lint:
+      <<: *go_checks
       name: "Go Lint"
-      glob: "*.go"
+      glob: "cli/**/*.go"
       run: |
-        if [ -f "cli/go.mod" ]; then
-          cd cli
-        elif [ ! -f "go.mod" ]; then
-          exit 0
-        fi
-        
-        # Try golangci-lint first, fall back to go vet
         if command -v golangci-lint >/dev/null 2>&1; then
-          golangci-lint run --timeout=60s --new-from-rev=HEAD~1
-        elif command -v go >/dev/null 2>&1; then
-          go vet ./...
+          golangci-lint run --timeout=60s --new-from-rev=HEAD~1 {staged_files}
+        else
+          go vet {staged_files}
         fi
       skip:
         - merge
         - rebase
-      
+
+    # Go build - only for changed packages
     go-build:
+      <<: *go_checks
       name: "Go Build"
-      glob: "*.go"
-      run: |
-        if [ -f "cli/go.mod" ]; then
-          cd cli
-        elif [ ! -f "go.mod" ]; then
-          exit 0
-        fi
-        
-        echo "🔨 Building Go project..."
-        go build -v ./...
+      glob: "cli/**/*.go"
+      run: 'go build -v ./...'
       skip:
         - merge
         - rebase
-      
+
+    # Go tests - targeted testing
     go-test:
+      <<: *go_checks
       name: "Go Tests"
-      glob: "*.go"
+      glob: "cli/**/*.go"
       run: |
-        if [ -f "cli/go.mod" ]; then
-          cd cli
-        elif [ ! -f "go.mod" ]; then
-          exit 0
-        fi
-        
-        # Only test packages with changes
-        packages=$(git diff --cached --name-only --diff-filter=ACM | grep '\.go$' | xargs -n1 dirname | sort -u | sed 's|^cli/||' | grep -v "^\.")
-        
-        if [ -n "$packages" ]; then
-          echo "🧪 Running tests for changed packages..."
-          for pkg in $packages; do
-            if ls "$pkg"/*_test.go >/dev/null 2>&1; then
-              go test -short -v "./$pkg"
-            fi
-          done
-        fi
+        packages=$(echo {staged_files} | xargs -n1 dirname | sort -u | sed 's|^cli/||')
+        for pkg in $packages; do
+          if ls "$pkg"/*_test.go >/dev/null 2>&1; then
+            go test -short -race "./$pkg"
+          fi
+        done
       skip:
         - merge
         - rebase
       env:
         SKIP_INTEGRATION_TESTS: "true"
-      
-    # ====================
-    # Security Checks
-    # ====================
-    
+
+    # Secrets scanning - prefer gitleaks when available
     secrets:
+      <<: *security_checks
       name: "Scan for secrets"
-      parallel: true
       run: |
-        # Use gitleaks if available, otherwise basic pattern matching
         if command -v gitleaks >/dev/null 2>&1; then
           gitleaks protect --staged --verbose --redact
         else
-          files=$(git diff --cached --name-only --diff-filter=ACM)
-          found=0
-          
-          # Check for common secret patterns
-          patterns=(
-            'api[_-]?key.*=.*["'\''][a-zA-Z0-9]{20,}'
-            'AKIA[0-9A-Z]{16}'  # AWS keys
-            'ghp_[a-zA-Z0-9]{36}'  # GitHub tokens
-            'sk_live_[0-9a-zA-Z]{24,}'  # Stripe keys
-            '-----BEGIN.*PRIVATE KEY'
-          )
-          
-          for pattern in "${patterns[@]}"; do
-            if echo "$files" | xargs grep -l -E "$pattern" 2>/dev/null; then
-              echo "❌ Potential secret detected (pattern: $pattern)"
-              found=1
-            fi
-          done
-          
-          # Check for sensitive filenames
-          sensitive_files=".env .env.local credentials secrets.yml private.key id_rsa"
-          for sensitive in $sensitive_files; do
-            if echo "$files" | grep -q "$sensitive"; then
-              echo "❌ Sensitive file detected: $sensitive"
-              found=1
-            fi
-          done
-          
-          exit $found
+          # Fallback to pattern matching
+          patterns='(api[_-]?key|apikey|secret|token|password|passwd|pwd|auth|credential|private[_-]?key).*=.*["'"'"'][A-Za-z0-9+/]{20,}'
+          if grep -E "$patterns" {staged_files} 2>/dev/null; then
+            echo "Potential secrets detected"
+            exit 1
+          fi
+
+          # AWS keys
+          if grep -E 'AKIA[0-9A-Z]{16}' {staged_files} 2>/dev/null; then
+            echo "AWS key pattern detected"
+            exit 1
+          fi
+
+          # GitHub tokens
+          if grep -E 'ghp_[a-zA-Z0-9]{36}' {staged_files} 2>/dev/null; then
+            echo "GitHub token pattern detected"
+            exit 1
+          fi
         fi
       exclude:
         - "*.md"
@@ -354,83 +161,154 @@ pre-commit:
         - "package-lock.json"
         - "*_test.go"
       fail_text: "Secrets detected! Remove them or add to .gitleaks.toml if false positive"
-      
-    binaries:
-      name: "Check binaries"
+
+    # Binary and large file check
+    large-files:
+      name: "Check file sizes"
       run: |
-        # Check for large files and unexpected binaries
-        MAX_SIZE=5242880  # 5MB
-        files=$(git diff --cached --name-only --diff-filter=ACM)
-        found=0
-        
-        for file in $files; do
-          if [ -f "$file" ]; then
-            size=$(stat -f%z "$file" 2>/dev/null || stat -c%s "$file" 2>/dev/null || echo 0)
-            
-            # Check size
-            if [ "$size" -gt "$MAX_SIZE" ]; then
-              size_mb=$((size / 1048576))
-              echo "❌ Large file: $file (${size_mb}MB)"
-              found=1
-            fi
-            
-            # Check if binary (skip allowed extensions)
-            case "$file" in
-              *.png|*.jpg|*.jpeg|*.gif|*.svg|*.ico|*.woff|*.woff2|*.ttf|*.eot|*.pdf)
-                ;;
-              *)
-                if file "$file" 2>/dev/null | grep -q "binary\|executable"; then
-                  echo "❌ Unexpected binary: $file"
-                  found=1
-                fi
-                ;;
-            esac
+        for file in {staged_files}; do
+          size=$(stat -f%z "$file" 2>/dev/null || stat -c%s "$file" 2>/dev/null || echo 0)
+          if [ "$size" -gt 5242880 ]; then
+            echo "Large file detected: $file ($(($size / 1048576))MB)"
+            exit 1
           fi
         done
-        
-        exit $found
-      fail_text: "Binary files detected. Use Git LFS for large files or add to .gitignore"
-      
-    # ====================
-    # DDx-specific Checks
-    # ====================
-    
+      exclude:
+        - "*.png"
+        - "*.jpg"
+        - "*.jpeg"
+        - "*.gif"
+        - "*.svg"
+        - "*.ico"
+        - "*.pdf"
+        - "*.woff"
+        - "*.woff2"
+        - "*.ttf"
+        - "*.eot"
+      fail_text: "Large files detected. Use Git LFS for files over 5MB"
+
+    # DDx validation - only when relevant files change
     ddx-validate:
       name: "Validate DDx"
       run: |
-        # Only run if DDx files changed
-        if ! git diff --cached --name-only | grep -qE '(\.ddx\.yml|\.ddx/|templates/|patterns/|prompts/)'; then
+        # Only run if DDx files are staged
+        if ! git diff --cached --name-only | grep -qE '(\.ddx\.yml|templates/|patterns/|prompts/)'; then
           exit 0
         fi
-        
-        # Check if ddx command is available
+
+        # Check for DDx command availability
         if command -v ddx >/dev/null 2>&1; then
-          DDX_CMD="ddx"
+          ddx diagnose --quiet
         elif [ -x "./cli/ddx" ]; then
-          DDX_CMD="./cli/ddx"
-        elif [ -x "./ddx" ]; then
-          DDX_CMD="./ddx"
-        else
-          echo "⚠️  DDx command not found, skipping validation"
-          exit 0
+          ./cli/ddx diagnose --quiet
         fi
-        
-        # Validate configuration
-        echo "🔍 Validating DDx configuration..."
-        $DDX_CMD diagnose || true  # Don't fail on diagnose, just warn
-      glob: "**/*.{yml,yaml,md}"
       fail_text: "DDx validation failed. Run 'ddx diagnose' for details"
 
-# Optional: pre-push hooks
-pre-push:
+# ====================
+# CI/CD - Full validation (all files)
+# ====================
+ci:
+  parallel: true
+
   commands:
-    tests:
-      name: "Run full test suite"
+    # Full conflict check
+    conflicts-all:
+      name: "Check all merge conflicts"
       run: |
-        if [ -f "cli/go.mod" ]; then
-          cd cli && go test ./...
+        # Check for actual merge conflict markers (exactly 7 characters followed by space or newline)
+        conflicts=$(find . -type f ! -path "./.git/*" ! -path "./cli/.git/*" ! -name "lefthook.yml" \
+          -exec grep -l "^<<<<<<<[ \t]\|^=======\$\|^>>>>>>>[ \t]\|^||||||[ \t]" {} \; 2>/dev/null | head -1)
+        if [ -n "$conflicts" ]; then
+          echo "Merge conflict markers found in: $conflicts"
+          exit 1
         fi
 
-# Skip configuration via environment variables
-# Usage: LEFTHOOK_EXCLUDE=go-test,go-build git commit ...
-# Or: LEFTHOOK=0 git commit ... (skip all hooks)
+    # Full secrets scan
+    secrets-all:
+      <<: *security_checks
+      name: "Full secrets scan"
+      run: |
+        if command -v gitleaks >/dev/null 2>&1; then
+          gitleaks detect --verbose --redact
+        else
+          echo "Consider installing gitleaks for comprehensive secret scanning"
+        fi
+
+    # Go full test suite
+    go-test-all:
+      <<: *go_checks
+      name: "Full Go test suite"
+      root: "cli/"
+      run: 'go test -race -cover ./...'
+
+    # Go formatting check all files
+    go-fmt-all:
+      <<: *go_checks
+      name: "Check all Go formatting"
+      root: "cli/"
+      run: |
+        unformatted=$(gofmt -l .)
+        if [ -n "$unformatted" ]; then
+          echo "Unformatted files: $unformatted"
+          exit 1
+        fi
+
+    # Go lint all files
+    go-lint-all:
+      <<: *go_checks
+      name: "Lint all Go files"
+      root: "cli/"
+      run: |
+        if command -v golangci-lint >/dev/null 2>&1; then
+          golangci-lint run --timeout=5m
+        else
+          go vet ./...
+        fi
+
+    # Go build all targets
+    go-build-all:
+      <<: *go_checks
+      name: "Build all targets"
+      root: "cli/"
+      run: 'go build -v ./...'
+
+    # YAML validation
+    yaml-validate:
+      name: "Validate YAML files"
+      glob: "**/*.{yml,yaml}"
+      run: |
+        if command -v yq >/dev/null 2>&1; then
+          for file in {all_files}; do
+            yq eval . "$file" >/dev/null || exit 1
+          done
+        fi
+
+# ====================
+# Pre-push hooks - Extended validation
+# ====================
+pre-push:
+  parallel: false
+
+  commands:
+    # Run full test suite before push
+    full-tests:
+      name: "Full test suite"
+      root: "cli/"
+      run: 'go test -race -cover ./...'
+      tags: [go, test]
+
+    # Ensure no debug statements in any file
+    no-debug:
+      name: "No debug statements"
+      run: |
+        if command -v rg >/dev/null 2>&1; then
+          ! rg -q "(console\.log|fmt\.Print(?!ln)|pdb\.set_trace|debugger)" --type-add 'code:*.{go,js,jsx,ts,tsx,py}' -t code
+        fi
+
+# Skip configuration
+# Usage: LEFTHOOK_EXCLUDE=go-test,secrets git commit
+# Or: LEFTHOOK=0 git commit (skip all hooks)
+
+# Install hooks: lefthook install
+# Run manually: lefthook run pre-commit
+# Run CI checks: lefthook run ci
