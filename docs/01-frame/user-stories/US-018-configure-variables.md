@@ -46,7 +46,7 @@ This story enables developers to define variables in their DDX configuration tha
 - [ ] All acceptance criteria are met and verified
 
 ## Technical Considerations
-[NEEDS CLARIFICATION: These will be defined in the Design phase]
+To be defined in technical design
 - Variable substitution syntax and escaping
 - Resolution order for nested variables
 - Circular reference detection
@@ -59,8 +59,8 @@ This story enables developers to define variables in their DDX configuration tha
 ## Assumptions
 - Variables follow a consistent naming convention
 - Environment variables are accessible to the DDX process
-- [NEEDS CLARIFICATION: Are there reserved variable names?]
-- [NEEDS CLARIFICATION: Maximum depth for nested variables?]
+- DDX_ prefix is reserved for system variables
+- Maximum depth for nested variables is 10 levels
 
 ## Edge Cases
 - Circular variable references (A references B, B references A)

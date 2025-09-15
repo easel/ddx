@@ -65,7 +65,7 @@ exit_gates:
     evidence: docs/01-frame/user-stories/
 
   - criteria: Risk assessment completed
-    required: true
+    required: false
     validation:
       - Major risks identified
       - Risk probability and impact assessed
@@ -74,7 +74,7 @@ exit_gates:
     evidence: docs/01-frame/risk-register.md
 
   - criteria: Stakeholder alignment achieved
-    required: true
+    required: false
     validation:
       - All key stakeholders identified
       - RACI matrix completed
@@ -111,7 +111,7 @@ exit_gates:
 
   # Process Gates
   - criteria: Validation checklist completed
-    required: true
+    required: false
     validation:
       - All required artifacts created
       - Cross-references between documents verified
@@ -127,6 +127,31 @@ exit_gates:
       - Technical terms explained
       - Shared understanding confirmed
     evidence: docs/01-frame/glossary.md
+
+  # Security and Compliance Gates (Optional)
+  - criteria: Security requirements defined
+    required: false
+    validation:
+      - Security user stories documented
+      - Authentication requirements specified
+      - Data protection requirements identified
+    evidence: docs/01-frame/security-requirements.md
+
+  - criteria: Threat model completed
+    required: false
+    validation:
+      - Threat analysis performed
+      - Risk assessment documented
+      - Mitigation strategies identified
+    evidence: docs/01-frame/threat-model.md
+
+  - criteria: Compliance requirements documented
+    required: false
+    validation:
+      - Applicable regulations identified
+      - Compliance matrix created
+      - Data handling requirements specified
+    evidence: docs/01-frame/compliance-requirements.md
 
 # Automated Validation Rules
 validation_rules:

@@ -3,7 +3,7 @@
 **Document Type**: Feature Registry
 **Status**: Active
 **Last Updated**: 2025-01-14
-**Maintained By**: [NEEDS CLARIFICATION: Team/Person]
+**Maintained By**: Core Team
 
 ## Purpose
 
@@ -13,11 +13,11 @@ This registry tracks all features in the system, their status, dependencies, and
 
 | ID | Name | Description | Status | Priority | Owner | Created | Updated |
 |----|------|-------------|--------|----------|-------|---------|---------|
-| FEAT-001 | Core CLI Framework | Basic CLI structure with Cobra framework, implementing core commands (init, list, apply, update, contribute) | Designed | P0 | [NEEDS CLARIFICATION] | 2025-01-14 | 2025-01-14 |
-| FEAT-002 | Upstream Synchronization System | Enables pulling upstream updates while preserving local work, with conflict handling and contribution flow | Designed | P0 | [NEEDS CLARIFICATION] | 2025-01-14 | 2025-01-14 |
-| FEAT-003 | Configuration Management | YAML-based .ddx.yml configuration with variable substitution and environment-specific overrides | Designed | P0 | [NEEDS CLARIFICATION] | 2025-01-14 | 2025-01-14 |
-| FEAT-004 | Cross-Platform Installation | Single-command installer with automatic PATH configuration for macOS, Linux, and Windows | Designed | P0 | [NEEDS CLARIFICATION] | 2025-01-14 | 2025-01-14 |
-| FEAT-005 | Workflow Execution Engine with Observability | Comprehensive phase-based workflow execution engine with integrated state tracking, logging, and audit trails for complete visibility | Designed | P0 | [NEEDS CLARIFICATION] | 2025-01-14 | 2025-01-14 |
+| FEAT-001 | Core CLI Framework | Basic CLI structure with Cobra framework, implementing core commands (init, list, apply, update, contribute) | Designed | P0 | Core Team | 2025-01-14 | 2025-01-14 |
+| FEAT-002 | Upstream Synchronization System | Enables pulling upstream updates while preserving local work, with conflict handling and contribution flow | Designed | P0 | Core Team | 2025-01-14 | 2025-01-14 |
+| FEAT-003 | Configuration Management | YAML-based .ddx.yml configuration with variable substitution and environment-specific overrides | Designed | P0 | Core Team | 2025-01-14 | 2025-01-14 |
+| FEAT-004 | Cross-Platform Installation | Single-command installer with automatic PATH configuration for macOS, Linux, and Windows | Designed | P0 | Core Team | 2025-01-14 | 2025-01-14 |
+| FEAT-005 | Workflow Execution Engine with Observability | Comprehensive phase-based workflow execution engine with integrated state tracking, logging, and audit trails for complete visibility | Designed | P0 | Core Team | 2025-01-14 | 2025-01-14 |
 
 ## Feature Status Definitions
 

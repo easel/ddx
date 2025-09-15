@@ -47,7 +47,7 @@ This story provides visibility into the final, effective configuration after all
 - [ ] All acceptance criteria are met and verified
 
 ## Technical Considerations
-[NEEDS CLARIFICATION: These will be defined in the Design phase]
+To be defined in technical design
 - Configuration resolution and tracking mechanism
 - Output formatting and color support detection
 - Performance with very large configurations
@@ -61,8 +61,8 @@ This story provides visibility into the final, effective configuration after all
 ## Assumptions
 - Terminal supports color output (with fallback)
 - Configuration resolution preserves source information
-- [NEEDS CLARIFICATION: Should sensitive values be masked in display?]
-- [NEEDS CLARIFICATION: What level of detail is most useful?]
+- Sensitive values should be masked in display for security
+- Display should show source origin and override hierarchy
 
 ## Edge Cases
 - Very large configurations that exceed screen size

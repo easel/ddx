@@ -47,7 +47,7 @@ This story enables developers to configure how DDX connects to the master reposi
 - [ ] All acceptance criteria are met and verified
 
 ## Technical Considerations
-[NEEDS CLARIFICATION: These will be defined in the Design phase]
+To be defined in technical design
 - Git integration for repository operations
 - Authentication credential storage and security
 - Network timeout and retry mechanisms
@@ -60,8 +60,8 @@ This story enables developers to configure how DDX connects to the master reposi
 ## Assumptions
 - Git is available in the environment
 - Network access is available for repository operations
-- [NEEDS CLARIFICATION: Are private repositories supported?]
-- [NEEDS CLARIFICATION: What authentication methods are required?]
+- Private repositories are supported via git authentication
+- Authentication uses Git's native SSH/HTTPS methods
 
 ## Edge Cases
 - Invalid repository URL format

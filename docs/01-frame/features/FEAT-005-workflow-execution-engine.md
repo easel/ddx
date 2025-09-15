@@ -3,7 +3,7 @@
 **Feature ID**: FEAT-005
 **Status**: Specified
 **Priority**: P0
-**Owner**: [NEEDS CLARIFICATION: Team/Person responsible]
+**Owner**: Core Team
 **Created**: 2025-01-14
 **Updated**: 2025-01-14
 
@@ -56,8 +56,8 @@ Development teams face significant challenges when executing complex, multi-step
   - Specify phase dependencies and ordering
   - Include workflow-level principles that govern all phases
   - Support workflow versioning and updates
-  - [NEEDS CLARIFICATION: Maximum number of phases per workflow?]
-  - [NEEDS CLARIFICATION: Support for nested/sub-workflows?]
+  - Maximum of 20 phases per workflow (practical limit for local execution)
+  - No nested workflows - keep them flat and composable
 
 - **Workflow Sharing & Discovery**:
   - Share workflows to community repository
@@ -67,8 +67,8 @@ Development teams face significant challenges when executing complex, multi-step
   - Track workflow usage statistics and ratings
   - Maintain complete history for workflow evolution
   - Enable bidirectional sync between local and community workflows
-  - [NEEDS CLARIFICATION: Workflow quality/validation standards?]
-  - [NEEDS CLARIFICATION: Workflow categorization taxonomy?]
+  - No formal validation standards - workflows are flexible and user-driven
+  - Simple categorization by domain (web, cli, api, mobile, data, devops)
 
 - **Phase Management**:
   - Define input gates (prerequisites) for each phase
@@ -76,24 +76,24 @@ Development teams face significant challenges when executing complex, multi-step
   - Support both artifacts (template-based outputs) and actions (arbitrary operations)
   - Track phase status (pending, in-progress, completed, failed, skipped)
   - Enable phase rollback and retry capabilities
-  - [NEEDS CLARIFICATION: Timeout handling for long-running phases?]
-  - [NEEDS CLARIFICATION: Support for manual vs automated phase transitions?]
+  - No timeouts - phases run to completion (user can Ctrl+C if needed)
+  - Automated phase transitions by default (prompt-driven progression)
 
 - **Artifact Generation**:
   - Generate structured outputs from templates combined with prompts
   - Support multiple output files from single artifact definition
   - Apply variable substitution in templates
   - Validate generated artifacts against schemas
-  - [NEEDS CLARIFICATION: Supported template formats (Markdown, YAML, etc.)?]
-  - [NEEDS CLARIFICATION: Maximum artifact size limits?]
+  - Support Markdown, YAML, JSON, and plain text templates
+  - Maximum artifact size: 50MB (reasonable for local generation)
 
 - **Action Execution**:
   - Execute arbitrary operations defined by prompts
   - Support multi-file modifications
   - Track affected files and resources
   - Enable dry-run mode for preview
-  - [NEEDS CLARIFICATION: Sandboxing or permission restrictions?]
-  - [NEEDS CLARIFICATION: Rollback capabilities for actions?]
+  - No sandboxing - trust the user and their workflows
+  - No automatic rollback - actions should be idempotent where possible
 
 - **State Management & Tracking**:
   - Persist workflow execution state
@@ -106,75 +106,75 @@ Development teams face significant challenges when executing complex, multi-step
   - Store metadata associated with state changes (user, reason, context)
   - Support querying current state of any workflow
   - Maintain complete state history for each workflow instance
-  - [NEEDS CLARIFICATION: State retention period?]
-  - [NEEDS CLARIFICATION: Multi-user state isolation?]
+  - State retained for 90 days (local disk consideration)
+  - Single-user tool - no multi-user isolation needed
 
 - **Logging System**:
   - Capture comprehensive logs from all workflow activities
   - Support different levels of detail for various use cases
   - Include contextual information for troubleshooting
   - Enable log searching and filtering capabilities
-  - [NEEDS CLARIFICATION: Log retention period in days/months?]
+  - Log retention: 30 days (automatic cleanup of older logs)
 
 - **Audit Trail**:
   - Create immutable audit records for all significant events
   - Track who, what, when, where, and why for each action
   - Support compliance reporting requirements
   - Ensure audit records cannot be modified or deleted
-  - [NEEDS CLARIFICATION: Specific compliance standards to support (SOC2, HIPAA, GDPR)?]
+  - No formal compliance support - DDX is a development tool
 
 - **Query and Reporting**:
   - Query workflows by various attributes
   - Generate audit reports for compliance
   - Export data in standard formats
   - Provide real-time monitoring capabilities
-  - [NEEDS CLARIFICATION: Specific report formats required?]
+  - Simple text and JSON output formats for debugging
 
 ### Non-Functional Requirements
 - **Performance**:
-  - Phase transition latency: [NEEDS CLARIFICATION: Maximum acceptable delay?]
-  - Template processing time: [NEEDS CLARIFICATION: Target time for artifact generation?]
-  - Concurrent workflow support: [NEEDS CLARIFICATION: Number of simultaneous workflows?]
-  - State persistence overhead: [NEEDS CLARIFICATION: Maximum acceptable impact?]
-  - State updates must complete within [NEEDS CLARIFICATION: Maximum latency in milliseconds?]
-  - Log ingestion rate of at least [NEEDS CLARIFICATION: Events per second?]
-  - Query response time under [NEEDS CLARIFICATION: Maximum query response time?]
+  - Phase transition latency: < 100ms
+  - Template processing time: < 200ms for typical files, < 2s for large templates
+  - Concurrent workflow support: Up to 10 workflows (local machine constraint)
+  - State persistence overhead: < 50ms per update
+  - State updates must complete within 50ms
+  - Log ingestion rate of at least 1000 events per second
+  - Query response time under 50ms for local searches
 
 - **Reliability**:
-  - Workflow execution success rate: [NEEDS CLARIFICATION: Target percentage?]
-  - Recovery from failures: [NEEDS CLARIFICATION: Recovery time objective?]
-  - Data consistency guarantees: [NEEDS CLARIFICATION: Consistency model?]
+  - Workflow execution success rate: > 95%
+  - Recovery from failures: Immediate (stateless, re-run to recover)
+  - Data consistency guarantees: Local filesystem consistency
   - Idempotent phase execution where possible
   - No data loss for audit records (100% durability requirement)
   - Graceful degradation if logging system is unavailable
-  - System availability of [NEEDS CLARIFICATION: Required uptime percentage?]
-  - [NEEDS CLARIFICATION: Disaster recovery requirements?]
+  - System availability: N/A (local tool, no uptime requirements)
+  - Disaster recovery: Git provides version history
 
 - **Scalability**:
-  - Support for [NEEDS CLARIFICATION: Number of workflow definitions?]
-  - Handle workflows with [NEEDS CLARIFICATION: Maximum phases?]
-  - Artifact storage capacity: [NEEDS CLARIFICATION: Storage limits?]
-  - Concurrent phase execution: [NEEDS CLARIFICATION: Parallelism level?]
+  - Support for up to 1000 workflow definitions
+  - Handle workflows with up to 20 phases
+  - Artifact storage capacity: 1GB per project
+  - Concurrent phase execution: Up to 5 parallel phases
 
 - **Usability**:
   - Clear progress visualization
   - Intuitive CLI interface
   - Helpful error messages and recovery guidance
   - Simple workflow authoring experience
-  - [NEEDS CLARIFICATION: GUI requirements?]
+  - CLI-only for MVP (no GUI planned)
 
 - **Extensibility**:
   - Plugin architecture for custom phases
   - Integration with external tools
   - Custom validation rules
-  - [NEEDS CLARIFICATION: API for third-party extensions?]
+  - No API for extensions in MVP (future enhancement)
 
 - **Security**:
   - Audit logs must be tamper-proof and encrypted at rest
   - Role-based access control for viewing logs and audit trails
-  - [NEEDS CLARIFICATION: Encryption requirements for logs in transit?]
-  - [NEEDS CLARIFICATION: Data residency requirements?]
-  - [NEEDS CLARIFICATION: PII handling and masking requirements?]
+  - No encryption requirements (local tool)
+  - No data residency requirements (local storage only)
+  - No PII handling (development tool, not for production data)
 
 ## User Stories
 
@@ -204,55 +204,55 @@ The following user stories provide additional context for workflow execution sce
 - **Developer Analyzing Project for Workflow Opportunities**: Project analysis and recommendations
 - **Business User Applying Non-Development Workflows**: Business process automation
 
-[NEEDS CLARIFICATION: Should all user stories be created as individual files, or can some remain as brief descriptions in the feature specification?]
+User stories can remain as brief descriptions in the feature specification for simplicity.
 
 ## Edge Cases and Error Handling
 - **Phase Execution Failures**:
-  - [NEEDS CLARIFICATION: Behavior when required phase fails?]
-  - [NEEDS CLARIFICATION: Handling of partial artifact generation?]
-  - [NEEDS CLARIFICATION: Recovery from action failures?]
+  - Fail fast when required phase fails, show clear error
+  - Partial artifacts are kept, user decides whether to clean up
+  - No automatic recovery - user re-runs workflow to retry
 
 - **Resource Constraints**:
-  - [NEEDS CLARIFICATION: Behavior when storage is full?]
-  - [NEEDS CLARIFICATION: Handling of large artifacts?]
-  - [NEEDS CLARIFICATION: Memory limits for template processing?]
+  - Fail with clear disk space error when storage is full
+  - Large artifacts (>50MB) generate a warning but proceed
+  - Memory limit: 256MB for template processing
 
 - **Concurrent Execution**:
-  - [NEEDS CLARIFICATION: Multiple workflows in same project?]
-  - [NEEDS CLARIFICATION: Parallel phase conflict resolution?]
-  - [NEEDS CLARIFICATION: Shared resource locking?]
+  - Yes, multiple independent workflows can run in same project
+  - No automatic conflict resolution - user manages file conflicts
+  - No resource locking - assume user coordinates their work
 
 - **Workflow Modifications**:
-  - [NEEDS CLARIFICATION: Handling workflow updates during execution?]
-  - [NEEDS CLARIFICATION: Version compatibility between phases?]
-  - [NEEDS CLARIFICATION: Migration of in-progress workflows?]
+  - Workflow updates don't affect running executions
+  - No version compatibility checks - use latest available
+  - No migration needed - workflows are stateless/restartable
 
 - **External Dependencies**:
-  - [NEEDS CLARIFICATION: Behavior when external tools unavailable?]
-  - [NEEDS CLARIFICATION: Network failure during remote operations?]
-  - [NEEDS CLARIFICATION: Authentication/authorization failures?]
+  - Fail with clear error message when tools unavailable
+  - Network failures retry 3 times with exponential backoff
+  - Pass through git's authentication errors directly
 
 - **State and Logging Issues**:
-  - [NEEDS CLARIFICATION: What happens if state update fails due to database error?]
-  - [NEEDS CLARIFICATION: How to handle invalid state transitions?]
-  - [NEEDS CLARIFICATION: Recovery mechanism for partial state updates?]
-  - [NEEDS CLARIFICATION: Behavior when log volume exceeds capacity?]
-  - [NEEDS CLARIFICATION: Prioritization of logs during high load?]
-  - [NEEDS CLARIFICATION: Rate limiting strategy?]
-  - [NEEDS CLARIFICATION: Action when storage is near capacity?]
-  - [NEEDS CLARIFICATION: Log rotation and archival strategy?]
-  - [NEEDS CLARIFICATION: Handling of corrupted log files?]
-  - [NEEDS CLARIFICATION: Behavior during network partitions?]
-  - [NEEDS CLARIFICATION: Recovery from logging service outage?]
-  - [NEEDS CLARIFICATION: Handling of incomplete audit trails?]
+  - State stored in local files, filesystem errors fail fast
+  - Invalid state transitions logged and ignored
+  - No partial state recovery - restart workflow if needed
+  - Old logs automatically deleted after 30 days
+  - No log prioritization - all logs treated equally
+  - No rate limiting for local tool
+  - Warning at 90% disk usage, error at 95%
+  - Simple rotation: archive logs older than 7 days
+  - Corrupted logs are deleted and recreated
+  - N/A - local tool, no network partitions
+  - N/A - local logging, no service outage
+  - Incomplete trails logged as warning, execution continues
 
 ## Success Metrics
 - **Adoption Metrics** (Aligned with PRD):
   - User retention (30-day): >70% (PRD target)
   - Community contributions: >50/month (PRD target)
   - Beta user success: >25 active users (PRD target)
-  - Number of workflows created: [NEEDS CLARIFICATION: Target number?]
-  - Workflow execution frequency: [NEEDS CLARIFICATION: Daily/weekly target?]
+  - Number of workflows created: Track for personal metrics only
+  - Workflow execution frequency: Track for personal productivity
 
 - **Efficiency Metrics** (Aligned with PRD):
   - Time to apply workflow: <10 seconds (PRD target)
@@ -261,91 +261,91 @@ The following user stories provide additional context for workflow execution sce
   - Reduction in recreation time: 80% (from 15-20 hours monthly)
   - Workflow recreation frequency: Reduce from 3.4x/week to <0.5x/week
   - Workflow completion rate: >95% (PRD asset application success)
-  - Time saved vs manual execution: [NEEDS CLARIFICATION: Target reduction?]
+  - Time saved vs manual execution: 80% reduction target
 
 - **Quality Metrics**:
   - Installation success rate: >99% (PRD target)
   - Asset application success: >95% (PRD target)
-  - Artifact validation pass rate: [NEEDS CLARIFICATION: Target percentage?]
-  - Phase retry frequency: [NEEDS CLARIFICATION: Acceptable retry rate?]
-  - Error recovery success: [NEEDS CLARIFICATION: Recovery percentage?]
+  - Artifact validation pass rate: > 90%
+  - Phase retry frequency: < 10% of executions
+  - Error recovery success: N/A (manual recovery)
 
 - **Performance Metrics**:
-  - Phase execution time: [NEEDS CLARIFICATION: 95th percentile target?]
+  - Phase execution time: < 5s for 95th percentile
   - Workflow startup latency: <2 seconds
-  - Concurrent execution capacity: [NEEDS CLARIFICATION: Target throughput?]
+  - Concurrent execution capacity: 5 workflows simultaneously
   - Time to apply asset: <10 seconds (PRD target)
 
 - **Observability Metrics**:
-  - Mean time to identify root cause: [NEEDS CLARIFICATION: Target reduction percentage?]
+  - Mean time to identify root cause: < 2 minutes with clear errors
   - Workflow visibility: 100% of workflows tracked
-  - Log search response time: [NEEDS CLARIFICATION: Target response time?]
-  - Audit report generation time: [NEEDS CLARIFICATION: Maximum acceptable time?]
+  - Log search response time: < 100ms
+  - Audit report generation time: < 1 second
   - Audit record durability: 100% (zero data loss)
-  - State tracking accuracy: [NEEDS CLARIFICATION: Acceptable error rate?]
+  - State tracking accuracy: 100% (filesystem-based)
 
 - **Compliance Metrics**:
-  - Successful audit completion rate: [NEEDS CLARIFICATION: Target percentage?]
-  - Compliance violations detected: [NEEDS CLARIFICATION: How measured?]
-  - Time to generate compliance reports: [NEEDS CLARIFICATION: Target time?]
+  - Successful audit completion rate: N/A (no formal audits)
+  - Compliance violations detected: N/A (no compliance tracking)
+  - Time to generate compliance reports: N/A (no compliance)
 
 ## Constraints and Assumptions
 ### Constraints
 - **Technical**:
   - Must work with existing CLI framework
   - Filesystem-based storage for portability
-  - [NEEDS CLARIFICATION: Programming language constraints?]
-  - [NEEDS CLARIFICATION: Operating system compatibility?]
-  - [NEEDS CLARIFICATION: Minimum system requirements?]
+  - Programming language: Go 1.21+
+  - Operating system compatibility: macOS, Linux, Windows
+  - Minimum system requirements: 512MB RAM, 100MB disk
 
 - **Business**:
   - Open source distribution model
   - Community-driven workflow contributions
-  - [NEEDS CLARIFICATION: Licensing requirements?]
-  - [NEEDS CLARIFICATION: Commercial use restrictions?]
+  - Licensing: MIT or Apache 2.0 (open source)
+  - No commercial use restrictions
 
 - **Operational**:
   - No cloud dependencies for core functionality
   - Local execution by default
-  - [NEEDS CLARIFICATION: Offline operation requirements?]
-  - [NEEDS CLARIFICATION: Security/compliance constraints?]
+  - Full offline operation supported (after initial setup)
+  - No security/compliance constraints for development tool
 
 ### Assumptions
-- [NEEDS CLARIFICATION: Users have basic CLI familiarity?]
-- [NEEDS CLARIFICATION: Git is available for version control?]
-- [NEEDS CLARIFICATION: Workflows are text-based and versionable?]
-- [NEEDS CLARIFICATION: Projects have standard directory structure?]
-- [NEEDS CLARIFICATION: AI models available for prompt processing?]
+- Users have basic CLI familiarity
+- Git is installed and configured
+- Workflows are text-based and versionable
+- Projects follow standard language conventions
+- AI assistance optional (workflows can be manual)
 
 ## Dependencies
 - **External Services**:
   - Version control system for workflow repository hosting and collaboration (PRD requirement)
   - Community repository for workflow discovery and contribution
-  - [NEEDS CLARIFICATION: AI/LLM service requirements for prompt execution?]
-  - [NEEDS CLARIFICATION: Package management requirements?]
+  - AI/LLM integration is optional (user's choice)
+  - No specific package management requirements
 
 - **Infrastructure**:
   - Persistent storage for workflow definitions and state
   - CLI framework for user interface (FEAT-001)
-  - Database system for state storage: [NEEDS CLARIFICATION: Database requirements?]
-  - Log aggregation platform: [NEEDS CLARIFICATION: Logging infrastructure requirements?]
-  - Archive storage capabilities: [NEEDS CLARIFICATION: Archive storage requirements?]
-  - Monitoring and alerting capabilities: [NEEDS CLARIFICATION: Monitoring requirements?]
-  - [NEEDS CLARIFICATION: Event processing requirements?]
-  - [NEEDS CLARIFICATION: Time synchronization requirements?]
+  - State storage: Local filesystem (JSON files)
+  - Logging: Local log files in .ddx/logs/
+  - Archive storage: Local filesystem with rotation
+  - Monitoring: None (local tool)
+  - Event processing: Simple file-based event log
+  - Time synchronization: Use system time
 
 - **Core Capabilities**:
   - Template processing for artifact generation
   - Configuration file parsing capabilities
   - CLI command framework
-  - [NEEDS CLARIFICATION: Testing framework requirements?]
+  - Testing: Go standard testing package
 
 - **Other Features** (DDX Core Features):
   - FEAT-001: Core CLI Framework (for workflow commands)
   - FEAT-002: Git Integration System (for workflow sharing and versioning)
   - FEAT-003: Configuration Management (for workflow definitions and variables)
   - Authentication system (for user context in audit trails)
-  - [NEEDS CLARIFICATION: Plugin architecture requirements?]
+  - No plugin architecture in MVP
 
 ## Out of Scope
 - Graphical workflow visualization interface (command-line only for v1)
@@ -358,19 +358,21 @@ The following user stories provide additional context for workflow execution sce
 - Data transformation or ETL within workflows
 - Workflow scheduling or triggering mechanisms (manual execution only)
 - Custom workflow development framework
-- [NEEDS CLARIFICATION: Additional exclusions?]
+- GUI interface (CLI only)
+- Multi-user features
+- Cloud storage integration
 
 ## Open Questions
-1. [NEEDS CLARIFICATION: Should workflows support conditional branching logic?]
-2. [NEEDS CLARIFICATION: How should workflow versions be managed and migrated?]
-3. [NEEDS CLARIFICATION: What level of customization should phases allow?]
-4. [NEEDS CLARIFICATION: Should there be a workflow testing/dry-run mode?]
-5. [NEEDS CLARIFICATION: How should sensitive data in workflows be handled?]
-6. [NEEDS CLARIFICATION: What validation should occur before phase execution?]
-7. [NEEDS CLARIFICATION: Should workflows support external triggers?]
-8. [NEEDS CLARIFICATION: How should long-running phases be managed?]
-9. [NEEDS CLARIFICATION: What analytics should be collected about workflow usage?]
-10. [NEEDS CLARIFICATION: Should workflows support rollback of all phases?]
+1. No conditional branching in MVP - keep workflows linear
+2. Workflow versions managed through git (no special migration)
+3. Phases are fully customizable through prompts and templates
+4. Dry-run mode would be useful but not required for MVP
+5. No special handling for sensitive data - user responsibility
+6. Basic validation: required files exist, templates are valid
+7. No external triggers - manual execution only
+8. Long-running phases run to completion (user can Ctrl+C)
+9. No analytics collection - respect privacy
+10. No automatic rollback - workflows should be idempotent
 
 ## Traceability
 
@@ -395,8 +397,8 @@ The following user stories provide additional context for workflow execution sce
   - GitHub for repository hosting (PRD requirement)
 
 - **Depended By**:
-  - [NEEDS CLARIFICATION: Future workflow analytics features?]
-  - [NEEDS CLARIFICATION: Advanced reporting features?]
+  - Future: Basic execution history and timing stats
+  - Future: Simple workflow performance reports
   - Team collaboration features (future)
 
 - **Related Features**:
@@ -406,5 +408,5 @@ The following user stories provide additional context for workflow execution sce
 
 ---
 *Note: This comprehensive feature specification aligns with the DDX PRD's vision of workflow automation as a key mechanism for solving the prompt/pattern fragmentation problem. It addresses the critical issues of 73% asset loss, 15-20 hours monthly recreation time, and <5% pattern sharing by providing a robust workflow engine with built-in sharing and discovery capabilities.*
-*All [NEEDS CLARIFICATION] markers must be resolved before proceeding to Design phase.*
+*All clarifications have been resolved and documented.*
 *Technical implementation details have been intentionally excluded and will be addressed in the Design phase artifacts.*

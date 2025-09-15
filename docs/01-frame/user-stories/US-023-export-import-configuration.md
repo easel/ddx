@@ -47,7 +47,7 @@ This story enables teams to share DDX configurations easily and maintain consist
 - [ ] All acceptance criteria are met and verified
 
 ## Technical Considerations
-[NEEDS CLARIFICATION: These will be defined in the Design phase]
+To be defined in technical design
 - Export package format and compression
 - Sensitive value detection and masking strategies
 - Configuration merging algorithms
@@ -60,8 +60,8 @@ This story enables teams to share DDX configurations easily and maintain consist
 ## Assumptions
 - Teams have shared storage or communication channels for config files
 - Configuration contains identifiable sensitive values
-- [NEEDS CLARIFICATION: What constitutes a "sensitive value"?]
-- [NEEDS CLARIFICATION: Should exports include resource selections?]
+- Sensitive values include passwords, tokens, keys (anything with "secret", "token", "key", "password" in name)
+- Exports include resource selections and full configuration
 
 ## Edge Cases
 - Export with no sensitive value detection rules

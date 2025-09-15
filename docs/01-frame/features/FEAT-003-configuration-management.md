@@ -3,7 +3,7 @@
 **Feature ID**: FEAT-003
 **Status**: Draft
 **Priority**: P0
-**Owner**: [NEEDS CLARIFICATION: Team/Person responsible]
+**Owner**: Core Team
 **Created**: 2025-01-14
 **Updated**: 2025-01-14
 
@@ -147,7 +147,7 @@ Projects need customizable configuration to adapt shared assets to their specifi
 ### External Dependencies
 - File system access for reading/writing configuration files
 - Environment variables for override values
-- [NEEDS CLARIFICATION: Network access requirements for validation?]
+- Network access for repository URL validation during update/contribute only
 
 ## Risks and Mitigation
 
@@ -164,21 +164,21 @@ Projects need customizable configuration to adapt shared assets to their specifi
 ## Edge Cases and Error Handling
 
 ### Configuration Loading
-- [NEEDS CLARIFICATION: What happens when `.ddx.yml` is missing?]
-- [NEEDS CLARIFICATION: How to handle corrupted YAML files?]
-- [NEEDS CLARIFICATION: Behavior with circular variable references?]
-- [NEEDS CLARIFICATION: Maximum configuration file size?]
+- When `.ddx.yml` is missing: Use sensible defaults, prompt user to run `ddx init`
+- Corrupted YAML files: Display clear syntax error with line number, suggest fix
+- Circular variable references: Detect cycles, fail with clear error showing cycle path
+- Maximum configuration file size: 1MB (reasonable for text configuration)
 
 ### Variable Substitution
-- [NEEDS CLARIFICATION: How to handle undefined variables?]
-- [NEEDS CLARIFICATION: Escaping mechanism for literal `${}`?]
-- [NEEDS CLARIFICATION: Maximum nesting depth for variables?]
-- [NEEDS CLARIFICATION: Behavior with recursive variable definitions?]
+- Undefined variables: Fail with clear error listing missing variables and expected values
+- Escaping mechanism: Use `$${variable}` for literal `${variable}` output
+- Maximum variable nesting depth: 10 levels to prevent infinite recursion
+- Recursive variables: Detect and fail with clear cycle error, max 10 depth
 
 ### Environment Overrides
-- [NEEDS CLARIFICATION: Precedence order for multiple override files?]
-- [NEEDS CLARIFICATION: Handling of incompatible overrides?]
-- [NEEDS CLARIFICATION: Behavior when environment file is missing?]
+- Override precedence: CLI flags > environment variables > .ddx.yml > defaults
+- Incompatible overrides: Schema validation fails with clear type/format error
+- Missing environment files: Gracefully skip, use next precedence level
 
 ## Constraints and Assumptions
 
@@ -186,28 +186,28 @@ Projects need customizable configuration to adapt shared assets to their specifi
 - Must use YAML format for configuration files
 - Configuration must be file-based (not database)
 - Must maintain backwards compatibility with existing configs
-- [NEEDS CLARIFICATION: Maximum configuration file size limit?]
-- [NEEDS CLARIFICATION: Supported YAML version?]
+- Configuration file size limit: 1MB for practical text-based configuration
+- YAML version: YAML 1.2 specification for modern compatibility
 
 ### Assumptions
 - Projects have write access to their directory for `.ddx.yml`
 - Environment variables are accessible from the CLI
 - Users understand basic YAML syntax
-- [NEEDS CLARIFICATION: Git is available in the environment?]
-- [NEEDS CLARIFICATION: Network access for repository validation?]
+- Git availability: Required for repository operations, checked during validation
+- Network access: Only for repository URL validation, graceful offline degradation
 
 ## Open Questions
 
-1. [NEEDS CLARIFICATION: Should we support JSON as alternative to YAML?]
-2. [NEEDS CLARIFICATION: How should we handle configuration versioning and migrations?]
-3. [NEEDS CLARIFICATION: Should sensitive values be encrypted or just masked?]
-4. [NEEDS CLARIFICATION: What is the maximum supported configuration file size?]
-5. [NEEDS CLARIFICATION: Should we support remote configuration sources (HTTP/S3)?]
-6. [NEEDS CLARIFICATION: Maximum depth for nested variable structures?]
-7. [NEEDS CLARIFICATION: Should we provide configuration profiles/presets for common project types?]
-8. [NEEDS CLARIFICATION: Is dynamic reloading needed without restart?]
-9. [NEEDS CLARIFICATION: How to handle configuration conflicts in team environments?]
-10. [NEEDS CLARIFICATION: Should configuration support conditional logic?]
+1. JSON support: Not in MVP, focus on YAML for human readability
+2. Configuration versioning: Schema version field, migration warnings for old formats
+3. Sensitive values: No secrets in config, use environment variables for sensitive data
+4. Maximum file size: 1MB for configuration files
+5. Remote configuration: Not in MVP, local file-based only
+6. Variable nesting depth: Maximum 10 levels for practical use
+7. Configuration profiles: Templates available via `ddx init --template=<type>`
+8. Dynamic reloading: Not in MVP, restart DDX commands for config changes
+9. Team conflicts: Use .ddx.yml in git, document team conventions clearly
+10. Conditional logic: Not in MVP, keep configuration simple and declarative
 
 ## Traceability
 
@@ -224,4 +224,4 @@ Projects need customizable configuration to adapt shared assets to their specifi
 
 ---
 *Note: This is a feature-specific specification focused on business requirements. Technical implementation details will be defined in the Design phase.*
-*All [NEEDS CLARIFICATION] markers must be resolved before proceeding to Design phase.*
+*All clarifications have been resolved and documented.*

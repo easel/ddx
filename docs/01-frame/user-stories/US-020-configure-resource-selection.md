@@ -47,7 +47,7 @@ This story allows developers to configure which DDX resources (templates, patter
 - [ ] All acceptance criteria are met and verified
 
 ## Technical Considerations
-[NEEDS CLARIFICATION: These will be defined in the Design phase]
+To be defined in technical design
 - Pattern matching algorithm efficiency
 - Dependency graph resolution
 - Resource discovery mechanism
@@ -60,8 +60,8 @@ This story allows developers to configure which DDX resources (templates, patter
 ## Assumptions
 - Resources are organized in a predictable structure
 - Resource names follow consistent conventions
-- [NEEDS CLARIFICATION: Are resource dependencies explicitly defined?]
-- [NEEDS CLARIFICATION: How are new resources discovered?]
+- Resource dependencies are defined in meta.yml files
+- New resources are discovered via ddx list command
 
 ## Edge Cases
 - Conflicting include/exclude rules

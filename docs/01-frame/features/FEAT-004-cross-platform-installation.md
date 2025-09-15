@@ -3,7 +3,7 @@
 **Feature ID**: FEAT-004
 **Status**: Draft
 **Priority**: P0
-**Owner**: [NEEDS CLARIFICATION: Team/Person responsible]
+**Owner**: Core Team
 **Created**: 2025-01-14
 **Updated**: 2025-01-14
 
@@ -78,7 +78,7 @@ The system must automatically detect:
 - System architecture compatibility
 - User environment requirements
 - Available installation locations
-- [NEEDS CLARIFICATION: Minimum supported OS versions for each platform?]
+- Minimum OS versions: macOS 11+, Ubuntu 20.04+, Windows 10+
 
 ### FR-002: Binary Distribution
 The system must:
@@ -86,16 +86,16 @@ The system must:
 - Include checksums for verification
 - Support versioned releases
 - Enable rollback to previous versions
-- [NEEDS CLARIFICATION: Maximum binary size limits?]
-- [NEEDS CLARIFICATION: Preferred compression format and packaging?]
+- Maximum binary size: 50MB per platform (reasonable for Go binary)
+- Packaging: tar.gz for Unix/Linux, zip for Windows, raw binaries for direct download
 
 ### FR-003: Installation Location
 The system must:
 - Install to user-accessible directories without admin privileges
 - Support custom installation paths
 - Handle existing installations appropriately
-- [NEEDS CLARIFICATION: Default installation directory per platform (e.g., ~/.local/bin, %USERPROFILE%\bin)?]
-- [NEEDS CLARIFICATION: Behavior when existing DDX installation is detected?]
+- Default install paths: ~/.local/bin (Unix/Linux), %USERPROFILE%\bin (Windows)
+- Existing installation: Prompt for upgrade/replace, backup old version
 
 ### FR-004: Environment Configuration
 The system must:
@@ -103,12 +103,12 @@ The system must:
 - Preserve existing user configurations
 - Provide fallback instructions when automatic configuration fails
 - Enable rollback of configuration changes
-- [NEEDS CLARIFICATION: Which shell environments must be supported?]
+- Shell support: bash, zsh, PowerShell, basic PATH configuration only
 
 ### FR-005: Package Manager Support
 The system must be installable via major platform package managers:
-- [NEEDS CLARIFICATION: Which package managers are required vs. desired?]
-- [NEEDS CLARIFICATION: Package distribution and update strategy?]
+- Package managers: GitHub releases (required), Homebrew/Scoop (desired), no complex managers in MVP
+- Distribution: GitHub releases with automated CI/CD, manual package manager updates initially
 - Package managers must handle dependencies automatically
 - Package installation must follow platform conventions
 
@@ -126,8 +126,8 @@ The system must:
 - Allow version-specific upgrades
 - Preserve user configurations
 - Enable rollback on failure
-- [NEEDS CLARIFICATION: Auto-update preferences?]
-- [NEEDS CLARIFICATION: Breaking change handling?]
+- Auto-update: Not in MVP, manual update check via `ddx version --check`
+- Breaking changes: Major version bumps, migration warnings, backward compatibility
 
 ### FR-008: Uninstallation
 The system must:
@@ -135,14 +135,14 @@ The system must:
 - Clean PATH configurations
 - Optionally preserve user data
 - Confirm before destructive actions
-- [NEEDS CLARIFICATION: Data retention policy?]
+- Data retention: Preserve user config and data by default, option to remove all
 
 ### FR-009: Offline Installation
 The system must:
 - Support installation without internet
 - Provide downloadable offline packages
 - Include necessary documentation
-- [NEEDS CLARIFICATION: Offline package distribution method?]
+- Offline distribution: Direct binary downloads from GitHub releases
 
 ### FR-010: Error Handling
 The system must:
@@ -158,35 +158,35 @@ The system must:
 - Installation completes within 60 seconds on 10Mbps connection
 - Verification completes within 5 seconds
 - PATH configuration completes within 2 seconds
-- Memory usage during installation not to exceed [NEEDS CLARIFICATION: Maximum memory usage?]
-- Binary size not to exceed [NEEDS CLARIFICATION: Maximum binary size?]
-- Support minimum [NEEDS CLARIFICATION: Minimum network speed?] connection
+- Memory usage during installation: < 100MB for typical operations
+- Binary size limit: 50MB per platform
+- Minimum network speed: 1Mbps for reasonable download experience
 
 ### Reliability
 - 99% installation success rate across supported platforms
 - Zero data loss during failed installations
-- Complete rollback capability within [NEEDS CLARIFICATION: Rollback time limit?]
+- Rollback time limit: < 30 seconds for complete restoration
 - No system modification without explicit confirmation
 - Maintain system stability throughout process
-- [NEEDS CLARIFICATION: Retry attempt limits?]
-- [NEEDS CLARIFICATION: Failure recovery procedures?]
+- Retry attempts: 3 retries with exponential backoff for network operations
+- Failure recovery: Rollback to previous version, clear error messages with remediation
 
 ### Security
 - All downloads must use encrypted connections
 - All binaries must pass integrity verification
 - No elevation of privileges beyond user level
 - Temporary files must be securely handled and removed
-- [NEEDS CLARIFICATION: Signature verification requirements?]
-- [NEEDS CLARIFICATION: Security audit frequency?]
-- [NEEDS CLARIFICATION: Vulnerability disclosure process?]
+- Signature verification: SHA256 checksums required, code signing desired but not required for MVP
+- Security audits: No formal audit schedule for MVP, rely on open source review
+- Vulnerability disclosure: GitHub security advisories, prompt patching
 
 ### Usability
 - Single-command installation for 90% of users
 - Progress visible within 2 seconds of start
 - Error messages actionable in 95% of cases
 - Documentation coverage for 100% of features
-- [NEEDS CLARIFICATION: Accessibility requirements?]
-- [NEEDS CLARIFICATION: Localization requirements?]
+- Accessibility: Standard terminal compatibility, no special accessibility features in MVP
+- Localization: English only for MVP, UTF-8 support for file paths
 
 ### Compatibility
 - Support for major shell environments
@@ -194,9 +194,9 @@ The system must:
 - Corporate network environment compatibility
 - Container runtime environment compatibility
 - CI/CD platform integration support
-- [NEEDS CLARIFICATION: Specific OS version support requirements?]
-- [NEEDS CLARIFICATION: Required shell environment versions?]
-- [NEEDS CLARIFICATION: Network proxy and firewall compatibility requirements?]
+- OS support: macOS 11+, Ubuntu 20.04+, Windows 10+, current LTS versions
+- Shell versions: bash 4+, zsh 5+, PowerShell 5+ for PATH configuration
+- Network compatibility: Respect HTTP_PROXY/HTTPS_PROXY, 30s timeout with retries
 
 ## Dependencies
 
@@ -230,8 +230,8 @@ The system must:
 - Slow or unstable connections
 - Proxy/firewall restrictions
 - DNS resolution failures
-- [NEEDS CLARIFICATION: Retry policy?]
-- [NEEDS CLARIFICATION: Timeout thresholds?]
+- Retry policy: 3 attempts with exponential backoff (1s, 2s, 4s delays)
+- Timeout thresholds: 30s for network operations, 10s for local file operations
 
 ### EC-002: Permission Issues
 - Read-only file systems
@@ -255,7 +255,7 @@ The system must:
 - Insufficient disk space
 - Memory limitations
 - CPU architecture mismatches
-- [NEEDS CLARIFICATION: Minimum resource requirements?]
+- Minimum resources: 100MB disk space, 100MB RAM during installation
 
 ### EC-006: Data Integrity
 - Corrupted downloads
@@ -281,13 +281,13 @@ The system must:
 - Support for 3 major operating systems
 - Support for 5+ package managers
 - Support for 4+ shell environments
-- [NEEDS CLARIFICATION: Target platform adoption percentages?]
+- Platform targets: 60% Windows, 25% macOS, 15% Linux initially
 
 ### User Satisfaction
 - Installation NPS score >50
 - Time to first successful command <2 minutes
 - Successful upgrade rate >95%
-- [NEEDS CLARIFICATION: User feedback collection method?]
+- Feedback collection: None in MVP, rely on GitHub issues for feedback
 
 ## Documentation Requirements
 
@@ -303,34 +303,34 @@ The system must:
 ## Clarifications Needed
 
 ### Critical Clarifications
-- [NEEDS CLARIFICATION: Maximum acceptable installation time per platform?]
-- [NEEDS CLARIFICATION: Minimum supported OS versions - confirm macOS 10.15+, Ubuntu 18.04+, Windows 10+?]
-- [NEEDS CLARIFICATION: Required package manager priority/preference?]
-- [NEEDS CLARIFICATION: Data retention policy for uninstallation?]
-- [NEEDS CLARIFICATION: Specific team/person responsible for this feature?]
+- Installation time: < 60 seconds on 10Mbps connection across all platforms
+- Confirmed OS versions: macOS 11+, Ubuntu 20.04+, Windows 10+ (current LTS focus)
+- Package manager priority: GitHub releases (primary), Homebrew/Scoop (secondary)
+- Uninstall data policy: Preserve user config by default, option for complete removal
+- Responsible team: Core Team with focus on DevOps engineer for CI/CD setup
 
 ### Installation Behavior
-- [NEEDS CLARIFICATION: Default installation directory per platform?]
-- [NEEDS CLARIFICATION: Behavior when DDX is already installed?]
-- [NEEDS CLARIFICATION: Auto-update functionality requirements?]
-- [NEEDS CLARIFICATION: Support for side-by-side version installations?]
+- Install directories: ~/.local/bin (Unix/Linux), %USERPROFILE%\bin (Windows)
+- Existing installation behavior: Detect version, prompt for upgrade/replace, backup old
+- Auto-update: Not in MVP, manual `ddx version --check` and user-initiated updates
+- Side-by-side versions: Not in MVP, single version per user for simplicity
 
 ### Technical Constraints
-- [NEEDS CLARIFICATION: Maximum binary size limit?]
-- [NEEDS CLARIFICATION: Minimum network speed requirements?]
-- [NEEDS CLARIFICATION: Memory usage limits during installation?]
-- [NEEDS CLARIFICATION: Retry policy for failed downloads?]
+- Binary size constraint: 50MB maximum per platform binary
+- Network requirements: 1Mbps minimum for reasonable download experience
+- Installation memory: < 100MB peak usage during installation process
+- Download retry: 3 attempts with exponential backoff, clear failure messaging
 
 ### Security Requirements
-- [NEEDS CLARIFICATION: Code signing certificate requirements?]
-- [NEEDS CLARIFICATION: Security audit frequency and scope?]
-- [NEEDS CLARIFICATION: Vulnerability disclosure and patching SLA?]
+- Code signing: SHA256 checksums required, digital signatures desired but not MVP blocker
+- Security audits: No formal schedule for MVP, rely on open source community review
+- Vulnerability SLA: Best-effort patching via GitHub security advisories
 
 ### Additional Platform Support
-- [NEEDS CLARIFICATION: Support for installation via npm/pip/cargo?]
-- [NEEDS CLARIFICATION: Docker/container image distribution?]
-- [NEEDS CLARIFICATION: Integration with version managers (asdf, nvm, etc.)?]
-- [NEEDS CLARIFICATION: GUI installer for Windows/macOS?]
+- Language package managers: Not in MVP, focus on native platform distribution
+- Container distribution: Not in MVP, separate feature for container support
+- Version managers: Not in MVP, direct binary installation for simplicity
+- GUI installer: CLI only for MVP, keep installation simple and scriptable
 
 ---
 *This specification is part of the DDX Document-Driven Development process. Updates should follow the established change management procedures.*

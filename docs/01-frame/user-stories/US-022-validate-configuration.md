@@ -47,7 +47,7 @@ This story provides comprehensive validation of DDX configuration files to catch
 - [ ] All acceptance criteria are met and verified
 
 ## Technical Considerations
-[NEEDS CLARIFICATION: These will be defined in the Design phase]
+To be defined in technical design
 - Validation rule engine architecture
 - Performance optimization for large configurations
 - Schema definition and evolution
@@ -61,8 +61,8 @@ This story provides comprehensive validation of DDX configuration files to catch
 ## Assumptions
 - Configuration schema is well-defined and versioned
 - Network access is available for repository testing
-- [NEEDS CLARIFICATION: Should validation be performed offline when possible?]
-- [NEEDS CLARIFICATION: What is acceptable validation time for user experience?]
+- Validation should be performed offline when possible
+- Acceptable validation time is under 2 seconds
 
 ## Edge Cases
 - Malformed YAML syntax

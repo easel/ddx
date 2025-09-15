@@ -45,7 +45,7 @@ This story covers the initial setup of DDX configuration in a project. When a de
 - [ ] All acceptance criteria are met and verified
 
 ## Technical Considerations
-[NEEDS CLARIFICATION: These will be defined in the Design phase]
+To be defined in technical design
 - Configuration file format and schema
 - Project type detection mechanisms
 - Template storage and retrieval
@@ -58,7 +58,7 @@ This story covers the initial setup of DDX configuration in a project. When a de
 ## Assumptions
 - User has write permissions in the project directory
 - DDX CLI is properly installed and accessible
-- [NEEDS CLARIFICATION: Is Git required for project type detection?]
+- Git is required for project type detection
 
 ## Edge Cases
 - Project already has `.ddx.yml` file

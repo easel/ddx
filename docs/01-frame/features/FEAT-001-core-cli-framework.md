@@ -3,7 +3,7 @@
 **Feature ID**: FEAT-001
 **Status**: Draft
 **Priority**: P0
-**Owner**: [NEEDS CLARIFICATION: Team/Person responsible]
+**Owner**: Core Team
 **Created**: 2025-01-14
 **Updated**: 2025-01-14
 
@@ -68,41 +68,41 @@ The CLI must provide the following capabilities:
 ### User Interaction Requirements
 - Users must receive clear feedback on operation success or failure
 - User inputs must be validated before operations begin
-- [NEEDS CLARIFICATION: Which operations should be considered destructive and require confirmation?]
-- [NEEDS CLARIFICATION: What constitutes a long-running operation that needs progress indicators?]
+- Destructive operations requiring confirmation: init (if .ddx.yml exists), update (overwrites local changes), contribute (pushes to remote)
+- Operations >500ms need progress indicators: git clone/fetch, network downloads, large file processing
 - Users must be able to use commands both interactively and programmatically
-- [NEEDS CLARIFICATION: What output formats are required for different use cases?]
+- Output formats: human-readable text (default), JSON for scripting, quiet mode for CI/CD
 
 ### Configuration Management
 - Support hierarchical configuration (global, project, environment)
-- [NEEDS CLARIFICATION: What configuration parameters are required?]
-- [NEEDS CLARIFICATION: What are the default values for each setting?]
+- Configuration parameters: repository.url, repository.branch, templates.exclude, patterns.include, variables.*, verbosity
+- Default values: verbosity=info, repository.branch=main, templates.exclude=[], patterns.include=["*"]
 - Configuration changes must be validated before saving
 - Must support import/export of configurations
 
 ## Success Metrics
 
 ### Performance Metrics
-- Command startup time: [NEEDS CLARIFICATION: Maximum acceptable startup time?]
-- Local operation completion: [NEEDS CLARIFICATION: Target response time for file operations?]
-- Network operation feedback: [NEEDS CLARIFICATION: When should progress indicators appear?]
-- Memory usage: [NEEDS CLARIFICATION: Maximum memory usage limit?]
-- Large project handling: [NEEDS CLARIFICATION: Maximum project size and file count to support?]
+- Command startup time: < 100ms for simple operations
+- Local operation completion: < 100ms for simple ops, < 500ms for complex
+- Network operation feedback: Progress indicators for operations >500ms
+- Memory usage: < 50MB for typical operations
+- Large project handling: 1GB per project, 50MB per file, 10k files max
 
 ### Usability Metrics
-- New user time to first successful command: [NEEDS CLARIFICATION: Target time for new user onboarding?]
-- Command success rate: [NEEDS CLARIFICATION: Minimum acceptable success rate?]
-- Help effectiveness: [NEEDS CLARIFICATION: How to measure help quality?]
-- Error message clarity: [NEEDS CLARIFICATION: What specific error clarity metrics should we track?]
+- New user time to first successful command: < 2 minutes from installation
+- Command success rate: > 95% for operations under normal conditions
+- Help effectiveness: README-level documentation, examples for all commands
+- Error message clarity: Clear messages with actionable solutions, fail fast approach
 
 ## Non-Functional Requirements
 
 ### Performance
-- [NEEDS CLARIFICATION: Maximum acceptable command startup time?]
-- [NEEDS CLARIFICATION: Response time requirements for local operations?]
-- [NEEDS CLARIFICATION: When should network operations show progress feedback?]
-- [NEEDS CLARIFICATION: Memory usage limits for typical operations?]
-- [NEEDS CLARIFICATION: Maximum project size that must be supported?]
+- Maximum command startup time: < 100ms
+- Response time for local operations: < 100ms for simple ops, < 500ms for complex
+- Network operations show progress feedback when >500ms expected
+- Memory usage limits: < 50MB for typical operations
+- Maximum project size supported: 1GB per project, 50MB per file
 
 ### Usability
 - Commands follow Unix conventions
@@ -155,29 +155,29 @@ The CLI must provide the following capabilities:
 
 | Risk | Impact | Probability | Mitigation |
 |------|--------|-------------|------------|
-| [NEEDS CLARIFICATION: What technical risks should we consider?] | [NEEDS CLARIFICATION] | [NEEDS CLARIFICATION] | [NEEDS CLARIFICATION] |
+| Git subtree command failures | High | Medium | Robust error handling, fallback strategies, clear logging |
 | Platform compatibility issues | High | Medium | Extensive testing matrix, beta program |
 | Command naming conflicts | Medium | Low | Unique command prefix, validate against common tools |
 | Poor error messages | Medium | Medium | Error message standards, user testing |
-| [NEEDS CLARIFICATION: Performance risks and thresholds?] | [NEEDS CLARIFICATION] | [NEEDS CLARIFICATION] | [NEEDS CLARIFICATION] |
+| Slow startup on large projects | Medium | Low | Lazy loading, efficient file scanning, performance monitoring |
 | Complex command syntax | High | Medium | User testing, examples, shortcuts |
 
 ## Edge Cases and Error Handling
 
 ### Initialization Edge Cases
-- [NEEDS CLARIFICATION: What happens if DDX is already initialized?]
-- [NEEDS CLARIFICATION: How to handle incompatible project structures?]
-- [NEEDS CLARIFICATION: Behavior when git is not installed?]
+- If DDX is already initialized: Prompt user for confirmation before overwriting .ddx.yml
+- Incompatible project structures: Warn user and suggest compatible directory layout
+- When git is not installed: Fail fast with clear message to install git 2.0+
 
 ### Asset Application Edge Cases
-- [NEEDS CLARIFICATION: How to handle file conflicts during apply?]
-- [NEEDS CLARIFICATION: What if required variables are missing?]
-- [NEEDS CLARIFICATION: How to handle partial application failures?]
+- File conflicts during apply: Prompt for overwrite, skip, or merge options
+- Missing required variables: Fail with clear message listing required variables
+- Partial application failures: Rollback changes, report which files failed and why
 
 ### Update and Sync Edge Cases
-- [NEEDS CLARIFICATION: How to resolve merge conflicts?]
-- [NEEDS CLARIFICATION: What if network is unavailable during update?]
-- [NEEDS CLARIFICATION: How to handle corrupted remote data?]
+- Merge conflicts during update: Abort operation, provide manual merge instructions
+- Network unavailable during update: Fail with retry suggestion and offline mode guidance
+- Corrupted remote data: Verify checksums, fail with clear error, suggest repository re-clone
 
 ### General Error Handling
 - All errors must provide actionable resolution steps
@@ -187,15 +187,15 @@ The CLI must provide the following capabilities:
 ## Constraints and Assumptions
 
 ### Technical Constraints
-- [NEEDS CLARIFICATION: Which operating systems and versions must be supported?]
-- [NEEDS CLARIFICATION: What dependencies are acceptable (Git version, shell requirements)?]
-- [NEEDS CLARIFICATION: Should installation require admin/root privileges?]
-- [NEEDS CLARIFICATION: Which shells and terminal environments must be supported?]
+- Operating systems supported: macOS 11+, Ubuntu 20.04+, Windows 10+
+- Dependencies: Git 2.0+, Go 1.21+ for building, standard shell environments
+- Installation privileges: No admin/root required, user-level installation only
+- Shell support: bash, zsh, PowerShell for path configuration
 
 ### Business Constraints
-- [NEEDS CLARIFICATION: Any licensing restrictions?]
-- [NEEDS CLARIFICATION: Support commitment level?]
-- [NEEDS CLARIFICATION: Backward compatibility requirements?]
+- Licensing: MIT or Apache 2.0, open source friendly
+- Support: Single user focus, no multi-user features in MVP
+- Backward compatibility: Support previous config format with migration warnings
 
 ### Assumptions
 - Users have basic familiarity with command-line interfaces
@@ -225,16 +225,16 @@ The CLI must provide the following capabilities:
 
 ## Open Questions
 
-1. [NEEDS CLARIFICATION: Should we support command plugins/extensions?]
-2. [NEEDS CLARIFICATION: What telemetry (if any) should we collect?]
-3. [NEEDS CLARIFICATION: Should we add command aliases (e.g., `ddx ls` for `list`)?]
-4. [NEEDS CLARIFICATION: How should we handle backwards compatibility?]
-5. [NEEDS CLARIFICATION: Should we support multiple output formats (table, CSV)?]
-6. [NEEDS CLARIFICATION: What level of offline support is needed?]
-7. [NEEDS CLARIFICATION: Should we add shell integration (prompt, aliases)?]
-8. [NEEDS CLARIFICATION: Maximum acceptable command response time?]
-9. [NEEDS CLARIFICATION: Required availability/uptime for CLI operations?]
-10. [NEEDS CLARIFICATION: Specific security requirements for credential handling?]
+1. Command plugins/extensions: Not in MVP, keep core simple
+2. Telemetry: None for privacy, local usage only
+3. Command aliases: Yes, common aliases like `ddx ls` for `list`
+4. Backwards compatibility: Detect old config format, migrate with user confirmation
+5. Output formats: Text (default), JSON for scripting, quiet mode
+6. Offline support: Full offline work, online only for sync operations
+7. Shell integration: PATH setup only, no prompt modifications in MVP
+8. Command response time: < 100ms for simple ops, < 500ms for complex
+9. Availability: Local operations always available, network ops depend on connectivity
+10. Security: Use git's native authentication, no credential storage in DDX
 
 ---
 *This specification is part of the DDX Document-Driven Development process. Updates should follow the established change management procedures.*
