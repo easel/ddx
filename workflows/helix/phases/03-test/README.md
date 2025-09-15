@@ -33,7 +33,7 @@ Prerequisites to enter this phase (defined in `input-gates.yml`):
 
 2. **User stories have clear acceptance criteria**
    - Requirement: Each story has testable Given/When/Then scenarios
-   - Validation: All stories in `docs/frame/user-stories/` have criteria
+   - Validation: All stories in `docs/01-frame/user-stories/` have criteria
    - Source: 01-frame phase
 
 3. **Non-functional requirements defined**
@@ -41,7 +41,12 @@ Prerequisites to enter this phase (defined in `input-gates.yml`):
    - Validation: NFRs documented with measurable targets
    - Source: 01-frame phase
 
-These gates ensure we have complete specifications to derive comprehensive tests.
+4. **Security architecture completed**
+   - Requirement: Security controls and architecture documented
+   - Validation: Security architecture and threat model approved
+   - Source: 02-design phase
+
+These gates ensure we have complete specifications to derive comprehensive tests, including security test requirements.
 
 ## Process Flow
 
@@ -102,6 +107,18 @@ Test templates and generators:
 - Unit test scaffolds
 - E2E test frameworks
 - Acceptance test scenarios
+
+#### 4. Security Test Suite
+**Artifact Location**: `artifacts/security-tests/`
+**Output Location**: `tests/security/`
+
+Comprehensive security testing specifications:
+- **Authentication and authorization test cases**
+- **Input validation and injection prevention tests**
+- **Data protection and encryption validation**
+- **Session management and CSRF protection tests**
+- **SAST/DAST integration and configuration**
+- **Compliance validation test scenarios**
 
 ## Artifact Metadata
 

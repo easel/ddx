@@ -18,6 +18,9 @@ Before starting Design, verify Frame outputs:
 - [ ] User stories with acceptance criteria
 - [ ] Principles document established
 - [ ] All stakeholders aligned on scope
+- [ ] Security requirements documented and approved
+- [ ] Threat model completed with risk assessment
+- [ ] Compliance requirements identified and mapped
 
 ## Artifacts
 
@@ -71,15 +74,126 @@ Comprehensive data architecture:
 - **Access Patterns**: Common queries and optimization
 - **Migration Strategy**: Moving from current to target state
 
-### 6. Security Design
-**Location**: `docs/design/security.md`
+### Security Design Artifacts
 
-Security architecture and threat modeling:
-- **Threat Model**: STRIDE analysis of system
-- **Authentication**: How users prove identity
-- **Authorization**: Access control model
-- **Data Protection**: Encryption and privacy
-- **Security Controls**: Input validation, headers, monitoring
+#### 6. Security Architecture
+**Artifact Location**: `artifacts/security-architecture/`
+**Output Location**: `docs/02-design/security-architecture.md`
+
+Comprehensive security architecture and controls:
+- **Security principles and patterns applied**
+- **Defense in depth implementation strategy**
+- **Authentication and authorization architecture**
+- **Data protection and encryption design**
+- **Security monitoring and incident response integration**
+
+#### 7. Authentication and Authorization Design
+**Artifact Location**: `artifacts/auth-design/`
+**Output Location**: `docs/02-design/auth-design.md`
+
+Detailed identity and access management design:
+- **Identity provider integration and SSO design**
+- **Multi-factor authentication implementation**
+- **Role-based access control (RBAC) model**
+- **Session management and token handling**
+- **API authentication and authorization patterns**
+
+#### 8. Data Protection Plan
+**Artifact Location**: `artifacts/data-protection/`
+**Output Location**: `docs/02-design/data-protection.md`
+
+Data security and privacy implementation:
+- **Data classification and handling procedures**
+- **Encryption at rest and in transit specifications**
+- **Key management architecture**
+- **Privacy controls and data subject rights**
+- **Compliance implementation strategy**
+
+### Technical Investigation Artifacts (Optional - When Technical Uncertainty Exists)
+
+When significant technical unknowns exist about architecture, technology choices, integration complexity, or implementation approaches, technical investigation artifacts can be used to reduce risk and validate approaches before committing to detailed design.
+
+#### 7. Technical Spike (Optional)
+**Artifact Location**: `artifacts/tech-spike/`
+**Output Location**: `docs/02-design/spikes/SPIKE-XXX-[name].md`
+
+Time-boxed technical investigation for unknowns:
+- **When to Use**: Technical approach unclear, architecture decision risk, implementation complexity unknown
+- **Objectives**: Specific technical questions that need answers
+- **Investigation Methods**: Prototyping, benchmarking, comparative analysis, expert consultation
+- **Time Budget**: Strict time boundaries (typically 1-5 days)
+- **Evidence-Based Findings**: Concrete results with measurements and data
+- **Actionable Recommendations**: Clear next steps for design decisions
+
+**Triggers for Technical Spike**:
+- "Which technology/approach should we use?" (needs validation)
+- "Can this architecture handle our requirements?" (feasibility question)
+- "How complex will integration with System X be?" (complexity assessment)
+- Unknown performance characteristics or scalability limits
+- Novel technical approaches requiring validation
+
+#### 8. Proof of Concept (Optional)
+**Artifact Location**: `artifacts/proof-of-concept/`
+**Output Location**: `docs/02-design/proofs-of-concept/POC-XXX-[name].md`
+
+Minimal working implementation to validate technical concepts:
+- **When to Use**: High-risk technical approach, novel architecture, complex integration, end-to-end validation needed
+- **Working Implementation**: Functional system demonstrating core concept
+- **End-to-End Validation**: Complete workflows tested from input to output
+- **Production Readiness Assessment**: What would be needed for production deployment
+- **Performance Characteristics**: Measured system behavior under realistic conditions
+- **Integration Strategy**: Validated approach for connecting with other systems
+
+**Triggers for Proof of Concept**:
+- High-risk or novel architectural approaches
+- Complex system integration requirements
+- Performance requirements need validation
+- User experience concepts require testing
+- Technology stack viability needs demonstration
+
+### Technical Investigation Workflow Integration
+
+#### When Technical Investigation is Needed
+Technical investigation artifacts should be considered when:
+
+1. **Technical Uncertainty**: Unknown implementation complexity or approach viability
+2. **High-Risk Decisions**: Architecture choices with significant impact if wrong
+3. **Novel Technology**: Unproven or unfamiliar technical approaches
+4. **Complex Integration**: Integration complexity or compatibility unknown
+5. **Performance Critical**: Performance characteristics unknown or requirements stringent
+
+#### Investigation-Informed Design Process
+```mermaid
+graph TD
+    A[Frame Requirements Available] --> B{Technical Uncertainty Exists?}
+    B -->|Yes| C[Identify Technical Questions]
+    B -->|No| D[Standard Design Artifacts]
+    C --> E{Scope of Investigation}
+    E -->|Quick Questions| F[Technical Spike]
+    E -->|Complex Validation| G[Proof of Concept]
+    F --> H[Spike Findings]
+    G --> I[PoC Results]
+    H --> J{Sufficient Confidence?}
+    I --> J
+    J -->|No| K[Additional Investigation]
+    J -->|Yes| D
+    K --> E
+    D --> L[Solution Design & Architecture]
+```
+
+#### Integration with Standard Design Artifacts
+Technical investigation findings directly inform design artifacts:
+
+- **Spike Findings → Architecture Decisions**: Technical validation becomes ADR rationale
+- **PoC Results → Solution Design**: Proven approaches inform implementation strategy
+- **Performance Data → Contracts**: Measured characteristics define API performance requirements
+- **Integration Testing → Data Design**: Validated integration patterns inform data architecture
+
+#### Time Management for Technical Investigations
+- **Technical Spike**: 1-5 days maximum, strictly time-boxed
+- **Proof of Concept**: 1-2 weeks, focused on core concept validation
+- **Decision Points**: Clear criteria for when investigation provides sufficient evidence
+- **Integration Time**: Budget 1-2 days to integrate findings into design artifacts
 
 ## Process Flow
 
@@ -117,6 +231,9 @@ graph TD
 - **Consistency Validation**: Check alignment with requirements
 - **Documentation**: Structure technical specifications
 - **Pattern Suggestions**: Recommend proven solutions
+- **Technical Analysis**: Synthesize spike and PoC findings into actionable insights
+- **Risk Assessment**: Identify technical risks from multiple implementation approaches
+- **Performance Analysis**: Process benchmark data and identify optimization opportunities
 
 ## Design Principles Enforcement
 
@@ -149,6 +266,14 @@ Before proceeding to Test phase:
 - [ ] Technology choices justified
 - [ ] ADRs document key decisions
 - [ ] No [TO BE DEFINED] markers remain
+
+#### Technical Investigation Completion (When Applicable)
+- [ ] Technical spikes completed within time budget with evidence-based findings
+- [ ] Proof of concepts demonstrate end-to-end functionality
+- [ ] Investigation findings integrated into architecture and design decisions
+- [ ] Technical risks identified and mitigation strategies documented
+- [ ] Performance characteristics measured and documented
+- [ ] Integration complexity assessed and approaches validated
 
 ### Validation Questions
 1. **Contract Clarity**: Could another team implement from these contracts alone?
@@ -228,6 +353,7 @@ Implementation must match contracts exactly. No undocumented behavior.
 
 When working with AI assistants during Design:
 
+### Standard Design Artifacts
 ```bash
 # Generate contracts from requirements
 ddx apply prompts/helix/design/contracts
@@ -239,7 +365,33 @@ ddx apply prompts/helix/design/test-specs
 ddx apply prompts/helix/design/complexity-check
 ```
 
-The AI excels at generating comprehensive contracts and test cases but human judgment is essential for architectural decisions.
+### Technical Investigation (When Technical Uncertainty Exists)
+```bash
+# Create technical spike plan
+ddx apply prompts/helix/design/tech-spike
+
+# Plan proof of concept development
+ddx apply prompts/helix/design/proof-of-concept
+
+# Analyze spike findings and create recommendations
+ddx apply prompts/helix/design/spike-analysis
+
+# Synthesize PoC results into design decisions
+ddx apply prompts/helix/design/poc-analysis
+
+# Generate ADR from technical investigation findings
+ddx apply prompts/helix/design/adr-from-investigation
+```
+
+### AI Technical Investigation Capabilities
+AI assistants excel at:
+- **Comparative Analysis**: Evaluating trade-offs between technical approaches
+- **Risk Assessment**: Identifying technical risks and mitigation strategies
+- **Performance Analysis**: Processing benchmark data and identifying patterns
+- **Integration Planning**: Analyzing integration complexity and approaches
+- **Code Review**: Analyzing spike and PoC code for best practices and improvements
+
+The AI excels at generating comprehensive contracts and test cases but human judgment is essential for architectural decisions and technical trade-offs.
 
 ## Design Review Checklist
 

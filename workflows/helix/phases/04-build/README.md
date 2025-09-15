@@ -19,6 +19,9 @@ Before starting Build phase, verify Test phase outputs:
 - [ ] CI/CD pipeline configured for tests
 - [ ] Test procedures documented
 - [ ] Test infrastructure operational
+- [ ] Security test suite completed and failing
+- [ ] SAST/DAST tools configured in CI/CD pipeline
+- [ ] Security coding standards established
 
 ## Artifacts
 
@@ -45,6 +48,18 @@ TDD implementation guide:
 - **Refactoring guidelines**: When and how to improve code
 - **Quality checkpoints**: Code review and standards
 - **Troubleshooting guide**: Common issues and solutions
+
+### 3. Secure Coding Checklist
+**Artifact Location**: `artifacts/secure-coding/`
+**Output Location**: `docs/04-build/secure-coding-checklist.md`
+
+Security implementation validation:
+- **Input validation and sanitization checks**
+- **Authentication and session management verification**
+- **Authorization and access control implementation**
+- **Data protection and encryption validation**
+- **Security testing integration and SAST/DAST execution**
+- **Secrets management and configuration security**
 
 ## Core Workflow
 

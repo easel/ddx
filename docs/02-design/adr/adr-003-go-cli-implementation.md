@@ -1,58 +1,44 @@
----
-tags: [adr, architecture, development-workflow, decisions, ddx, golang, cli]
-template: false
-version: 1.0.0
----
+# ADR-003: Implement DDX CLI Using Go
 
-# ADR-002: Implement DDX CLI Using Go
-
-**Date**: 2025-01-12  
-**Status**: Accepted  
-**Deciders**: DDX Development Team  
-**Technical Story**: Select implementation language and framework for the DDX command-line interface
+**Date**: 2025-01-12
+**Status**: Accepted
+**Deciders**: DDX Development Team
+**Related Feature(s)**: Cross-cutting - CLI Implementation
+**Confidence Level**: High
 
 ## Context
 
+DDX requires a command-line interface that runs on multiple platforms, executes Git commands reliably, provides fast execution with minimal startup time, and distributes as a single binary with no runtime dependencies.
+
 ### Problem Statement
-DDX requires a command-line interface that can:
-- Run on multiple platforms (macOS, Linux, Windows)
+
+What programming language and framework should we use to implement the DDX CLI to ensure cross-platform compatibility, fast performance, easy distribution, and maintainable codebase while minimizing dependencies?
+
+### Current State
+
+CLI tools are commonly built with various languages: Node.js/TypeScript for web developers, Python for data scientists, Rust for systems programmers, and Go for cloud-native tools. Each has trade-offs in terms of performance, distribution, and developer experience.
+
+### Requirements Driving This Decision
+- Run identically on macOS, Linux, and Windows
 - Execute Git commands reliably
-- Manipulate filesystem operations safely
-- Parse and process YAML configurations
-- Provide fast execution with minimal startup time
-- Distribute as a single binary with no runtime dependencies
-
-### Forces at Play
-- **Cross-platform Compatibility**: Must work identically across operating systems
-- **Distribution Simplicity**: Users want single-file installation
-- **Performance**: CLI tools need instant response times
-- **Developer Productivity**: Need rapid development and maintenance
-- **Ecosystem**: Must integrate with Git and filesystem operations
-- **Community**: Need access to libraries and tooling
-- **Learning Curve**: Team expertise and onboarding considerations
-
-### Constraints
-- No runtime dependencies allowed (rules out interpreted languages)
-- Must compile to native binary for each platform
-- Startup time must be < 100ms for simple commands
-- Binary size should be reasonable (< 50MB)
-- Must handle concurrent operations safely
-- Need robust error handling for system operations
+- Single binary distribution with no runtime dependencies
+- Startup time < 100ms for simple commands
+- Parse and process YAML configurations efficiently
+- Handle concurrent operations safely
+- Integrate well with existing Go ecosystem
 
 ## Decision
 
-### Chosen Approach
-Implement the DDX CLI using Go (Golang) with the Cobra framework for command structure and Viper for configuration management.
+We will implement the DDX CLI using Go (Golang) with the Cobra framework for command structure and Viper for configuration management.
 
-### Rationale
-- **Single Binary Distribution**: Go compiles to self-contained binaries with no runtime dependencies
-- **Cross-platform Support**: Excellent cross-compilation support for all target platforms
-- **Performance**: Fast startup time and execution speed suitable for CLI tools
-- **Robust Standard Library**: Built-in support for OS operations, process management, and networking
-- **Cobra Framework**: Industry-standard CLI framework used by Docker, Kubernetes, and GitHub CLI
-- **Concurrency**: Goroutines enable efficient parallel operations
-- **Error Handling**: Explicit error handling promotes reliability
-- **Growing CLI Ecosystem**: Many successful CLI tools built with Go
+### Key Points
+- Go compiles to self-contained native binaries
+- Cobra provides industry-standard CLI framework
+- Viper handles configuration with multiple formats
+- Excellent cross-compilation support
+- Fast startup and execution speed
+- Strong standard library for OS operations
+- Growing ecosystem of CLI tools in Go
 
 ## Alternatives Considered
 
@@ -60,228 +46,181 @@ Implement the DDX CLI using Go (Golang) with the Cobra framework for command str
 **Description**: Implement CLI using Rust for maximum performance and safety
 
 **Pros**:
-- Zero-cost abstractions and maximum performance
-- Memory safety guarantees without garbage collection
-- Excellent cross-compilation support
-- Growing ecosystem with Clap for CLI parsing
+- Zero-cost abstractions
+- Memory safety guarantees
+- Excellent performance
 - Small binary sizes possible
+- Growing ecosystem
 
 **Cons**:
-- Steep learning curve for the team
+- Steep learning curve for team
 - Slower development velocity
-- Smaller talent pool for maintenance
-- Complex async/await model
-- Longer compile times impacting development
+- Smaller talent pool
+- Complex async model
+- Longer compile times
 
-**Why rejected**: The performance benefits don't outweigh the significantly slower development velocity and steeper learning curve for the team
+**Evaluation**: Rejected - performance benefits don't outweigh development complexity
 
 ### Option 2: Node.js/TypeScript
-**Description**: Build CLI using Node.js with TypeScript for type safety
+**Description**: Build CLI using Node.js with TypeScript
 
 **Pros**:
-- Large ecosystem of packages
+- Large ecosystem
 - Familiar to many developers
-- Fast development iteration
+- Fast development
 - Excellent JSON/YAML handling
 - Good testing frameworks
 
 **Cons**:
-- Requires Node.js runtime installation
+- Requires Node.js runtime
 - Slow startup time (200-500ms)
-- Complex distribution (node_modules bloat)
-- Platform-specific binary compilation complicated
-- Runtime errors possible despite TypeScript
+- Complex distribution
+- Large package sizes
+- Runtime errors possible
 
-**Why rejected**: Runtime dependency violates the zero-dependency requirement, and startup performance is inadequate for a CLI tool
+**Evaluation**: Rejected - runtime dependency violates requirements
 
-### Option 3: Python with PyInstaller
-**Description**: Develop in Python and bundle to executables using PyInstaller
-
-**Pros**:
-- Rapid development
-- Extensive standard library
-- Large ecosystem
-- Readable and maintainable code
-- Good for scripting and automation
-
-**Cons**:
-- Large bundled executables (30-100MB)
-- Slow startup time when bundled
-- PyInstaller compatibility issues
-- Anti-virus false positives common
-- Performance limitations for I/O operations
-
-**Why rejected**: Bundle size and startup performance issues, plus distribution complexity with PyInstaller
-
-### Option 4: Bash/Shell Script
-**Description**: Implement as pure shell scripts for maximum portability
+### Option 3: Go (Selected)
+**Description**: Implement using Go with Cobra framework
 
 **Pros**:
-- No compilation needed
-- Direct Git and filesystem integration
-- Minimal overhead
-- Works everywhere Bash is available
-- Simple to modify and debug
+- Single binary distribution
+- Fast startup (<100ms)
+- Cross-platform compilation
+- Strong standard library
+- Cobra/Viper ecosystem
+- Growing CLI community
 
 **Cons**:
-- Windows compatibility requires WSL or Git Bash
-- Complex logic becomes unmaintainable
-- No type safety or modern language features
-- Testing is difficult
-- String manipulation is error-prone
-- No standard packaging/distribution
+- Larger binaries than C/Rust - acceptable at 10-20MB
+- Garbage collection - negligible for CLI use
+- Verbose error handling - improves reliability
 
-**Why rejected**: Windows compatibility issues and maintainability concerns for complex logic
-
-### Option 5: C/C++
-**Description**: Use C or C++ for maximum control and performance
-
-**Pros**:
-- Maximum performance potential
-- Smallest possible binaries
-- Complete system control
-- No garbage collection overhead
-- Mature tooling
-
-**Cons**:
-- Manual memory management complexity
-- Slow development velocity
-- Platform-specific code required
-- Security vulnerabilities more likely
-- Complex build system
-- String handling is error-prone
-
-**Why rejected**: Development complexity and security concerns outweigh performance benefits for this use case
+**Evaluation**: Selected for optimal balance of performance, development speed, and distribution
 
 ## Consequences
 
 ### Positive Consequences
-- **Fast Execution**: Sub-100ms startup time achieved
-- **Easy Distribution**: Single binary installation via curl/wget
-- **Cross-platform Consistency**: Same binary behavior across all platforms
-- **Reliable Operations**: Strong standard library for system operations
-- **Growing Ecosystem**: Can leverage packages like Cobra, Viper, Survey
-- **Maintainability**: Clear, typed code with explicit error handling
-- **Hiring Pool**: Growing number of Go developers available
+- **Fast Execution**: Sub-100ms startup achieved
+- **Easy Distribution**: Single binary via curl/wget
+- **Cross-platform**: Identical behavior across OS
+- **Reliable Operations**: Strong standard library
+- **Rich Ecosystem**: Leverage Cobra, Viper, etc.
+- **Maintainable**: Clear, typed code
 
 ### Negative Consequences
-- **Binary Size**: Go binaries are larger than C/Rust equivalents (10-20MB)
-- **Garbage Collection**: GC pauses possible (though negligible for CLI)
-- **Generics Limited**: Go's generics are relatively new and limited
-- **Error Verbosity**: Explicit error handling can be verbose
-- **Learning Curve**: Team needs to learn Go idioms and patterns
+- **Binary Size**: 10-20MB per platform
+- **GC Pauses**: Possible but negligible for CLI
+- **Error Verbosity**: Explicit handling required
+- **Learning Curve**: Team needs Go proficiency
 
 ### Neutral Consequences
-- **Opinionated Language**: Go's conventions reduce style debates
-- **Limited Metaprogramming**: Less flexible but more predictable
-- **Module System**: Go modules for dependency management
-- **Testing Built-in**: Standard testing framework included
+- **Opinionated Language**: Reduces style debates
+- **Limited Metaprogramming**: More predictable code
+- **Built-in Testing**: Standard framework included
 
-## Implementation
+## Implementation Impact
 
-### Required Changes
-- Set up Go development environment
-- Implement Cobra command structure
-- Integrate Viper for configuration
-- Create build pipeline for multi-platform binaries
-- Establish testing patterns
-- Document Go coding standards
+### Development Impact
+- **Effort**: Medium - Team learning Go idioms
+- **Time**: 2-3 weeks for initial CLI
+- **Skills Required**: Go proficiency, Cobra knowledge
 
-### Migration Strategy
-Not applicable - new implementation
+### Operational Impact
+- **Performance**: Excellent - native execution
+- **Scalability**: Not applicable for CLI
+- **Maintenance**: Low - stable language and libraries
 
-### Success Metrics
-- **Startup Time**: < 100ms for `ddx --help`
-- **Binary Size**: < 20MB for each platform
-- **Build Time**: < 30 seconds for all platforms
-- **Test Coverage**: > 80% for critical paths
-- **Cross-platform Tests**: Pass on all target platforms
-- **Memory Usage**: < 50MB for typical operations
+### Security Impact
+- Memory safe by default
+- No buffer overflows
+- Built-in concurrency safety
+- Standard crypto libraries
 
-## Compliance
+## Risks and Mitigation
 
-### Security Requirements
-- No dynamic code execution
-- Secure handling of Git credentials
-- Input validation for all user inputs
-- No phone-home telemetry
+| Risk | Probability | Impact | Mitigation Strategy |
+|------|------------|--------|-------------------|
+| Team Go proficiency | Medium | Medium | Training and pair programming |
+| Binary size growth | Low | Low | Build optimization flags |
+| Dependency management | Low | Low | Go modules vendoring |
+| Cross-platform issues | Low | Medium | CI testing on all platforms |
 
-### Performance Requirements
-- Instant response for local operations
-- Efficient file I/O for large projects
-- Minimal memory footprint
-- Concurrent operations where beneficial
+## Dependencies
 
-### Regulatory Requirements
-- MIT license compatibility
-- No cryptographic restrictions
-- Open source distribution
+### Technical Dependencies
+- Go 1.21+ (latest stable)
+- Cobra CLI framework
+- Viper configuration library
+- Standard Go toolchain
 
-## Monitoring and Review
+### Decision Dependencies
+- ADR-001: CLI must handle workflow structure
+- ADR-002: CLI wraps git subtree commands
+- ADR-004: May need to embed Starlark
 
-### Key Indicators to Watch
-- Binary size growth over time
-- Startup time regression
-- Memory usage patterns
-- Dependency update frequency
-- Build time trends
-- Platform-specific bug reports
+## Validation
 
-### Review Date
-Q3 2025 - After 9 months of production use
+### How We'll Know This Was Right
+- Startup time consistently < 100ms
+- Binary size < 20MB compressed
+- Zero runtime dependencies
+- Cross-platform tests pass
+- Developer productivity maintained
 
 ### Review Triggers
-- Go 2.0 release (if it happens)
+This decision should be reviewed if:
+- Go 2.0 introduces breaking changes
 - Binary size exceeds 30MB
 - Startup time exceeds 200ms
-- Major security vulnerability in Go runtime
-- Team velocity concerns
-
-## Related Decisions
-
-### Dependencies
-- ADR-001: Git Subtree Architecture - CLI must wrap git subtree commands
-- ADR-003: YAML Configuration Format - CLI must parse YAML efficiently
-
-### Influenced By
-- Target user base (developers comfortable with CLI tools)
-- Zero-dependency distribution requirement
-- Cross-platform support requirement
-- Performance requirements for CLI responsiveness
-
-### Influences
-- Testing strategy (Go's built-in testing)
-- CI/CD pipeline (Go cross-compilation)
-- Documentation approach (godoc)
-- Contribution guidelines (Go formatting standards)
+- Better CLI frameworks emerge
+- Team velocity concerns arise
 
 ## References
 
-### Documentation
+### Internal References
+- [DDX CLI Architecture](/docs/architecture/cli-architecture.md)
+- [DDX Development Guide](/docs/development/README.md)
+- Related ADRs: ADR-001, ADR-002
+
+### External References
 - [Go Documentation](https://go.dev/doc/)
 - [Cobra CLI Framework](https://cobra.dev/)
 - [Viper Configuration](https://github.com/spf13/viper)
-- [DDX CLI Design Doc](/docs/design/cli-architecture.md)
-
-### External Resources
-- [Go CLI Best Practices](https://go.dev/doc/effective_go)
 - [Building CLIs with Go](https://pragprog.com/titles/rggo/powerful-command-line-applications-in-go/)
-- [Go Binary Size Optimization](https://blog.filippo.io/shrink-your-go-binaries-with-this-one-weird-trick/)
-
-### Discussion History
-- Language selection discussion in initial planning
-- Performance benchmarks comparing languages
-- Team skills assessment and training plan
 
 ## Notes
 
-Go has proven to be an excellent choice for CLI tools, as evidenced by successful projects like Docker, Kubernetes, Terraform, and GitHub CLI. The combination of Go with Cobra provides a robust foundation that balances development velocity with performance.
+### Meeting Notes
+- Team evaluated languages based on requirements matrix
+- Performance benchmarks showed Go meeting all targets
+- Distribution simplicity was key decision factor
 
-The decision to use Go aligns with the medical metaphor - like medical instruments, the CLI tool needs to be reliable, precise, and immediately available when needed. Go's compilation to a single binary is like having a self-contained medical device that works anywhere without external dependencies.
+### Future Considerations
+- Consider plugin system for extensions
+- Explore WASM for plugin sandboxing
+- Monitor Rust ecosystem evolution
+- Investigate build size optimizations
 
-Key insight: While Rust might offer marginally better performance and smaller binaries, Go's developer productivity and ecosystem maturity make it the pragmatic choice for a tool that needs to evolve quickly based on user feedback.
+### Lessons Learned
+*To be filled after 6 months of production use*
 
 ---
 
-**Last Updated**: 2025-01-12  
-**Next Review**: 2025-10-01
+## Decision History
+
+### 2025-01-12 - Initial Decision
+- Status: Proposed
+- Author: DDX Development Team
+- Notes: Language evaluation complete
+
+### 2025-01-12 - Review and Acceptance
+- Status: Accepted
+- Reviewers: DDX Core Team
+- Changes: Added specific version requirements
+
+### Post-Implementation Review
+- *To be scheduled after Q4 2025*
+
+---
+*This ADR documents a significant architectural decision and its rationale for future reference.*

@@ -98,7 +98,19 @@ Observability configuration:
 - SLI/SLO definitions
 - On-call procedures
 
-#### 3. Runbook
+#### 3. Security Monitoring Setup
+**Artifact Location**: `artifacts/security-monitoring/`
+**Output Location**: `docs/05-deploy/security-monitoring.md`
+
+Production security monitoring configuration:
+- **SIEM integration and security event collection**
+- **Real-time security alerts and threat detection**
+- **Compliance monitoring and audit trail setup**
+- **Incident response procedures and escalation**
+- **Vulnerability monitoring and patch management**
+- **Access monitoring and suspicious activity detection**
+
+#### 4. Runbook
 **Artifact Location**: `artifacts/runbook/`
 **Output Location**: `docs/05-deploy/runbook.md`
 

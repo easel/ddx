@@ -43,6 +43,28 @@ Throughout the workflow, responsibilities are shared:
 - Test case generation
 - Documentation and analysis
 
+## Security Integration
+
+HELIX integrates security practices throughout every phase, following DevSecOps principles to ensure security is built-in rather than bolted-on:
+
+### Security-First Approach
+- **Frame**: Security requirements, threat modeling, and compliance analysis established upfront
+- **Design**: Security architecture and controls designed into system structure
+- **Test**: Security test suites created alongside functional tests
+- **Build**: Secure coding practices and automated security scanning integrated
+- **Deploy**: Security monitoring and incident response procedures activated
+- **Iterate**: Security metrics tracked and security posture continuously improved
+
+### Key Security Artifacts
+- **Security Requirements**: Comprehensive security and compliance requirements
+- **Threat Model**: STRIDE-based threat analysis with risk assessment
+- **Security Architecture**: Defense-in-depth design with security controls
+- **Security Tests**: Automated and manual security testing procedures
+- **Security Monitoring**: Production security monitoring and alerting
+
+### Security Quality Gates
+Each phase includes security checkpoints that must be satisfied before progression, ensuring security requirements are met throughout the development lifecycle.
+
 ## Getting Started
 
 ```bash

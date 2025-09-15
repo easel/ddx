@@ -80,14 +80,14 @@ Track high-level metrics:
 ## Cross-References
 
 ### Related Documents
-- **PRD**: `docs/frame/prd.md` - Overall product vision
-- **Principles**: `docs/frame/principles.md` - Guiding principles
-- **Feature Specs**: `docs/frame/features/FEAT-XXX-[name].md`
+- **PRD**: `docs/01-frame/prd.md` - Overall product vision
+- **Principles**: `docs/01-frame/principles.md` - Guiding principles
+- **Feature Specs**: `docs/01-frame/features/FEAT-XXX-[name].md`
 
 ### Artifact Locations by Feature
 For each feature, artifacts are located at:
-- **Specification**: `docs/frame/features/FEAT-XXX-[name].md`
-- **User Stories**: `docs/frame/user-stories/US-XXX-[name].md`
+- **Specification**: `docs/01-frame/features/FEAT-XXX-[name].md`
+- **User Stories**: `docs/01-frame/user-stories/US-XXX-[name].md`
 - **Solution Design**: `docs/design/solution-designs/SD-XXX-[name].md`
 - **Contracts**: `docs/design/contracts/API-XXX-[name].md`
 - **Tests**: `tests/FEAT-XXX-[name]/`

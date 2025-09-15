@@ -122,7 +122,7 @@ graph TD
 ## Feature Traceability
 
 ### Parent Feature
-- **Feature Specification**: `docs/frame/features/FEAT-XXX-[name].md`
+- **Feature Specification**: `docs/01-frame/features/FEAT-XXX-[name].md`
 
 ### Related Design Artifacts
 - **Contracts**: [To be created for APIs serving these stories]
