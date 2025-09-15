@@ -154,4 +154,3 @@ func TestListCommand_Help(t *testing.T) {
 	assert.Contains(t, output, "List all available resources")
 	assert.Contains(t, output, "search")
 }
-

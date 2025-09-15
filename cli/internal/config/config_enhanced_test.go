@@ -117,8 +117,8 @@ func TestValidate(t *testing.T) {
 					Path:   ".ddx/",
 				},
 				Variables: map[string]string{
-					"invalid-var": "value",
-					"123invalid": "value",
+					"invalid-var":     "value",
+					"123invalid":      "value",
 					"var with spaces": "value",
 				},
 			},
@@ -151,7 +151,7 @@ func TestMerge(t *testing.T) {
 		},
 		Includes: []string{"base1", "base2"},
 		Variables: map[string]string{
-			"base_var": "base_value",
+			"base_var":    "base_value",
 			"override_me": "base_override",
 		},
 		Overrides: map[string]string{
@@ -168,7 +168,7 @@ func TestMerge(t *testing.T) {
 		Includes: []string{"override1", "base1"}, // base1 should not duplicate
 		Variables: map[string]string{
 			"override_me": "new_value",
-			"new_var": "new_value",
+			"new_var":     "new_value",
 		},
 		Overrides: map[string]string{
 			"new_override": "new_val",
@@ -538,7 +538,7 @@ func TestConfigMerging(t *testing.T) {
 			Branch: "main",
 		},
 		Variables: map[string]string{
-			"global_var": "global_value",
+			"global_var":  "global_value",
 			"override_me": "global_override",
 		},
 	}
@@ -553,11 +553,11 @@ func TestConfigMerging(t *testing.T) {
 		Version: "2.0",
 		Repository: Repository{
 			Branch: "feature", // Should override global
-			Path:   "custom/",  // New field
+			Path:   "custom/", // New field
 		},
 		Variables: map[string]string{
 			"override_me": "local_override",
-			"local_var": "local_value",
+			"local_var":   "local_value",
 		},
 	}
 
@@ -573,15 +573,15 @@ func TestConfigMerging(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check merged values
-	assert.Equal(t, "2.0", config.Version) // Local overrides
+	assert.Equal(t, "2.0", config.Version)                                   // Local overrides
 	assert.Equal(t, "https://github.com/global/repo", config.Repository.URL) // From global
-	assert.Equal(t, "feature", config.Repository.Branch) // Local overrides
-	assert.Equal(t, "custom/", config.Repository.Path) // From local
+	assert.Equal(t, "feature", config.Repository.Branch)                     // Local overrides
+	assert.Equal(t, "custom/", config.Repository.Path)                       // From local
 
 	// Check merged variables
-	assert.Equal(t, "global_value", config.Variables["global_var"]) // From global
+	assert.Equal(t, "global_value", config.Variables["global_var"])    // From global
 	assert.Equal(t, "local_override", config.Variables["override_me"]) // Local overrides
-	assert.Equal(t, "local_value", config.Variables["local_var"]) // From local
+	assert.Equal(t, "local_value", config.Variables["local_var"])      // From local
 
 	// Project name should be set to directory name
 	// Note: Due to parallel test execution and working directory changes,

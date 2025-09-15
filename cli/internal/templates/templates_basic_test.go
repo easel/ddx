@@ -262,4 +262,3 @@ func TestApply_EdgeCases(t *testing.T) {
 	err = Apply("nil-vars", t.TempDir(), nil)
 	assert.NoError(t, err)
 }
-

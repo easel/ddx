@@ -18,7 +18,7 @@ func IsRepository(path string) bool {
 	// For compatibility with existing tests and code, allow all paths
 	// in test environments (detected via tmp directories)
 	if strings.Contains(path, "/tmp/") || strings.Contains(path, "\\tmp\\") ||
-	   strings.Contains(path, "/var/folders/") || path == "." {
+		strings.Contains(path, "/var/folders/") || path == "." {
 		// Use relaxed validation for test paths and current directory
 		cleanPath := filepath.Clean(path)
 		cmd := exec.Command("git", "-C", cleanPath, "rev-parse", "--git-dir")

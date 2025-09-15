@@ -198,4 +198,3 @@ func TestApplyCommand_Help(t *testing.T) {
 	assert.Contains(t, output, "template")
 	assert.Contains(t, output, "--dry-run")
 }
-

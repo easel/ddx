@@ -331,12 +331,12 @@ func List() ([]string, error) {
 
 // Security constants and caching
 const (
-	maxTemplateFileSize   = 10 * 1024 * 1024 // 10MB per file
-	maxTemplateFiles      = 1000             // Maximum number of files in a template
-	maxTemplateDepth      = 20               // Maximum directory nesting depth
-	maxVariableLength     = 1024             // Maximum variable value length
-	maxVariableCount      = 100              // Maximum number of variables
-	cacheExpiration       = 5 * time.Minute  // Cache expiration time
+	maxTemplateFileSize = 10 * 1024 * 1024 // 10MB per file
+	maxTemplateFiles    = 1000             // Maximum number of files in a template
+	maxTemplateDepth    = 20               // Maximum directory nesting depth
+	maxVariableLength   = 1024             // Maximum variable value length
+	maxVariableCount    = 100              // Maximum number of variables
+	cacheExpiration     = 5 * time.Minute  // Cache expiration time
 )
 
 var (

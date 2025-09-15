@@ -35,9 +35,9 @@ type Repository struct {
 
 // ConfigError represents configuration-related errors
 type ConfigError struct {
-	Field   string
-	Value   string
-	Message string
+	Field      string
+	Value      string
+	Message    string
 	Suggestion string
 }
 
@@ -371,15 +371,15 @@ func (c *Config) Validate() error {
 	// Validate version
 	if c.Version == "" {
 		errors = append(errors, &ConfigError{
-			Field:   "version",
-			Message: "version is required",
+			Field:      "version",
+			Message:    "version is required",
 			Suggestion: "add 'version: \"1.0\"' to your config",
 		})
 	} else if !isValidVersion(c.Version) {
 		errors = append(errors, &ConfigError{
-			Field:   "version",
-			Value:   c.Version,
-			Message: "unsupported version",
+			Field:      "version",
+			Value:      c.Version,
+			Message:    "unsupported version",
 			Suggestion: fmt.Sprintf("use one of: %s", strings.Join(SupportedVersions, ", ")),
 		})
 	}
@@ -387,31 +387,31 @@ func (c *Config) Validate() error {
 	// Validate repository
 	if c.Repository.URL == "" {
 		errors = append(errors, &ConfigError{
-			Field:   "repository.url",
-			Message: "repository URL is required",
+			Field:      "repository.url",
+			Message:    "repository URL is required",
 			Suggestion: "add a valid Git repository URL",
 		})
 	} else if !isValidURL(c.Repository.URL) {
 		errors = append(errors, &ConfigError{
-			Field:   "repository.url",
-			Value:   c.Repository.URL,
-			Message: "invalid URL format",
+			Field:      "repository.url",
+			Value:      c.Repository.URL,
+			Message:    "invalid URL format",
 			Suggestion: "use a valid URL like 'https://github.com/user/repo'",
 		})
 	}
 
 	if c.Repository.Branch == "" {
 		errors = append(errors, &ConfigError{
-			Field:   "repository.branch",
-			Message: "repository branch is required",
+			Field:      "repository.branch",
+			Message:    "repository branch is required",
 			Suggestion: "add 'branch: \"main\"' or another valid branch name",
 		})
 	}
 
 	if c.Repository.Path == "" {
 		errors = append(errors, &ConfigError{
-			Field:   "repository.path",
-			Message: "repository path is required",
+			Field:      "repository.path",
+			Message:    "repository path is required",
 			Suggestion: "add 'path: \".ddx/\"' or another valid path",
 		})
 	}
@@ -420,9 +420,9 @@ func (c *Config) Validate() error {
 	for key := range c.Variables {
 		if !isValidVariableName(key) {
 			errors = append(errors, &ConfigError{
-				Field:   fmt.Sprintf("variables.%s", key),
-				Value:   key,
-				Message: "invalid variable name",
+				Field:      fmt.Sprintf("variables.%s", key),
+				Value:      key,
+				Message:    "invalid variable name",
 				Suggestion: "use only letters, numbers, and underscores",
 			})
 		}
@@ -611,11 +611,11 @@ func (c *Config) MigrateVersion(targetVersion string) (*Config, []string, error)
 	if c.Version == targetVersion {
 		// Even if no migration is needed, we should still apply common migrations
 		migrated := &Config{
-			Version:   c.Version,
+			Version:    c.Version,
 			Repository: c.Repository,
-			Includes:  make([]string, len(c.Includes)),
-			Overrides: make(map[string]string),
-			Variables: make(map[string]string),
+			Includes:   make([]string, len(c.Includes)),
+			Overrides:  make(map[string]string),
+			Variables:  make(map[string]string),
 		}
 
 		copy(migrated.Includes, c.Includes)
@@ -642,11 +642,11 @@ func (c *Config) MigrateVersion(targetVersion string) (*Config, []string, error)
 
 	var warnings []string
 	migrated := &Config{
-		Version:   targetVersion,
+		Version:    targetVersion,
 		Repository: c.Repository,
-		Includes:  make([]string, len(c.Includes)),
-		Overrides: make(map[string]string),
-		Variables: make(map[string]string),
+		Includes:   make([]string, len(c.Includes)),
+		Overrides:  make(map[string]string),
+		Variables:  make(map[string]string),
 	}
 
 	copy(migrated.Includes, c.Includes)
