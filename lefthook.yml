@@ -94,7 +94,11 @@ pre-commit:
         if command -v golangci-lint >/dev/null 2>&1; then
           golangci-lint run --timeout=60s --new-from-rev=HEAD~1 {staged_files}
         else
-          go vet {staged_files}
+          # Get unique packages from staged files and vet them
+          packages=$(echo {staged_files} | xargs -n1 dirname | sort -u | sed 's|^cli/|./|')
+          for pkg in $packages; do
+            go vet "$pkg"
+          done
         fi
       skip:
         - merge
@@ -198,9 +202,9 @@ pre-commit:
 
         # Check for DDx command availability
         if command -v ddx >/dev/null 2>&1; then
-          ddx diagnose --quiet
+          ddx diagnose >/dev/null 2>&1
         elif [ -x "./cli/ddx" ]; then
-          ./cli/ddx diagnose --quiet
+          ./cli/ddx diagnose >/dev/null 2>&1
         fi
       fail_text: "DDx validation failed. Run 'ddx diagnose' for details"
 

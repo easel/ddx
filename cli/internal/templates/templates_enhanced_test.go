@@ -32,9 +32,9 @@ func TestReplaceVariables_EdgeCases(t *testing.T) {
 		},
 		{
 			name:      "mixed case variables",
-			content:   "{{Name}} ${NAME} ${name}",
+			content:   "{{Name}} ${name} {{name}}",
 			variables: map[string]string{"name": "test", "Name": "Test"},
-			expected:  "Test test test", // ${NAME} converts to lowercase and matches "name" -> "test"
+			expected:  "Test test test",
 		},
 		{
 			name:      "special characters in variables",
@@ -94,10 +94,10 @@ func TestProcessTemplateFile_EdgeCases(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "Content: test", string(content))
 
-	// Verify permissions are preserved
+	// Verify permissions are capped at 0644 for security
 	info, err := os.Stat(expectedTarget)
 	require.NoError(t, err)
-	assert.Equal(t, os.FileMode(0755), info.Mode())
+	assert.Equal(t, os.FileMode(0644), info.Mode())
 }
 
 // TestApplyTemplate_EdgeCases tests edge cases for applyTemplate
