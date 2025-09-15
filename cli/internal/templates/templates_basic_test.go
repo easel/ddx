@@ -11,6 +11,7 @@ import (
 
 // TestReplaceVariables tests variable substitution
 func TestReplaceVariables_Basic(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name      string
 		content   string
@@ -86,6 +87,7 @@ func TestReplaceVariables_Basic(t *testing.T) {
 
 // TestProcessTemplateFile tests processing a single template file
 func TestProcessTemplateFile_Basic(t *testing.T) {
+	t.Parallel()
 	tempDir := t.TempDir()
 
 	// Create source file
@@ -113,6 +115,7 @@ func TestProcessTemplateFile_Basic(t *testing.T) {
 
 // TestApplyTemplate tests applying a template directory
 func TestApplyTemplate_Basic(t *testing.T) {
+	t.Parallel()
 	// Create template directory
 	templateDir := t.TempDir()
 	targetDir := t.TempDir()
@@ -224,3 +227,39 @@ func TestApply_Basic(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "not found")
 }
+
+// TestApply_EdgeCases tests edge cases for Apply function
+func TestApply_EdgeCases(t *testing.T) {
+	tempHome := t.TempDir()
+	t.Setenv("HOME", tempHome)
+
+	// Test empty template name
+	err := Apply("", t.TempDir(), nil)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "template name cannot be empty")
+
+	// Test empty target directory
+	err = Apply("test", "", nil)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "target directory cannot be empty")
+
+	// Test template that is a file, not directory
+	templateName := "file-template"
+	templatePath := filepath.Join(tempHome, ".ddx", "templates", templateName)
+	require.NoError(t, os.MkdirAll(filepath.Dir(templatePath), 0755))
+	require.NoError(t, os.WriteFile(templatePath, []byte("content"), 0644))
+
+	err = Apply(templateName, t.TempDir(), nil)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "is not a directory")
+
+	// Test nil variables (should work)
+	templateDir := filepath.Join(tempHome, ".ddx", "templates", "nil-vars")
+	require.NoError(t, os.MkdirAll(templateDir, 0755))
+	templateFile := filepath.Join(templateDir, "test.txt")
+	require.NoError(t, os.WriteFile(templateFile, []byte("no variables"), 0644))
+
+	err = Apply("nil-vars", t.TempDir(), nil)
+	assert.NoError(t, err)
+}
+

@@ -5,11 +5,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/AlecAivazis/survey/v2"
 	"github.com/briandowns/spinner"
 	"github.com/easel/ddx/internal/config"
 	"github.com/easel/ddx/internal/templates"
-	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 )
 
@@ -39,109 +37,127 @@ func init() {
 }
 
 func runInit(cmd *cobra.Command, args []string) error {
-	cyan := color.New(color.FgCyan)
-	green := color.New(color.FgGreen)
-	yellow := color.New(color.FgYellow)
-	red := color.New(color.FgRed)
+	fmt.Fprint(cmd.OutOrStdout(), "🚀 Initializing DDx in current project...\n")
+	fmt.Fprintln(cmd.OutOrStdout())
 
-	cyan.Println("🚀 Initializing DDx in current project...")
-	fmt.Println()
-
-	// Check if already initialized
-	if isInitialized() && !initForce {
-		var proceed bool
-		prompt := &survey.Confirm{
-			Message: "DDx is already initialized. Do you want to proceed anyway?",
-			Default: false,
-		}
-		if err := survey.AskOne(prompt, &proceed); err != nil {
-			return err
-		}
-
-		if !proceed {
-			yellow.Println("Initialization cancelled.")
-			return nil
-		}
+	// Check if config already exists
+	configPath := ".ddx.yml"
+	if _, err := os.Stat(configPath); err == nil && !initForce {
+		// Config exists and --force not used - exit code 2 per contract
+		fmt.Fprint(cmd.OutOrStdout(), "❌ DDx configuration already exists. Use --force to overwrite.\n")
+		// Return error with exit code 2
+		cmd.SilenceUsage = true
+		return fmt.Errorf("exit code 2: configuration already exists")
 	}
-
-	s := spinner.New(spinner.CharSets[14], 100)
-	s.Prefix = "Setting up DDx... "
-	s.Start()
 
 	// Check if DDx home exists
 	ddxHome := getDDxHome()
+	ddxHomeExists := true
 	if _, err := os.Stat(ddxHome); os.IsNotExist(err) {
-		s.Stop()
-		red.Println("❌ DDx toolkit not found. Please run the installation script first.")
-		return fmt.Errorf("DDx not installed at %s", ddxHome)
+		ddxHomeExists = false
 	}
 
-	// Load configuration
-	cfg, err := config.Load()
-	if err != nil {
-		s.Stop()
-		return fmt.Errorf("failed to load configuration: %w", err)
-	}
-
-	// Create local .ddx directory
-	localDDxPath := ".ddx"
-	if err := os.MkdirAll(localDDxPath, 0755); err != nil {
-		s.Stop()
-		return fmt.Errorf("failed to create .ddx directory: %w", err)
-	}
-
-	// Copy selected resources
-	for _, include := range cfg.Includes {
-		sourcePath := filepath.Join(ddxHome, include)
-		targetPath := filepath.Join(localDDxPath, include)
-
-		if _, err := os.Stat(sourcePath); err == nil {
-			s.Suffix = fmt.Sprintf(" Copying %s...", include)
-			if err := copyDir(sourcePath, targetPath); err != nil {
-				s.Stop()
-				return fmt.Errorf("failed to copy %s: %w", include, err)
-			}
-		}
-	}
-
-	// Create local configuration
+	// Create local configuration even if DDx home doesn't exist
 	pwd, _ := os.Getwd()
 	projectName := filepath.Base(pwd)
 
 	localConfig := &config.Config{
-		Version:  cfg.Version,
-		Includes: cfg.Includes,
+		Version: "1.0",
+		Repository: config.Repository{
+			URL:    "https://github.com/easel/ddx",
+			Branch: "main",
+			Path:   ".ddx/",
+		},
+		Includes: []string{
+			"prompts/claude",
+			"scripts/hooks",
+			"templates/common",
+		},
 		Variables: map[string]string{
 			"project_name": projectName,
-			"ai_model":     cfg.Variables["ai_model"],
+			"ai_model":     "claude-3-opus",
 		},
 	}
 
-	if err := config.SaveLocal(localConfig); err != nil {
-		s.Stop()
-		return fmt.Errorf("failed to save local configuration: %w", err)
-	}
-
-	// Apply template if specified
-	if initTemplate != "" {
-		s.Suffix = fmt.Sprintf(" Applying template: %s...", initTemplate)
-		if err := templates.Apply(initTemplate, ".", cfg.Variables); err != nil {
-			s.Stop()
-			return fmt.Errorf("failed to apply template: %w", err)
+	// Try to load existing config for more accurate defaults
+	if ddxHomeExists {
+		if cfg, err := config.Load(); err == nil {
+			localConfig.Version = cfg.Version
+			localConfig.Repository = cfg.Repository
+			localConfig.Includes = cfg.Includes
+			for k, v := range cfg.Variables {
+				if k != "project_name" { // Keep project-specific name
+					localConfig.Variables[k] = v
+				}
+			}
 		}
 	}
 
-	s.Stop()
-	green.Println("✅ DDx initialized successfully!")
-	fmt.Println()
+	// Save local configuration
+	if err := config.SaveLocal(localConfig); err != nil {
+		fmt.Fprintf(cmd.OutOrStdout(), "❌ Failed to save configuration: %v\n", err)
+		cmd.SilenceUsage = true
+		return fmt.Errorf("exit code 1: failed to save configuration: %w", err)
+	}
 
-	// Show next steps
-	fmt.Println(color.New(color.Bold).Sprint("Next steps:"))
-	cyan.Printf("  ddx list          - See available resources\n")
-	cyan.Printf("  ddx apply <name>  - Apply templates or patterns\n")
-	cyan.Printf("  ddx diagnose      - Analyze your project\n")
-	cyan.Printf("  ddx update        - Update toolkit\n")
-	fmt.Println()
+	// Copy resources if DDx home exists
+	if ddxHomeExists {
+		s := spinner.New(spinner.CharSets[14], 100)
+		s.Prefix = "Setting up DDx... "
+		s.Start()
+
+		// Create local .ddx directory
+		localDDxPath := ".ddx"
+		if err := os.MkdirAll(localDDxPath, 0755); err != nil {
+			s.Stop()
+			fmt.Fprintf(cmd.OutOrStdout(), "❌ Failed to create .ddx directory: %v\n", err)
+			cmd.SilenceUsage = true
+			return fmt.Errorf("exit code 1: failed to create .ddx directory: %w", err)
+		}
+
+		// Copy selected resources
+		for _, include := range localConfig.Includes {
+			sourcePath := filepath.Join(ddxHome, include)
+			targetPath := filepath.Join(localDDxPath, include)
+
+			if _, err := os.Stat(sourcePath); err == nil {
+				s.Suffix = fmt.Sprintf(" Copying %s...", include)
+				if err := copyDir(sourcePath, targetPath); err != nil {
+					s.Stop()
+					fmt.Fprintf(cmd.OutOrStdout(), "❌ Failed to copy %s: %v\n", include, err)
+					cmd.SilenceUsage = true
+					return fmt.Errorf("exit code 1: failed to copy %s: %w", include, err)
+				}
+			}
+		}
+
+		// Apply template if specified
+		if initTemplate != "" {
+			s.Suffix = fmt.Sprintf(" Applying template: %s...", initTemplate)
+			if err := templates.Apply(initTemplate, ".", localConfig.Variables); err != nil {
+				s.Stop()
+				fmt.Fprintf(cmd.OutOrStdout(), "❌ Failed to apply template: %v\n", err)
+				cmd.SilenceUsage = true
+				return fmt.Errorf("exit code 4: template not found: %w", err)
+			}
+		}
+
+		s.Stop()
+	}
+
+	fmt.Fprint(cmd.OutOrStdout(), "✅ DDx initialized successfully!\n")
+	fmt.Fprint(cmd.OutOrStdout(), "Initialized DDx in current project.\n")
+	fmt.Fprintln(cmd.OutOrStdout())
+
+	// Show next steps only if DDx home exists
+	if ddxHomeExists {
+		fmt.Fprint(cmd.OutOrStdout(), "Next steps:\n")
+		fmt.Fprint(cmd.OutOrStdout(), "  ddx list          - See available resources\n")
+		fmt.Fprint(cmd.OutOrStdout(), "  ddx apply <name>  - Apply templates or patterns\n")
+		fmt.Fprint(cmd.OutOrStdout(), "  ddx diagnose      - Analyze your project\n")
+		fmt.Fprint(cmd.OutOrStdout(), "  ddx update        - Update toolkit\n")
+		fmt.Fprintln(cmd.OutOrStdout())
+	}
 
 	return nil
 }

@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -201,4 +202,141 @@ func TestCommitChanges_Basic(t *testing.T) {
 	output, err := cmd.Output()
 	require.NoError(t, err)
 	assert.Contains(t, string(output), "Test commit")
+}
+
+// TestCommitChanges_EdgeCases tests edge cases for CommitChanges
+func TestCommitChanges_EdgeCases(t *testing.T) {
+	repoDir := setupTestGitRepo(t)
+	originalDir, _ := os.Getwd()
+	defer os.Chdir(originalDir)
+
+	require.NoError(t, os.Chdir(repoDir))
+
+	// Test empty commit message
+	err := CommitChanges("")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "commit message cannot be empty")
+
+	// Test no changes to commit
+	err = CommitChanges("Should fail")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "no changes to commit")
+
+	// Test from non-git directory
+	nonGitDir := t.TempDir()
+	require.NoError(t, os.Chdir(nonGitDir))
+	err = CommitChanges("Should fail")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "not a git repository")
+}
+
+// TestHasSubtree_EdgeCases tests edge cases for HasSubtree
+func TestHasSubtree_EdgeCases(t *testing.T) {
+	repoDir := setupTestGitRepo(t)
+	originalDir, _ := os.Getwd()
+	defer os.Chdir(originalDir)
+
+	require.NoError(t, os.Chdir(repoDir))
+
+	// Test empty prefix
+	exists, err := HasSubtree("")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "prefix cannot be empty")
+	assert.False(t, exists)
+
+	// Test from non-git directory
+	nonGitDir := t.TempDir()
+	require.NoError(t, os.Chdir(nonGitDir))
+	exists, err = HasSubtree("test")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "not a git repository")
+	assert.False(t, exists)
+}
+
+// TestHasUncommittedChanges_EdgeCases tests edge cases for HasUncommittedChanges
+func TestHasUncommittedChanges_EdgeCases(t *testing.T) {
+	repoDir := setupTestGitRepo(t)
+	originalDir, _ := os.Getwd()
+	defer os.Chdir(originalDir)
+
+	require.NoError(t, os.Chdir(repoDir))
+
+	// Test empty path (should default to current directory)
+	hasChanges, err := HasUncommittedChanges("")
+	assert.NoError(t, err)
+	assert.False(t, hasChanges)
+
+	// Test from non-git directory
+	nonGitDir := t.TempDir()
+	hasChanges, err = HasUncommittedChanges(nonGitDir)
+	assert.Error(t, err)
+	// The error message could be "invalid path" or "not a git repository"
+	assert.True(t, strings.Contains(err.Error(), "not a git repository") || strings.Contains(err.Error(), "invalid path"))
+	assert.False(t, hasChanges)
+}
+
+// TestGetCurrentBranch_EdgeCases tests edge cases for GetCurrentBranch
+func TestGetCurrentBranch_EdgeCases(t *testing.T) {
+	originalDir, _ := os.Getwd()
+	defer os.Chdir(originalDir)
+
+	// Test from non-git directory
+	nonGitDir := t.TempDir()
+	require.NoError(t, os.Chdir(nonGitDir))
+
+	branch, err := GetCurrentBranch()
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "not a git repository")
+	assert.Equal(t, "", branch)
+}
+
+// TestSubtreeOperations_EdgeCases tests edge cases for subtree operations
+func TestSubtreeOperations_EdgeCases(t *testing.T) {
+	repoDir := setupTestGitRepo(t)
+	originalDir, _ := os.Getwd()
+	defer os.Chdir(originalDir)
+
+	require.NoError(t, os.Chdir(repoDir))
+
+	// Test SubtreeAdd with empty parameters
+	err := SubtreeAdd("", "https://example.com/repo.git", "main")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "prefix cannot be empty")
+
+	err = SubtreeAdd("prefix", "", "main")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "repository URL cannot be empty")
+
+	err = SubtreeAdd("prefix", "https://example.com/repo.git", "")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "branch name cannot be empty")
+
+	// Test SubtreePull with non-existent subtree
+	err = SubtreePull("nonexistent", "https://example.com/repo.git", "main")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "no subtree found")
+
+	// Test SubtreePush with empty parameters
+	err = SubtreePush("", "https://example.com/repo.git", "main")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "prefix cannot be empty")
+
+	// Test SubtreeReset with empty parameters
+	err = SubtreeReset("", "https://example.com/repo.git", "main")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "prefix cannot be empty")
+
+	// Test CheckBehind with empty parameters
+	count, err := CheckBehind("", "https://example.com/repo.git", "main")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "prefix cannot be empty")
+	assert.Equal(t, 0, count)
+
+	// Test from non-git directory
+	nonGitDir := t.TempDir()
+	require.NoError(t, os.Chdir(nonGitDir))
+
+	err = SubtreeAdd("prefix", "https://example.com/repo.git", "main")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "not a git repository")
 }

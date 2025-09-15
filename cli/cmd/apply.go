@@ -11,14 +11,25 @@ import (
 
 	"github.com/briandowns/spinner"
 	"github.com/easel/ddx/internal/config"
-	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 )
 
 var (
 	applyPath   string
 	applyDryRun bool
+	applyVars   []string
 )
+
+// ExitError represents an error with a specific exit code
+// ExitError represents an error with a specific exit code
+type ExitError struct {
+	Code    int
+	Message string
+}
+
+func (e *ExitError) Error() string {
+	return e.Message
+}
 
 var applyCmd = &cobra.Command{
 	Use:   "apply <resource>",
@@ -46,24 +57,16 @@ func init() {
 
 	applyCmd.Flags().StringVarP(&applyPath, "path", "p", ".", "Target path for application")
 	applyCmd.Flags().BoolVar(&applyDryRun, "dry-run", false, "Show what would be applied without making changes")
+	applyCmd.Flags().StringSliceVar(&applyVars, "var", nil, "Set template variables (key=value)")
 }
 
 func runApply(cmd *cobra.Command, args []string) error {
-	cyan := color.New(color.FgCyan)
-	green := color.New(color.FgGreen)
-	yellow := color.New(color.FgYellow)
-	red := color.New(color.FgRed)
-	gray := color.New(color.FgHiBlack)
-
 	resourceName := args[0]
 
-	cyan.Printf("🎯 Applying resource: %s\n\n", resourceName)
+	cmd.Printf("🎯 Applying resource: %s\n\n", resourceName)
 
-	// Check if DDx is initialized
-	if !isInitialized() {
-		red.Println("❌ DDx not initialized. Run 'ddx init' first.")
-		return nil
-	}
+	// Check if we can load configuration (either local or have DDx home)
+	// This allows the command to work if either DDx is installed globally or locally initialized
 
 	// Load configuration
 	cfg, err := config.Load()
@@ -84,22 +87,23 @@ func runApply(cmd *cobra.Command, args []string) error {
 
 	if resourceInfo == nil {
 		s.Stop()
-		red.Printf("❌ Resource '%s' not found\n", resourceName)
+		cmd.PrintErrf("❌ Resource '%s' not found\n", resourceName)
 
 		// Show available resources
-		yellow.Println("\n💡 Available resources:")
+		cmd.PrintErr("\n💡 Available resources:")
 		if err := showAvailableResources(); err != nil {
 			return err
 		}
-		return nil
+		// Exit code 6: Resource not found
+		return &ExitError{Code: 6, Message: fmt.Sprintf("resource '%s' not found", resourceName)}
 	}
 
 	s.Suffix = fmt.Sprintf(" Found %s: %s", resourceInfo.Type, resourceInfo.Name)
 
 	if applyDryRun {
 		s.Stop()
-		yellow.Println("🔍 Dry run mode - showing what would be applied:")
-		return showDryRun(resourceInfo, applyPath, cfg)
+		cmd.Println("🔍 Dry run mode - showing what would be applied:")
+		return showDryRun(resourceInfo, applyPath, cfg, cmd)
 	}
 
 	// Apply the resource
@@ -111,15 +115,15 @@ func runApply(cmd *cobra.Command, args []string) error {
 	}
 
 	s.Stop()
-	green.Printf("✅ Successfully applied %s!\n", resourceInfo.Name)
+	cmd.Printf("✅ Successfully applied %s!\n", resourceInfo.Name)
 
 	// Show what was applied
-	fmt.Println()
-	gray.Printf("Applied %s: %s\n", resourceInfo.Type, resourceInfo.Name)
+	cmd.Println()
+	cmd.Printf("Applied %s: %s\n", resourceInfo.Type, resourceInfo.Name)
 	if resourceInfo.Description != "" {
-		gray.Printf("Description: %s\n", resourceInfo.Description)
+		cmd.Printf("Description: %s\n", resourceInfo.Description)
 	}
-	gray.Printf("Target: %s\n", applyPath)
+	cmd.Printf("Target: %s\n", applyPath)
 
 	return nil
 }
@@ -134,6 +138,8 @@ type ResourceInfo struct {
 
 // findResource locates a resource by name
 func findResource(resourceName string) (*ResourceInfo, error) {
+	ddxHome := getDDxHome()
+
 	// Resource directories to search
 	resourceDirs := map[string]string{
 		"templates": "templates",
@@ -145,7 +151,7 @@ func findResource(resourceName string) (*ResourceInfo, error) {
 
 	// First try exact match
 	for resourceType, dir := range resourceDirs {
-		resourcePath := filepath.Join(".ddx", dir, resourceName)
+		resourcePath := filepath.Join(ddxHome, dir, resourceName)
 		if _, err := os.Stat(resourcePath); err == nil {
 			return &ResourceInfo{
 				Name:        resourceName,
@@ -158,7 +164,7 @@ func findResource(resourceName string) (*ResourceInfo, error) {
 
 	// Try partial match
 	for resourceType, dir := range resourceDirs {
-		dirPath := filepath.Join(".ddx", dir)
+		dirPath := filepath.Join(ddxHome, dir)
 		if entries, err := os.ReadDir(dirPath); err == nil {
 			for _, entry := range entries {
 				if strings.Contains(strings.ToLower(entry.Name()), strings.ToLower(resourceName)) {
@@ -176,7 +182,7 @@ func findResource(resourceName string) (*ResourceInfo, error) {
 
 	// Try nested search (e.g., "prompts/claude")
 	if strings.Contains(resourceName, "/") {
-		resourcePath := filepath.Join(".ddx", resourceName)
+		resourcePath := filepath.Join(ddxHome, resourceName)
 		if _, err := os.Stat(resourcePath); err == nil {
 			parts := strings.Split(resourceName, "/")
 			return &ResourceInfo{
@@ -296,8 +302,14 @@ func processFile(sourcePath, targetPath string, cfg *config.Config) error {
 		return err
 	}
 
+	// Parse runtime variables from --var flags
+	runtimeVars := parseRuntimeVariables(applyVars)
+
+	// Create a copy of the config with runtime variables merged
+	mergedConfig := cfg.WithRuntimeVariables(runtimeVars)
+
 	// Apply variable substitution
-	processedContent := cfg.ReplaceVariables(string(content))
+	processedContent := mergedConfig.ReplaceVariables(string(content))
 
 	// Ensure target directory exists
 	if err := os.MkdirAll(filepath.Dir(targetPath), 0755); err != nil {
@@ -308,24 +320,32 @@ func processFile(sourcePath, targetPath string, cfg *config.Config) error {
 	return os.WriteFile(targetPath, []byte(processedContent), 0644)
 }
 
-// showDryRun shows what would be applied without making changes
-func showDryRun(resource *ResourceInfo, targetPath string, cfg *config.Config) error {
-	blue := color.New(color.FgBlue)
-	yellow := color.New(color.FgYellow)
-	gray := color.New(color.FgHiBlack)
+// parseRuntimeVariables parses --var flags into a map
+func parseRuntimeVariables(vars []string) map[string]string {
+	result := make(map[string]string)
+	for _, v := range vars {
+		parts := strings.SplitN(v, "=", 2)
+		if len(parts) == 2 {
+			result[parts[0]] = parts[1]
+		}
+	}
+	return result
+}
 
-	blue.Printf("\n📋 Dry Run Results:\n\n")
-	fmt.Printf("Resource: %s\n", resource.Name)
-	fmt.Printf("Type: %s\n", resource.Type)
-	fmt.Printf("Source: %s\n", resource.Path)
-	fmt.Printf("Target: %s\n\n", targetPath)
+// showDryRun shows what would be applied without making changes
+func showDryRun(resource *ResourceInfo, targetPath string, cfg *config.Config, cmd *cobra.Command) error {
+	cmd.Printf("\n📋 Dry Run Results:\n\n")
+	cmd.Printf("Would apply: %s\n", resource.Name)
+	cmd.Printf("Type: %s\n", resource.Type)
+	cmd.Printf("Source: %s\n", resource.Path)
+	cmd.Printf("Target: %s\n\n", targetPath)
 
 	stat, err := os.Stat(resource.Path)
 	if err != nil {
 		return err
 	}
 
-	yellow.Println("Files that would be created/updated:")
+	cmd.Println("Files that would be created/updated:")
 
 	if stat.IsDir() {
 		return filepath.Walk(resource.Path, func(path string, info os.FileInfo, err error) error {
@@ -343,9 +363,9 @@ func showDryRun(resource *ResourceInfo, targetPath string, cfg *config.Config) e
 
 				// Check if file exists
 				if _, err := os.Stat(targetFile); err == nil {
-					gray.Printf("  ~ %s (would update)\n", targetFile)
+					cmd.Printf("  ~ %s (would update)\n", targetFile)
 				} else {
-					gray.Printf("  + %s (would create)\n", targetFile)
+					cmd.Printf("  + %s (would create)\n", targetFile)
 				}
 			}
 			return nil
@@ -355,9 +375,9 @@ func showDryRun(resource *ResourceInfo, targetPath string, cfg *config.Config) e
 		targetFile := filepath.Join(targetPath, filename)
 
 		if _, err := os.Stat(targetFile); err == nil {
-			gray.Printf("  ~ %s (would update)\n", targetFile)
+			cmd.Printf("  ~ %s (would update)\n", targetFile)
 		} else {
-			gray.Printf("  + %s (would create)\n", targetFile)
+			cmd.Printf("  + %s (would create)\n", targetFile)
 		}
 	}
 
@@ -366,10 +386,11 @@ func showDryRun(resource *ResourceInfo, targetPath string, cfg *config.Config) e
 
 // showAvailableResources shows available resources organized by type
 func showAvailableResources() error {
+	ddxHome := getDDxHome()
 	resourceDirs := []string{"templates", "patterns", "configs", "prompts", "scripts"}
 
 	for _, dir := range resourceDirs {
-		dirPath := filepath.Join(".ddx", dir)
+		dirPath := filepath.Join(ddxHome, dir)
 		if entries, err := os.ReadDir(dirPath); err == nil && len(entries) > 0 {
 			caser := cases.Title(language.English)
 			fmt.Printf("\n%s:\n", caser.String(dir))

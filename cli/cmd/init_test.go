@@ -120,6 +120,10 @@ repository:
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Reset global flag variables to ensure test isolation
+			initTemplate = ""
+			initForce = false
+
 			dir, cleanup := setupTestDir(t)
 			defer cleanup()
 

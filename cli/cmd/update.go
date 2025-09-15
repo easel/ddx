@@ -14,6 +14,7 @@ import (
 
 var (
 	updateCheck bool
+	updateForce bool
 	updateReset bool
 )
 
@@ -34,6 +35,7 @@ func init() {
 	rootCmd.AddCommand(updateCmd)
 
 	updateCmd.Flags().BoolVar(&updateCheck, "check", false, "Check for updates without applying")
+	updateCmd.Flags().BoolVar(&updateForce, "force", false, "Force update even if there are local changes")
 	updateCmd.Flags().BoolVar(&updateReset, "reset", false, "Reset to master state, discarding local changes")
 }
 
@@ -97,6 +99,22 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
+	// Check for local changes before updating
+	if !updateForce && !updateReset {
+		hasChanges, err := git.HasUncommittedChanges(".ddx")
+		if err != nil {
+			s.Stop()
+			return fmt.Errorf("failed to check for local changes: %w", err)
+		}
+
+		if hasChanges {
+			s.Stop()
+			yellow.Println("⚠️  Local changes detected in .ddx directory")
+			yellow.Println("Use --force to update anyway or --reset to discard changes")
+			return nil
+		}
+	}
+
 	// Perform the update
 	if hasSubtree {
 		s.Suffix = " Updating from subtree..."
@@ -137,10 +155,25 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 	}
 	fmt.Println()
 
+	// Show version information if available
+	if hasSubtree {
+		// Note: Detailed version info would require additional git commands
+		green.Printf("🏷️  Updated successfully!\n\n")
+	}
+
 	// Run post-update tasks
 	if err := runPostUpdateTasks(cfg); err != nil {
 		yellow.Printf("⚠️  Post-update tasks failed: %v\n", err)
+	} else {
+		green.Println("✅ Post-update tasks completed successfully!")
 	}
+
+	// Suggest next steps
+	fmt.Println()
+	green.Println("💡 Next steps:")
+	fmt.Println("  • Review updated resources in .ddx/")
+	fmt.Println("  • Run 'ddx diagnose' to check your project health")
+	fmt.Println("  • Apply new patterns with 'ddx apply <pattern>'")
 
 	return nil
 }

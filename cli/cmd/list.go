@@ -9,13 +9,13 @@ import (
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
-	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 )
 
 var (
-	listType   string
-	listSearch string
+	listType    string
+	listSearch  string
+	listVerbose bool
 )
 
 var listCmd = &cobra.Command{
@@ -32,31 +32,32 @@ func init() {
 
 	listCmd.Flags().StringVarP(&listType, "type", "t", "", "Filter by type (templates|patterns|configs|prompts|scripts)")
 	listCmd.Flags().StringVarP(&listSearch, "search", "s", "", "Search for specific items")
+	listCmd.Flags().BoolVar(&listVerbose, "verbose", false, "Show verbose output with additional details")
 }
 
 func runList(cmd *cobra.Command, args []string) error {
-	cyan := color.New(color.FgCyan)
-	green := color.New(color.FgGreen)
-	gray := color.New(color.FgHiBlack)
-	bold := color.New(color.Bold)
-
 	ddxHome := getDDxHome()
 
 	// Check if DDx is installed
 	if _, err := os.Stat(ddxHome); os.IsNotExist(err) {
-		color.Red("❌ DDx not found. Please run the installation script first.")
+		cmd.PrintErr("❌ DDx not found. Please run the installation script first.")
 		return nil
 	}
 
-	cyan.Println("📋 Available DDx Resources")
-	fmt.Println()
+	cmd.Println("📋 Available DDx Resources")
+	cmd.Println()
 
 	// Define resource types to list
 	resourceTypes := []string{"templates", "patterns", "configs", "prompts", "scripts"}
 
-	// Filter by type if specified
-	if listType != "" {
-		resourceTypes = []string{listType}
+	// Filter by type if specified (either via flag or argument)
+	filterType := listType
+	if len(args) > 0 {
+		filterType = args[0]
+	}
+
+	if filterType != "" {
+		resourceTypes = []string{filterType}
 	}
 
 	for _, resourceType := range resourceTypes {
@@ -89,7 +90,7 @@ func runList(cmd *cobra.Command, args []string) error {
 
 		// Print section header
 		caser := cases.Title(language.English)
-		_, _ = bold.Printf("%s:\n", caser.String(resourceType))
+		cmd.Printf("%s:\n", caser.String(resourceType))
 
 		for _, entry := range filteredEntries {
 			itemPath := filepath.Join(resourcePath, entry.Name())
@@ -98,25 +99,25 @@ func runList(cmd *cobra.Command, args []string) error {
 			info := getResourceInfo(itemPath, entry)
 
 			if entry.IsDir() {
-				green.Printf("  📁 %s", entry.Name())
+				cmd.Printf("  📁 %s", entry.Name())
 			} else {
-				green.Printf("  📄 %s", entry.Name())
+				cmd.Printf("  📄 %s", entry.Name())
 			}
 
 			if info != "" {
-				gray.Printf(" - %s", info)
+				cmd.Printf(" - %s", info)
 			}
-			fmt.Println()
+			cmd.Println()
 		}
-		fmt.Println()
+		cmd.Println()
 	}
 
 	// Show usage examples
-	gray.Println("Usage examples:")
-	gray.Println("  ddx apply nextjs           # Apply Next.js template")
-	gray.Println("  ddx apply error-handling   # Apply error handling pattern")
-	gray.Println("  ddx list --type templates  # Show only templates")
-	gray.Println("  ddx list --search react    # Search for react-related items")
+	cmd.Println("Usage examples:")
+	cmd.Println("  ddx apply nextjs           # Apply Next.js template")
+	cmd.Println("  ddx apply error-handling   # Apply error handling pattern")
+	cmd.Println("  ddx list --type templates  # Show only templates")
+	cmd.Println("  ddx list --search react    # Search for react-related items")
 
 	return nil
 }

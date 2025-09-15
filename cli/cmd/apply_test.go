@@ -150,6 +150,11 @@ variables:
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Reset global flag variables to ensure test isolation
+			applyPath = "."
+			applyDryRun = false
+			applyVars = nil
+
 			originalDir, _ := os.Getwd()
 			defer os.Chdir(originalDir)
 
@@ -193,3 +198,4 @@ func TestApplyCommand_Help(t *testing.T) {
 	assert.Contains(t, output, "template")
 	assert.Contains(t, output, "--dry-run")
 }
+

@@ -84,6 +84,10 @@ func TestInitCommand_Contract(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Reset global flag variables to ensure test isolation
+			initTemplate = ""
+			initForce = false
+
 			originalDir, _ := os.Getwd()
 			defer os.Chdir(originalDir)
 
@@ -179,6 +183,11 @@ func TestListCommand_Contract(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Reset global flag variables to ensure test isolation
+			listType = ""
+			listSearch = ""
+			listVerbose = false
+
 			if tt.setup != nil {
 				tt.setup(t)
 			}
@@ -308,6 +317,11 @@ func TestApplyCommand_Contract(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Reset global flag variables to ensure test isolation
+			applyPath = "."
+			applyDryRun = false
+			applyVars = nil
+
 			originalDir, _ := os.Getwd()
 			defer os.Chdir(originalDir)
 
@@ -393,6 +407,12 @@ variables:
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Reset global flag variables to ensure test isolation
+			configGlobal = false
+			configLocal = false
+			configInit = false
+			configShow = false
+
 			originalDir, _ := os.Getwd()
 			defer os.Chdir(originalDir)
 

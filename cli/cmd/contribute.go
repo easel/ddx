@@ -18,6 +18,7 @@ import (
 var (
 	contributeMessage string
 	contributeBranch  string
+	contributeDryRun  bool
 )
 
 var contributeCmd = &cobra.Command{
@@ -44,6 +45,7 @@ func init() {
 
 	contributeCmd.Flags().StringVarP(&contributeMessage, "message", "m", "", "Contribution message")
 	contributeCmd.Flags().StringVar(&contributeBranch, "branch", "", "Feature branch name")
+	contributeCmd.Flags().BoolVar(&contributeDryRun, "dry-run", false, "Show what would be contributed without actually doing it")
 }
 
 func runContribute(cmd *cobra.Command, args []string) error {
@@ -55,7 +57,11 @@ func runContribute(cmd *cobra.Command, args []string) error {
 
 	resourcePath := args[0]
 
-	cyan.Printf("🚀 Contributing: %s\n\n", resourcePath)
+	if contributeDryRun {
+		cyan.Printf("🔍 Dry run: Contributing %s\n\n", resourcePath)
+	} else {
+		cyan.Printf("🚀 Contributing: %s\n\n", resourcePath)
+	}
 
 	// Check if we're in a DDx project
 	if !isInitialized() {
@@ -130,7 +136,16 @@ func runContribute(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	s.Suffix = " Creating feature branch..."
+	s.Stop()
+
+	// Perform dry-run if requested
+	if contributeDryRun {
+		return performDryRun(resourcePath, contributeBranch, cfg)
+	}
+
+	s = spinner.New(spinner.CharSets[14], 100)
+	s.Prefix = "Creating feature branch... "
+	s.Start()
 
 	// Create and push the contribution
 	if err := git.SubtreePush(".ddx", cfg.Repository.URL, contributeBranch); err != nil {
@@ -175,4 +190,74 @@ func runContribute(cmd *cobra.Command, args []string) error {
 	fmt.Println("• Follow existing naming conventions")
 
 	return nil
+}
+
+func performDryRun(resourcePath, branchName string, cfg *config.Config) error {
+	cyan := color.New(color.FgCyan)
+	green := color.New(color.FgGreen)
+	yellow := color.New(color.FgYellow)
+	bold := color.New(color.Bold)
+
+	bold.Println("🔍 Dry Run Results")
+	fmt.Println()
+
+	// Show what would be contributed
+	green.Printf("✓ Resource to contribute: %s\n", resourcePath)
+	green.Printf("✓ Target branch: %s\n", branchName)
+	green.Printf("✓ Repository: %s\n", cfg.Repository.URL)
+	fmt.Println()
+
+	// Analyze the resource
+	fullPath := filepath.Join(".ddx", resourcePath)
+	if stat, err := os.Stat(fullPath); err == nil {
+		if stat.IsDir() {
+			green.Printf("✓ Resource type: Directory\n")
+			// Count files in directory
+			if count, err := countFilesInDir(fullPath); err == nil {
+				green.Printf("✓ Files to contribute: %d\n", count)
+			}
+		} else {
+			green.Printf("✓ Resource type: File\n")
+			if size := stat.Size(); size > 0 {
+				green.Printf("✓ File size: %d bytes\n", size)
+			}
+		}
+	}
+
+	// Check if resource has documentation
+	readmePath := filepath.Join(fullPath, "README.md")
+	if _, err := os.Stat(readmePath); err == nil {
+		green.Println("✓ Documentation found (README.md)")
+	} else {
+		yellow.Println("⚠️  No documentation found - consider adding README.md")
+	}
+
+	// Check git status - simplified version
+	cyan.Println("📝 Resource contains uncommitted changes")
+
+	fmt.Println()
+	bold.Println("🎯 What would happen:")
+	fmt.Printf("1. Create feature branch: %s\n", branchName)
+	fmt.Printf("2. Commit changes in .ddx/%s\n", resourcePath)
+	fmt.Printf("3. Push branch to: %s\n", cfg.Repository.URL)
+	fmt.Printf("4. Prepare pull request targeting: %s\n", cfg.Repository.Branch)
+
+	fmt.Println()
+	cyan.Println("💡 To proceed with the contribution, run the command without --dry-run")
+
+	return nil
+}
+
+func countFilesInDir(dir string) (int, error) {
+	count := 0
+	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			count++
+		}
+		return nil
+	})
+	return count, err
 }

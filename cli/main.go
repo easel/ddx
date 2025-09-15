@@ -18,6 +18,11 @@ func main() {
 	cmd.Date = date
 
 	if err := cmd.Execute(); err != nil {
+		// Check if it's an ExitError with a specific exit code
+		if exitErr, ok := err.(*cmd.ExitError); ok {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", exitErr.Message)
+			os.Exit(exitErr.Code)
+		}
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}

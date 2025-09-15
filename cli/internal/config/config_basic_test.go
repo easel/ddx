@@ -12,6 +12,7 @@ import (
 
 // TestDefaultConfig validates the default configuration values
 func TestDefaultConfig_Basic(t *testing.T) {
+	t.Parallel()
 	config := DefaultConfig
 
 	assert.Equal(t, "1.0", config.Version)
@@ -154,6 +155,7 @@ func TestSaveLocal_Basic(t *testing.T) {
 
 // TestReplaceVariables tests the ReplaceVariables method
 func TestReplaceVariables_Basic(t *testing.T) {
+	t.Parallel()
 	config := &Config{
 		Variables: map[string]string{
 			"name":    "TestProject",

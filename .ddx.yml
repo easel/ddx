@@ -45,3 +45,17 @@ preferences:
   auto_apply_hooks: true
   check_updates: true
   backup_before_update: true
+
+# Persona bindings - map roles to specific personas
+persona_bindings:
+  code-reviewer: strict-code-reviewer
+  test-engineer: test-engineer-tdd
+  architect: architect-systems
+  developer: developer-senior-golang
+  devops-engineer: devops-engineer-kubernetes
+  analyst: analyst-feedback
+
+  # Optional: workflow-specific overrides
+  # overrides:
+  #   helix:
+  #     test-engineer: test-engineer-bdd

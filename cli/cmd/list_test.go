@@ -110,6 +110,11 @@ func TestListCommand(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Reset global flag variables to ensure test isolation
+			listType = ""
+			listSearch = ""
+			listVerbose = false
+
 			if tt.setup != nil {
 				tt.setup(t)
 			}
@@ -149,3 +154,4 @@ func TestListCommand_Help(t *testing.T) {
 	assert.Contains(t, output, "List all available resources")
 	assert.Contains(t, output, "search")
 }
+

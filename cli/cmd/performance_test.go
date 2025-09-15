@@ -186,8 +186,14 @@ func TestPerformance_MemoryUsage(t *testing.T) {
 			var m2 runtime.MemStats
 			runtime.ReadMemStats(&m2)
 
-			// Calculate memory used
-			memUsedMB := (m2.Alloc - m1.Alloc) / 1024 / 1024
+			// Calculate memory used (handle cases where GC freed memory)
+			var memUsedMB uint64
+			if m2.Alloc > m1.Alloc {
+				memUsedMB = (m2.Alloc - m1.Alloc) / 1024 / 1024
+			} else {
+				// If GC freed memory, consider it as 0 additional memory used
+				memUsedMB = 0
+			}
 
 			assert.LessOrEqual(t, memUsedMB, tt.maxMemoryMB,
 				"Memory usage exceeds limit: %dMB > %dMB", memUsedMB, tt.maxMemoryMB)

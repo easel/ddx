@@ -1,11 +1,13 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/briandowns/spinner"
 	"github.com/easel/ddx/internal/config"
@@ -26,6 +28,8 @@ type DiagnosticResult struct {
 	Score       int           `json:"score"`
 	Issues      []string      `json:"issues"`
 	Suggestions []string      `json:"suggestions"`
+	Timestamp   time.Time     `json:"timestamp"`
+	ProjectPath string        `json:"project_path"`
 }
 
 type DDxStatus struct {
@@ -88,9 +92,12 @@ func runDiagnose(cmd *cobra.Command, args []string) error {
 	s.Prefix = "Analyzing project... "
 	s.Start()
 
+	pwd, _ := os.Getwd()
 	result := &DiagnosticResult{
 		Issues:      []string{},
 		Suggestions: []string{},
+		Timestamp:   time.Now(),
+		ProjectPath: pwd,
 	}
 
 	// Check DDx setup
@@ -114,6 +121,15 @@ func runDiagnose(cmd *cobra.Command, args []string) error {
 
 	// Display results
 	displayResults(result)
+
+	// Generate report if requested
+	if diagnoseReport {
+		fmt.Println()
+		if err := generateReport(result); err != nil {
+			yellow := color.New(color.FgYellow)
+			yellow.Printf("⚠️  Failed to generate report: %v\n", err)
+		}
+	}
 
 	// Auto-fix if requested
 	if diagnoseFix {
@@ -494,4 +510,114 @@ Describe the high-level architecture and key components.
 `, projectName)
 
 	return os.WriteFile("CLAUDE.md", []byte(content), 0644)
+}
+
+func generateReport(result *DiagnosticResult) error {
+	cyan := color.New(color.FgCyan)
+	green := color.New(color.FgGreen)
+
+	cyan.Println("📊 Generating diagnostic report...")
+
+	// Generate JSON report
+	reportData, err := json.MarshalIndent(result, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal report data: %w", err)
+	}
+
+	// Create reports directory if it doesn't exist
+	reportsDir := ".ddx-reports"
+	if err := os.MkdirAll(reportsDir, 0755); err != nil {
+		return fmt.Errorf("failed to create reports directory: %w", err)
+	}
+
+	// Generate filename with timestamp
+	timestamp := result.Timestamp.Format("2006-01-02_15-04-05")
+	reportPath := filepath.Join(reportsDir, fmt.Sprintf("diagnostic-report_%s.json", timestamp))
+
+	// Write JSON report
+	if err := os.WriteFile(reportPath, reportData, 0644); err != nil {
+		return fmt.Errorf("failed to write report: %w", err)
+	}
+
+	green.Printf("✅ Report saved: %s\n", reportPath)
+
+	// Also generate a human-readable summary
+	summaryPath := filepath.Join(reportsDir, fmt.Sprintf("diagnostic-summary_%s.md", timestamp))
+	if err := generateMarkdownReport(result, summaryPath); err != nil {
+		return fmt.Errorf("failed to generate summary: %w", err)
+	}
+
+	green.Printf("✅ Summary saved: %s\n", summaryPath)
+
+	return nil
+}
+
+func generateMarkdownReport(result *DiagnosticResult, path string) error {
+	var content strings.Builder
+
+	content.WriteString(fmt.Sprintf("# DDx Diagnostic Report\n\n"))
+	content.WriteString(fmt.Sprintf("**Generated:** %s\n", result.Timestamp.Format("2006-01-02 15:04:05")))
+	content.WriteString(fmt.Sprintf("**Project Path:** %s\n", result.ProjectPath))
+	content.WriteString(fmt.Sprintf("**Overall Score:** %d/100\n\n", result.Score))
+
+	// DDx Status
+	content.WriteString("## DDx Status\n\n")
+	content.WriteString(fmt.Sprintf("- **Installed:** %s\n", boolToIcon(result.DDx.Installed)))
+	content.WriteString(fmt.Sprintf("- **Initialized:** %s\n", boolToIcon(result.DDx.Initialized)))
+	content.WriteString(fmt.Sprintf("- **Configuration Valid:** %s\n\n", boolToIcon(result.DDx.ConfigValid)))
+
+	// Git Status
+	content.WriteString("## Git Status\n\n")
+	content.WriteString(fmt.Sprintf("- **Repository:** %s\n", boolToIcon(result.Git.Repository)))
+	content.WriteString(fmt.Sprintf("- **Gitignore:** %s\n", boolToIcon(result.Git.Gitignore)))
+	content.WriteString(fmt.Sprintf("- **README:** %s\n", boolToIcon(result.Git.Readme)))
+	content.WriteString(fmt.Sprintf("- **Git Hooks:** %d configured\n", len(result.Git.Hooks)))
+	content.WriteString(fmt.Sprintf("- **DDx Subtree:** %s\n\n", boolToIcon(result.Git.DDxSubtree)))
+
+	// Project Status
+	content.WriteString("## Project Structure\n\n")
+	content.WriteString(fmt.Sprintf("- **Type:** %s\n", result.Project.Type))
+	content.WriteString(fmt.Sprintf("- **Config File:** %s\n", result.Project.ConfigFile))
+	content.WriteString(fmt.Sprintf("- **Source Directories:** %s\n", formatSlice(result.Project.SourceDirs)))
+	content.WriteString(fmt.Sprintf("- **Test Directories:** %s\n\n", formatSlice(result.Project.TestDirs)))
+
+	// AI Integration
+	content.WriteString("## AI Integration\n\n")
+	content.WriteString(fmt.Sprintf("- **CLAUDE.md:** %s\n", boolToIcon(result.AI.ClaudeFile)))
+	content.WriteString(fmt.Sprintf("- **AI Files:** %s\n", formatSlice(result.AI.Files)))
+	content.WriteString(fmt.Sprintf("- **Documentation:** %s\n\n", formatSlice(result.AI.Documentation)))
+
+	// Issues
+	if len(result.Issues) > 0 {
+		content.WriteString("## Issues Found\n\n")
+		for _, issue := range result.Issues {
+			content.WriteString(fmt.Sprintf("- ❌ %s\n", issue))
+		}
+		content.WriteString("\n")
+	}
+
+	// Suggestions
+	if len(result.Suggestions) > 0 {
+		content.WriteString("## Suggestions\n\n")
+		for _, suggestion := range result.Suggestions {
+			content.WriteString(fmt.Sprintf("- 💡 %s\n", suggestion))
+		}
+		content.WriteString("\n")
+	}
+
+	return os.WriteFile(path, []byte(content.String()), 0644)
+}
+
+func boolToIcon(value bool) string {
+	if value {
+		return "✅"
+	}
+	return "❌"
+}
+
+func formatSlice(slice []string) string {
+	if len(slice) == 0 {
+		return "None"
+	}
+	return strings.Join(slice, ", ")
 }

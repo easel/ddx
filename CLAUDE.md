@@ -21,6 +21,7 @@ The project has a dual structure:
 - `templates/` - Project templates (NextJS, Python, etc.)
 - `patterns/` - Reusable code patterns and examples
 - `prompts/` - AI prompts and instructions (Claude-specific and general)
+- `personas/` - AI persona definitions for consistent role-based interactions
 - `scripts/` - Automation scripts and git hooks
 - `configs/` - Tool configurations (ESLint, Prettier, TypeScript)
 
@@ -102,5 +103,16 @@ Pre-commit checks include:
 - `ddx diagnose` - Analyze project health and suggest improvements
 - `ddx update` - Update toolkit from master repository
 - `ddx contribute` - Share improvements back to community
+- `ddx persona` - Manage AI personas for consistent role-based interactions
 
 The CLI follows the medical metaphor throughout, treating projects as patients that need diagnosis and treatment through appropriate templates and patterns.
+
+### Persona System
+
+DDX includes a persona system that provides consistent AI personalities for different roles:
+
+- **Personas**: Reusable AI personality templates (e.g., `strict-code-reviewer`, `test-engineer-tdd`)
+- **Roles**: Abstract functions that personas fulfill (e.g., `code-reviewer`, `test-engineer`)
+- **Bindings**: Project-specific mappings between roles and personas in `.ddx.yml`
+
+Personas enable consistent, high-quality AI interactions across team members and projects. Workflows can specify required roles, and projects bind specific personas to those roles. See `/personas/` for available personas and `/personas/README.md` for detailed documentation.

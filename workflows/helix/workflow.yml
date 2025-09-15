@@ -19,28 +19,31 @@ phases:
     order: 1
     name: Frame the Problem
     description: Define and analyze the problem with AI assistance
+    required_role: architect
     exit_criteria:
       - Problem statement clearly documented
       - Success metrics defined
       - Constraints and requirements captured
       - Context established for AI agents
     estimated_duration: 1-2 days
-    
+
   - id: design
     order: 2
     name: Design the Solution
     description: Architect the solution with AI collaboration
+    required_role: architect
     exit_criteria:
       - System architecture documented
       - Technology choices justified
       - Design patterns selected
       - Approach validated
     estimated_duration: 1-2 days
-    
+
   - id: test
     order: 3
     name: Write Tests First
     description: Define system behavior through comprehensive test suites before implementation
+    required_role: test-engineer
     exit_criteria:
       - All contract tests written (failing)
       - Integration tests defined (failing)
@@ -52,28 +55,31 @@ phases:
     order: 4
     name: Build to Pass Tests
     description: Implement code using TDD to make all tests pass
+    required_role: developer
     exit_criteria:
       - All tests passing (green)
       - Code coverage targets met
       - Code reviewed and refactored
       - Documentation generated
     estimated_duration: variable
-    
+
   - id: deploy
     order: 5
     name: Deploy the System
     description: Deploy with AI-guided DevOps
+    required_role: devops-engineer
     exit_criteria:
       - Successfully deployed
       - Monitoring configured
       - Documentation published
       - Deployment verified
     estimated_duration: 1 day
-    
+
   - id: iterate
     order: 6
     name: Iterate the Process
     description: Gather feedback and improve with AI analysis
+    required_role: analyst
     exit_criteria:
       - Feedback analyzed
       - Improvements identified

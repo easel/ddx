@@ -154,6 +154,12 @@ repository:
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Reset global flag variables to ensure test isolation
+			configGlobal = false
+			configLocal = false
+			configInit = false
+			configShow = false
+
 			originalDir, _ := os.Getwd()
 			defer os.Chdir(originalDir)
 
@@ -183,6 +189,12 @@ repository:
 
 // TestConfigCommand_Global tests global config operations
 func TestConfigCommand_Global(t *testing.T) {
+	// Reset global flag variables to ensure test isolation
+	configGlobal = false
+	configLocal = false
+	configInit = false
+	configShow = false
+
 	// Setup temp home
 	homeDir := t.TempDir()
 	t.Setenv("HOME", homeDir)
