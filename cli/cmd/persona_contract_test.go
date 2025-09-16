@@ -32,7 +32,7 @@ func TestPersonaListCommand_Contract(t *testing.T) {
 				t.Setenv("HOME", homeDir)
 
 				// Create personas directory with sample personas
-				personasDir := filepath.Join(homeDir, ".ddx", "personas")
+				personasDir := filepath.Join(homeDir, ".ddx", "library", "personas")
 				require.NoError(t, os.MkdirAll(personasDir, 0755))
 
 				// Create test persona
@@ -71,7 +71,7 @@ You are a test code reviewer.`
 				t.Setenv("HOME", homeDir)
 
 				// Create empty personas directory
-				personasDir := filepath.Join(homeDir, ".ddx", "personas")
+				personasDir := filepath.Join(homeDir, ".ddx", "library", "personas")
 				require.NoError(t, os.MkdirAll(personasDir, 0755))
 
 				return homeDir
@@ -90,7 +90,7 @@ You are a test code reviewer.`
 				homeDir := t.TempDir()
 				t.Setenv("HOME", homeDir)
 
-				personasDir := filepath.Join(homeDir, ".ddx", "personas")
+				personasDir := filepath.Join(homeDir, ".ddx", "library", "personas")
 				require.NoError(t, os.MkdirAll(personasDir, 0755))
 
 				// Create personas with different roles
@@ -139,7 +139,7 @@ tags: [test, tdd]
 				homeDir := t.TempDir()
 				t.Setenv("HOME", homeDir)
 
-				personasDir := filepath.Join(homeDir, ".ddx", "personas")
+				personasDir := filepath.Join(homeDir, ".ddx", "library", "personas")
 				require.NoError(t, os.MkdirAll(personasDir, 0755))
 
 				// Create personas with different tags
@@ -184,7 +184,9 @@ tags: [test, bdd]
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// TODO: Reset global flag variables when persona command is implemented
+			// Reset flags to avoid interference between tests
+			personaListCmd.Flags().Set("role", "")
+			personaListCmd.Flags().Set("tag", "")
 
 			if tt.setup != nil {
 				tt.setup(t)
@@ -194,25 +196,19 @@ tags: [test, bdd]
 				Use:   "ddx",
 				Short: "DDx CLI",
 			}
-			// TODO: Add persona command when implemented
-			// rootCmd.AddCommand(personaCmd)
+			rootCmd.AddCommand(personaCmd)
 
 			output, err := executeContractCommand(rootCmd, tt.args...)
 
 			// Validate exit code matches contract
 			if tt.expectCode == 0 {
-				// TODO: Update when persona command is implemented
-				// For now, expect error since command doesn't exist
-				assert.Error(t, err, "Command not implemented yet")
-				// assert.NoError(t, err, "Contract specifies exit code 0 for: %s", tt.description)
+				assert.NoError(t, err, "Contract specifies exit code 0 for: %s", tt.description)
 			} else {
 				assert.Error(t, err, "Contract specifies non-zero exit code for: %s", tt.description)
 			}
 
 			if tt.validateOutput != nil && tt.expectCode == 0 {
-				// TODO: Enable output validation when command is implemented
-				// tt.validateOutput(t, output)
-				_ = output // Suppress unused variable warning
+				tt.validateOutput(t, output)
 			}
 		})
 	}
@@ -236,7 +232,7 @@ func TestPersonaShowCommand_Contract(t *testing.T) {
 				homeDir := t.TempDir()
 				t.Setenv("HOME", homeDir)
 
-				personasDir := filepath.Join(homeDir, ".ddx", "personas")
+				personasDir := filepath.Join(homeDir, ".ddx", "library", "personas")
 				require.NoError(t, os.MkdirAll(personasDir, 0755))
 
 				personaContent := `---
@@ -283,7 +279,7 @@ You are an experienced code reviewer who enforces high standards.
 				t.Setenv("HOME", homeDir)
 
 				// Create empty personas directory
-				personasDir := filepath.Join(homeDir, ".ddx", "personas")
+				personasDir := filepath.Join(homeDir, ".ddx", "library", "personas")
 				require.NoError(t, os.MkdirAll(personasDir, 0755))
 
 				return homeDir
@@ -306,23 +302,19 @@ You are an experienced code reviewer who enforces high standards.
 				Use:   "ddx",
 				Short: "DDx CLI",
 			}
-			// TODO: Add persona command when implemented
-			// rootCmd.AddCommand(personaCmd)
+			rootCmd.AddCommand(personaCmd)
 
 			output, err := executeContractCommand(rootCmd, tt.args...)
 
 			if tt.expectCode == 0 {
 				// TODO: Update when persona command is implemented
-				assert.Error(t, err, "Command not implemented yet")
-				// assert.NoError(t, err, "Contract specifies exit code 0 for: %s", tt.description)
+				assert.NoError(t, err, "Contract specifies exit code 0 for: %s", tt.description)
 			} else {
 				assert.Error(t, err, "Contract specifies non-zero exit code for: %s", tt.description)
 			}
 
 			if tt.validateOutput != nil && tt.expectCode == 0 {
-				// TODO: Enable output validation when command is implemented
-				// tt.validateOutput(t, output)
-				_ = output // Suppress unused variable warning
+				tt.validateOutput(t, output)
 			}
 		})
 	}
@@ -361,7 +353,7 @@ repository:
 				// Create personas directory with target persona
 				homeDir := t.TempDir()
 				t.Setenv("HOME", homeDir)
-				personasDir := filepath.Join(homeDir, ".ddx", "personas")
+				personasDir := filepath.Join(homeDir, ".ddx", "library", "personas")
 				require.NoError(t, os.MkdirAll(personasDir, 0755))
 
 				personaContent := `---
@@ -414,7 +406,7 @@ tags: [strict]
 				// Create empty personas directory
 				homeDir := t.TempDir()
 				t.Setenv("HOME", homeDir)
-				personasDir := filepath.Join(homeDir, ".ddx", "personas")
+				personasDir := filepath.Join(homeDir, ".ddx", "library", "personas")
 				require.NoError(t, os.MkdirAll(personasDir, 0755))
 
 				return workDir
@@ -457,29 +449,23 @@ tags: [strict]
 				Use:   "ddx",
 				Short: "DDx CLI",
 			}
-			// TODO: Add persona command when implemented
-			// rootCmd.AddCommand(personaCmd)
+			rootCmd.AddCommand(personaCmd)
 
 			output, err := executeContractCommand(rootCmd, tt.args...)
 
 			if tt.expectCode == 0 {
 				// TODO: Update when persona command is implemented
-				assert.Error(t, err, "Command not implemented yet")
-				// assert.NoError(t, err, "Contract specifies exit code 0 for: %s", tt.description)
+				assert.NoError(t, err, "Contract specifies exit code 0 for: %s", tt.description)
 			} else {
 				assert.Error(t, err, "Contract specifies non-zero exit code for: %s", tt.description)
 			}
 
 			if tt.validateOutput != nil && tt.expectCode == 0 {
-				// TODO: Enable output validation when command is implemented
-				// tt.validateOutput(t, output)
-				_ = output // Suppress unused variable warning
+				tt.validateOutput(t, output)
 			}
 
 			if tt.validateFiles != nil && tt.expectCode == 0 {
-				// TODO: Enable file validation when command is implemented
-				// tt.validateFiles(t, workDir)
-				_ = workDir // Suppress unused variable warning
+				tt.validateFiles(t, workDir)
 			}
 		})
 	}
@@ -528,7 +514,7 @@ This is the project guidance.`
 				// Create personas
 				homeDir := t.TempDir()
 				t.Setenv("HOME", homeDir)
-				personasDir := filepath.Join(homeDir, ".ddx", "personas")
+				personasDir := filepath.Join(homeDir, ".ddx", "library", "personas")
 				require.NoError(t, os.MkdirAll(personasDir, 0755))
 
 				reviewerContent := `---
@@ -604,7 +590,7 @@ This is the project guidance.`
 				// Create persona
 				homeDir := t.TempDir()
 				t.Setenv("HOME", homeDir)
-				personasDir := filepath.Join(homeDir, ".ddx", "personas")
+				personasDir := filepath.Join(homeDir, ".ddx", "library", "personas")
 				require.NoError(t, os.MkdirAll(personasDir, 0755))
 
 				personaContent := `---
@@ -651,7 +637,7 @@ You are a strict code reviewer.`
 				// Create empty personas directory
 				homeDir := t.TempDir()
 				t.Setenv("HOME", homeDir)
-				personasDir := filepath.Join(homeDir, ".ddx", "personas")
+				personasDir := filepath.Join(homeDir, ".ddx", "library", "personas")
 				require.NoError(t, os.MkdirAll(personasDir, 0755))
 
 				return workDir
@@ -678,29 +664,23 @@ You are a strict code reviewer.`
 				Use:   "ddx",
 				Short: "DDx CLI",
 			}
-			// TODO: Add persona command when implemented
-			// rootCmd.AddCommand(personaCmd)
+			rootCmd.AddCommand(personaCmd)
 
 			output, err := executeContractCommand(rootCmd, tt.args...)
 
 			if tt.expectCode == 0 {
 				// TODO: Update when persona command is implemented
-				assert.Error(t, err, "Command not implemented yet")
-				// assert.NoError(t, err, "Contract specifies exit code 0 for: %s", tt.description)
+				assert.NoError(t, err, "Contract specifies exit code 0 for: %s", tt.description)
 			} else {
 				assert.Error(t, err, "Contract specifies non-zero exit code for: %s", tt.description)
 			}
 
 			if tt.validateOutput != nil && tt.expectCode == 0 {
-				// TODO: Enable output validation when command is implemented
-				// tt.validateOutput(t, output)
-				_ = output // Suppress unused variable warning
+				tt.validateOutput(t, output)
 			}
 
 			if tt.validateFiles != nil && tt.expectCode == 0 {
-				// TODO: Enable file validation when command is implemented
-				// tt.validateFiles(t, workDir)
-				_ = workDir // Suppress unused variable warning
+				tt.validateFiles(t, workDir)
 			}
 		})
 	}
@@ -807,23 +787,19 @@ repository:
 				Use:   "ddx",
 				Short: "DDx CLI",
 			}
-			// TODO: Add persona command when implemented
-			// rootCmd.AddCommand(personaCmd)
+			rootCmd.AddCommand(personaCmd)
 
 			output, err := executeContractCommand(rootCmd, tt.args...)
 
 			if tt.expectCode == 0 {
 				// TODO: Update when persona command is implemented
-				assert.Error(t, err, "Command not implemented yet")
-				// assert.NoError(t, err, "Contract specifies exit code 0 for: %s", tt.description)
+				assert.NoError(t, err, "Contract specifies exit code 0 for: %s", tt.description)
 			} else {
 				assert.Error(t, err, "Contract specifies non-zero exit code for: %s", tt.description)
 			}
 
 			if tt.validateOutput != nil && tt.expectCode == 0 {
-				// TODO: Enable output validation when command is implemented
-				// tt.validateOutput(t, output)
-				_ = output // Suppress unused variable warning
+				tt.validateOutput(t, output)
 			}
 		})
 	}
@@ -936,23 +912,19 @@ This is the project guidance.`
 				Use:   "ddx",
 				Short: "DDx CLI",
 			}
-			// TODO: Add persona command when implemented
-			// rootCmd.AddCommand(personaCmd)
+			rootCmd.AddCommand(personaCmd)
 
 			output, err := executeContractCommand(rootCmd, tt.args...)
 
 			if tt.expectCode == 0 {
 				// TODO: Update when persona command is implemented
-				assert.Error(t, err, "Command not implemented yet")
-				// assert.NoError(t, err, "Contract specifies exit code 0 for: %s", tt.description)
+				assert.NoError(t, err, "Contract specifies exit code 0 for: %s", tt.description)
 			} else {
 				assert.Error(t, err, "Contract specifies non-zero exit code for: %s", tt.description)
 			}
 
 			if tt.validateOutput != nil && tt.expectCode == 0 {
-				// TODO: Enable output validation when command is implemented
-				// tt.validateOutput(t, output)
-				_ = output // Suppress unused variable warning
+				tt.validateOutput(t, output)
 			}
 		})
 	}

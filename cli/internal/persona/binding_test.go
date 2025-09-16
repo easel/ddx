@@ -83,23 +83,14 @@ persona_bindings: null`,
 			configPath := filepath.Join(workDir, ".ddx.yml")
 			require.NoError(t, os.WriteFile(configPath, []byte(tt.config), 0644))
 
-			// TODO: Implement BindingManager interface and GetBinding method
-			// For now, tests will fail - this is expected in TDD
+			manager := NewBindingManagerWithPath(configPath)
+			result, err := manager.GetBinding(tt.role)
 
-			// manager := NewBindingManager()
-			// result, err := manager.GetBinding(tt.role)
-
-			// if tt.expectError {
-			//     assert.Error(t, err)
-			// } else {
-			//     assert.NoError(t, err)
-			//     assert.Equal(t, tt.expected, result)
-			// }
-
-			// For now, just validate test structure
-			assert.NotEmpty(t, tt.config, "Test config should not be empty")
-			if !tt.expectError {
-				assert.True(t, len(tt.expected) >= 0, "Expected result should be defined")
+			if tt.expectError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, result)
 			}
 		})
 	}

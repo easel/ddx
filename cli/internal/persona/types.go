@@ -63,8 +63,8 @@ type ClaudeInjector interface {
 	// RemovePersonas removes all personas from CLAUDE.md
 	RemovePersonas() error
 
-	// GetLoadedPersonas returns the names of currently loaded personas
-	GetLoadedPersonas() ([]string, error)
+	// GetLoadedPersonas returns the currently loaded personas as role->persona map
+	GetLoadedPersonas() (map[string]string, error)
 }
 
 // PersonaBinding represents a role-persona binding

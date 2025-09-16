@@ -81,24 +81,31 @@ ddx contribute patterns/my-new-pattern
 
 ```
 ddx/
-├── prompts/           # AI prompts and instructions
-│   ├── claude/        # Claude-specific prompts
-│   └── general/       # Model-agnostic prompts
-├── templates/         # Project templates
-│   ├── nextjs/        # Next.js starter
-│   ├── python/        # Python projects
-│   └── common/        # Common files (.gitignore, etc.)
-├── patterns/          # Code patterns and examples
-│   ├── error-handling/
-│   ├── testing/
-│   └── ai-integration/
-├── scripts/           # Automation scripts
-│   ├── hooks/         # Git hooks
-│   └── setup/         # Project setup scripts
-├── configs/           # Tool configurations
-│   ├── eslint/
-│   ├── prettier/
-│   └── typescript/
+├── library/           # DDx library resources
+│   ├── prompts/       # AI prompts and instructions
+│   │   ├── claude/    # Claude-specific prompts
+│   │   └── general/   # Model-agnostic prompts
+│   ├── templates/     # Project templates
+│   │   ├── nextjs/    # Next.js starter
+│   │   ├── python/    # Python projects
+│   │   └── common/    # Common files (.gitignore, etc.)
+│   ├── patterns/      # Code patterns and examples
+│   │   ├── error-handling/
+│   │   ├── testing/
+│   │   └── ai-integration/
+│   ├── personas/      # AI personality definitions
+│   │   └── *.md       # Persona files
+│   ├── mcp-servers/   # MCP server configurations
+│   │   ├── registry.yml
+│   │   └── servers/
+│   └── configs/       # Tool configurations
+│       ├── eslint/
+│       ├── prettier/
+│       └── typescript/
+├── cli/               # DDx CLI implementation
+├── docs/              # Documentation
+├── scripts/           # Build and setup scripts
+├── workflows/         # HELIX workflow definitions
 └── install.sh         # One-line installer
 ```
 
@@ -110,7 +117,7 @@ DDx uses `.ddx.yml` files for configuration:
 version: 1.0
 includes:
   - prompts/claude
-  - scripts/hooks  
+  - scripts/hooks
   - templates/common
 variables:
   project_name: "my-project"
@@ -118,6 +125,18 @@ variables:
 overrides:
   "prompts/custom.md": "local/my-prompt.md"
 ```
+
+### Library Path Resolution
+
+DDx looks for library resources in the following order:
+
+1. **Command flag**: `ddx --library-base-path /custom/path [command]`
+2. **Environment variable**: `DDX_LIBRARY_BASE_PATH=/path ddx [command]`
+3. **Development mode**: `<git-repo>/library/` when in DDx repository
+4. **Project library**: `.ddx/library/` in current or parent directory
+5. **Global library**: `~/.ddx/library/` (default installation)
+
+This allows flexible testing and project-specific customization.
 
 ## 🔄 Git Subtree Integration
 

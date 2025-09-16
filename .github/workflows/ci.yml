@@ -107,12 +107,9 @@ jobs:
     
     - name: Setup DDx toolkit directory
       run: |
-        # Create the DDx installation directory with basic structure
-        mkdir -p ~/.ddx
-        cp -r templates ~/.ddx/ || true
-        cp -r patterns ~/.ddx/ || true
-        cp -r prompts ~/.ddx/ || true
-        cp -r configs ~/.ddx/ || true
+        # Create the DDx installation directory with library structure
+        mkdir -p ~/.ddx/library
+        cp -r library/* ~/.ddx/library/ || true
     
     - name: Test init command
       run: |

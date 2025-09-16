@@ -174,28 +174,19 @@ tags: [test]
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// TODO: Implement parsePersona function
-			// For now, tests will fail - this is expected in TDD
+			persona, err := parsePersona([]byte(tt.content))
 
-			// persona, err := parsePersona([]byte(tt.content))
-
-			// if tt.expectError {
-			//     assert.Error(t, err)
-			//     assert.Nil(t, persona)
-			// } else {
-			//     assert.NoError(t, err)
-			//     assert.NotNil(t, persona)
-			//     assert.Equal(t, tt.expected.Name, persona.Name)
-			//     assert.Equal(t, tt.expected.Roles, persona.Roles)
-			//     assert.Equal(t, tt.expected.Description, persona.Description)
-			//     assert.Equal(t, tt.expected.Tags, persona.Tags)
-			//     assert.Equal(t, tt.expected.Content, persona.Content)
-			// }
-
-			// For now, just ensure test structure is valid
-			assert.NotEmpty(t, tt.content, "Test content should not be empty")
-			if !tt.expectError {
-				assert.NotNil(t, tt.expected, "Expected persona should not be nil for valid cases")
+			if tt.expectError {
+				assert.Error(t, err)
+				assert.Nil(t, persona)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, persona)
+				assert.Equal(t, tt.expected.Name, persona.Name)
+				assert.Equal(t, tt.expected.Roles, persona.Roles)
+				assert.Equal(t, tt.expected.Description, persona.Description)
+				assert.Equal(t, tt.expected.Tags, persona.Tags)
+				assert.Equal(t, tt.expected.Content, persona.Content)
 			}
 		})
 	}
@@ -277,26 +268,18 @@ description: Invalid YAML
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// TODO: Implement PersonaLoader interface and LoadPersona function
-			// For now, tests will fail - this is expected in TDD
+			loader := NewPersonaLoaderWithDir(personasDir)
+			persona, err := loader.LoadPersona(tt.personaName)
 
-			// loader := NewPersonaLoader()
-			// persona, err := loader.LoadPersona(tt.personaName)
-
-			// if tt.expectError {
-			//     assert.Error(t, err)
-			//     assert.Nil(t, persona)
-			// } else {
-			//     assert.NoError(t, err)
-			//     assert.NotNil(t, persona)
-			//     if tt.validate != nil {
-			//         tt.validate(t, persona)
-			//     }
-			// }
-
-			// For now, just validate test parameters
-			if !tt.expectError {
-				assert.NotEmpty(t, tt.personaName, "Valid test cases should have persona name")
+			if tt.expectError {
+				assert.Error(t, err)
+				assert.Nil(t, persona)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, persona)
+				if tt.validate != nil {
+					tt.validate(t, persona)
+				}
 			}
 		})
 	}
@@ -363,36 +346,26 @@ roles: [bad-yaml
 		{
 			name: "list_all_valid_personas",
 			validate: func(t *testing.T, personas []*Persona, err error) {
-				// TODO: Implement ListPersonas function
-				// For now, tests will fail - this is expected in TDD
+				assert.NoError(t, err)
+				assert.Len(t, personas, 3) // Only valid personas
 
-				// assert.NoError(t, err)
-				// assert.Len(t, personas, 3) // Only valid personas
+				personaNames := make([]string, len(personas))
+				for i, p := range personas {
+					personaNames[i] = p.Name
+				}
 
-				// personaNames := make([]string, len(personas))
-				// for i, p := range personas {
-				//     personaNames[i] = p.Name
-				// }
-
-				// assert.Contains(t, personaNames, "reviewer-strict")
-				// assert.Contains(t, personaNames, "reviewer-balanced")
-				// assert.Contains(t, personaNames, "tester-tdd")
-
-				// For now, just validate we have test setup
-				assert.True(t, true, "Test setup completed")
+				assert.Contains(t, personaNames, "reviewer-strict")
+				assert.Contains(t, personaNames, "reviewer-balanced")
+				assert.Contains(t, personaNames, "tester-tdd")
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// TODO: Implement PersonaLoader interface and ListPersonas function
-			// loader := NewPersonaLoader()
-			// personas, err := loader.ListPersonas()
-			// tt.validate(t, personas, err)
-
-			// For now, just run validation with nil values
-			tt.validate(t, nil, nil)
+			loader := NewPersonaLoaderWithDir(personasDir)
+			personas, err := loader.ListPersonas()
+			tt.validate(t, personas, err)
 		})
 	}
 }
@@ -448,59 +421,43 @@ tags: [design, architecture]
 			name: "find_code_reviewers",
 			role: "code-reviewer",
 			validate: func(t *testing.T, personas []*Persona, err error) {
-				// TODO: Implement FindByRole function
-				// assert.NoError(t, err)
-				// assert.Len(t, personas, 1) // Only multi-role has code-reviewer
-				// assert.Equal(t, "multi-role", personas[0].Name)
-
-				assert.Equal(t, "code-reviewer", "code-reviewer", "Role parameter passed correctly")
+				assert.NoError(t, err)
+				assert.Len(t, personas, 1) // Only multi-role has code-reviewer
+				assert.Equal(t, "multi-role", personas[0].Name)
 			},
 		},
 		{
 			name: "find_architects",
 			role: "architect",
 			validate: func(t *testing.T, personas []*Persona, err error) {
-				// TODO: Implement FindByRole function
-				// assert.NoError(t, err)
-				// assert.Len(t, personas, 1) // Only architect has architect role
-				// assert.Equal(t, "architect", personas[0].Name)
-
-				assert.Equal(t, "architect", "architect", "Role parameter passed correctly")
+				assert.NoError(t, err)
+				assert.Len(t, personas, 1) // Only architect has architect role
+				assert.Equal(t, "architect", personas[0].Name)
 			},
 		},
 		{
 			name: "find_nonexistent_role",
 			role: "nonexistent-role",
 			validate: func(t *testing.T, personas []*Persona, err error) {
-				// TODO: Implement FindByRole function
-				// assert.NoError(t, err)
-				// assert.Empty(t, personas) // No personas with this role
-
-				assert.Equal(t, "nonexistent-role", "nonexistent-role", "Role parameter passed correctly")
+				assert.NoError(t, err)
+				assert.Empty(t, personas) // No personas with this role
 			},
 		},
 		{
 			name: "empty_role",
 			role: "",
 			validate: func(t *testing.T, personas []*Persona, err error) {
-				// TODO: Implement FindByRole function
-				// assert.Error(t, err) // Should error on empty role
-				// assert.Nil(t, personas)
-
-				assert.Empty(t, "", "Empty role parameter handled")
+				assert.Error(t, err) // Should error on empty role
+				assert.Nil(t, personas)
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// TODO: Implement PersonaLoader interface and FindByRole function
-			// loader := NewPersonaLoader()
-			// personas, err := loader.FindByRole(tt.role)
-			// tt.validate(t, personas, err)
-
-			// For now, just run validation with nil values
-			tt.validate(t, nil, nil)
+			loader := NewPersonaLoaderWithDir(personasDir)
+			personas, err := loader.FindByRole(tt.role)
+			tt.validate(t, personas, err)
 		})
 	}
 }
@@ -564,58 +521,42 @@ tags: [strict, security, quality]
 			name: "find_by_single_tag",
 			tags: []string{"security"},
 			validate: func(t *testing.T, personas []*Persona, err error) {
-				// TODO: Implement FindByTags function
-				// assert.NoError(t, err)
-				// assert.Len(t, personas, 2) // security-focused and strict-reviewer
-
-				assert.Contains(t, []string{"security"}, "security", "Tag parameter passed correctly")
+				assert.NoError(t, err)
+				assert.Len(t, personas, 2) // security-focused and strict-reviewer
 			},
 		},
 		{
 			name: "find_by_multiple_tags",
 			tags: []string{"security", "strict"},
 			validate: func(t *testing.T, personas []*Persona, err error) {
-				// TODO: Implement FindByTags function
-				// assert.NoError(t, err)
-				// assert.Len(t, personas, 1) // Only strict-reviewer has both tags
-				// assert.Equal(t, "strict-reviewer", personas[0].Name)
-
-				assert.Contains(t, []string{"security", "strict"}, "security", "Multiple tags passed correctly")
+				assert.NoError(t, err)
+				assert.Len(t, personas, 1) // Only strict-reviewer has both tags
+				assert.Equal(t, "strict-reviewer", personas[0].Name)
 			},
 		},
 		{
 			name: "find_by_nonexistent_tag",
 			tags: []string{"nonexistent"},
 			validate: func(t *testing.T, personas []*Persona, err error) {
-				// TODO: Implement FindByTags function
-				// assert.NoError(t, err)
-				// assert.Empty(t, personas) // No personas with this tag
-
-				assert.Contains(t, []string{"nonexistent"}, "nonexistent", "Tag parameter passed correctly")
+				assert.NoError(t, err)
+				assert.Empty(t, personas) // No personas with this tag
 			},
 		},
 		{
 			name: "empty_tags_list",
 			tags: []string{},
 			validate: func(t *testing.T, personas []*Persona, err error) {
-				// TODO: Implement FindByTags function
-				// assert.Error(t, err) // Should error on empty tags
-				// assert.Nil(t, personas)
-
-				assert.Empty(t, []string{}, "Empty tags list handled")
+				assert.Error(t, err) // Should error on empty tags
+				assert.Nil(t, personas)
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// TODO: Implement PersonaLoader interface and FindByTags function
-			// loader := NewPersonaLoader()
-			// personas, err := loader.FindByTags(tt.tags)
-			// tt.validate(t, personas, err)
-
-			// For now, just run validation with nil values
-			tt.validate(t, nil, nil)
+			loader := NewPersonaLoaderWithDir(personasDir)
+			personas, err := loader.FindByTags(tt.tags)
+			tt.validate(t, personas, err)
 		})
 	}
 }

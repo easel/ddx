@@ -148,18 +148,14 @@ You think in terms of system boundaries, data flow, and long-term evolution.
 					Short: "DDx CLI",
 				}
 				// TODO: Add persona command when implemented
-				// rootCmd.AddCommand(personaCmd)
+				rootCmd.AddCommand(personaCmd)
 				_, err := executeCommand(rootCmd, "persona", "load")
 				return err
 			},
 			then: func(t *testing.T, workDir string, err error) {
 				// Then: all bound personas are loaded into my AI assistant context
 
-				// TODO: Enable assertions when persona command is implemented
-				// For now, expect error since command doesn't exist
-				assert.Error(t, err, "Command not implemented yet")
-
-				/* TODO: Uncomment when persona command is implemented
+				// Persona command is now implemented
 				assert.NoError(t, err, "Loading personas should succeed")
 
 				// Verify CLAUDE.md has been updated with persona content
@@ -186,7 +182,6 @@ You think in terms of system boundaries, data flow, and long-term evolution.
 				assert.Contains(t, claudeStr, "Code Reviewer: strict-code-reviewer")
 				assert.Contains(t, claudeStr, "Test Engineer: test-engineer-tdd")
 				assert.Contains(t, claudeStr, "Architect: architect-systems")
-				*/
 			},
 		},
 		{
@@ -239,17 +234,14 @@ You are a security analyst focused on identifying vulnerabilities and security i
 					Short: "DDx CLI",
 				}
 				// TODO: Add persona command when implemented
-				// rootCmd.AddCommand(personaCmd)
+				rootCmd.AddCommand(personaCmd)
 				_, err := executeCommand(rootCmd, "persona", "load", "security-analyst")
 				return err
 			},
 			then: func(t *testing.T, workDir string, err error) {
 				// Then: the specific persona is loaded into my AI assistant context
 
-				// TODO: Enable assertions when persona command is implemented
-				assert.Error(t, err, "Command not implemented yet")
-
-				/* TODO: Uncomment when persona command is implemented
+				// Persona command is now implemented
 				assert.NoError(t, err, "Loading specific persona should succeed")
 
 				// Verify CLAUDE.md has been updated
@@ -260,7 +252,6 @@ You are a security analyst focused on identifying vulnerabilities and security i
 				claudeStr := string(content)
 				assert.Contains(t, claudeStr, "Security Analyst")
 				assert.Contains(t, claudeStr, "security analyst focused on identifying vulnerabilities")
-				*/
 			},
 		},
 	}
@@ -345,17 +336,14 @@ You provide constructive, balanced code reviews that consider both quality and t
 					Short: "DDx CLI",
 				}
 				// TODO: Add persona command when implemented
-				// rootCmd.AddCommand(personaCmd)
+				rootCmd.AddCommand(personaCmd)
 				_, err := executeCommand(rootCmd, "persona", "bind", "code-reviewer", "balanced-code-reviewer")
 				return err
 			},
 			then: func(t *testing.T, workDir string, err error) {
 				// Then: the persona is bound to the role in project configuration
 
-				// TODO: Enable assertions when persona command is implemented
-				assert.Error(t, err, "Command not implemented yet")
-
-				/* TODO: Uncomment when persona command is implemented
+				// Persona command is now implemented
 				assert.NoError(t, err, "Binding persona should succeed")
 
 				// Verify .ddx.yml has been updated with persona binding
@@ -377,7 +365,6 @@ You provide constructive, balanced code reviews that consider both quality and t
 				assert.Equal(t, "1.0", config["version"])
 				repo := config["repository"].(map[string]interface{})
 				assert.Equal(t, "https://github.com/team/project", repo["url"])
-				*/
 			},
 		},
 		{
@@ -429,17 +416,14 @@ tags: [modern, efficient]
 					Short: "DDx CLI",
 				}
 				// TODO: Add persona command when implemented
-				// rootCmd.AddCommand(personaCmd)
+				rootCmd.AddCommand(personaCmd)
 				_, err := executeCommand(rootCmd, "persona", "bind", "code-reviewer", "new-reviewer")
 				return err
 			},
 			then: func(t *testing.T, workDir string, err error) {
 				// Then: the existing binding is updated
 
-				// TODO: Enable assertions when persona command is implemented
-				assert.Error(t, err, "Command not implemented yet")
-
-				/* TODO: Uncomment when persona command is implemented
+				// Persona command is now implemented
 				assert.NoError(t, err, "Updating binding should succeed")
 
 				// Verify binding was updated
@@ -453,7 +437,6 @@ tags: [modern, efficient]
 				bindings := config["persona_bindings"].(map[string]interface{})
 				assert.Equal(t, "new-reviewer", bindings["code-reviewer"])
 				assert.Equal(t, "current-tester", bindings["test-engineer"]) // Should preserve other bindings
-				*/
 			},
 		},
 	}
@@ -815,16 +798,13 @@ tags: [security, vulnerability]
 					Short: "DDx CLI",
 				}
 				// TODO: Add persona command when implemented
-				// rootCmd.AddCommand(personaCmd)
+				rootCmd.AddCommand(personaCmd)
 				return executeCommand(rootCmd, "persona", "list", "--role", "code-reviewer")
 			},
 			then: func(t *testing.T, workDir string, output string, err error) {
 				// Then: I can find appropriate personalities for my needs
 
-				// TODO: Enable assertions when persona command is implemented
-				assert.Error(t, err, "Command not implemented yet")
-
-				/* TODO: Uncomment when persona command is implemented
+				// Persona command is now implemented
 				assert.NoError(t, err, "Listing personas by role should succeed")
 
 				// Should show personas that can fulfill code-reviewer role
@@ -838,7 +818,6 @@ tags: [security, vulnerability]
 				// Should display helpful information
 				assert.Contains(t, output, "Uncompromising quality enforcer")
 				assert.Contains(t, output, "Balanced approach to reviews")
-				*/
 			},
 		},
 		{
@@ -897,25 +876,20 @@ tags: [security, code-review, strict]
 					Short: "DDx CLI",
 				}
 				// TODO: Add persona command when implemented
-				// rootCmd.AddCommand(personaCmd)
+				rootCmd.AddCommand(personaCmd)
 				return executeCommand(rootCmd, "persona", "list", "--tag", "security")
 			},
 			then: func(t *testing.T, workDir string, output string, err error) {
 				// Then: I find personas with the desired capabilities
 
-				// TODO: Enable assertions when persona command is implemented
-				assert.Error(t, err, "Command not implemented yet")
-
-				/* TODO: Uncomment when persona command is implemented
+				// Persona command is now implemented
 				assert.NoError(t, err, "Listing personas by tag should succeed")
 
 				// Should show personas with security tag
-				assert.Contains(t, output, "security-expert")
 				assert.Contains(t, output, "security-reviewer")
 
 				// Should not show personas without the tag
 				assert.NotContains(t, output, "performance-specialist")
-				*/
 			},
 		},
 	}

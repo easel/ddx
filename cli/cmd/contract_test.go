@@ -322,6 +322,11 @@ func TestApplyCommand_Contract(t *testing.T) {
 			applyDryRun = false
 			applyVars = nil
 
+			// Also reset flags on the command
+			applyCmd.Flags().Set("path", ".")
+			applyCmd.Flags().Set("dry-run", "false")
+			applyCmd.Flags().Set("var", "")
+
 			originalDir, _ := os.Getwd()
 			defer os.Chdir(originalDir)
 
@@ -412,6 +417,20 @@ variables:
 			configLocal = false
 			configInit = false
 			configShow = false
+
+			// Also reset flags on the command if they exist
+			if configCmd.Flags().Lookup("global") != nil {
+				configCmd.Flags().Set("global", "false")
+			}
+			if configCmd.Flags().Lookup("local") != nil {
+				configCmd.Flags().Set("local", "false")
+			}
+			if configCmd.Flags().Lookup("init") != nil {
+				configCmd.Flags().Set("init", "false")
+			}
+			if configCmd.Flags().Lookup("show") != nil {
+				configCmd.Flags().Set("show", "false")
+			}
 
 			originalDir, _ := os.Getwd()
 			defer os.Chdir(originalDir)

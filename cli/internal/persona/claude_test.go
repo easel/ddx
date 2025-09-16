@@ -186,29 +186,20 @@ When responding, adopt the appropriate persona based on the task.
 			claudePath := filepath.Join(workDir, "CLAUDE.md")
 			require.NoError(t, os.WriteFile(claudePath, []byte(tt.initialContent), 0644))
 
-			// TODO: Implement ClaudeInjector interface and InjectPersona method
-			// For now, tests will fail - this is expected in TDD
+			injector := NewClaudeInjectorWithPath(claudePath)
+			err := injector.InjectPersona(tt.persona, tt.role)
 
-			// injector := NewClaudeInjector()
-			// err := injector.InjectPersona(tt.persona, tt.role)
+			if tt.expectError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
 
-			// if tt.expectError {
-			//     assert.Error(t, err)
-			// } else {
-			//     assert.NoError(t, err)
+				// Verify CLAUDE.md content
+				content, readErr := os.ReadFile(claudePath)
+				require.NoError(t, readErr)
 
-			//     // Verify CLAUDE.md content
-			//     content, readErr := os.ReadFile(claudePath)
-			//     require.NoError(t, readErr)
-
-			//     actualContent := string(content)
-			//     assert.Equal(t, tt.expectedContent, actualContent)
-			// }
-
-			// For now, just validate test structure
-			if !tt.expectError {
-				assert.NotEmpty(t, tt.expectedContent, "Expected content should be defined for valid cases")
-				assert.NotNil(t, tt.persona, "Persona should not be nil for valid cases")
+				actualContent := string(content)
+				assert.Equal(t, tt.expectedContent, actualContent)
 			}
 		})
 	}

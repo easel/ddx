@@ -15,8 +15,9 @@ var (
 	Commit  = "unknown"
 	Date    = "unknown"
 
-	cfgFile string
-	verbose bool
+	cfgFile     string
+	verbose     bool
+	libraryPath string // Override path for library location
 )
 
 // Banner for DDx
@@ -64,6 +65,7 @@ func init() {
 	// Global flags
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.ddx.yml)")
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "verbose output")
+	rootCmd.PersistentFlags().StringVar(&libraryPath, "library-base-path", "", "override path for DDx library location")
 
 	// Version command
 	rootCmd.AddCommand(&cobra.Command{
@@ -152,4 +154,9 @@ func getDDxHome() string {
 func isInitialized() bool {
 	_, err := os.Stat(".ddx")
 	return err == nil
+}
+
+// getLibraryPath returns the library path override from flag or empty string
+func getLibraryPath() string {
+	return libraryPath
 }

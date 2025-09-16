@@ -1,0 +1,328 @@
+package mcp
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/easel/ddx/internal/config"
+	"gopkg.in/yaml.v3"
+)
+
+var (
+	// DefaultRegistryPath is the default path to the registry (relative to library)
+	DefaultRegistryPath = "mcp-servers/registry.yml"
+
+	// CacheTTL is the duration for which registry cache is valid
+	CacheTTL = 15 * time.Minute
+)
+
+// LoadRegistry loads the MCP server registry from a file
+func LoadRegistry(path string) (*Registry, error) {
+	if path == "" {
+		// Resolve the registry path using library path resolution
+		resolvedPath, err := config.ResolveLibraryResource(DefaultRegistryPath, "")
+		if err != nil {
+			return nil, fmt.Errorf("resolving registry path: %w", err)
+		}
+		path = resolvedPath
+	}
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("reading registry file: %w", err)
+	}
+
+	var registry Registry
+	if err := yaml.Unmarshal(data, &registry); err != nil {
+		return nil, fmt.Errorf("parsing registry YAML: %w", err)
+	}
+
+	if err := registry.validate(); err != nil {
+		return nil, fmt.Errorf("validating registry: %w", err)
+	}
+
+	registry.buildCache()
+	return &registry, nil
+}
+
+// GetServer retrieves a server definition by name
+func (r *Registry) GetServer(name string) (*Server, error) {
+	if name == "" {
+		return nil, ErrEmptyServerName
+	}
+
+	// Check cache first
+	if r.cache != nil {
+		if server, ok := r.cache[strings.ToLower(name)]; ok {
+			return server, nil
+		}
+	}
+
+	// Load from file if not cached
+	for _, ref := range r.Servers {
+		if strings.EqualFold(ref.Name, name) {
+			return r.loadServerFromFile(ref.File)
+		}
+	}
+
+	return nil, fmt.Errorf("%w: %s", ErrServerNotFound, name)
+}
+
+// Search searches for servers by name or description
+func (r *Registry) Search(term string) ([]*ServerReference, error) {
+	if term == "" {
+		var all []*ServerReference
+		for i := range r.Servers {
+			all = append(all, &r.Servers[i])
+		}
+		return all, nil
+	}
+
+	lowerTerm := strings.ToLower(term)
+	var results []*ServerReference
+
+	for i := range r.Servers {
+		ref := &r.Servers[i]
+		if strings.Contains(strings.ToLower(ref.Name), lowerTerm) ||
+			strings.Contains(strings.ToLower(ref.Description), lowerTerm) {
+			results = append(results, ref)
+		}
+	}
+
+	return results, nil
+}
+
+// FilterByCategory returns servers in a specific category
+func (r *Registry) FilterByCategory(category string) ([]*ServerReference, error) {
+	if category == "" {
+		var all []*ServerReference
+		for i := range r.Servers {
+			all = append(all, &r.Servers[i])
+		}
+		return all, nil
+	}
+
+	lowerCategory := strings.ToLower(category)
+	var results []*ServerReference
+
+	for i := range r.Servers {
+		ref := &r.Servers[i]
+		if strings.EqualFold(ref.Category, lowerCategory) {
+			results = append(results, ref)
+		}
+	}
+
+	return results, nil
+}
+
+// GetCategories returns all available categories
+func (r *Registry) GetCategories() []string {
+	categoryMap := make(map[string]bool)
+	for _, server := range r.Servers {
+		if server.Category != "" {
+			categoryMap[server.Category] = true
+		}
+	}
+
+	var categories []string
+	for cat := range categoryMap {
+		categories = append(categories, cat)
+	}
+	return categories
+}
+
+// ListServers returns servers based on options
+func (r *Registry) ListServers(opts ListOptions) ([]*ServerReference, error) {
+	var results []*ServerReference
+
+	// Start with all servers or filtered by category
+	if opts.Category != "" {
+		filtered, err := r.FilterByCategory(opts.Category)
+		if err != nil {
+			return nil, err
+		}
+		results = filtered
+	} else {
+		for i := range r.Servers {
+			results = append(results, &r.Servers[i])
+		}
+	}
+
+	// Apply search filter
+	if opts.Search != "" {
+		var searched []*ServerReference
+		lowerSearch := strings.ToLower(opts.Search)
+		for _, ref := range results {
+			if strings.Contains(strings.ToLower(ref.Name), lowerSearch) ||
+				strings.Contains(strings.ToLower(ref.Description), lowerSearch) {
+				searched = append(searched, ref)
+			}
+		}
+		results = searched
+	}
+
+	// TODO: Filter by installation status when config detection is implemented
+	if opts.Installed {
+		// Filter to show only installed servers
+	}
+	if opts.Available {
+		// Filter to show only available (not installed) servers
+	}
+
+	return results, nil
+}
+
+// validate ensures the registry data is valid
+func (r *Registry) validate() error {
+	if r.Version == "" {
+		return ErrMissingVersion
+	}
+
+	seen := make(map[string]bool)
+	for i, server := range r.Servers {
+		if server.Name == "" {
+			return fmt.Errorf("server %d: %w", i, ErrMissingName)
+		}
+
+		lower := strings.ToLower(server.Name)
+		if seen[lower] {
+			return fmt.Errorf("duplicate server: %s", server.Name)
+		}
+		seen[lower] = true
+
+		if server.File == "" {
+			return fmt.Errorf("server %s: missing file path", server.Name)
+		}
+	}
+
+	return nil
+}
+
+// buildCache creates an index for fast lookups
+func (r *Registry) buildCache() {
+	r.cache = make(map[string]*Server, len(r.Servers))
+	r.cacheTTL = time.Now().Add(CacheTTL)
+
+	// Note: We don't preload all servers to save memory
+	// They will be loaded on demand
+}
+
+// loadServerFromFile loads a server definition from its YAML file
+func (r *Registry) loadServerFromFile(file string) (*Server, error) {
+	// Construct path relative to mcp-servers directory in library
+	mcpPath := filepath.Join("mcp-servers", file)
+	serverPath, err := config.ResolveLibraryResource(mcpPath, "")
+	if err != nil {
+		return nil, fmt.Errorf("resolving server file path: %w", err)
+	}
+
+	data, err := os.ReadFile(serverPath)
+	if err != nil {
+		return nil, fmt.Errorf("reading server file %s: %w", serverPath, err)
+	}
+
+	var server Server
+	if err := yaml.Unmarshal(data, &server); err != nil {
+		return nil, fmt.Errorf("parsing server YAML %s: %w", serverPath, err)
+	}
+
+	if err := server.validate(); err != nil {
+		return nil, fmt.Errorf("validating server %s: %w", server.Name, err)
+	}
+
+	// Cache the loaded server
+	if r.cache != nil {
+		r.cache[strings.ToLower(server.Name)] = &server
+	}
+
+	return &server, nil
+}
+
+// validate ensures a server definition is valid
+func (s *Server) validate() error {
+	if s.Name == "" {
+		return ErrMissingName
+	}
+
+	if s.Description == "" {
+		return fmt.Errorf("missing description")
+	}
+
+	if s.Category == "" {
+		return fmt.Errorf("missing category")
+	}
+
+	if s.Command.Executable == "" {
+		return fmt.Errorf("missing command executable")
+	}
+
+	return nil
+}
+
+// IsSensitive checks if an environment variable should be masked
+func (s *Server) IsSensitive(envName string) bool {
+	for _, env := range s.Environment {
+		if env.Name == envName {
+			return env.Sensitive
+		}
+	}
+	return false
+}
+
+// GetRequiredEnvironment returns only required environment variables
+func (s *Server) GetRequiredEnvironment() []EnvironmentVar {
+	var required []EnvironmentVar
+	for _, env := range s.Environment {
+		if env.Required {
+			required = append(required, env)
+		}
+	}
+	return required
+}
+
+// RegistryCache provides thread-safe caching for the registry
+type RegistryCache struct {
+	mu       sync.RWMutex
+	registry *Registry
+	path     string
+	loadedAt time.Time
+}
+
+// Get retrieves the cached registry or loads it if expired
+func (rc *RegistryCache) Get() (*Registry, error) {
+	rc.mu.RLock()
+	if rc.registry != nil && time.Since(rc.loadedAt) < CacheTTL {
+		defer rc.mu.RUnlock()
+		return rc.registry, nil
+	}
+	rc.mu.RUnlock()
+
+	rc.mu.Lock()
+	defer rc.mu.Unlock()
+
+	// Double-check after acquiring write lock
+	if rc.registry != nil && time.Since(rc.loadedAt) < CacheTTL {
+		return rc.registry, nil
+	}
+
+	registry, err := LoadRegistry(rc.path)
+	if err != nil {
+		return nil, err
+	}
+
+	rc.registry = registry
+	rc.loadedAt = time.Now()
+	return registry, nil
+}
+
+// Invalidate clears the cache
+func (rc *RegistryCache) Invalidate() {
+	rc.mu.Lock()
+	defer rc.mu.Unlock()
+	rc.registry = nil
+}
+
