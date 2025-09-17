@@ -195,6 +195,84 @@ Technical investigation findings directly inform design artifacts:
 - **Decision Points**: Clear criteria for when investigation provides sufficient evidence
 - **Integration Time**: Budget 1-2 days to integrate findings into design artifacts
 
+## Artifact Selection Guide
+
+Understanding which artifact to use is critical for maintaining clear documentation. This guide helps you choose the right artifact type for your design documentation needs.
+
+### Quick Decision Tree
+
+When deciding which artifact to use, ask these questions in order:
+
+1. **Is this a fundamental architectural decision that would be expensive to change?**
+   - YES → **ADR** (e.g., "Use GraphQL for internal APIs", "Adopt microservices architecture")
+   - NO → Continue to question 2
+
+2. **Are you evaluating or selecting specific technologies/libraries?**
+   - YES → **Tech Spike** (e.g., "Redis vs Hazelcast for caching", "Caliban vs Sangria for GraphQL")
+   - NO → Continue to question 3
+
+3. **Are you defining how to implement an architectural approach?**
+   - YES → **Solution Design** (e.g., "GraphQL federation architecture", "Database sharding strategy")
+   - NO → Consider if this belongs in Build phase as an Implementation Guide
+
+### Artifact Boundaries and Relationships
+
+#### ADRs - Architectural Decisions (WHY)
+**Purpose**: Document fundamental decisions that shape the system architecture
+**Scope**: Protocol choices, architectural patterns, system boundaries, data strategies
+**Review Cycle**: Only when requirements fundamentally change
+**Example**: "We will separate internal and external API surfaces because they have different SLAs, security models, and evolution rates"
+
+#### Tech Spikes - Technology Selection (WHAT)
+**Purpose**: Evaluate and select specific technologies to implement architectural decisions
+**Scope**: Library comparisons, performance testing, feasibility studies
+**Review Cycle**: When new versions released or better alternatives emerge
+**Example**: "After evaluating Caliban, Sangria, and GraphQL-Java, we selected Caliban for its native ZIO integration"
+
+#### Solution Designs - Implementation Architecture (HOW)
+**Purpose**: Define how to build the system using chosen technologies
+**Scope**: Component design, integration patterns, data flows, deployment architecture
+**Review Cycle**: When implementation reveals better patterns
+**Example**: "Internal GraphQL will use Apollo Federation to combine Caliban services with PostGraphile"
+
+### Artifact Flow Example
+
+Here's how artifacts build on each other:
+
+```
+1. ADR-012: "Use GraphQL for internal APIs"
+   ↓ (Architectural decision made)
+2. SPIKE-003: "GraphQL library evaluation for Scala"
+   ↓ (Caliban selected)
+3. SD-005: "Internal GraphQL federation implementation"
+   ↓ (Implementation defined)
+4. Build Phase: Implementation guides and code
+```
+
+### Common Mistakes to Avoid
+
+❌ **Don't put technology selection in ADRs**
+- Wrong: ADR titled "Use Caliban for GraphQL"
+- Right: ADR "Use GraphQL for internal APIs" + Spike "GraphQL library selection"
+
+❌ **Don't repeat architectural rationale in Tech Spikes**
+- Wrong: Tech Spike explaining why GraphQL is better than REST
+- Right: Tech Spike comparing GraphQL libraries assuming GraphQL is already chosen
+
+❌ **Don't put implementation details in Solution Designs**
+- Wrong: Solution Design with code snippets and configuration values
+- Right: Solution Design with architecture diagrams and patterns
+
+### Cross-Referencing
+
+Each artifact should reference related artifacts:
+- ADRs should note which Tech Spikes validate the decision
+- Tech Spikes should reference the ADR they support
+- Solution Designs should reference both the ADR (why) and Tech Spike (what technology)
+
+### Reference
+For complete artifact boundary definitions, see [ADR-011: Design Phase Artifact Boundaries](/docs/02-design/adr/adr-011-design-artifact-boundaries.md) in the DDX documentation.
+
 ## Process Flow
 
 ```mermaid

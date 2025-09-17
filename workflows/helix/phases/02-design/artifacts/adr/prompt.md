@@ -28,6 +28,22 @@ Create an ADR when the decision:
 - Deviates from standard practices
 - Has high cost of change if wrong
 
+**Focus on fundamental architectural choices**, not specific technology selections.
+
+### ADR Scope Guidelines
+
+**✅ Good ADR Topics:**
+- Protocol choices: "Use GraphQL for internal APIs" (not "Use Caliban for GraphQL")
+- Architectural patterns: "Adopt microservices architecture" (not "Use Spring Boot")
+- Data strategies: "Use event-driven architecture" (not "Use Kafka implementation")
+- System boundaries: "Separate internal and external APIs" (not "Use different ports")
+
+**❌ Not for ADRs (use other artifacts):**
+- Specific library/framework selection → **Tech Spike**
+- Implementation patterns and details → **Solution Design**
+- Configuration and deployment procedures → **Implementation Guide**
+- Tool selection for development workflow → **Process documentation**
+
 ## What Doesn't Need an ADR?
 
 Skip ADRs for:
@@ -35,7 +51,23 @@ Skip ADRs for:
 - Minor implementation details
 - Decisions that can easily be changed
 - Standard/conventional approaches
-- Tool selection for development only
+- **Specific technology selections** (create a **Tech Spike** instead)
+- **Implementation architecture** (create a **Solution Design** instead)
+
+## Artifact Relationships
+
+ADRs work with other design artifacts in this flow:
+
+```
+ADR (Why) → Tech Spike (What) → Solution Design (How)
+```
+
+**Example:**
+1. **ADR-012**: "Use distributed caching" → Why we need caching
+2. **SPIKE-003**: "Redis vs Hazelcast evaluation" → Which technology
+3. **SD-008**: "Redis cluster implementation" → How to implement
+
+**Cross-reference related artifacts** in your ADR to maintain traceability.
 
 ## Key Principles
 

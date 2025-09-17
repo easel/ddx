@@ -3,6 +3,8 @@
 ## Context
 You are helping create a technical spike for the Design phase of the HELIX workflow. Technical spikes are time-boxed investigations used to explore technical unknowns, validate architectural approaches, or reduce implementation risk before committing to detailed design decisions.
 
+**Primary Focus**: Technology evaluation and selection to implement architectural decisions made in ADRs.
+
 ## Objective
 Create a focused technical investigation that transforms uncertainty into actionable insights. The spike should be strictly time-boxed, evidence-based, and produce concrete recommendations that inform architectural decisions.
 
@@ -38,17 +40,44 @@ Create a focused technical investigation that transforms uncertainty into action
 Identify the specific uncertainty that needs investigation:
 
 **Question Types**:
-- **Architecture**: "Which architectural pattern best fits our constraints?"
-- **Technology**: "Can technology X handle our performance requirements?"
-- **Integration**: "How complex is integrating with system Y?"
-- **Performance**: "What are the scalability limits of approach Z?"
-- **Feasibility**: "Is it possible to implement feature A with constraint B?"
+- **Technology Selection**: "Which library/framework should we use for X?" (most common)
+- **Performance Validation**: "Can technology X handle our performance requirements?"
+- **Integration Assessment**: "How complex is integrating with system Y?"
+- **Feasibility Study**: "Is it possible to implement feature A with technology B?"
+- **Compatibility Testing**: "Does framework X work with our existing stack?"
+
+**Tech Spike Scope (What Belongs Here)**:
+- Comparing specific libraries or frameworks (e.g., "Caliban vs Sangria for GraphQL")
+- Performance benchmarking of technologies
+- Integration complexity assessment
+- Version compatibility testing
+- License and ecosystem evaluation
+
+**Not for Tech Spikes (Use Other Artifacts)**:
+- Fundamental architectural decisions → **ADR** (e.g., "Should we use GraphQL?" → ADR)
+- Implementation patterns and architecture → **Solution Design**
+- Configuration and deployment → **Implementation Guide**
 
 **Question Quality Criteria**:
 - Specific and measurable
 - Directly blocks architectural decisions
 - Answerable within time budget
 - Has clear success criteria
+
+### Artifact Relationships
+
+Tech Spikes work within this design artifact flow:
+
+```
+ADR (Why) → Tech Spike (What) → Solution Design (How)
+```
+
+**Typical Flow:**
+1. **ADR decides approach**: "Use distributed caching for session management"
+2. **Tech Spike selects technology**: "Redis vs Hazelcast vs Memcached evaluation"
+3. **Solution Design defines implementation**: "Redis cluster architecture"
+
+**Reference the supporting ADR** in your spike to maintain traceability. The architectural decision should already be made - your spike is choosing the specific technology to implement it.
 
 ### Spike Scope Definition
 

@@ -189,6 +189,41 @@ The structure enables clear traceability across phases:
 3. **Archive Completed Cycles**: Move old iterations to archive
 4. **Document Changes**: Update this README when structure evolves
 
+## Project Documentation Convention
+
+### Using Helix Phases in Projects
+
+When applying the HELIX workflow to your project, organize documentation using the `docs/helix-phases/` convention:
+
+```
+project-root/
+├── docs/
+│   ├── helix-phases/           # HELIX phase documentation
+│   │   ├── 01-frame/          # Problem definition & requirements
+│   │   ├── 02-design/         # Architecture & design decisions
+│   │   ├── 03-test/           # Test strategies & plans
+│   │   ├── 04-build/          # Implementation guidance
+│   │   ├── 05-deploy/         # Deployment & operations
+│   │   └── 06-iterate/        # Continuous improvement
+│   ├── reference/             # Reference documentation
+│   ├── operations/            # Operational procedures
+│   └── strategy/              # Strategic planning
+```
+
+This convention:
+- Keeps phase documentation separate from operational docs
+- Uses numbered prefixes for clear ordering
+- Places artifacts directly in phase directories (no `artifacts/` subdirectory)
+- Allows for project-specific documentation outside the phases
+
+### Why `helix-phases/`?
+
+The `helix-phases/` naming:
+1. Clearly indicates use of the HELIX workflow
+2. Separates phase artifacts from other documentation
+3. Maintains consistency across projects using HELIX
+4. Enables tooling to identify and validate phase structure
+
 ## Tools and Automation
 
 ### Validation

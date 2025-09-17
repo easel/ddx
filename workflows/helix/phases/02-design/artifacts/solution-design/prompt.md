@@ -14,6 +14,8 @@ The Solution Design is the critical transformation layer that:
 - Documents the rationale for technical choices
 - Creates traceability from needs to implementation
 
+**Focus**: Define HOW to implement the system using decisions from ADRs and technologies from Tech Spikes.
+
 ## Key Principles
 
 ### 1. Requirements-First Thinking
@@ -28,11 +30,50 @@ Always consider alternatives:
 - Evaluate trade-offs objectively
 - Explain why you selected or rejected each approach
 
-### 3. Clear Traceability
+### 3. Leverage Existing Decisions
+Build on established architectural decisions and technology selections:
+- Reference supporting ADRs that justify the approach
+- Use technologies selected through Tech Spikes
+- Don't re-argue architectural decisions - focus on implementation
+- Assume technology choices are made - design around them
+
+### 4. Clear Traceability
 Every design decision must trace back to requirements:
 - Map each requirement to specific components
 - Show how NFRs influence architecture
 - Identify any requirements not fully addressed
+
+## Artifact Relationships
+
+Solution Designs complete the design artifact flow:
+
+```
+ADR (Why) → Tech Spike (What) → Solution Design (How)
+```
+
+**Your Role in the Flow:**
+- **Start with ADRs**: Architectural decisions are already made - implement them, don't question them
+- **Use Tech Spike results**: Technology selections are done - design around chosen technologies
+- **Focus on implementation**: Define component architecture, integration patterns, data flows
+
+**What Belongs in Solution Designs:**
+- Component architecture and interactions
+- Data flow and processing patterns
+- Integration strategies between components
+- Deployment and scaling architecture
+- Error handling and recovery patterns
+- Security implementation approach
+
+**What Doesn't Belong Here:**
+- Why we chose this architecture → **ADR**
+- Which technology/library to use → **Tech Spike**
+- Step-by-step procedures → **Implementation Guide**
+- Configuration details → **Implementation Guide**
+
+**Cross-Reference Related Artifacts:**
+- Reference the ADR that establishes the architectural approach
+- Reference the Tech Spike that selected the technologies
+- Note any Solution Designs that depend on this one
 
 ## Process to Follow
 
