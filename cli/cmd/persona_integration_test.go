@@ -50,8 +50,12 @@ This is a test project for validating persona workflows.`
 	claudePath := filepath.Join(workDir, "CLAUDE.md")
 	require.NoError(t, os.WriteFile(claudePath, []byte(initialClaude), 0644))
 
+	// Set library path to project-local library
+	libraryDir := filepath.Join(workDir, ".ddx", "library")
+	t.Setenv("DDX_LIBRARY_BASE_PATH", libraryDir)
+
 	// Create personas directory with test personas
-	personasDir := filepath.Join(tempHome, ".ddx", "library", "personas")
+	personasDir := filepath.Join(libraryDir, "personas")
 	require.NoError(t, os.MkdirAll(personasDir, 0755))
 
 	// Create comprehensive set of test personas
@@ -648,7 +652,10 @@ func TestPersonaIntegration_ErrorHandling(t *testing.T) {
 			name: "load_persona_with_invalid_content",
 			setup: func(t *testing.T) {
 				// Create persona with invalid YAML
-				personasDir := filepath.Join(tempHome, ".ddx", "library", "personas")
+				currentDir, _ := os.Getwd()
+				libraryDir := filepath.Join(currentDir, ".ddx", "library")
+				t.Setenv("DDX_LIBRARY_BASE_PATH", libraryDir)
+				personasDir := filepath.Join(libraryDir, "personas")
 				require.NoError(t, os.MkdirAll(personasDir, 0755))
 
 				invalidPersona := `---
@@ -678,7 +685,10 @@ persona_bindings:
 			name: "show_nonexistent_persona",
 			setup: func(t *testing.T) {
 				// Create empty personas directory
-				personasDir := filepath.Join(tempHome, ".ddx", "library", "personas")
+				currentDir, _ := os.Getwd()
+				libraryDir := filepath.Join(currentDir, ".ddx", "library")
+				t.Setenv("DDX_LIBRARY_BASE_PATH", libraryDir)
+				personasDir := filepath.Join(libraryDir, "personas")
 				require.NoError(t, os.MkdirAll(personasDir, 0755))
 			},
 			operation: func(t *testing.T) error {

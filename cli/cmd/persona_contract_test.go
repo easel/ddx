@@ -28,11 +28,16 @@ func TestPersonaListCommand_Contract(t *testing.T) {
 			description: "Exit code 0: Success with personas found",
 			args:        []string{"persona", "list"},
 			setup: func(t *testing.T) string {
+				testWorkDir := t.TempDir()
+				require.NoError(t, os.Chdir(testWorkDir))
+
 				homeDir := t.TempDir()
 				t.Setenv("HOME", homeDir)
+				libraryDir := filepath.Join(testWorkDir, ".ddx", "library")
+				t.Setenv("DDX_LIBRARY_BASE_PATH", libraryDir)
 
 				// Create personas directory with sample personas
-				personasDir := filepath.Join(homeDir, ".ddx", "library", "personas")
+				personasDir := filepath.Join(libraryDir, "personas")
 				require.NoError(t, os.MkdirAll(personasDir, 0755))
 
 				// Create test persona
@@ -52,7 +57,7 @@ You are a test code reviewer.`
 					0644,
 				))
 
-				return homeDir
+				return testWorkDir
 			},
 			expectCode: 0,
 			validateOutput: func(t *testing.T, output string) {
@@ -67,14 +72,19 @@ You are a test code reviewer.`
 			description: "Exit code 0: Success with no personas found",
 			args:        []string{"persona", "list"},
 			setup: func(t *testing.T) string {
+				testWorkDir := t.TempDir()
+				require.NoError(t, os.Chdir(testWorkDir))
+
 				homeDir := t.TempDir()
 				t.Setenv("HOME", homeDir)
+				libraryDir := filepath.Join(testWorkDir, ".ddx", "library")
+				t.Setenv("DDX_LIBRARY_BASE_PATH", libraryDir)
 
 				// Create empty personas directory
-				personasDir := filepath.Join(homeDir, ".ddx", "library", "personas")
+				personasDir := filepath.Join(libraryDir, "personas")
 				require.NoError(t, os.MkdirAll(personasDir, 0755))
 
-				return homeDir
+				return testWorkDir
 			},
 			expectCode: 0,
 			validateOutput: func(t *testing.T, output string) {
@@ -87,10 +97,15 @@ You are a test code reviewer.`
 			description: "--role flag filters personas by role",
 			args:        []string{"persona", "list", "--role", "test-engineer"},
 			setup: func(t *testing.T) string {
+				testWorkDir := t.TempDir()
+				require.NoError(t, os.Chdir(testWorkDir))
+
 				homeDir := t.TempDir()
 				t.Setenv("HOME", homeDir)
+				libraryDir := filepath.Join(testWorkDir, ".ddx", "library")
+				t.Setenv("DDX_LIBRARY_BASE_PATH", libraryDir)
 
-				personasDir := filepath.Join(homeDir, ".ddx", "library", "personas")
+				personasDir := filepath.Join(libraryDir, "personas")
 				require.NoError(t, os.MkdirAll(personasDir, 0755))
 
 				// Create personas with different roles
@@ -122,7 +137,7 @@ tags: [test, tdd]
 					0644,
 				))
 
-				return homeDir
+				return testWorkDir
 			},
 			expectCode: 0,
 			validateOutput: func(t *testing.T, output string) {
@@ -136,10 +151,15 @@ tags: [test, tdd]
 			description: "--tag flag filters personas by tag",
 			args:        []string{"persona", "list", "--tag", "tdd"},
 			setup: func(t *testing.T) string {
+				testWorkDir := t.TempDir()
+				require.NoError(t, os.Chdir(testWorkDir))
+
 				homeDir := t.TempDir()
 				t.Setenv("HOME", homeDir)
+				libraryDir := filepath.Join(testWorkDir, ".ddx", "library")
+				t.Setenv("DDX_LIBRARY_BASE_PATH", libraryDir)
 
-				personasDir := filepath.Join(homeDir, ".ddx", "library", "personas")
+				personasDir := filepath.Join(libraryDir, "personas")
 				require.NoError(t, os.MkdirAll(personasDir, 0755))
 
 				// Create personas with different tags
@@ -171,7 +191,7 @@ tags: [test, bdd]
 					0644,
 				))
 
-				return homeDir
+				return testWorkDir
 			},
 			expectCode: 0,
 			validateOutput: func(t *testing.T, output string) {
@@ -229,10 +249,15 @@ func TestPersonaShowCommand_Contract(t *testing.T) {
 			description: "Exit code 0: Persona found and displayed",
 			args:        []string{"persona", "show", "test-reviewer"},
 			setup: func(t *testing.T) string {
+				testWorkDir := t.TempDir()
+				require.NoError(t, os.Chdir(testWorkDir))
+
 				homeDir := t.TempDir()
 				t.Setenv("HOME", homeDir)
+				libraryDir := filepath.Join(testWorkDir, ".ddx", "library")
+				t.Setenv("DDX_LIBRARY_BASE_PATH", libraryDir)
 
-				personasDir := filepath.Join(homeDir, ".ddx", "library", "personas")
+				personasDir := filepath.Join(libraryDir, "personas")
 				require.NoError(t, os.MkdirAll(personasDir, 0755))
 
 				personaContent := `---
@@ -257,7 +282,7 @@ You are an experienced code reviewer who enforces high standards.
 					0644,
 				))
 
-				return homeDir
+				return testWorkDir
 			},
 			expectCode: 0,
 			validateOutput: func(t *testing.T, output string) {
@@ -275,14 +300,19 @@ You are an experienced code reviewer who enforces high standards.
 			description: "Exit code 6: Persona not found",
 			args:        []string{"persona", "show", "nonexistent-persona"},
 			setup: func(t *testing.T) string {
+				testWorkDir := t.TempDir()
+				require.NoError(t, os.Chdir(testWorkDir))
+
 				homeDir := t.TempDir()
 				t.Setenv("HOME", homeDir)
+				libraryDir := filepath.Join(testWorkDir, ".ddx", "library")
+				t.Setenv("DDX_LIBRARY_BASE_PATH", libraryDir)
 
 				// Create empty personas directory
-				personasDir := filepath.Join(homeDir, ".ddx", "library", "personas")
+				personasDir := filepath.Join(libraryDir, "personas")
 				require.NoError(t, os.MkdirAll(personasDir, 0755))
 
-				return homeDir
+				return testWorkDir
 			},
 			expectCode: 6,
 			validateOutput: func(t *testing.T, output string) {
@@ -353,7 +383,9 @@ repository:
 				// Create personas directory with target persona
 				homeDir := t.TempDir()
 				t.Setenv("HOME", homeDir)
-				personasDir := filepath.Join(homeDir, ".ddx", "library", "personas")
+				libraryDir := filepath.Join(workDir, ".ddx", "library")
+				t.Setenv("DDX_LIBRARY_BASE_PATH", libraryDir)
+				personasDir := filepath.Join(libraryDir, "personas")
 				require.NoError(t, os.MkdirAll(personasDir, 0755))
 
 				personaContent := `---
@@ -514,7 +546,9 @@ This is the project guidance.`
 				// Create personas
 				homeDir := t.TempDir()
 				t.Setenv("HOME", homeDir)
-				personasDir := filepath.Join(homeDir, ".ddx", "library", "personas")
+				libraryDir := filepath.Join(workDir, ".ddx", "library")
+				t.Setenv("DDX_LIBRARY_BASE_PATH", libraryDir)
+				personasDir := filepath.Join(libraryDir, "personas")
 				require.NoError(t, os.MkdirAll(personasDir, 0755))
 
 				reviewerContent := `---
@@ -590,7 +624,9 @@ This is the project guidance.`
 				// Create persona
 				homeDir := t.TempDir()
 				t.Setenv("HOME", homeDir)
-				personasDir := filepath.Join(homeDir, ".ddx", "library", "personas")
+				libraryDir := filepath.Join(workDir, ".ddx", "library")
+				t.Setenv("DDX_LIBRARY_BASE_PATH", libraryDir)
+				personasDir := filepath.Join(libraryDir, "personas")
 				require.NoError(t, os.MkdirAll(personasDir, 0755))
 
 				personaContent := `---

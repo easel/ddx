@@ -61,10 +61,13 @@ This is a test project for validating persona functionality.`
 					0644,
 				))
 
-				// Create personas in home directory
+				// Create personas in library directory
 				homeDir := t.TempDir()
 				t.Setenv("HOME", homeDir)
-				personasDir := filepath.Join(homeDir, ".ddx", "personas")
+				// Set library path to project-local library
+				libraryDir := filepath.Join(workDir, ".ddx", "library")
+				t.Setenv("DDX_LIBRARY_BASE_PATH", libraryDir)
+				personasDir := filepath.Join(libraryDir, "personas")
 				require.NoError(t, os.MkdirAll(personasDir, 0755))
 
 				// Create the bound personas
@@ -202,10 +205,13 @@ Project guidance for my application.`
 					0644,
 				))
 
-				// Create persona
+				// Create persona in library directory
 				homeDir := t.TempDir()
 				t.Setenv("HOME", homeDir)
-				personasDir := filepath.Join(homeDir, ".ddx", "personas")
+				// Set library path to project-local library
+				libraryDir := filepath.Join(workDir, ".ddx", "library")
+				t.Setenv("DDX_LIBRARY_BASE_PATH", libraryDir)
+				personasDir := filepath.Join(libraryDir, "personas")
 				require.NoError(t, os.MkdirAll(personasDir, 0755))
 
 				personaContent := `---
@@ -304,10 +310,13 @@ variables:
 					0644,
 				))
 
-				// Create available persona
+				// Create available persona in library directory
 				homeDir := t.TempDir()
 				t.Setenv("HOME", homeDir)
-				personasDir := filepath.Join(homeDir, ".ddx", "personas")
+				// Set library path to project-local library
+				libraryDir := filepath.Join(workDir, ".ddx", "library")
+				t.Setenv("DDX_LIBRARY_BASE_PATH", libraryDir)
+				personasDir := filepath.Join(libraryDir, "personas")
 				require.NoError(t, os.MkdirAll(personasDir, 0755))
 
 				personaContent := `---
@@ -386,10 +395,13 @@ persona_bindings:
 					0644,
 				))
 
-				// Create new persona to bind
+				// Create new persona to bind in library directory
 				homeDir := t.TempDir()
 				t.Setenv("HOME", homeDir)
-				personasDir := filepath.Join(homeDir, ".ddx", "personas")
+				// Set library path to project-local library
+				libraryDir := filepath.Join(workDir, ".ddx", "library")
+				t.Setenv("DDX_LIBRARY_BASE_PATH", libraryDir)
+				personasDir := filepath.Join(libraryDir, "personas")
 				require.NoError(t, os.MkdirAll(personasDir, 0755))
 
 				personaContent := `---
@@ -744,7 +756,10 @@ func TestAcceptance_US034_DeveloperDiscoveringPersonas(t *testing.T) {
 				// Create variety of personas to discover
 				homeDir := t.TempDir()
 				t.Setenv("HOME", homeDir)
-				personasDir := filepath.Join(homeDir, ".ddx", "personas")
+				// Set library path to project-local library
+				libraryDir := filepath.Join(workDir, ".ddx", "library")
+				t.Setenv("DDX_LIBRARY_BASE_PATH", libraryDir)
+				personasDir := filepath.Join(libraryDir, "personas")
 				require.NoError(t, os.MkdirAll(personasDir, 0755))
 
 				personas := map[string]string{
@@ -830,7 +845,10 @@ tags: [security, vulnerability]
 
 				homeDir := t.TempDir()
 				t.Setenv("HOME", homeDir)
-				personasDir := filepath.Join(homeDir, ".ddx", "personas")
+				// Set library path to project-local library
+				libraryDir := filepath.Join(workDir, ".ddx", "library")
+				t.Setenv("DDX_LIBRARY_BASE_PATH", libraryDir)
+				personasDir := filepath.Join(libraryDir, "personas")
 				require.NoError(t, os.MkdirAll(personasDir, 0755))
 
 				personas := map[string]string{
