@@ -19,11 +19,12 @@ import (
 
 // Config represents the DDx configuration
 type Config struct {
-	Version    string            `yaml:"version"`
-	Repository Repository        `yaml:"repository"`
-	Includes   []string          `yaml:"includes"`
-	Overrides  map[string]string `yaml:"overrides,omitempty"`
-	Variables  map[string]string `yaml:"variables"`
+	Version     string            `yaml:"version"`
+	LibraryPath string            `yaml:"library_path,omitempty"`
+	Repository  Repository        `yaml:"repository"`
+	Includes    []string          `yaml:"includes"`
+	Overrides   map[string]string `yaml:"overrides,omitempty"`
+	Variables   map[string]string `yaml:"variables"`
 }
 
 // Repository configuration
@@ -438,10 +439,11 @@ func (c *Config) Validate() error {
 // Merge combines this config with another, with the other taking precedence
 func (c *Config) Merge(other *Config) *Config {
 	result := &Config{
-		Version:   c.Version,
-		Includes:  make([]string, len(c.Includes)),
-		Overrides: make(map[string]string),
-		Variables: make(map[string]string),
+		Version:     c.Version,
+		LibraryPath: c.LibraryPath,
+		Includes:    make([]string, len(c.Includes)),
+		Overrides:   make(map[string]string),
+		Variables:   make(map[string]string),
 	}
 
 	// Copy includes
@@ -453,6 +455,9 @@ func (c *Config) Merge(other *Config) *Config {
 	// Override with other's values if they exist
 	if other.Version != "" {
 		result.Version = other.Version
+	}
+	if other.LibraryPath != "" {
+		result.LibraryPath = other.LibraryPath
 	}
 	if other.Repository.URL != "" {
 		result.Repository.URL = other.Repository.URL
@@ -611,11 +616,12 @@ func (c *Config) MigrateVersion(targetVersion string) (*Config, []string, error)
 	if c.Version == targetVersion {
 		// Even if no migration is needed, we should still apply common migrations
 		migrated := &Config{
-			Version:    c.Version,
-			Repository: c.Repository,
-			Includes:   make([]string, len(c.Includes)),
-			Overrides:  make(map[string]string),
-			Variables:  make(map[string]string),
+			Version:     c.Version,
+			LibraryPath: c.LibraryPath,
+			Repository:  c.Repository,
+			Includes:    make([]string, len(c.Includes)),
+			Overrides:   make(map[string]string),
+			Variables:   make(map[string]string),
 		}
 
 		copy(migrated.Includes, c.Includes)
@@ -642,11 +648,12 @@ func (c *Config) MigrateVersion(targetVersion string) (*Config, []string, error)
 
 	var warnings []string
 	migrated := &Config{
-		Version:    targetVersion,
-		Repository: c.Repository,
-		Includes:   make([]string, len(c.Includes)),
-		Overrides:  make(map[string]string),
-		Variables:  make(map[string]string),
+		Version:     targetVersion,
+		LibraryPath: c.LibraryPath,
+		Repository:  c.Repository,
+		Includes:    make([]string, len(c.Includes)),
+		Overrides:   make(map[string]string),
+		Variables:   make(map[string]string),
 	}
 
 	copy(migrated.Includes, c.Includes)

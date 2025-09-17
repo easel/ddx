@@ -10,9 +10,10 @@ import (
 // GetLibraryPath returns the path to the DDx library with the following priority:
 // 1. Override path (from command flag)
 // 2. DDX_LIBRARY_BASE_PATH environment variable
-// 3. Git repository root /library (for development)
-// 4. Nearest .ddx/library/ directory (project-specific)
-// 5. ~/.ddx/library/ (global fallback)
+// 3. library_path from .ddx.yml configuration file
+// 4. Git repository root /library (for development)
+// 5. Nearest .ddx/library/ directory (project-specific)
+// 6. ~/.ddx/library/ (global fallback)
 func GetLibraryPath(overridePath string) (string, error) {
 	// 1. Check override path (from command flag)
 	if overridePath != "" {
@@ -38,7 +39,34 @@ func GetLibraryPath(overridePath string) (string, error) {
 		return absPath, nil
 	}
 
-	// 3. Check if we're in DDx development (git repo with library/)
+	// 3. Check configuration file for library_path
+	if cfg, err := LoadLocal(); err == nil && cfg.LibraryPath != "" {
+		// Resolve path relative to config file location
+		configDir := findConfigDirectory()
+		var libPath string
+
+		if filepath.IsAbs(cfg.LibraryPath) {
+			libPath = cfg.LibraryPath
+		} else {
+			// Make path relative to config file's directory
+			if configDir != "" {
+				libPath = filepath.Join(configDir, cfg.LibraryPath)
+			} else {
+				libPath = cfg.LibraryPath
+			}
+		}
+
+		absPath, err := filepath.Abs(libPath)
+		if err != nil {
+			return "", fmt.Errorf("invalid library_path in config: %w", err)
+		}
+		if !dirExists(absPath) {
+			return "", fmt.Errorf("library_path does not exist: %s", absPath)
+		}
+		return absPath, nil
+	}
+
+	// 4. Check if we're in DDx development (git repo with library/)
 	if gitRoot := findGitRoot(); gitRoot != "" {
 		libPath := filepath.Join(gitRoot, "library")
 		if dirExists(libPath) {
@@ -49,12 +77,12 @@ func GetLibraryPath(overridePath string) (string, error) {
 		}
 	}
 
-	// 4. Find nearest .ddx/library/ (project-specific)
+	// 5. Find nearest .ddx/library/ (project-specific)
 	if projectLib := findNearestDDxLibrary(); projectLib != "" {
 		return projectLib, nil
 	}
 
-	// 5. Global fallback
+	// 6. Global fallback
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return "", fmt.Errorf("cannot determine home directory: %w", err)
@@ -72,6 +100,29 @@ func findGitRoot() string {
 	for {
 		gitDir := filepath.Join(dir, ".git")
 		if dirExists(gitDir) {
+			return dir
+		}
+
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			break
+		}
+		dir = parent
+	}
+
+	return ""
+}
+
+// findConfigDirectory finds the directory containing .ddx.yml
+func findConfigDirectory() string {
+	dir, err := os.Getwd()
+	if err != nil {
+		return ""
+	}
+
+	for {
+		configFile := filepath.Join(dir, ".ddx.yml")
+		if fileExists(configFile) {
 			return dir
 		}
 

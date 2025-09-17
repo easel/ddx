@@ -44,10 +44,8 @@ func runInit(cmd *cobra.Command, args []string) error {
 	configPath := ".ddx.yml"
 	if _, err := os.Stat(configPath); err == nil && !initForce {
 		// Config exists and --force not used - exit code 2 per contract
-		fmt.Fprint(cmd.OutOrStdout(), "❌ DDx configuration already exists. Use --force to overwrite.\n")
-		// Return error with exit code 2
 		cmd.SilenceUsage = true
-		return fmt.Errorf("exit code 2: configuration already exists")
+		return NewExitError(2, ".ddx.yml already exists. Use --force to overwrite.")
 	}
 
 	// Check if DDx home exists
@@ -79,6 +77,13 @@ func runInit(cmd *cobra.Command, args []string) error {
 		},
 	}
 
+	// Check if we're in the DDx repository itself
+	if isDDxRepository() {
+		// For DDx repo, point directly to the library directory
+		localConfig.LibraryPath = "../library"
+		fmt.Fprint(cmd.OutOrStdout(), "📚 Detected DDx repository - configuring library_path to use ../library\n")
+	}
+
 	// Try to load existing config for more accurate defaults
 	if ddxHomeExists {
 		if cfg, err := config.Load(); err == nil {
@@ -95,9 +100,8 @@ func runInit(cmd *cobra.Command, args []string) error {
 
 	// Save local configuration
 	if err := config.SaveLocal(localConfig); err != nil {
-		fmt.Fprintf(cmd.OutOrStdout(), "❌ Failed to save configuration: %v\n", err)
 		cmd.SilenceUsage = true
-		return fmt.Errorf("exit code 1: failed to save configuration: %w", err)
+		return NewExitError(1, fmt.Sprintf("Failed to save configuration: %v", err))
 	}
 
 	// Copy resources if DDx home exists
@@ -110,9 +114,8 @@ func runInit(cmd *cobra.Command, args []string) error {
 		localDDxPath := ".ddx"
 		if err := os.MkdirAll(localDDxPath, 0755); err != nil {
 			s.Stop()
-			fmt.Fprintf(cmd.OutOrStdout(), "❌ Failed to create .ddx directory: %v\n", err)
 			cmd.SilenceUsage = true
-			return fmt.Errorf("exit code 1: failed to create .ddx directory: %w", err)
+			return NewExitError(1, fmt.Sprintf("Failed to create .ddx directory: %v", err))
 		}
 
 		// Copy selected resources
@@ -124,9 +127,8 @@ func runInit(cmd *cobra.Command, args []string) error {
 				s.Suffix = fmt.Sprintf(" Copying %s...", include)
 				if err := copyDir(sourcePath, targetPath); err != nil {
 					s.Stop()
-					fmt.Fprintf(cmd.OutOrStdout(), "❌ Failed to copy %s: %v\n", include, err)
 					cmd.SilenceUsage = true
-					return fmt.Errorf("exit code 1: failed to copy %s: %w", include, err)
+					return NewExitError(1, fmt.Sprintf("Failed to copy %s: %v", include, err))
 				}
 			}
 		}
@@ -136,9 +138,8 @@ func runInit(cmd *cobra.Command, args []string) error {
 			s.Suffix = fmt.Sprintf(" Applying template: %s...", initTemplate)
 			if err := templates.Apply(initTemplate, ".", localConfig.Variables); err != nil {
 				s.Stop()
-				fmt.Fprintf(cmd.OutOrStdout(), "❌ Failed to apply template: %v\n", err)
 				cmd.SilenceUsage = true
-				return fmt.Errorf("exit code 4: template not found: %w", err)
+				return NewExitError(4, fmt.Sprintf("Template '%s' not found. Run 'ddx list templates' to see available templates.", initTemplate))
 			}
 		}
 
@@ -160,6 +161,36 @@ func runInit(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+// isDDxRepository checks if we're in the DDx repository
+func isDDxRepository() bool {
+	// Check for identifying files that indicate this is the DDx repo
+	// Look for cli/main.go and library/ directory
+	pwd, err := os.Getwd()
+	if err != nil {
+		return false
+	}
+
+	// Check if we're in the cli directory of DDx repo
+	if filepath.Base(pwd) == "cli" {
+		// Check for main.go
+		if _, err := os.Stat("main.go"); err == nil {
+			// Check for ../library directory
+			if _, err := os.Stat("../library"); err == nil {
+				return true
+			}
+		}
+	}
+
+	// Check if we're at the root of DDx repo
+	if _, err := os.Stat("cli/main.go"); err == nil {
+		if _, err := os.Stat("library"); err == nil {
+			return true
+		}
+	}
+
+	return false
 }
 
 // copyDir recursively copies a directory

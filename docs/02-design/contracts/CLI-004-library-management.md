@@ -22,7 +22,16 @@ ddx [command]
 - **Priority**: Second highest
 - **Use Case**: Testing environments, containers
 
-### 3. Automatic Detection
+### 3. Configuration File
+```yaml
+# .ddx.yml
+library_path: ./library  # or /absolute/path/to/library
+```
+- **Scope**: Project-specific configuration
+- **Priority**: Third (after env var, before auto-detection)
+- **Use Case**: DDx repository, shared team libraries, consistent project setup
+
+### 4. Automatic Detection
 The system automatically detects the appropriate library:
 - **Development**: `<git-repo>/library/` when in DDx repository
 - **Project**: `.ddx/library/` in project root or parent directories
@@ -58,11 +67,12 @@ func GetLibraryPath(overridePath string) (string, error)
 ```
 **Returns**: Absolute path to library directory
 **Priority Order**:
-1. overridePath parameter
+1. overridePath parameter (from --library-base-path flag)
 2. DDX_LIBRARY_BASE_PATH environment variable
-3. Git repository library/ (if in DDx repo)
-4. Nearest .ddx/library/
-5. ~/.ddx/library/
+3. library_path from .ddx.yml configuration file
+4. Git repository library/ (if in DDx repo)
+5. Nearest .ddx/library/
+6. ~/.ddx/library/
 
 #### Resource-Specific Helpers
 ```go
@@ -136,8 +146,10 @@ library/
 1. **Development Mode**: Verify uses repo library/
 2. **Override Flag**: Test --library-base-path works
 3. **Environment Variable**: Verify DDX_LIBRARY_BASE_PATH
-4. **Project Library**: Test .ddx/library/ discovery
-5. **Global Fallback**: Verify ~/.ddx/library/ usage
+4. **Config File Path**: Test library_path from .ddx.yml
+5. **Project Library**: Test .ddx/library/ discovery
+6. **Global Fallback**: Verify ~/.ddx/library/ usage
+7. **Priority Order**: Verify correct precedence of all methods
 
 ### Test Utilities
 ```go

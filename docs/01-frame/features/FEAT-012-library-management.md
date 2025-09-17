@@ -43,6 +43,7 @@ Implement a hierarchical library path resolution system with:
 ### FR-002: Path Resolution
 - Command-line flag override (`--library-base-path`)
 - Environment variable support (`DDX_LIBRARY_BASE_PATH`)
+- Configuration file setting (`library_path` in .ddx.yml)
 - Automatic detection for development (git repo with library/)
 - Project-local library support (.ddx/library/)
 - Global fallback (~/.ddx/library/)
@@ -92,6 +93,11 @@ Implement a hierarchical library path resolution system with:
 **I want** to maintain project-specific templates
 **So that** my team uses consistent, customized resources
 
+### Story 4: Configuration-Based Library Path
+**As a** DDx repository developer
+**I want** to specify the library path in .ddx.yml configuration
+**So that** I can point directly to ./library without using git subtree
+
 ## Acceptance Criteria
 
 ### AC1: Library Structure
@@ -102,9 +108,11 @@ Implement a hierarchical library path resolution system with:
 ### AC2: Path Resolution
 - [ ] Flag override works correctly
 - [ ] Environment variable recognized
+- [ ] Configuration file library_path field works
 - [ ] Git repo detection functional
 - [ ] Project library discovery works
 - [ ] Global fallback operational
+- [ ] Priority order is maintained correctly
 
 ### AC3: Integration
 - [ ] Persona loader uses library paths

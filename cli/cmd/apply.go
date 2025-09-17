@@ -20,17 +20,6 @@ var (
 	applyVars   []string
 )
 
-// ExitError represents an error with a specific exit code
-// ExitError represents an error with a specific exit code
-type ExitError struct {
-	Code    int
-	Message string
-}
-
-func (e *ExitError) Error() string {
-	return e.Message
-}
-
 var applyCmd = &cobra.Command{
 	Use:   "apply <resource>",
 	Short: "Apply a specific template, pattern, or configuration",

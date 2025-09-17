@@ -20,10 +20,14 @@ func main() {
 	if err := cmd.Execute(); err != nil {
 		// Check if it's an ExitError with a specific exit code
 		if exitErr, ok := err.(*cmd.ExitError); ok {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", exitErr.Message)
+			// Print error message only if it's not empty
+			if exitErr.Message != "" {
+				fmt.Fprintf(os.Stderr, "Error: %v\n", exitErr.Message)
+			}
 			os.Exit(exitErr.Code)
 		}
+		// For other errors, print them
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
-} // Test hooks
+}

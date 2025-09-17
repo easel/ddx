@@ -50,8 +50,9 @@ func init() {
 
 func runConfig(cmd *cobra.Command, args []string) error {
 	// Handle flags first
-	if configShow {
-		return showCurrentConfig()
+	if configShow || len(args) == 0 && !configInit && !configGlobal && !configLocal {
+		// Show config when no args or --show flag
+		return showCurrentConfigWithWriter(cmd.OutOrStdout())
 	}
 
 	if configInit {
@@ -86,7 +87,7 @@ func runConfig(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Default behavior - show current config
+	// Should never reach here
 	return showCurrentConfigWithWriter(cmd.OutOrStdout())
 }
 
@@ -110,23 +111,6 @@ func showCurrentConfigWithWriter(w io.Writer) error {
 	}
 
 	fmt.Fprint(w, string(yamlData))
-
-	// Show configuration file sources (no color when writing to buffer)
-	fmt.Fprintln(w)
-	fmt.Fprintln(w, "Configuration sources:")
-
-	home, _ := os.UserHomeDir()
-	globalPath := home + "/.ddx.yml"
-	localPath := ".ddx.yml"
-
-	if _, err := os.Stat(globalPath); err == nil {
-		fmt.Fprintf(w, "  • Global: %s\n", globalPath)
-	}
-
-	if _, err := os.Stat(localPath); err == nil {
-		fmt.Fprintf(w, "  • Local:  %s\n", localPath)
-	}
-
 	return nil
 }
 
