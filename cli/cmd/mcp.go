@@ -2,9 +2,112 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
 
+	"github.com/easel/ddx/internal/mcp"
 	"github.com/spf13/cobra"
 )
+
+// extractInstallOptions creates InstallOptions from CLI flags
+func extractInstallOptions(cmd *cobra.Command, envVars []string, yes bool, configPath string) mcp.InstallOptions {
+	// Parse environment variables from KEY=VALUE format
+	environment := make(map[string]string)
+	for _, envVar := range envVars {
+		parts := strings.SplitN(envVar, "=", 2)
+		if len(parts) == 2 {
+			environment[parts[0]] = parts[1]
+		}
+	}
+
+	noBackup, _ := cmd.Flags().GetBool("no-backup")
+	dryRun, _ := cmd.Flags().GetBool("dry-run")
+
+	return mcp.InstallOptions{
+		Environment: environment,
+		ConfigPath:  configPath,
+		NoBackup:    noBackup,
+		DryRun:      dryRun,
+	}
+}
+
+// extractListOptions creates ListOptions from CLI flags
+func extractListOptions(category, search string, installed, available, verbose bool, format string) mcp.ListOptions {
+	return mcp.ListOptions{
+		Category:  category,
+		Search:    search,
+		Installed: installed,
+		Available: available,
+		Verbose:   verbose,
+		Format:    format,
+	}
+}
+
+// extractConfigureOptions creates ConfigureOptions from CLI flags
+func extractConfigureOptions(env, addEnv, removeEnv []string, reset bool) mcp.ConfigureOptions {
+	// Parse environment variables from KEY=VALUE format
+	environment := make(map[string]string)
+	for _, envVar := range env {
+		parts := strings.SplitN(envVar, "=", 2)
+		if len(parts) == 2 {
+			environment[parts[0]] = parts[1]
+		}
+	}
+
+	addEnvironment := make(map[string]string)
+	for _, envVar := range addEnv {
+		parts := strings.SplitN(envVar, "=", 2)
+		if len(parts) == 2 {
+			addEnvironment[parts[0]] = parts[1]
+		}
+	}
+
+	return mcp.ConfigureOptions{
+		Environment:       environment,
+		AddEnvironment:    addEnvironment,
+		RemoveEnvironment: removeEnv,
+		Reset:             reset,
+	}
+}
+
+// extractRemoveOptions creates RemoveOptions from CLI flags
+func extractRemoveOptions(cmd *cobra.Command) mcp.RemoveOptions {
+	yes, _ := cmd.Flags().GetBool("yes")
+	noBackup, _ := cmd.Flags().GetBool("no-backup")
+	purge, _ := cmd.Flags().GetBool("purge")
+
+	return mcp.RemoveOptions{
+		SkipConfirmation: yes,
+		NoBackup:         noBackup,
+		Purge:            purge,
+	}
+}
+
+// extractStatusOptions creates StatusOptions from CLI flags
+func extractStatusOptions(cmd *cobra.Command, serverName string) mcp.StatusOptions {
+	check, _ := cmd.Flags().GetBool("check")
+	verbose, _ := cmd.Flags().GetBool("verbose")
+	format, _ := cmd.Flags().GetString("format")
+
+	return mcp.StatusOptions{
+		ServerName: serverName,
+		Check:      check,
+		Verbose:    verbose,
+		Format:     format,
+	}
+}
+
+// extractUpdateOptions creates UpdateOptions from CLI flags
+func extractUpdateOptions(cmd *cobra.Command) mcp.UpdateOptions {
+	force, _ := cmd.Flags().GetBool("force")
+	server, _ := cmd.Flags().GetString("server")
+	check, _ := cmd.Flags().GetBool("check")
+
+	return mcp.UpdateOptions{
+		Force:  force,
+		Server: server,
+		Check:  check,
+	}
+}
 
 // mcpCmd represents the mcp command
 var mcpCmd = &cobra.Command{
@@ -65,16 +168,16 @@ Filter by category, search by name or description, and see installation status.`
   ddx mcp list --search git         # Search for git-related servers
   ddx mcp list --installed          # Show only installed servers`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// TODO: Implement list functionality
-			fmt.Println("📋 Available MCP Servers")
-			fmt.Println()
-			fmt.Println("Development:")
-			fmt.Println("  ⬜ github         - GitHub integration for repository access")
-			fmt.Println("  ⬜ gitlab         - GitLab integration for repository access")
-			fmt.Println("\nDatabase:")
-			fmt.Println("  ⬜ postgres       - PostgreSQL database integration")
-			fmt.Println("  ⬜ mysql          - MySQL database integration")
-			return nil
+			// Extract options from CLI flags
+			opts := extractListOptions(category, search, installed, available, verbose, format)
+
+			// Create and invoke registry service
+			registry, err := mcp.LoadRegistry("")
+			if err != nil {
+				return fmt.Errorf("loading registry: %w", err)
+			}
+
+			return registry.List(opts)
 		},
 	}
 
@@ -114,10 +217,13 @@ This command will:
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			serverName := args[0]
-			// TODO: Implement install functionality
-			fmt.Printf("🔧 Installing %s MCP server...\n", serverName)
-			fmt.Println("✅ Installation would complete here")
-			return nil
+
+			// Extract options from CLI flags
+			opts := extractInstallOptions(cmd, env, yes, configPath)
+
+			// Create and invoke installer service
+			installer := mcp.NewInstaller()
+			return installer.Install(serverName, opts)
 		},
 	}
 
@@ -149,9 +255,13 @@ func newMCPConfigureCommand() *cobra.Command {
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			serverName := args[0]
-			// TODO: Implement configure functionality
-			fmt.Printf("🔧 Configuring %s MCP server...\n", serverName)
-			return nil
+
+			// Extract options from CLI flags
+			opts := extractConfigureOptions(env, addEnv, removeEnv, reset)
+
+			// Create and invoke config manager service
+			configManager := mcp.NewConfigManager("")
+			return configManager.UpdateServer(serverName, opts)
 		},
 	}
 
@@ -181,9 +291,13 @@ func newMCPRemoveCommand() *cobra.Command {
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			serverName := args[0]
-			// TODO: Implement remove functionality
-			fmt.Printf("🗑️  Removing %s MCP server...\n", serverName)
-			return nil
+
+			// Extract options from CLI flags
+			opts := extractRemoveOptions(cmd)
+
+			// Create and invoke config manager service
+			configManager := mcp.NewConfigManager("")
+			return configManager.RemoveServer(serverName, opts)
 		},
 	}
 
@@ -210,11 +324,17 @@ func newMCPStatusCommand() *cobra.Command {
   ddx mcp status github       # Show specific server
   ddx mcp status --check      # Verify connectivity`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// TODO: Implement status functionality
-			fmt.Println("📊 MCP Server Status")
-			fmt.Println()
-			fmt.Println("⚠️  No servers installed")
-			return nil
+			var serverName string
+			if len(args) > 0 {
+				serverName = args[0]
+			}
+
+			// Extract options from CLI flags
+			opts := extractStatusOptions(cmd, serverName)
+
+			// Create and invoke status checker service
+			statusChecker := mcp.NewStatusChecker()
+			return statusChecker.Check(opts)
 		},
 	}
 
@@ -241,10 +361,16 @@ func newMCPUpdateCommand() *cobra.Command {
   ddx mcp update --check      # Check for updates
   ddx mcp update --force      # Force update`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// TODO: Implement update functionality
-			fmt.Println("🔄 Updating MCP registry...")
-			fmt.Println("✅ Registry is up to date")
-			return nil
+			// Extract options from CLI flags
+			opts := extractUpdateOptions(cmd)
+
+			// Create and invoke registry service
+			registry, err := mcp.LoadRegistry("")
+			if err != nil {
+				return fmt.Errorf("loading registry: %w", err)
+			}
+
+			return registry.Update(opts)
 		},
 	}
 

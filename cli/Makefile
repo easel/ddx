@@ -17,7 +17,7 @@ PLATFORMS = \
 	linux/arm64 \
 	windows/amd64
 
-.PHONY: all build clean test lint deps help
+.PHONY: all build clean test lint deps help obsidian-migrate obsidian-validate obsidian-test obsidian-dry-run obsidian-nav obsidian-revert
 
 # Default target
 all: clean deps test build
@@ -110,6 +110,33 @@ dev:
 		go run . $(ARGS); \
 	fi
 
+# Obsidian integration targets
+obsidian-migrate: build
+	@echo "Migrating HELIX workflow to Obsidian format..."
+	./$(BUILD_DIR)/ddx obsidian migrate workflows/helix
+
+obsidian-validate: build
+	@echo "Validating Obsidian format in HELIX workflow..."
+	./$(BUILD_DIR)/ddx obsidian validate workflows/helix
+
+obsidian-test:
+	@echo "Running Obsidian integration tests..."
+	go test ./internal/obsidian/... -v
+	go test ./internal/obsidian/converter/... -v
+	go test ./internal/obsidian/validator/... -v
+
+obsidian-dry-run: build
+	@echo "Running Obsidian migration dry-run..."
+	./$(BUILD_DIR)/ddx obsidian migrate --dry-run workflows/helix
+
+obsidian-nav: build
+	@echo "Generating navigation hub..."
+	./$(BUILD_DIR)/ddx obsidian nav workflows/helix
+
+obsidian-revert: build
+	@echo "Reverting Obsidian migration..."
+	./$(BUILD_DIR)/ddx obsidian revert --strip-frontmatter workflows/helix
+
 # Show help
 help:
 	@echo "DDx CLI Build System"
@@ -129,6 +156,14 @@ help:
 	@echo "  release     - Create release archives"
 	@echo "  dev         - Development mode with file watching"
 	@echo "  help        - Show this help"
+	@echo ""
+	@echo "Obsidian Integration:"
+	@echo "  obsidian-migrate   - Migrate HELIX to Obsidian format"
+	@echo "  obsidian-validate  - Validate Obsidian format"
+	@echo "  obsidian-test      - Run Obsidian integration tests"
+	@echo "  obsidian-dry-run   - Preview migration changes"
+	@echo "  obsidian-nav       - Generate navigation hub"
+	@echo "  obsidian-revert    - Revert Obsidian migration"
 	@echo ""
 	@echo "Variables:"
 	@echo "  VERSION     - Version string (default: git describe)"

@@ -164,3 +164,33 @@ type ListOptions struct {
 	Verbose   bool   // Detailed output
 	Format    string // Output format (table/json/yaml)
 }
+
+// ConfigureOptions contains options for server configuration
+type ConfigureOptions struct {
+	Environment       map[string]string // Set environment variables
+	AddEnvironment    map[string]string // Add environment variables
+	RemoveEnvironment []string          // Remove environment variable keys
+	Reset             bool              // Reset to defaults
+}
+
+// RemoveOptions contains options for server removal
+type RemoveOptions struct {
+	SkipConfirmation bool // Skip confirmation prompts
+	NoBackup         bool // Skip backup creation
+	Purge            bool // Remove all related data
+}
+
+// StatusOptions contains options for status checking
+type StatusOptions struct {
+	ServerName string // Specific server to check (empty for all)
+	Check      bool   // Verify server connectivity
+	Verbose    bool   // Show detailed information
+	Format     string // Output format
+}
+
+// UpdateOptions contains options for registry updates
+type UpdateOptions struct {
+	Force  bool   // Force update even if current
+	Server string // Update specific server
+	Check  bool   // Check for updates only
+}
