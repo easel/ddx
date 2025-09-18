@@ -8,9 +8,10 @@ tags: [files, filesystem, storage, local, directories]
 
 command:
   executable: npx
-  args: ["-y", "@modelcontextprotocol/server-filesystem"]
+  args: ["-y", "@modelcontextprotocol/server-filesystem", "$PWD"]
+  # $PWD will be replaced with the repository root directory
   # Additional paths can be added as arguments after the package name
-  # Example: [..., "/Users/username/Documents", "/Users/username/Projects"]
+  # Example: [..., "$PWD", "/Users/username/Documents", "/Users/username/Projects"]
   
 environment:
   - name: FILESYSTEM_PATHS
@@ -28,16 +29,18 @@ environment:
     
 documentation:
   setup: |
-    1. Decide which directories Claude should access
-    2. Add directory paths as command arguments:
+    1. By default, $PWD gives access to the repository root directory
+    2. Decide if additional directories are needed
+    3. Add directory paths as command arguments:
        - During installation, you'll be prompted for paths
        - Or set FILESYSTEM_PATHS environment variable
-    3. Consider using read-only mode for safety
-    4. Paths must be absolute (not relative)
-  permissions:
-    - Read: List and read file contents
-    - Write: Create, modify, delete files (if not read-only)
-    - Directory operations: Create, remove directories
+    4. Consider using read-only mode for safety
+    5. Paths must be absolute (not relative)
+    6. $PWD will be replaced with the current working directory
+  features:
+    - "Read: List and read file contents"
+    - "Write: Create, modify, delete files (if not read-only)"
+    - "Directory operations: Create, remove directories"
   examples:
     - "List files in /Users/me/Projects"
     - "Read the contents of README.md"
@@ -82,7 +85,21 @@ configuration_example: |
         "args": [
           "-y",
           "@modelcontextprotocol/server-filesystem",
-          "/Users/username/Projects",
+          "$PWD"
+        ]
+      }
+    }
+  }
+
+  # Or with additional paths:
+  {
+    "mcpServers": {
+      "filesystem": {
+        "command": "npx",
+        "args": [
+          "-y",
+          "@modelcontextprotocol/server-filesystem",
+          "$PWD",
           "/Users/username/Documents"
         ]
       }
