@@ -1,9 +1,9 @@
-# US-002: Install MCP Server
+# US-037: Install MCP Server
 
 ## Story Overview
 
-**Story ID**: US-002  
-**Feature**: FEAT-001 (MCP Server Management)  
+**Story ID**: US-037
+**Feature**: FEAT-014 (MCP Server Management)  
 **Priority**: P0  
 **Points**: 5  
 **Sprint**: 1  
@@ -168,10 +168,10 @@ $ ddx mcp install github --env GITHUB_TOKEN=ghp_xxx --yes
 
 ## Related Stories
 
-- US-001: List Available MCP Servers
-- US-003: Configure MCP Server
-- US-004: Remove MCP Server
-- US-005: Update MCP Server
+- US-036: List Available MCP Servers
+- US-038: Configure MCP Server (future)
+- US-039: Remove MCP Server (future)
+- US-040: Update MCP Server (future)
 
 ## Change Log
 

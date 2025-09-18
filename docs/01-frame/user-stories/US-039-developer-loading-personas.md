@@ -1,4 +1,4 @@
-# User Story: [US-030] - Developer Loading Personas for Session
+# User Story: [US-039] - Developer Loading Personas for Session
 
 **Story ID**: US-030
 **Feature**: FEAT-011 (AI Persona System)

@@ -1,6 +1,6 @@
-# User Story: [US-024] - Developer Applying Standard Workflow
+# User Story: [US-038] - Developer Applying Standard Workflow
 
-**Story ID**: US-024
+**Story ID**: US-038
 **Priority**: P0
 **Feature**: FEAT-005 - Workflow Execution Engine
 **Created**: 2025-01-14

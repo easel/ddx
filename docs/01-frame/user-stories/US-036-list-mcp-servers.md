@@ -1,9 +1,9 @@
-# US-001: List Available MCP Servers
+# US-036: List Available MCP Servers
 
 ## Story Overview
 
-**Story ID**: US-001  
-**Feature**: FEAT-001 (MCP Server Management)  
+**Story ID**: US-036
+**Feature**: FEAT-014 (MCP Server Management)  
 **Priority**: P0  
 **Points**: 3  
 **Sprint**: 1  
@@ -131,9 +131,9 @@ Database (4 servers):
 
 ## Related Stories
 
-- US-002: Install MCP Server
-- US-003: Search MCP Server Details
-- US-004: Update Registry Cache
+- US-037: Install MCP Server
+- US-038: Search MCP Server Details (future)
+- US-039: Update Registry Cache (future)
 
 ## Change Log
 

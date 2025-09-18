@@ -1,4 +1,4 @@
-# User Story: [US-031] - Team Lead Binding Personas to Roles
+# User Story: [US-040] - Team Lead Binding Personas to Roles
 
 **Story ID**: US-031
 **Feature**: FEAT-011 (AI Persona System)

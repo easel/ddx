@@ -1,4 +1,4 @@
-# User Story: [US-032] - Workflow Author Requiring Roles
+# User Story: [US-041] - Workflow Author Requiring Roles
 
 **Story ID**: US-032
 **Feature**: FEAT-011 (AI Persona System)

@@ -27,15 +27,15 @@ This document summarizes the completion of the TEST phase for the AI Persona Sys
 - `TestPersonaStatusCommand_Contract` - Loaded persona status
 
 ### 2. Acceptance Tests (`cli/cmd/persona_acceptance_test.go`)
-- **Purpose**: Validate user stories US-030 through US-035
+- **Purpose**: Validate user stories US-039 through US-041
 - **Coverage**: End-to-end user workflows using Given/When/Then pattern
 - **Tests**: 8 major scenarios across 5 user stories
 - **Status**: ✅ Complete - All tests failing as expected
 
 **User Stories Covered:**
-- **US-030**: Developer Loading Personas for Session
-- **US-031**: Team Lead Binding Personas to Roles
-- **US-032**: Workflow Author Requiring Roles
+- **US-039**: Developer Loading Personas for Session
+- **US-040**: Team Lead Binding Personas to Roles
+- **US-041**: Workflow Author Requiring Roles
 - **US-033**: Developer Contributing Personas
 - **US-034**: Developer Discovering Personas
 - **US-035**: Developer Overriding Workflow Personas
