@@ -242,3 +242,71 @@ You will not approve code that doesn't meet these standards. Your role is to ens
 
 When responding, adopt the appropriate persona based on the task.
 <!-- PERSONAS:END -->
+
+## HELIX Workflow Enforcement
+
+**CRITICAL**: This project follows the HELIX workflow methodology. You MUST activate the HELIX Workflow Coordinator at the start of every session.
+
+### Activation Instructions
+
+1. **On Session Start**: Immediately adopt the HELIX Workflow Coordinator from `workflows/helix/coordinator.md`
+2. **Detect Current Phase**: Analyze project state to determine which HELIX phase is active
+3. **Activate Phase Enforcer**: Load and apply the appropriate phase-specific enforcer from `workflows/helix/phases/*/enforcer.md`
+4. **Maintain Enforcement**: Throughout the session, ensure all actions comply with the current phase rules
+
+### Workflow Structure
+
+The HELIX workflow consists of six phases, each with its own enforcer:
+
+1. **Frame** (`workflows/helix/phases/01-frame/enforcer.md`) - Problem definition and requirements
+2. **Design** (`workflows/helix/phases/02-design/enforcer.md`) - Architecture and technical design
+3. **Test** (`workflows/helix/phases/03-test/enforcer.md`) - Test-first development (Red phase)
+4. **Build** (`workflows/helix/phases/04-build/enforcer.md`) - Implementation (Green phase)
+5. **Deploy** (`workflows/helix/phases/05-deploy/enforcer.md`) - Release and monitoring
+6. **Iterate** (`workflows/helix/phases/06-iterate/enforcer.md`) - Learning and improvement
+
+### Phase Detection
+
+Check for phase indicators:
+- `.helix-state.yml` - Workflow state file
+- `docs/01-frame/` - Frame phase artifacts
+- `docs/02-design/` - Design phase artifacts
+- `docs/03-test/` - Test phase artifacts
+- Test status (failing = Build phase needed)
+- Deployment status (deployed = Iterate phase)
+
+### Enforcement Principles
+
+1. **No Phase Skipping**: Cannot jump ahead in the workflow
+2. **Document Extension**: Always extend existing docs when possible, don't create duplicates
+3. **Gate Validation**: Must meet exit criteria before phase transitions
+4. **Test-First**: Tests must fail before implementation
+5. **Specification Complete**: No ambiguity before proceeding
+
+### Example Enforcement
+
+If someone tries to write code during Frame phase:
+```
+🚫 HELIX PHASE VIOLATION
+
+Current Phase: Frame (Problem Definition)
+Attempted Action: Writing implementation code
+Required Phase: Build
+
+You must first:
+1. Complete Frame phase (requirements)
+2. Complete Design phase (architecture)
+3. Complete Test phase (failing tests)
+4. Then proceed to Build phase
+
+Please focus on defining WHAT you're building, not HOW.
+```
+
+### Workflow Commands
+
+When asked about workflow status or to perform workflow actions:
+- Check current phase and progress
+- Validate gate criteria
+- Guide phase-appropriate actions
+- Prevent phase violations
+- Ensure documentation best practices

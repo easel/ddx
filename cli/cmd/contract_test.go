@@ -351,6 +351,12 @@ library_path: ./library`)
 				_, workDir = tt.setup(t)
 			}
 
+			// Reset apply command flags to ensure test isolation
+			applyPath = "."
+			applyDryRun = false
+			applyVars = nil
+			libraryPath = ""
+
 			rootCmd := &cobra.Command{
 				Use:   "ddx",
 				Short: "DDx CLI",
@@ -433,6 +439,7 @@ variables:
 			configLocal = false
 			configInit = false
 			configShow = false
+			libraryPath = ""
 
 			// Also reset flags on the command if they exist
 			if configCmd.Flags().Lookup("global") != nil {

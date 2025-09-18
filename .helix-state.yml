@@ -1,0 +1,23 @@
+# HELIX Workflow State
+# This file tracks the current phase and progress of the HELIX workflow
+
+workflow: helix
+current_phase: frame
+phases_completed: []
+active_features:
+  - FEAT-014: helix-workflow-enforcement
+
+# Phase history
+phase_transitions:
+  - phase: frame
+    started_at: 2025-01-18
+    status: in_progress
+
+# Metadata
+created_at: 2025-01-18
+last_updated: 2025-01-18
+version: 1.0.0
+
+# Notes
+# - Frame phase: Currently defining workflow enforcement requirements
+# - Next: Complete Frame artifacts before moving to Design phase

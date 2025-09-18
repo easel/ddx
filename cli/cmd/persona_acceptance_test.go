@@ -264,6 +264,18 @@ You are a security analyst focused on identifying vulnerabilities and security i
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Reset persona command flags to avoid test pollution
+			if personaListCmd.Flags().Lookup("role") != nil {
+				personaListCmd.Flags().Set("role", "")
+			}
+			if tagFlag := personaListCmd.Flags().Lookup("tag"); tagFlag != nil {
+				tagFlag.Value.Set("")
+				tagFlag.Changed = false
+			}
+			if personaLoadCmd.Flags().Lookup("role") != nil {
+				personaLoadCmd.Flags().Set("role", "")
+			}
+
 			originalDir, _ := os.Getwd()
 			defer os.Chdir(originalDir)
 
@@ -455,6 +467,18 @@ tags: [modern, efficient]
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Reset persona command flags to avoid test pollution
+			if personaListCmd.Flags().Lookup("role") != nil {
+				personaListCmd.Flags().Set("role", "")
+			}
+			if tagFlag := personaListCmd.Flags().Lookup("tag"); tagFlag != nil {
+				tagFlag.Value.Set("")
+				tagFlag.Changed = false
+			}
+			if personaLoadCmd.Flags().Lookup("role") != nil {
+				personaLoadCmd.Flags().Set("role", "")
+			}
+
 			originalDir, _ := os.Getwd()
 			defer os.Chdir(originalDir)
 
@@ -604,6 +628,18 @@ tags: [testing]
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Reset persona command flags to avoid test pollution
+			if personaListCmd.Flags().Lookup("role") != nil {
+				personaListCmd.Flags().Set("role", "")
+			}
+			if tagFlag := personaListCmd.Flags().Lookup("tag"); tagFlag != nil {
+				tagFlag.Value.Set("")
+				tagFlag.Changed = false
+			}
+			if personaLoadCmd.Flags().Lookup("role") != nil {
+				personaLoadCmd.Flags().Set("role", "")
+			}
+
 			originalDir, _ := os.Getwd()
 			defer os.Chdir(originalDir)
 
@@ -721,6 +757,18 @@ Your reviews prioritize performance characteristics and efficient resource utili
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Reset persona command flags to avoid test pollution
+			if personaListCmd.Flags().Lookup("role") != nil {
+				personaListCmd.Flags().Set("role", "")
+			}
+			if tagFlag := personaListCmd.Flags().Lookup("tag"); tagFlag != nil {
+				tagFlag.Value.Set("")
+				tagFlag.Changed = false
+			}
+			if personaLoadCmd.Flags().Lookup("role") != nil {
+				personaLoadCmd.Flags().Set("role", "")
+			}
+
 			originalDir, _ := os.Getwd()
 			defer os.Chdir(originalDir)
 
@@ -914,6 +962,18 @@ tags: [security, code-review, strict]
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Reset persona command flags to avoid test pollution
+			if personaListCmd.Flags().Lookup("role") != nil {
+				personaListCmd.Flags().Set("role", "")
+			}
+			if tagFlag := personaListCmd.Flags().Lookup("tag"); tagFlag != nil {
+				tagFlag.Value.Set("")
+				tagFlag.Changed = false
+			}
+			if personaLoadCmd.Flags().Lookup("role") != nil {
+				personaLoadCmd.Flags().Set("role", "")
+			}
+
 			originalDir, _ := os.Getwd()
 			defer os.Chdir(originalDir)
 
@@ -1036,6 +1096,18 @@ tags: [bdd, behavior]
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Reset persona command flags to avoid test pollution
+			if personaListCmd.Flags().Lookup("role") != nil {
+				personaListCmd.Flags().Set("role", "")
+			}
+			if tagFlag := personaListCmd.Flags().Lookup("tag"); tagFlag != nil {
+				tagFlag.Value.Set("")
+				tagFlag.Changed = false
+			}
+			if personaLoadCmd.Flags().Lookup("role") != nil {
+				personaLoadCmd.Flags().Set("role", "")
+			}
+
 			originalDir, _ := os.Getwd()
 			defer os.Chdir(originalDir)
 

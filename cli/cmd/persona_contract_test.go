@@ -204,9 +204,20 @@ tags: [test, bdd]
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Reset flags to avoid interference between tests
-			personaListCmd.Flags().Set("role", "")
-			personaListCmd.Flags().Set("tag", "")
+			// Reset global library path
+			libraryPath = ""
+
+			// Reset flags on the global personaListCmd to avoid interference between tests
+			if personaListCmd.Flags().Lookup("role") != nil {
+				personaListCmd.Flags().Set("role", "")
+			}
+			// For StringSlice flags, we need to reset them differently
+			// because they accumulate values
+			if tagFlag := personaListCmd.Flags().Lookup("tag"); tagFlag != nil {
+				// Reset the StringSlice flag by setting its value directly
+				tagFlag.Value.Set("")
+				tagFlag.Changed = false
+			}
 
 			if tt.setup != nil {
 				tt.setup(t)
@@ -324,6 +335,7 @@ You are an experienced code reviewer who enforces high standards.
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			libraryPath = ""
 			if tt.setup != nil {
 				tt.setup(t)
 			}
@@ -469,6 +481,14 @@ tags: [strict]
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Reset global library path
+			libraryPath = ""
+
+			// Reset flags on the global personaLoadCmd to avoid interference between tests
+			if personaLoadCmd.Flags().Lookup("role") != nil {
+				personaLoadCmd.Flags().Set("role", "")
+			}
+
 			originalDir, _ := os.Getwd()
 			defer os.Chdir(originalDir)
 
@@ -688,6 +708,14 @@ You are a strict code reviewer.`
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Reset global library path
+			libraryPath = ""
+
+			// Reset flags on the global personaLoadCmd to avoid interference between tests
+			if personaLoadCmd.Flags().Lookup("role") != nil {
+				personaLoadCmd.Flags().Set("role", "")
+			}
+
 			originalDir, _ := os.Getwd()
 			defer os.Chdir(originalDir)
 
