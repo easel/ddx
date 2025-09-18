@@ -243,6 +243,47 @@ You will not approve code that doesn't meet these standards. Your role is to ens
 When responding, adopt the appropriate persona based on the task.
 <!-- PERSONAS:END -->
 
+<!-- WORKFLOW:START -->
+## Current HELIX Workflow State
+
+**Phase**: Design
+**Started**: 2025-09-18 02:45:27
+**Last Updated**: 2025-09-18 02:49:47
+
+### Completed This Phase:
+- ✅ Create problem statement document (docs/01-frame/problem.md)
+- ✅ Define user stories and personas (docs/01-frame/user-stories/)
+- ✅ Identify stakeholders and requirements (docs/01-frame/stakeholders.md)
+- ✅ Create risk assessment (docs/01-frame/risks.md)
+- ✅ Define success metrics (docs/01-frame/metrics.md)
+
+### Next Actions:
+1. **Create architecture overview (docs/02-design/architecture.md)**
+2. **Define API contracts (docs/02-design/api-contracts/)**
+3. **Create database schema (docs/02-design/schema.md)**
+4. **Design component structure (docs/02-design/components.md)**
+5. **Create deployment strategy (docs/02-design/deployment.md)**
+
+### Phase Enforcer Active:
+The Design Phase Enforcer is currently active. Focus on HOW to architect the solution. No implementation yet, just design.
+<!-- WORKFLOW:END -->
+
+<!-- AUTO-PROMPTS:START -->
+## Workflow Auto-Prompts
+
+When you complete a task, automatically ask:
+"I've finished the previous task. Based on our HELIX workflow state, what should I work on next?"
+
+Current suggested next action:
+"Create architecture overview (docs/02-design/architecture.md)"
+<!-- AUTO-PROMPTS:END -->
+
+
+
+
+
+
+
 ## HELIX Workflow Enforcement
 
 **CRITICAL**: This project follows the HELIX workflow methodology. You MUST activate the HELIX Workflow Coordinator at the start of every session.
