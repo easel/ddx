@@ -1,3 +1,4 @@
+library_path: ./library
 includes:
     - prompts/claude
     - scripts/hooks

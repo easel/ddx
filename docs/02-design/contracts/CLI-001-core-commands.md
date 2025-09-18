@@ -4,7 +4,8 @@
 **Feature**: FEAT-001
 **Type**: CLI
 **Status**: Approved
-**Version**: 1.0.0
+**Version**: 2.0.0
+**Updated**: 2025-01-18
 
 *Command-line interface contracts for DDx core commands*
 
@@ -36,7 +37,7 @@
 ✓ Applied template: [template-name] (if specified)
 
 Project ready for document-driven development!
-Run 'ddx list' to see available resources.
+Run 'ddx prompts list' or 'ddx templates list' to see available resources.
 ```
 
 ### Exit Codes
@@ -84,102 +85,227 @@ Error: Template 'unknown-template' not found. Run 'ddx list templates' to see av
 
 ---
 
-## Command: list
+## Resource Commands (Noun-Verb Structure)
 
-**Purpose**: Display available DDx resources (templates, patterns, prompts, configs)
-**Usage**: `ddx list [resource-type] [options]`
+DDx follows a noun-verb command structure for resource management. Each resource type has its own command namespace with consistent actions.
 
-### Arguments
-- `resource-type` (optional): Type to list - "templates", "patterns", "prompts", "configs", or "all" (default: all)
+### Command Pattern
+**Usage**: `ddx <resource> <action> [name] [options]`
+
+Resources: `prompts`, `templates`, `patterns`, `persona`, `mcp`, `workflows`
+Actions: `list`, `show`, `apply` (where applicable)
+
+---
+
+## Command: prompts
+
+**Purpose**: Manage AI prompts and instructions
+**Usage**: `ddx prompts <action> [name] [options]`
+
+### Subcommand: prompts list
+
+**Purpose**: List available AI prompts
+**Usage**: `ddx prompts list [options]`
 
 ### Options
-- `--filter, -f <query>`: Filter results by name or tag
-- `--tags, -t <tags>`: Filter by comma-separated tags
-- `--format <format>`: Output format: "table" (default), "json", "yaml", "simple"
-- `--verbose, -v`: Show detailed information
-- `--local`: Show only locally available resources
-- `--remote`: Show only remote resources
+- `--search, -s <term>`: Search for prompts containing term
+- `--verbose, -v`: Show all prompt files recursively (not just directories)
+- `--format <format>`: Output format: "table" (default), "json", "yaml"
 
-### Output Format (Table - Default)
+### Output Format
 ```
-Available DDx Resources:
+Available Prompts:
 
-TEMPLATES (5)
-Name            Description                          Tags           Status
-─────────────────────────────────────────────────────────────────────────
-nextjs          Next.js 14 with TypeScript          react, web     Available
-python-flask    Flask API with best practices       python, api    Available
-go-cli          Go CLI with Cobra framework         go, cli        Local only
-
-PATTERNS (12)
-Name            Description                          Tags           Status
-─────────────────────────────────────────────────────────────────────────
-auth-jwt        JWT authentication pattern          auth, security Available
-error-handler   Centralized error handling          errors         Available
+claude/             Claude-specific prompts (2 files)
+common/             General AI prompts (5 files)
+ddx/                DDx workflow prompts (1 file)
 ```
 
-### Output Format (JSON)
-```json
-{
-  "templates": [
-    {
-      "name": "nextjs",
-      "description": "Next.js 14 with TypeScript",
-      "tags": ["react", "web"],
-      "status": "available",
-      "path": ".ddx/templates/nextjs"
-    }
-  ],
-  "patterns": [...],
-  "prompts": [...],
-  "configs": [...]
-}
+### Output Format (Verbose)
 ```
+Available Prompts:
 
-### Exit Codes
-- `0`: Success
-- `1`: Invalid resource type
-- `2`: Filter syntax error
-- `3`: Configuration error
+claude/
+  code-review.md    Code review prompt for Claude
+  system-prompts/
+    security.md     Security-focused review prompt
+common/
+  refactor.md       Refactoring assistance prompt
+  docs.md           Documentation generation prompt
+```
 
 ### Examples
 ```bash
-# List all resources
-$ ddx list
-Available DDx Resources:
-[output as above]
+# List all prompts
+$ ddx prompts list
+Available Prompts:
+claude/             Claude-specific prompts (2 files)
+common/             General AI prompts (5 files)
 
-# List only templates
-$ ddx list templates
-TEMPLATES (5)
-nextjs          Next.js 14 with TypeScript          react, web     Available
-python-flask    Flask API with best practices       python, api    Available
+# List with file details
+$ ddx prompts list --verbose
+Available Prompts:
+claude/
+  code-review.md    Code review prompt for Claude
+  system-prompts/
+    security.md     Security-focused review prompt
 
-# Filter by tag
-$ ddx list --tags react,typescript
-Filtered Results (tag: react, typescript):
-nextjs          Next.js 14 with TypeScript          react, web     Available
-react-component React component pattern              react          Available
+# Search for specific prompts
+$ ddx prompts list --search review
+Matching Prompts:
+claude/code-review.md
+claude/system-prompts/security.md
+```
 
-# JSON output
-$ ddx list templates --format json
-{"templates": [{"name": "nextjs", ...}]}
+### Subcommand: prompts show
 
-# Verbose output
-$ ddx list patterns auth-jwt -v
-PATTERN: auth-jwt
-Description: JWT authentication pattern with refresh tokens
-Tags: auth, security, jwt
-Status: Available
-Path: .ddx/patterns/auth/jwt
-Files: 5 files, 2.3 KB
-Dependencies: jsonwebtoken, bcrypt
-Last Updated: 2025-01-10
+**Purpose**: Display a specific prompt
+**Usage**: `ddx prompts show <name>`
+
+### Arguments
+- `name` (required): Path to prompt file (e.g., "claude/code-review")
+
+### Output Format
+```
+Prompt: claude/code-review.md
+────────────────────────────────
+# Code Review Prompt
+
+You are a senior code reviewer...
+[prompt content]
 ```
 
 ---
 
-## Command: apply
+## Command: templates
+
+**Purpose**: Manage project templates
+**Usage**: `ddx templates <action> [name] [options]`
+
+### Subcommand: templates list
+
+**Purpose**: List available project templates
+**Usage**: `ddx templates list [options]`
+
+### Options
+- `--search, -s <term>`: Search for templates
+- `--tags, -t <tags>`: Filter by tags
+- `--verbose, -v`: Show detailed information
+
+### Output Format
+```
+Available Templates:
+
+Name            Description                          Tags
+────────────────────────────────────────────────────────────
+nextjs          Next.js 14 with TypeScript          react, web
+python-flask    Flask API with best practices       python, api
+go-cli          Go CLI with Cobra framework         go, cli
+```
+
+### Subcommand: templates apply
+
+**Purpose**: Apply a template to the current project
+**Usage**: `ddx templates apply <name> [options]`
+
+### Arguments
+- `name` (required): Template name (e.g., "nextjs")
+
+### Options
+- `--force, -f`: Overwrite existing files
+- `--dry-run`: Preview changes without applying
+- `--variables, -v <key=value>`: Set template variables
+
+### Examples
+```bash
+# List templates
+$ ddx templates list
+
+# Apply a template
+$ ddx templates apply nextjs
+✓ Applied template: nextjs
+✓ Created 15 files
+✓ Updated package.json
+
+# Preview changes
+$ ddx templates apply python-flask --dry-run
+```
+
+---
+
+## Command: patterns
+
+**Purpose**: Manage code patterns
+**Usage**: `ddx patterns <action> [name] [options]`
+
+### Subcommand: patterns list
+
+**Purpose**: List available code patterns
+**Usage**: `ddx patterns list [options]`
+
+### Options
+- `--search, -s <term>`: Search for patterns
+- `--category, -c <name>`: Filter by category
+- `--verbose, -v`: Show detailed information
+
+### Subcommand: patterns apply
+
+**Purpose**: Apply a code pattern to the project
+**Usage**: `ddx patterns apply <name> [options]`
+
+### Arguments
+- `name` (required): Pattern name (e.g., "error-handling")
+
+### Options
+- `--target, -t <path>`: Target directory for pattern
+- `--force, -f`: Overwrite existing files
+
+---
+
+## Command: persona
+
+**Purpose**: Manage AI personas for consistent interactions
+**Usage**: `ddx persona <action> [arguments] [options]`
+
+### Subcommand: persona list
+
+**Purpose**: List available AI personas
+**Usage**: `ddx persona list [options]`
+
+### Options
+- `--role <role>`: Filter by role capability
+- `--tag <tag>`: Filter by tags
+
+### Output Format
+```
+Available Personas:
+
+NAME                   ROLES                             DESCRIPTION
+────────────────────────────────────────────────────────────────────
+strict-code-reviewer   code-reviewer, security-analyst   Uncompromising code quality enforcer
+test-engineer-tdd      test-engineer, quality-analyst    Test-driven development specialist
+```
+
+### Subcommand: persona bind
+
+**Purpose**: Bind a persona to a role in the project
+**Usage**: `ddx persona bind <role> <persona-name>`
+
+### Arguments
+- `role` (required): Role to bind (e.g., "code-reviewer")
+- `persona-name` (required): Persona to bind (e.g., "strict-code-reviewer")
+
+### Subcommand: persona load
+
+**Purpose**: Load bound personas into CLAUDE.md
+**Usage**: `ddx persona load [options]`
+
+### Options
+- `--role <role>`: Load only specific role
+
+---
+
+## Legacy Command: apply (Deprecated)
 
 **Purpose**: Apply DDx resources (templates, patterns, prompts, configs) to the project
 **Usage**: `ddx apply <resource-path> [options]`

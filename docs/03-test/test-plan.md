@@ -5,7 +5,7 @@
 **Version**: 1.0.0
 **Status**: Draft
 **Created**: 2025-01-15
-**Updated**: 2025-01-15
+**Updated**: 2025-01-18
 
 ## 1. Test Plan Identifier
 
@@ -28,8 +28,16 @@ This test plan defines the comprehensive testing strategy for the DDx CLI toolki
 ### 2.2 Scope
 
 **In Scope:**
-- All CLI commands (init, list, apply, update, contribute, diagnose, config, version)
-- Internal packages (config, git, templates)
+- Core CLI commands (init, diagnose, update, contribute, version)
+- Resource commands following noun-verb structure:
+  - `prompts` commands (list, show)
+  - `templates` commands (list, show, apply)
+  - `patterns` commands (list, show, apply)
+  - `persona` commands (list, show, bind, load)
+  - `mcp` commands (list, show)
+  - `workflows` commands (list, show, run)
+- Internal packages (config, git, templates, persona)
+- Library path resolution (development, config, environment, fallback)
 - API contract validation
 - Security controls and input validation
 - Performance benchmarks
@@ -46,10 +54,16 @@ This test plan defines the comprehensive testing strategy for the DDx CLI toolki
 
 | Component | Type | Priority | Coverage Target |
 |-----------|------|----------|-----------------|
-| CLI Commands | Integration | P0 | 100% |
+| Core Commands (init, diagnose, update) | Integration | P0 | 100% |
+| Prompts Commands (list, show) | Integration | P0 | 100% |
+| Templates Commands (list, show, apply) | Integration | P0 | 100% |
+| Patterns Commands (list, show, apply) | Integration | P0 | 100% |
+| Persona Commands (list, show, bind, load) | Integration | P0 | 100% |
+| Library Path Resolution | Unit/Integration | P0 | 100% |
 | Config Package | Unit | P0 | 90% |
 | Git Package | Unit/Integration | P0 | 85% |
 | Templates Package | Unit | P0 | 90% |
+| Persona Package | Unit | P0 | 90% |
 | API Contracts | Contract | P0 | 100% |
 | Security Controls | Security | P0 | 100% |
 | Workflows | E2E | P1 | Critical paths |
@@ -135,7 +149,47 @@ Following the testing pyramid principle for optimal test distribution:
 - Secret detection validation
 - Injection attack prevention
 
-### 4.3 Test Data Management
+### 4.3 Noun-Verb Command Testing
+
+#### Testing Strategy for Resource Commands
+Each resource command must be tested for:
+
+1. **Command Structure Validation**
+   - Correct noun-verb pattern recognition
+   - Subcommand routing (e.g., `prompts list` vs `prompts show`)
+   - Help text generation for each resource
+   - Tab completion hints
+
+2. **Library Path Resolution Testing**
+   ```go
+   func TestLibraryPathResolution(t *testing.T) {
+       tests := []struct {
+           name     string
+           setup    func() // Set env, config, etc.
+           expected string
+       }{
+           {"flag override", setupFlagOverride, "/custom/path"},
+           {"env variable", setupEnvVar, "/env/path"},
+           {"config file", setupConfigFile, "./library"},
+           {"development mode", setupDevMode, "./library"},
+           {"project library", setupProjectLib, ".ddx/library"},
+           {"global fallback", setupNoConfig, "~/.ddx/library"},
+       }
+   }
+   ```
+
+3. **Resource-Specific Tests**
+   - **Prompts**: Test recursive listing with `--verbose`
+   - **Templates**: Test template application with variables
+   - **Patterns**: Test pattern matching and filtering
+   - **Personas**: Test binding persistence and loading
+
+4. **Migration Testing**
+   - Ensure no `getDDxHome()` function calls
+   - Verify no hardcoded `~/.ddx` paths
+   - Test that old commands return helpful migration messages
+
+### 4.4 Test Data Management
 
 #### Test Fixtures
 ```

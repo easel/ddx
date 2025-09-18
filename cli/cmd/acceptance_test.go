@@ -449,6 +449,17 @@ func TestAcceptance_WorkflowIntegration(t *testing.T) {
 		workDir := t.TempDir()
 		require.NoError(t, os.Chdir(workDir))
 
+		// Create library structure with templates
+		libraryDir := filepath.Join(workDir, "library")
+		templatesDir := filepath.Join(libraryDir, "templates")
+		require.NoError(t, os.MkdirAll(filepath.Join(templatesDir, "nextjs"), 0755))
+		require.NoError(t, os.MkdirAll(filepath.Join(templatesDir, "python"), 0755))
+
+		// Create config pointing to library
+		config := []byte(`version: "2.0"
+library_path: ./library`)
+		require.NoError(t, os.WriteFile(".ddx.yml", config, 0644))
+
 		rootCmd := &cobra.Command{
 			Use:   "ddx",
 			Short: "DDx CLI",
@@ -464,7 +475,7 @@ func TestAcceptance_WorkflowIntegration(t *testing.T) {
 
 		// Step 2: List available resources
 		listOutput, listErr := executeCommand(rootCmd, "list")
-		if listErr == nil && listOutput != "" && !strings.Contains(listOutput, "❌ DDx not found") {
+		if listErr == nil && listOutput != "" && !strings.Contains(listOutput, "❌ DDx library not found") {
 			assert.Contains(t, listOutput, "Templates", "Should list templates")
 		} else {
 			t.Log("Skipping template list assertion due to DDx not being initialized or available")

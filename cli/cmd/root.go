@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -146,11 +145,6 @@ func initConfig() {
 }
 
 // Helper functions for other commands
-func getDDxHome() string {
-	home, _ := os.UserHomeDir()
-	return filepath.Join(home, ".ddx")
-}
-
 func isInitialized() bool {
 	_, err := os.Stat(".ddx")
 	return err == nil

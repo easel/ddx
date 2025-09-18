@@ -79,6 +79,16 @@ Development teams face significant challenges when executing complex, multi-step
   - No timeouts - phases run to completion (user can Ctrl+C if needed)
   - Automated phase transitions by default (prompt-driven progression)
 
+- **Phase Enforcement**:
+  - Each phase includes an enforcer persona for workflow compliance
+  - Enforcers validate phase-appropriate actions before execution
+  - Prevent phase violations (e.g., coding during design phase)
+  - Guide users to correct phase artifacts and procedures
+  - Ensure document extension over creation where appropriate
+  - Validate gate criteria before phase transitions
+  - Provide educational guidance for phase best practices
+  - Integrate with AI assistants through CLAUDE.md instructions
+
 - **Artifact Generation**:
   - Generate structured outputs from templates combined with prompts
   - Support multiple output files from single artifact definition

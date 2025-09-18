@@ -134,19 +134,26 @@ func TestListCommand_Contract(t *testing.T) {
 			description: "Output format matches contract specification",
 			args:        []string{"list"},
 			setup: func(t *testing.T) string {
-				homeDir := t.TempDir()
-				t.Setenv("HOME", homeDir)
-				ddxHome := filepath.Join(homeDir, ".ddx")
+				testDir := t.TempDir()
+				origWd, _ := os.Getwd()
+				require.NoError(t, os.Chdir(testDir))
+				t.Cleanup(func() { os.Chdir(origWd) })
 
-				// Create resources as per contract
-				templatesDir := filepath.Join(ddxHome, "templates")
+				// Create library structure as per contract
+				libraryDir := filepath.Join(testDir, "library")
+				templatesDir := filepath.Join(libraryDir, "templates")
 				require.NoError(t, os.MkdirAll(filepath.Join(templatesDir, "nextjs"), 0755))
 				require.NoError(t, os.MkdirAll(filepath.Join(templatesDir, "python"), 0755))
 
-				patternsDir := filepath.Join(ddxHome, "patterns")
+				patternsDir := filepath.Join(libraryDir, "patterns")
 				require.NoError(t, os.MkdirAll(filepath.Join(patternsDir, "auth"), 0755))
 
-				return homeDir
+				// Create config
+				config := []byte(`version: "2.0"
+library_path: ./library`)
+				require.NoError(t, os.WriteFile(".ddx.yml", config, 0644))
+
+				return testDir
 			},
 			expectCode: 0,
 			validateOutput: func(t *testing.T, output string) {
@@ -160,17 +167,24 @@ func TestListCommand_Contract(t *testing.T) {
 			description: "Filter argument works as specified",
 			args:        []string{"list", "templates"},
 			setup: func(t *testing.T) string {
-				homeDir := t.TempDir()
-				t.Setenv("HOME", homeDir)
-				ddxHome := filepath.Join(homeDir, ".ddx")
+				testDir := t.TempDir()
+				origWd, _ := os.Getwd()
+				require.NoError(t, os.Chdir(testDir))
+				t.Cleanup(func() { os.Chdir(origWd) })
 
-				templatesDir := filepath.Join(ddxHome, "templates")
+				libraryDir := filepath.Join(testDir, "library")
+				templatesDir := filepath.Join(libraryDir, "templates")
 				require.NoError(t, os.MkdirAll(filepath.Join(templatesDir, "react"), 0755))
 
-				patternsDir := filepath.Join(ddxHome, "patterns")
+				patternsDir := filepath.Join(libraryDir, "patterns")
 				require.NoError(t, os.MkdirAll(filepath.Join(patternsDir, "auth"), 0755))
 
-				return homeDir
+				// Create config
+				config := []byte(`version: "2.0"
+library_path: ./library`)
+				require.NoError(t, os.WriteFile(".ddx.yml", config, 0644))
+
+				return testDir
 			},
 			expectCode: 0,
 			validateOutput: func(t *testing.T, output string) {
@@ -229,17 +243,19 @@ func TestApplyCommand_Contract(t *testing.T) {
 			description: "Exit code 6: Resource not found",
 			args:        []string{"apply", "templates/nonexistent"},
 			setup: func(t *testing.T) (string, string) {
-				homeDir := t.TempDir()
-				t.Setenv("HOME", homeDir)
-
 				workDir := t.TempDir()
 				require.NoError(t, os.Chdir(workDir))
 
-				// Create minimal config
-				config := `version: "1.0"`
-				require.NoError(t, os.WriteFile(filepath.Join(workDir, ".ddx.yml"), []byte(config), 0644))
+				// Create library structure (but no templates/nonexistent)
+				libraryDir := filepath.Join(workDir, "library")
+				require.NoError(t, os.MkdirAll(filepath.Join(libraryDir, "templates"), 0755))
 
-				return homeDir, workDir
+				// Create config pointing to library
+				config := []byte(`version: "2.0"
+library_path: ./library`)
+				require.NoError(t, os.WriteFile(".ddx.yml", config, 0644))
+
+				return workDir, workDir
 			},
 			expectCode: 6,
 			validateOutput: func(t *testing.T, output string) {
@@ -251,23 +267,23 @@ func TestApplyCommand_Contract(t *testing.T) {
 			description: "--dry-run flag shows changes without applying",
 			args:        []string{"apply", "templates/test", "--dry-run"},
 			setup: func(t *testing.T) (string, string) {
-				homeDir := t.TempDir()
-				t.Setenv("HOME", homeDir)
+				workDir := t.TempDir()
+				require.NoError(t, os.Chdir(workDir))
 
-				templateDir := filepath.Join(homeDir, ".ddx", "templates", "test")
+				// Create library with test template
+				templateDir := filepath.Join(workDir, "library", "templates", "test")
 				require.NoError(t, os.MkdirAll(templateDir, 0755))
 
 				// Add template file
 				templateFile := filepath.Join(templateDir, "test.txt")
 				require.NoError(t, os.WriteFile(templateFile, []byte("Test content"), 0644))
 
-				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
+				// Create config pointing to library
+				config := []byte(`version: "2.0"
+library_path: ./library`)
+				require.NoError(t, os.WriteFile(".ddx.yml", config, 0644))
 
-				config := `version: "1.0"`
-				require.NoError(t, os.WriteFile(filepath.Join(workDir, ".ddx.yml"), []byte(config), 0644))
-
-				return homeDir, workDir
+				return workDir, workDir
 			},
 			expectCode: 0,
 			validateOutput: func(t *testing.T, output string) {
@@ -285,23 +301,23 @@ func TestApplyCommand_Contract(t *testing.T) {
 			description: "Variables are substituted as per contract",
 			args:        []string{"apply", "templates/vars", "--var", "name=TestProject"},
 			setup: func(t *testing.T) (string, string) {
-				homeDir := t.TempDir()
-				t.Setenv("HOME", homeDir)
+				workDir := t.TempDir()
+				require.NoError(t, os.Chdir(workDir))
 
-				templateDir := filepath.Join(homeDir, ".ddx", "templates", "vars")
+				// Create library with vars template
+				templateDir := filepath.Join(workDir, "library", "templates", "vars")
 				require.NoError(t, os.MkdirAll(templateDir, 0755))
 
 				// Template with variable
 				templateFile := filepath.Join(templateDir, "project.txt")
 				require.NoError(t, os.WriteFile(templateFile, []byte("Project: {{name}}"), 0644))
 
-				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
+				// Create config pointing to library
+				config := []byte(`version: "2.0"
+library_path: ./library`)
+				require.NoError(t, os.WriteFile(".ddx.yml", config, 0644))
 
-				config := `version: "1.0"`
-				require.NoError(t, os.WriteFile(filepath.Join(workDir, ".ddx.yml"), []byte(config), 0644))
-
-				return homeDir, workDir
+				return workDir, workDir
 			},
 			expectCode: 0,
 			validateFiles: func(t *testing.T, workDir string) {

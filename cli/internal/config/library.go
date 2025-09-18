@@ -40,30 +40,30 @@ func GetLibraryPath(overridePath string) (string, error) {
 	}
 
 	// 3. Check configuration file for library_path
-	if cfg, err := LoadLocal(); err == nil && cfg.LibraryPath != "" {
-		// Resolve path relative to config file location
-		configDir := findConfigDirectory()
-		var libPath string
+	// Search for config file in current and parent directories
+	if configPath := findConfigFile(); configPath != "" {
+		cfg := &Config{}
+		if err := loadConfigFile(configPath, cfg); err == nil && cfg.LibraryPath != "" {
+			// Resolve path relative to config file location
+			configDir := filepath.Dir(configPath)
+			var libPath string
 
-		if filepath.IsAbs(cfg.LibraryPath) {
-			libPath = cfg.LibraryPath
-		} else {
-			// Make path relative to config file's directory
-			if configDir != "" {
-				libPath = filepath.Join(configDir, cfg.LibraryPath)
-			} else {
+			if filepath.IsAbs(cfg.LibraryPath) {
 				libPath = cfg.LibraryPath
+			} else {
+				// Make path relative to config file's directory
+				libPath = filepath.Join(configDir, cfg.LibraryPath)
 			}
-		}
 
-		absPath, err := filepath.Abs(libPath)
-		if err != nil {
-			return "", fmt.Errorf("invalid library_path in config: %w", err)
+			absPath, err := filepath.Abs(libPath)
+			if err != nil {
+				return "", fmt.Errorf("invalid library_path in config: %w", err)
+			}
+			if !dirExists(absPath) {
+				return "", fmt.Errorf("library_path does not exist: %s", absPath)
+			}
+			return absPath, nil
 		}
-		if !dirExists(absPath) {
-			return "", fmt.Errorf("library_path does not exist: %s", absPath)
-		}
-		return absPath, nil
 	}
 
 	// 4. Check if we're in DDx development (git repo with library/)
@@ -113,8 +113,8 @@ func findGitRoot() string {
 	return ""
 }
 
-// findConfigDirectory finds the directory containing .ddx.yml
-func findConfigDirectory() string {
+// findConfigFile finds the path to .ddx.yml file
+func findConfigFile() string {
 	dir, err := os.Getwd()
 	if err != nil {
 		return ""
@@ -123,7 +123,7 @@ func findConfigDirectory() string {
 	for {
 		configFile := filepath.Join(dir, ".ddx.yml")
 		if fileExists(configFile) {
-			return dir
+			return configFile
 		}
 
 		parent := filepath.Dir(dir)
@@ -133,6 +133,15 @@ func findConfigDirectory() string {
 		dir = parent
 	}
 
+	return ""
+}
+
+// findConfigDirectory finds the directory containing .ddx.yml
+func findConfigDirectory() string {
+	configFile := findConfigFile()
+	if configFile != "" {
+		return filepath.Dir(configFile)
+	}
 	return ""
 }
 
@@ -261,4 +270,3 @@ func ResolveLibraryResource(resourcePath string, libraryOverride string) (string
 
 	return fullPath, nil
 }
-

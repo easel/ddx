@@ -141,12 +141,13 @@ func runDiagnose(cmd *cobra.Command, args []string) error {
 }
 
 func checkDDxSetup(result *DiagnosticResult) {
-	ddxHome := getDDxHome()
-	result.DDx.Installed = fileExists(ddxHome)
+	// Check if library path exists
+	libPath, err := config.GetLibraryPath(libraryPath)
+	result.DDx.Installed = err == nil && libPath != "" && dirExists(libPath)
 	result.DDx.Initialized = isInitialized()
 
 	if !result.DDx.Installed {
-		result.Issues = append(result.Issues, "DDx toolkit not installed")
+		result.Issues = append(result.Issues, "DDx library not found")
 	}
 
 	if result.DDx.Initialized {
@@ -420,6 +421,11 @@ func autoFix(result *DiagnosticResult) error {
 func fileExists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil
+}
+
+func dirExists(path string) bool {
+	info, err := os.Stat(path)
+	return err == nil && info.IsDir()
 }
 
 func isGitRepository() bool {

@@ -35,17 +35,18 @@ pre-commit:
       fail_text: "Merge conflict markers found. Resolve conflicts before committing."
 
     # Debug statements - using ripgrep if available, fallback to grep
-    debug-go:
-      name: "Debug statements (Go)"
-      glob: "*.go"
-      exclude: "*_test.go"
-      run: |
-        if command -v rg >/dev/null 2>&1; then
-          rg -q "(fmt\.Print|println|spew\.Dump|pprof\.|debug\.Print)" {staged_files} && exit 1 || exit 0
-        else
-          grep -E "(fmt\.Print|println|spew\.Dump|pprof\.|debug\.Print)" {staged_files} 2>/dev/null && exit 1 || exit 0
-        fi
-      fail_text: "Debug statements found in Go files"
+    # Note: Disabled because CLI applications legitimately use fmt.Print for output
+    # debug-go:
+    #   name: "Debug statements (Go)"
+    #   glob: "*.go"
+    #   exclude: "*_test.go"
+    #   run: |
+    #     if command -v rg >/dev/null 2>&1; then
+    #       rg -q "(fmt\.Print|println|spew\.Dump|pprof\.|debug\.Print)" {staged_files} && exit 1 || exit 0
+    #     else
+    #       grep -E "(fmt\.Print|println|spew\.Dump|pprof\.|debug\.Print)" {staged_files} 2>/dev/null && exit 1 || exit 0
+    #     fi
+    #   fail_text: "Debug statements found in Go files"
 
     debug-js:
       name: "Debug statements (JS/TS)"

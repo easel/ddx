@@ -127,7 +127,11 @@ type ResourceInfo struct {
 
 // findResource locates a resource by name
 func findResource(resourceName string) (*ResourceInfo, error) {
-	ddxHome := getDDxHome()
+	// Get library path using the centralized resolution
+	libPath, err := config.GetLibraryPath(libraryPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get library path: %w", err)
+	}
 
 	// Resource directories to search
 	resourceDirs := map[string]string{
@@ -140,7 +144,7 @@ func findResource(resourceName string) (*ResourceInfo, error) {
 
 	// First try exact match
 	for resourceType, dir := range resourceDirs {
-		resourcePath := filepath.Join(ddxHome, dir, resourceName)
+		resourcePath := filepath.Join(libPath, dir, resourceName)
 		if _, err := os.Stat(resourcePath); err == nil {
 			return &ResourceInfo{
 				Name:        resourceName,
@@ -153,7 +157,7 @@ func findResource(resourceName string) (*ResourceInfo, error) {
 
 	// Try partial match
 	for resourceType, dir := range resourceDirs {
-		dirPath := filepath.Join(ddxHome, dir)
+		dirPath := filepath.Join(libPath, dir)
 		if entries, err := os.ReadDir(dirPath); err == nil {
 			for _, entry := range entries {
 				if strings.Contains(strings.ToLower(entry.Name()), strings.ToLower(resourceName)) {
@@ -171,7 +175,7 @@ func findResource(resourceName string) (*ResourceInfo, error) {
 
 	// Try nested search (e.g., "prompts/claude")
 	if strings.Contains(resourceName, "/") {
-		resourcePath := filepath.Join(ddxHome, resourceName)
+		resourcePath := filepath.Join(libPath, resourceName)
 		if _, err := os.Stat(resourcePath); err == nil {
 			parts := strings.Split(resourceName, "/")
 			return &ResourceInfo{
@@ -375,11 +379,16 @@ func showDryRun(resource *ResourceInfo, targetPath string, cfg *config.Config, c
 
 // showAvailableResources shows available resources organized by type
 func showAvailableResources() error {
-	ddxHome := getDDxHome()
+	// Get library path using the centralized resolution
+	libPath, err := config.GetLibraryPath(libraryPath)
+	if err != nil {
+		return fmt.Errorf("failed to get library path: %w", err)
+	}
+
 	resourceDirs := []string{"templates", "patterns", "configs", "prompts", "scripts"}
 
 	for _, dir := range resourceDirs {
-		dirPath := filepath.Join(ddxHome, dir)
+		dirPath := filepath.Join(libPath, dir)
 		if entries, err := os.ReadDir(dirPath); err == nil && len(entries) > 0 {
 			caser := cases.Title(language.English)
 			fmt.Printf("\n%s:\n", caser.String(dir))

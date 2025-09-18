@@ -5,10 +5,10 @@
 **Priority**: P0
 **Owner**: Core Team
 **Created**: 2025-01-14
-**Updated**: 2025-01-14
+**Updated**: 2025-01-18
 
 ## Overview
-The Core CLI Framework provides the foundational command-line interface for DDX, enabling users to interact with the asset management system through standardized commands. It establishes the core commands (init, list, apply, update, contribute) that allow developers to discover, apply, and share development assets. This framework serves as the primary entry point for all user interactions with DDX functionality.
+The Core CLI Framework provides the foundational command-line interface for DDX, enabling users to interact with the asset management system through standardized commands. It follows a noun-verb command structure (e.g., `ddx prompts list`, `ddx templates apply`) for better organization and discoverability. The framework establishes both core project commands (init, diagnose, update, contribute) and resource-specific commands that allow developers to discover, apply, and share development assets. This framework serves as the primary entry point for all user interactions with DDX functionality.
 
 ## Problem Statement
 Development teams need a consistent, intuitive command-line interface to interact with DDX's asset management capabilities:
@@ -24,7 +24,14 @@ Development teams need a consistent, intuitive command-line interface to interac
 
 ### In Scope
 - Command-line interface for DDX asset management
-- Core commands: init, list, apply, update, contribute
+- Core project commands: init, diagnose, update, contribute
+- Resource commands following noun-verb structure:
+  - `ddx prompts list/show` for AI prompts
+  - `ddx templates list/apply` for project templates
+  - `ddx patterns list/apply` for code patterns
+  - `ddx persona list/show/bind/load` for AI personas
+  - `ddx mcp list/show` for MCP servers
+  - `ddx workflows list/show/run` for workflows
 - User input validation and feedback
 - Help and documentation system
 - Error handling and user guidance
@@ -34,6 +41,7 @@ Development teams need a consistent, intuitive command-line interface to interac
 - Progress feedback for operations
 - Interactive user prompts when needed
 - Verbose and debug output modes
+- Centralized library path resolution (no hardcoded ~/.ddx)
 
 ### Out of Scope
 - GUI or web interface
@@ -51,19 +59,55 @@ Development teams need a consistent, intuitive command-line interface to interac
 - Commands follow Unix philosophy (do one thing well)
 - Exit codes properly indicate success/failure
 - Output can be piped to other commands
+- Noun-verb structure provides intuitive command discovery
+- Tab completion works for resource types and actions
+- Library path resolution works in development and production modes
 
 ## Functional Requirements
 
 ### Core Commands
-The CLI must provide the following capabilities:
-- **Initialize**: Enable DDX functionality in a project with configuration
-- **Browse**: Allow users to discover available assets by category with filtering
-- **Apply**: Enable users to incorporate templates, patterns, or prompts into their project
-- **Synchronize**: Allow users to pull latest improvements from master repository
-- **Contribute**: Enable users to share improvements back to community
-- **Configure**: Allow users to manage DDX settings and preferences
-- **Version**: Display version information and check for updates
-- **Help**: Provide comprehensive command documentation and examples
+The CLI follows a noun-verb command structure for better organization and discoverability.
+
+#### Project-Level Commands
+- **Initialize** (`ddx init`): Enable DDX functionality in a project with configuration
+- **Diagnose** (`ddx diagnose`): Analyze project health and suggest improvements
+- **Update** (`ddx update`): Pull latest improvements from master repository
+- **Contribute** (`ddx contribute`): Share improvements back to community
+- **Version** (`ddx version`): Display version information and check for updates
+- **Help** (`ddx help`): Provide comprehensive command documentation and examples
+
+#### Resource Commands (Noun-Verb Structure)
+Each resource type has its own command namespace with consistent actions:
+
+**Prompts** (`ddx prompts`)
+- `list`: Browse available AI prompts
+- `show <name>`: Display a specific prompt
+- `list --verbose`: Show all prompt files recursively
+
+**Templates** (`ddx templates`)
+- `list`: Browse available project templates
+- `show <name>`: Display template details
+- `apply <name>`: Apply template to current project
+
+**Patterns** (`ddx patterns`)
+- `list`: Browse available code patterns
+- `show <name>`: Display pattern details
+- `apply <name>`: Apply pattern to project
+
+**Personas** (`ddx persona`)
+- `list`: Browse available AI personas
+- `show <name>`: Display persona details
+- `bind <role> <name>`: Bind persona to role
+- `load`: Load personas into CLAUDE.md
+
+**MCP Servers** (`ddx mcp`)
+- `list`: Browse available MCP servers
+- `show <name>`: Display server details
+
+**Workflows** (`ddx workflows`)
+- `list`: Browse available workflows
+- `show <name>`: Display workflow details
+- `run <name>`: Execute workflow
 
 ### User Interaction Requirements
 - Users must receive clear feedback on operation success or failure
@@ -75,8 +119,15 @@ The CLI must provide the following capabilities:
 
 ### Configuration Management
 - Support hierarchical configuration (global, project, environment)
-- Configuration parameters: repository.url, repository.branch, templates.exclude, patterns.include, variables.*, verbosity
+- Configuration parameters: repository.url, repository.branch, library_path, templates.exclude, patterns.include, variables.*, verbosity, persona_bindings.*
 - Default values: verbosity=info, repository.branch=main, templates.exclude=[], patterns.include=["*"]
+- Library path resolution priority:
+  1. Command-line flag (`--library-base-path`)
+  2. Environment variable (`DDX_LIBRARY_BASE_PATH`)
+  3. Config file (`library_path` in `.ddx.yml`)
+  4. Development mode (`./library` when in DDX repo)
+  5. Project library (`.ddx/library/`)
+  6. Global fallback (`~/.ddx/library/`)
 - Configuration changes must be validated before saving
 - Must support import/export of configurations
 

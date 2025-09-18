@@ -104,6 +104,11 @@ func (l *PersonaLoaderImpl) ListPersonas() ([]*Persona, error) {
 			continue
 		}
 
+		// Skip README.md and other documentation files
+		if entry.Name() == "README.md" || entry.Name() == "readme.md" {
+			continue
+		}
+
 		// Extract persona name from filename
 		personaName := strings.TrimSuffix(entry.Name(), PersonaFileExtension)
 

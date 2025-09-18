@@ -9,6 +9,7 @@ import (
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
+	"github.com/easel/ddx/internal/config"
 	"github.com/spf13/cobra"
 )
 
@@ -36,11 +37,15 @@ func init() {
 }
 
 func runList(cmd *cobra.Command, args []string) error {
-	ddxHome := getDDxHome()
+	// Get library path using the centralized library resolution
+	libPath, err := config.GetLibraryPath(libraryPath)
+	if err != nil {
+		return fmt.Errorf("failed to get library path: %w", err)
+	}
 
-	// Check if DDx is installed
-	if _, err := os.Stat(ddxHome); os.IsNotExist(err) {
-		cmd.PrintErr("❌ DDx not found. Please run the installation script first.")
+	// Check if library exists
+	if _, err := os.Stat(libPath); os.IsNotExist(err) {
+		cmd.PrintErr("❌ DDx library not found. Please check your configuration.")
 		return nil
 	}
 
@@ -61,7 +66,7 @@ func runList(cmd *cobra.Command, args []string) error {
 	}
 
 	for _, resourceType := range resourceTypes {
-		resourcePath := filepath.Join(ddxHome, resourceType)
+		resourcePath := filepath.Join(libPath, resourceType)
 
 		if _, err := os.Stat(resourcePath); os.IsNotExist(err) {
 			continue
@@ -91,6 +96,10 @@ func runList(cmd *cobra.Command, args []string) error {
 		// Print section header
 		caser := cases.Title(language.English)
 		cmd.Printf("%s:\n", caser.String(resourceType))
+
+		// Special handling for prompts - show files recursively
+		// TODO: Implement recursive prompt listing when verbose flag is set
+		// This will be implemented with the prompts command
 
 		for _, entry := range filteredEntries {
 			itemPath := filepath.Join(resourcePath, entry.Name())

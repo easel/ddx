@@ -23,25 +23,37 @@ func TestListCommand(t *testing.T) {
 			name: "list all resources",
 			args: []string{"list"},
 			setup: func(t *testing.T) string {
-				// Setup mock DDx home with resources
-				homeDir := t.TempDir()
-				t.Setenv("HOME", homeDir)
-				ddxHome := filepath.Join(homeDir, ".ddx")
+				// Setup test directory with library
+				testDir := t.TempDir()
+				origWd, _ := os.Getwd()
+				require.NoError(t, os.Chdir(testDir))
+				t.Cleanup(func() { os.Chdir(origWd) })
+
+				// Create library structure
+				libraryDir := filepath.Join(testDir, "library")
 
 				// Create template directories
-				templatesDir := filepath.Join(ddxHome, "templates")
+				templatesDir := filepath.Join(libraryDir, "templates")
 				require.NoError(t, os.MkdirAll(filepath.Join(templatesDir, "nextjs"), 0755))
 				require.NoError(t, os.MkdirAll(filepath.Join(templatesDir, "python"), 0755))
 
 				// Create pattern directories
-				patternsDir := filepath.Join(ddxHome, "patterns")
+				patternsDir := filepath.Join(libraryDir, "patterns")
 				require.NoError(t, os.MkdirAll(filepath.Join(patternsDir, "auth"), 0755))
 
 				// Create prompts directories
-				promptsDir := filepath.Join(ddxHome, "prompts")
+				promptsDir := filepath.Join(libraryDir, "prompts")
 				require.NoError(t, os.MkdirAll(filepath.Join(promptsDir, "claude"), 0755))
 
-				return homeDir
+				// Create .ddx.yml config pointing to library
+				config := []byte(`version: "2.0"
+library_path: ./library
+repository:
+  url: https://github.com/easel/ddx
+  branch: main`)
+				require.NoError(t, os.WriteFile(".ddx.yml", config, 0644))
+
+				return testDir
 			},
 			validate: func(t *testing.T, output string, err error) {
 				assert.Contains(t, output, "Templates")
@@ -53,15 +65,22 @@ func TestListCommand(t *testing.T) {
 			name: "list specific resource type",
 			args: []string{"list", "templates"},
 			setup: func(t *testing.T) string {
-				homeDir := t.TempDir()
-				t.Setenv("HOME", homeDir)
-				ddxHome := filepath.Join(homeDir, ".ddx")
+				testDir := t.TempDir()
+				origWd, _ := os.Getwd()
+				require.NoError(t, os.Chdir(testDir))
+				t.Cleanup(func() { os.Chdir(origWd) })
 
-				templatesDir := filepath.Join(ddxHome, "templates")
+				libraryDir := filepath.Join(testDir, "library")
+				templatesDir := filepath.Join(libraryDir, "templates")
 				require.NoError(t, os.MkdirAll(filepath.Join(templatesDir, "react"), 0755))
 				require.NoError(t, os.MkdirAll(filepath.Join(templatesDir, "vue"), 0755))
 
-				return homeDir
+				// Create .ddx.yml config
+				config := []byte(`version: "2.0"
+library_path: ./library`)
+				require.NoError(t, os.WriteFile(".ddx.yml", config, 0644))
+
+				return testDir
 			},
 			validate: func(t *testing.T, output string, err error) {
 				assert.Contains(t, output, "Templates")
@@ -69,13 +88,15 @@ func TestListCommand(t *testing.T) {
 			expectError: false,
 		},
 		{
-			name: "list with empty DDx home",
+			name: "list with no library",
 			args: []string{"list"},
 			setup: func(t *testing.T) string {
-				homeDir := t.TempDir()
-				t.Setenv("HOME", homeDir)
-				// Don't create .ddx directory
-				return homeDir
+				testDir := t.TempDir()
+				origWd, _ := os.Getwd()
+				require.NoError(t, os.Chdir(testDir))
+				t.Cleanup(func() { os.Chdir(origWd) })
+				// Don't create library or config - should fail gracefully
+				return testDir
 			},
 			validate: func(t *testing.T, output string, err error) {
 				// Should handle gracefully
@@ -87,18 +108,25 @@ func TestListCommand(t *testing.T) {
 			name: "list with verbose flag",
 			args: []string{"list", "--verbose"},
 			setup: func(t *testing.T) string {
-				homeDir := t.TempDir()
-				t.Setenv("HOME", homeDir)
-				ddxHome := filepath.Join(homeDir, ".ddx")
+				testDir := t.TempDir()
+				origWd, _ := os.Getwd()
+				require.NoError(t, os.Chdir(testDir))
+				t.Cleanup(func() { os.Chdir(origWd) })
 
-				templatesDir := filepath.Join(ddxHome, "templates", "test")
+				libraryDir := filepath.Join(testDir, "library")
+				templatesDir := filepath.Join(libraryDir, "templates", "test")
 				require.NoError(t, os.MkdirAll(templatesDir, 0755))
 
 				// Add a README to the template
 				readme := filepath.Join(templatesDir, "README.md")
 				require.NoError(t, os.WriteFile(readme, []byte("# Test Template"), 0644))
 
-				return homeDir
+				// Create config
+				config := []byte(`version: "2.0"
+library_path: ./library`)
+				require.NoError(t, os.WriteFile(".ddx.yml", config, 0644))
+
+				return testDir
 			},
 			validate: func(t *testing.T, output string, err error) {
 				// Verbose output should include more details

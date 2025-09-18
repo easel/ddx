@@ -101,13 +101,26 @@ Pre-commit checks include:
 
 ### CLI Command Overview
 
+The CLI follows a noun-verb command structure for clarity and consistency:
+
+**Core Commands:**
 - `ddx init` - Initialize DDx in a project (with optional template)
-- `ddx list` - Show available templates, patterns, and prompts
-- `ddx apply <resource>` - Apply templates, patterns, or configurations
 - `ddx diagnose` - Analyze project health and suggest improvements
 - `ddx update` - Update toolkit from master repository
 - `ddx contribute` - Share improvements back to community
-- `ddx persona` - Manage AI personas for consistent role-based interactions
+
+**Resource Commands (noun-verb structure):**
+- `ddx prompts list` - List available AI prompts
+- `ddx prompts show <name>` - Display a specific prompt
+- `ddx templates list` - List available project templates
+- `ddx templates apply <name>` - Apply a project template
+- `ddx patterns list` - List available code patterns
+- `ddx patterns apply <name>` - Apply a code pattern
+- `ddx persona list` - List available AI personas
+- `ddx persona show <name>` - Show persona details
+- `ddx persona bind <role> <name>` - Bind persona to role
+- `ddx mcp list` - List available MCP servers
+- `ddx workflows list` - List available workflows
 
 The CLI follows the medical metaphor throughout, treating projects as patients that need diagnosis and treatment through appropriate templates and patterns.
 

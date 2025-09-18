@@ -49,14 +49,39 @@ Like medical differential diagnosis (DDx), we use structured documentation to:
 
 ## 📚 Commands
 
+DDx follows a noun-verb command structure for better organization and discoverability:
+
+### Core Commands
 | Command | Description |
 |---------|-------------|
 | `ddx init` | Initialize DDx in current project |
-| `ddx list` | Show available templates, patterns, and prompts |
-| `ddx apply <resource>` | Apply a template, pattern, or configuration |
 | `ddx diagnose` | Analyze project and suggest improvements |
 | `ddx update` | Update toolkit from master repository |
 | `ddx contribute` | Share improvements back to community |
+
+### Resource Commands (noun-verb structure)
+| Command | Description |
+|---------|-------------|
+| **Prompts** | |
+| `ddx prompts list` | List available AI prompts |
+| `ddx prompts show <name>` | Display a specific prompt |
+| **Templates** | |
+| `ddx templates list` | List available project templates |
+| `ddx templates apply <name>` | Apply a project template |
+| **Patterns** | |
+| `ddx patterns list` | List available code patterns |
+| `ddx patterns apply <name>` | Apply a code pattern |
+| **Personas** | |
+| `ddx persona list` | List available AI personas |
+| `ddx persona show <name>` | Show persona details |
+| `ddx persona bind <role> <name>` | Bind persona to role |
+| `ddx persona load` | Load personas into CLAUDE.md |
+| **MCP Servers** | |
+| `ddx mcp list` | List available MCP servers |
+| `ddx mcp show <name>` | Show MCP server details |
+| **Workflows** | |
+| `ddx workflows list` | List available workflows |
+| `ddx workflows show <name>` | Show workflow details |
 
 ## 📖 Usage Examples
 
@@ -64,11 +89,23 @@ Like medical differential diagnosis (DDx), we use structured documentation to:
 # Start a new Next.js project with DDx patterns
 ddx init --template nextjs
 
-# Apply error handling patterns to existing code
-ddx apply error-handling
+# List and apply templates
+ddx templates list
+ddx templates apply nextjs
 
-# Get AI-optimized prompts for your project
-ddx apply prompts/claude
+# Browse and use AI prompts
+ddx prompts list
+ddx prompts show claude/code-review
+ddx prompts list --verbose  # See all prompt files
+
+# Work with code patterns
+ddx patterns list
+ddx patterns apply error-handling
+
+# Manage AI personas
+ddx persona list
+ddx persona bind code-reviewer strict-code-reviewer
+ddx persona load
 
 # Check your project health
 ddx diagnose --fix

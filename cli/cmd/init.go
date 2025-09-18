@@ -48,11 +48,13 @@ func runInit(cmd *cobra.Command, args []string) error {
 		return NewExitError(2, ".ddx.yml already exists. Use --force to overwrite.")
 	}
 
-	// Check if DDx home exists
-	ddxHome := getDDxHome()
-	ddxHomeExists := true
-	if _, err := os.Stat(ddxHome); os.IsNotExist(err) {
-		ddxHomeExists = false
+	// Check if library path exists
+	libPath, err := config.GetLibraryPath(libraryPath)
+	libraryExists := true
+	if err != nil || libPath == "" {
+		libraryExists = false
+	} else if _, err := os.Stat(libPath); os.IsNotExist(err) {
+		libraryExists = false
 	}
 
 	// Create local configuration even if DDx home doesn't exist
@@ -85,7 +87,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 	}
 
 	// Try to load existing config for more accurate defaults
-	if ddxHomeExists {
+	if libraryExists {
 		if cfg, err := config.Load(); err == nil {
 			localConfig.Version = cfg.Version
 			localConfig.Repository = cfg.Repository
@@ -104,8 +106,8 @@ func runInit(cmd *cobra.Command, args []string) error {
 		return NewExitError(1, fmt.Sprintf("Failed to save configuration: %v", err))
 	}
 
-	// Copy resources if DDx home exists
-	if ddxHomeExists {
+	// Copy resources if library exists
+	if libraryExists {
 		s := spinner.New(spinner.CharSets[14], 100)
 		s.Prefix = "Setting up DDx... "
 		s.Start()
@@ -120,7 +122,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 
 		// Copy selected resources
 		for _, include := range localConfig.Includes {
-			sourcePath := filepath.Join(ddxHome, include)
+			sourcePath := filepath.Join(libPath, include)
 			targetPath := filepath.Join(localDDxPath, include)
 
 			if _, err := os.Stat(sourcePath); err == nil {
@@ -150,8 +152,8 @@ func runInit(cmd *cobra.Command, args []string) error {
 	fmt.Fprint(cmd.OutOrStdout(), "Initialized DDx in current project.\n")
 	fmt.Fprintln(cmd.OutOrStdout())
 
-	// Show next steps only if DDx home exists
-	if ddxHomeExists {
+	// Show next steps only if library exists
+	if libraryExists {
 		fmt.Fprint(cmd.OutOrStdout(), "Next steps:\n")
 		fmt.Fprint(cmd.OutOrStdout(), "  ddx list          - See available resources\n")
 		fmt.Fprint(cmd.OutOrStdout(), "  ddx apply <name>  - Apply templates or patterns\n")

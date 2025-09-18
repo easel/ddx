@@ -18,6 +18,9 @@ This registry tracks all features in the system, their status, dependencies, and
 | FEAT-003 | Configuration Management | YAML-based .ddx.yml configuration with variable substitution and environment-specific overrides | Designed | P0 | Core Team | 2025-01-14 | 2025-01-14 |
 | FEAT-004 | Cross-Platform Installation | Single-command installer with automatic PATH configuration for macOS, Linux, and Windows | Designed | P0 | Core Team | 2025-01-14 | 2025-01-14 |
 | FEAT-005 | Workflow Execution Engine with Observability | Comprehensive phase-based workflow execution engine with integrated state tracking, logging, and audit trails for complete visibility | Designed | P0 | Core Team | 2025-01-14 | 2025-01-14 |
+| FEAT-011 | AI Persona System | Comprehensive persona management enabling teams to define, share, and bind AI personalities to specific roles within workflows | Specified | P1 | Core Team | 2025-01-15 | 2025-01-15 |
+| FEAT-012 | Library Management System | Centralized, flexible approach to managing DDx resources with hierarchical path resolution and project customization support | In Development | P0 | Core Team | 2025-01-16 | 2025-01-16 |
+| FEAT-013 | Development Environment Assets | System for managing and sharing development environment configurations (Docker, Brew, Vagrant) for consistent AI development setups | Specified | P1 | Core Team | 2025-01-18 | 2025-01-18 |
 
 ## Feature Status Definitions
 
@@ -41,6 +44,13 @@ Document which features depend on others:
 | FEAT-004 | - | - | Standalone installer |
 | FEAT-005 | FEAT-001 | Internal | Workflows executed via CLI commands |
 | FEAT-005 | FEAT-003 | Internal | For workflow definitions |
+| FEAT-011 | FEAT-001 | Internal | Persona commands through CLI |
+| FEAT-011 | FEAT-003 | Internal | Persona bindings in configuration |
+| FEAT-012 | FEAT-001 | Internal | Library access through CLI |
+| FEAT-012 | FEAT-003 | Internal | Library path configuration |
+| FEAT-013 | FEAT-001 | Internal | Environment commands through CLI |
+| FEAT-013 | FEAT-003 | Internal | Environment settings in configuration |
+| FEAT-013 | FEAT-012 | Internal | Environments stored in library |
 
 ## Feature Categories
 
@@ -52,11 +62,15 @@ Group features by type or domain:
 - FEAT-003: Configuration Management
 - FEAT-004: Cross-Platform Installation
 - FEAT-005: Workflow Execution Engine with Observability
+- FEAT-012: Library Management System
+
+### AI Enhancement
+- FEAT-011: AI Persona System
+
+### Developer Experience
+- FEAT-013: Development Environment Assets
 
 ### Authentication & Security
-- [Future features]
-
-### Workflow Management
 - [Future features]
 
 ### Reporting & Analytics

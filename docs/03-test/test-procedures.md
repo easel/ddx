@@ -4,7 +4,7 @@
 **Version**: 1.0.0
 **Status**: Draft
 **Created**: 2025-01-15
-**Updated**: 2025-01-15
+**Updated**: 2025-01-18
 
 ## 1. Introduction
 
@@ -155,7 +155,103 @@ This document provides step-by-step procedures for writing, executing, and maint
    }
    ```
 
-### 2.3 Contract Test Development
+### 2.3 Noun-Verb Command Test Development
+
+#### Procedure: Testing Resource Commands
+
+1. **Test command structure**
+   ```go
+   func TestPromptsCommand_Structure(t *testing.T) {
+       tests := []struct {
+           name    string
+           args    []string
+           wantErr bool
+       }{
+           {"list prompts", []string{"prompts", "list"}, false},
+           {"show specific prompt", []string{"prompts", "show", "claude/code-review"}, false},
+           {"invalid action", []string{"prompts", "invalid"}, true},
+           {"old syntax", []string{"list", "--type", "prompts"}, true}, // Should fail
+       }
+
+       for _, tt := range tests {
+           t.Run(tt.name, func(t *testing.T) {
+               cmd := exec.Command("ddx", tt.args...)
+               err := cmd.Run()
+               if tt.wantErr {
+                   assert.Error(t, err)
+               } else {
+                   assert.NoError(t, err)
+               }
+           })
+       }
+   }
+   ```
+
+2. **Test library path resolution**
+   ```go
+   func TestLibraryPathResolution_Priority(t *testing.T) {
+       testDir := t.TempDir()
+
+       // Test 1: Flag override (highest priority)
+       t.Run("flag override", func(t *testing.T) {
+           customPath := filepath.Join(testDir, "custom-lib")
+           os.MkdirAll(filepath.Join(customPath, "prompts"), 0755)
+
+           cmd := exec.Command("ddx", "prompts", "list", "--library-base-path", customPath)
+           output, _ := cmd.CombinedOutput()
+           // Should use custom path
+           assert.Contains(t, string(output), "Using library:")
+       })
+
+       // Test 2: Environment variable
+       t.Run("env variable", func(t *testing.T) {
+           envPath := filepath.Join(testDir, "env-lib")
+           os.MkdirAll(filepath.Join(envPath, "prompts"), 0755)
+
+           cmd := exec.Command("ddx", "prompts", "list")
+           cmd.Env = append(os.Environ(), "DDX_LIBRARY_BASE_PATH="+envPath)
+           output, _ := cmd.CombinedOutput()
+           // Should use env path
+       })
+
+       // Test 3: Config file
+       t.Run("config file", func(t *testing.T) {
+           os.WriteFile(".ddx.yml", []byte("library_path: ./library"), 0644)
+           os.MkdirAll("./library/prompts", 0755)
+
+           cmd := exec.Command("ddx", "prompts", "list")
+           output, _ := cmd.CombinedOutput()
+           // Should use ./library
+       })
+   }
+   ```
+
+3. **Test resource-specific functionality**
+   ```go
+   func TestPromptsCommand_Verbose(t *testing.T) {
+       // Setup test prompts
+       testDir := setupTestLibrary(t)
+
+       // Create nested prompt structure
+       promptsDir := filepath.Join(testDir, "library", "prompts")
+       os.MkdirAll(filepath.Join(promptsDir, "claude", "system-prompts"), 0755)
+       os.WriteFile(
+           filepath.Join(promptsDir, "claude", "code-review.md"),
+           []byte("# Code Review Prompt"),
+           0644,
+       )
+
+       // Test verbose listing
+       cmd := exec.Command("ddx", "prompts", "list", "--verbose")
+       output, err := cmd.CombinedOutput()
+
+       require.NoError(t, err)
+       assert.Contains(t, string(output), "code-review.md")
+       assert.Contains(t, string(output), "system-prompts/")
+   }
+   ```
+
+### 2.4 Contract Test Development
 
 #### Procedure: Validating API Contracts
 
@@ -253,7 +349,66 @@ This document provides step-by-step procedures for writing, executing, and maint
    }
    ```
 
-### 2.5 Security Test Development
+### 2.5 Migration and Legacy Command Testing
+
+#### Procedure: Ensuring Clean Migration
+
+1. **Test old commands are removed**
+   ```go
+   func TestLegacyCommands_Removed(t *testing.T) {
+       oldCommands := [][]string{
+           {"list", "--type", "prompts"},     // Old generic list
+           {"list", "templates"},              // Old positional argument
+           {"apply", "nextjs"},                // Old generic apply
+       }
+
+       for _, args := range oldCommands {
+           t.Run(strings.Join(args, " "), func(t *testing.T) {
+               cmd := exec.Command("ddx", args...)
+               output, err := cmd.CombinedOutput()
+
+               // Should fail with helpful message
+               assert.Error(t, err)
+               assert.Contains(t, string(output), "command not found")
+               // Optionally suggest new command
+               if strings.Contains(args[0], "list") {
+                   assert.Contains(t, string(output), "try 'ddx prompts list'")
+               }
+           })
+       }
+   }
+   ```
+
+2. **Test getDDxHome is removed**
+   ```go
+   func TestNoLegacyHomePath(t *testing.T) {
+       // Ensure no ~/.ddx hardcoding
+       output := execGoGrep(t, "getDDxHome", "./cli")
+       assert.Empty(t, output, "getDDxHome function should be removed")
+
+       // Check for hardcoded paths
+       output = execGoGrep(t, `"~/.ddx"`, "./cli")
+       assert.Empty(t, output, "No hardcoded ~/.ddx paths should exist")
+   }
+   ```
+
+3. **Test help suggests new commands**
+   ```go
+   func TestHelp_ShowsNounVerbCommands(t *testing.T) {
+       cmd := exec.Command("ddx", "--help")
+       output, _ := cmd.CombinedOutput()
+
+       // Should show resource commands
+       assert.Contains(t, string(output), "prompts")
+       assert.Contains(t, string(output), "templates")
+       assert.Contains(t, string(output), "patterns")
+
+       // Should NOT show old commands
+       assert.NotContains(t, string(output), "list --type")
+   }
+   ```
+
+### 2.6 Security Test Development
 
 #### Procedure: Writing Security Tests
 

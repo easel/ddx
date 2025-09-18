@@ -92,9 +92,10 @@ Examples:
 		}
 
 		// Display personas in table format
-		cmd.Println("Available Personas:")
-		cmd.Println()
-		w := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 0, 3, ' ', 0)
+		out := cmd.OutOrStdout()
+		fmt.Fprintln(out, "Available Personas:")
+		fmt.Fprintln(out)
+		w := tabwriter.NewWriter(out, 0, 0, 3, ' ', 0)
 		fmt.Fprintln(w, "NAME\tROLES\tDESCRIPTION\tTAGS")
 		fmt.Fprintln(w, "----\t-----\t-----------\t----")
 
