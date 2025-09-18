@@ -15,7 +15,7 @@ environment:
     description: "GitHub personal access token with appropriate permissions"
     required: true
     sensitive: true
-    validation: "^(ghp_[a-zA-Z0-9]{36}|github_pat_[a-zA-Z0-9]{22}_[a-zA-Z0-9]{59})$"
+    validation: "^(ghp_[a-zA-Z0-9]{30,}|github_pat_[a-zA-Z0-9_]{50,})$"
     
 documentation:
   setup: |

@@ -9,54 +9,63 @@ servers:
     file: servers/github.yml
     category: development
     description: GitHub integration for repository access
-    
-  - name: gitlab
-    file: servers/gitlab.yml
-    category: development
-    description: GitLab integration for repository access
-    
+
   - name: postgres
     file: servers/postgres.yml
     category: database
     description: PostgreSQL database integration
-    
-  - name: mysql
-    file: servers/mysql.yml
+
+  - name: sqlite
+    file: servers/sqlite.yml
     category: database
-    description: MySQL database integration
-    
+    description: SQLite database interaction and management
+
   - name: filesystem
     file: servers/filesystem.yml
     category: filesystem
     description: Local filesystem access
-    
+
+  - name: sequential-thinking
+    file: servers/sequential-thinking.yml
+    category: utility
+    description: Dynamic problem-solving through structured thought sequences
+
   - name: memory
     file: servers/memory.yml
     category: utility
-    description: In-memory knowledge base
-    
-  - name: fetch
-    file: servers/fetch.yml
-    category: utility
-    description: Web content fetching
+    description: Persistent memory and context retention using Mem0
+
+  - name: playwright
+    file: servers/playwright.yml
+    category: automation
+    description: Browser automation capabilities using Playwright
+
+  - name: puppeteer
+    file: servers/puppeteer.yml
+    category: automation
+    description: Browser automation and web scraping using Puppeteer
 
 categories:
   development:
     description: Development and version control tools
     icon: 🛠️
-    
+
   database:
     description: Database and data storage integrations
     icon: 🗜️
-    
+
   filesystem:
     description: File system and storage access
     icon: 📁
-    
+
   utility:
     description: General utility servers
     icon: 🔧
-    
+
+  automation:
+    description: Browser and UI automation tools
+    icon: 🤖
+
   productivity:
     description: Productivity and collaboration tools
     icon: 📈
