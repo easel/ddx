@@ -95,11 +95,21 @@ func TestInitCommand_Contract(t *testing.T) {
 				tt.setup(t)
 			}
 
+			// Create a fresh init command to avoid state pollution
+			freshInitCmd := &cobra.Command{
+				Use:   "init",
+				Short: "Initialize DDx in current project",
+				Long:  initCmd.Long,
+				RunE:  runInit,
+			}
+			freshInitCmd.Flags().StringVarP(&initTemplate, "template", "t", "", "Use specific template")
+			freshInitCmd.Flags().BoolVarP(&initForce, "force", "f", false, "Force initialization even if DDx already exists")
+
 			rootCmd := &cobra.Command{
 				Use:   "ddx",
 				Short: "DDx CLI",
 			}
-			rootCmd.AddCommand(initCmd)
+			rootCmd.AddCommand(freshInitCmd)
 
 			output, err := executeContractCommand(rootCmd, tt.args...)
 
@@ -206,11 +216,22 @@ library_path: ./library`)
 				tt.setup(t)
 			}
 
+			// Create a fresh list command to avoid state pollution
+			freshListCmd := &cobra.Command{
+				Use:   "list",
+				Short: "List available resources",
+				Long:  listCmd.Long,
+				RunE:  runList,
+			}
+			freshListCmd.Flags().StringVarP(&listType, "type", "t", "", "Filter by type (templates|patterns|configs|prompts|scripts)")
+			freshListCmd.Flags().StringVarP(&listSearch, "search", "s", "", "Search for specific items")
+			freshListCmd.Flags().BoolVar(&listVerbose, "verbose", false, "Show verbose output with additional details")
+
 			rootCmd := &cobra.Command{
 				Use:   "ddx",
 				Short: "DDx CLI",
 			}
-			rootCmd.AddCommand(listCmd)
+			rootCmd.AddCommand(freshListCmd)
 
 			output, err := executeContractCommand(rootCmd, tt.args...)
 
@@ -357,11 +378,23 @@ library_path: ./library`)
 			applyVars = nil
 			libraryPath = ""
 
+			// Create a fresh apply command to avoid state pollution
+			freshApplyCmd := &cobra.Command{
+				Use:   "apply <resource>",
+				Short: "Apply a DDx resource to your project",
+				Long:  applyCmd.Long,
+				Args:  cobra.ExactArgs(1),
+				RunE:  runApply,
+			}
+			freshApplyCmd.Flags().StringVarP(&applyPath, "path", "p", ".", "Target path for application")
+			freshApplyCmd.Flags().BoolVar(&applyDryRun, "dry-run", false, "Show what would be applied without making changes")
+			freshApplyCmd.Flags().StringSliceVar(&applyVars, "var", nil, "Set template variables (key=value)")
+
 			rootCmd := &cobra.Command{
 				Use:   "ddx",
 				Short: "DDx CLI",
 			}
-			rootCmd.AddCommand(applyCmd)
+			rootCmd.AddCommand(freshApplyCmd)
 
 			output, err := executeContractCommand(rootCmd, tt.args...)
 
@@ -462,11 +495,23 @@ variables:
 				tt.setup(t)
 			}
 
+			// Create a fresh config command to avoid state pollution
+			freshConfigCmd := &cobra.Command{
+				Use:   "config [get|set|validate] [key] [value]",
+				Short: "Manage DDx configuration",
+				Long:  configCmd.Long,
+				RunE:  runConfig,
+			}
+			freshConfigCmd.Flags().BoolVarP(&configGlobal, "global", "g", false, "Edit global configuration")
+			freshConfigCmd.Flags().BoolVarP(&configLocal, "local", "l", false, "Edit local project configuration")
+			freshConfigCmd.Flags().BoolVar(&configInit, "init", false, "Initialize configuration wizard")
+			freshConfigCmd.Flags().BoolVar(&configShow, "show", false, "Show current configuration")
+
 			rootCmd := &cobra.Command{
 				Use:   "ddx",
 				Short: "DDx CLI",
 			}
-			rootCmd.AddCommand(configCmd)
+			rootCmd.AddCommand(freshConfigCmd)
 
 			output, err := executeContractCommand(rootCmd, tt.args...)
 			assert.NoError(t, err)
