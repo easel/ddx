@@ -908,6 +908,26 @@ gemini "optimize this SQL query: $(cat query.sql)"
 
 ### Open Source Alternatives
 
+#### OpenCode (Open Source Code Assistant)
+```bash
+# Install OpenCode
+pip install opencode-cli
+
+# Or install from source
+git clone https://github.com/opencode/opencode-cli
+cd opencode-cli
+pip install -e .
+
+# Configure with your preferred model
+opencode config set model "codellama"
+opencode config set provider "local"  # or "openai", "anthropic"
+
+# Use for code assistance
+opencode generate "create a Python web scraper"
+opencode explain "what does this function do" --file main.py
+opencode refactor "optimize for performance" --file utils.py
+```
+
 #### Ollama (Local AI Models)
 ```bash
 # Install Ollama
@@ -917,6 +937,7 @@ brew install ollama
 ollama pull codellama
 ollama pull mistral
 ollama pull phi
+ollama pull deepseek-coder
 
 # Use for code generation
 ollama run codellama "write a REST API in Go"
@@ -926,13 +947,16 @@ ollama run codellama "write a REST API in Go"
 ```bash
 # Download from https://lmstudio.ai
 # Run models locally with a GUI
-# Supports Code Llama, Mistral, and many others
+# Supports Code Llama, Mistral, DeepSeek, and many others
 ```
 
 #### Continue.dev (VS Code/JetBrains)
 ```bash
 # Install the Continue extension in VS Code
 code --install-extension continue.continue
+
+# Or for JetBrains IDEs
+# Install from: https://plugins.jetbrains.com/plugin/22707-continue
 
 # Configure with local or cloud models
 # Supports Ollama, OpenAI, Anthropic, and more
@@ -945,8 +969,10 @@ code --install-extension continue.continue
 | Claude Code | Full project understanding | Subscription | Cloud |
 | GitHub Copilot | Inline completions | Subscription | Cloud |
 | Gemini | Google ecosystem integration | Pay-per-use | Cloud |
+| OpenCode | Open source flexibility | Free | Local/Cloud |
 | Ollama | Privacy-focused development | Free | Local |
 | LM Studio | GUI for local models | Free | Local |
+| Continue.dev | IDE integration | Free | Local/Cloud |
 
 ### Setting Up Multiple AI Tools
 
