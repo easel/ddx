@@ -689,12 +689,45 @@ Better: "Create a REST API endpoint for user authentication using JWT,
 
 ### Integrating with Other Tools
 
+#### Zed (Recommended Code Editor)
+[Zed](https://zed.dev) is a high-performance, collaborative code editor with built-in AI features:
+```bash
+# Install Zed with Homebrew (macOS)
+brew install --cask zed
+
+# Or download directly from https://zed.dev/download
+# Available for macOS and Linux
+
+# Launch Zed
+open -a Zed  # macOS
+zed .        # If added to PATH
+```
+
+**Why Zed:**
+- ⚡ Native performance (written in Rust)
+- 🤝 Real-time collaboration
+- 🤖 Built-in AI assistant supporting multiple models
+- 🎨 Beautiful, minimal UI
+- 🔌 Growing extension ecosystem
+
+**Configure Zed for AI:**
+```json
+// Settings → assistant.provider
+{
+  "assistant": {
+    "default_model": "claude-3.5-sonnet",
+    "provider": "anthropic"
+  }
+}
+```
+
 #### VS Code
 ```bash
+# Install VS Code with Homebrew
+brew install --cask visual-studio-code
+
 # Install Claude Code extension (when available)
 code --install-extension anthropic.claude-code
-
-# Or use via web interface while coding
 ```
 
 #### Cursor
@@ -758,7 +791,182 @@ cp ~/.claude/templates/my-template.md ./CLAUDE.md
 
 ---
 
-## Part 6: Development Language Runtimes
+## Part 6: Knowledge Management with Obsidian
+
+[Obsidian](https://obsidian.md) is a powerful knowledge base that works on local markdown files. It's perfect for managing documentation, notes, and knowledge graphs for your projects.
+
+### Installing Obsidian
+
+```bash
+# macOS with Homebrew
+brew install --cask obsidian
+
+# Windows with Chocolatey
+choco install obsidian
+
+# Linux (AppImage)
+wget https://github.com/obsidianmd/obsidian-releases/releases/latest/download/Obsidian-*.AppImage
+chmod +x Obsidian-*.AppImage
+./Obsidian-*.AppImage
+
+# Or download from https://obsidian.md/download
+```
+
+### Why Obsidian for Development
+
+- 📝 **Markdown-based**: All notes are plain text markdown files
+- 🔗 **Linked Knowledge**: Create connections between concepts with [[wikilinks]]
+- 📊 **Graph View**: Visualize relationships between documentation
+- 🔍 **Powerful Search**: Find anything across all your notes instantly
+- 🔌 **Extensible**: Hundreds of community plugins
+- 💾 **Local First**: Your data stays on your machine
+
+### Setting Up Obsidian for DDX
+
+1. **Create a Vault for Your Project**
+   ```bash
+   # Create a docs vault in your project
+   mkdir -p ~/Documents/ObsidianVaults/ProjectDocs
+
+   # Open Obsidian and select "Open folder as vault"
+   # Navigate to the created folder
+   ```
+
+2. **Install Essential Plugins**
+   - **Templater**: For consistent document templates
+   - **Dataview**: Query and visualize your notes
+   - **Git**: Version control for your vault
+   - **Kanban**: Project management boards
+   - **Excalidraw**: Technical diagrams
+
+3. **DDX Integration**
+   ```bash
+   # Use DDX to convert docs to Obsidian format
+   ddx obsidian migrate docs/
+
+   # This adds frontmatter and converts links to wikilinks
+   ```
+
+4. **Templates for Development**
+   Create templates for common documentation:
+   - Feature specifications
+   - API documentation
+   - Meeting notes
+   - Bug reports
+   - Architecture decisions
+
+### Obsidian Workflow Tips
+
+- **Daily Notes**: Track progress and discoveries
+- **Tags**: Use #ddx #helix #architecture for organization
+- **Canvas**: Visual project planning and architecture
+- **Sync**: Use git for version control of your vault
+
+---
+
+## Part 7: Additional AI Development Tools
+
+Beyond Claude Code, several other AI tools can enhance your development workflow:
+
+### OpenAI Tools
+
+#### GPT CLI (OpenAI Codex Access)
+```bash
+# Install openai CLI
+pip install openai-cli
+
+# Configure with your API key
+export OPENAI_API_KEY="your-key-here"
+
+# Use for code generation
+openai api completions.create -m "gpt-4" -p "Write a Python function to..."
+```
+
+#### GitHub Copilot CLI
+```bash
+# Install GitHub Copilot CLI
+gh extension install github/gh-copilot
+
+# Use for command suggestions
+gh copilot suggest "how to rebase my branch"
+gh copilot explain "git reflog"
+```
+
+### Google Gemini CLI
+
+```bash
+# Install Gemini CLI
+npm install -g @google/generative-ai-cli
+
+# Configure with your API key
+gemini config set api_key YOUR_API_KEY
+
+# Use for code assistance
+gemini "explain this error: $(cat error.log)"
+gemini "optimize this SQL query: $(cat query.sql)"
+```
+
+### Open Source Alternatives
+
+#### Ollama (Local AI Models)
+```bash
+# Install Ollama
+brew install ollama
+
+# Pull and run models locally
+ollama pull codellama
+ollama pull mistral
+ollama pull phi
+
+# Use for code generation
+ollama run codellama "write a REST API in Go"
+```
+
+#### LM Studio
+```bash
+# Download from https://lmstudio.ai
+# Run models locally with a GUI
+# Supports Code Llama, Mistral, and many others
+```
+
+#### Continue.dev (VS Code/JetBrains)
+```bash
+# Install the Continue extension in VS Code
+code --install-extension continue.continue
+
+# Configure with local or cloud models
+# Supports Ollama, OpenAI, Anthropic, and more
+```
+
+### AI Tool Comparison
+
+| Tool | Best For | Cost | Privacy |
+|------|----------|------|---------|
+| Claude Code | Full project understanding | Subscription | Cloud |
+| GitHub Copilot | Inline completions | Subscription | Cloud |
+| Gemini | Google ecosystem integration | Pay-per-use | Cloud |
+| Ollama | Privacy-focused development | Free | Local |
+| LM Studio | GUI for local models | Free | Local |
+
+### Setting Up Multiple AI Tools
+
+Create an AI configuration file:
+```bash
+# ~/.ai-tools
+export OPENAI_API_KEY="sk-..."
+export ANTHROPIC_API_KEY="sk-ant-..."
+export GOOGLE_API_KEY="..."
+
+# Aliases for quick access
+alias ai-claude="claude"
+alias ai-gpt="openai api"
+alias ai-gemini="gemini"
+alias ai-local="ollama run codellama"
+```
+
+---
+
+## Part 8: Development Language Runtimes
 
 If you're not using containers, you'll need to install the runtime for your programming language. Here's how to set up the most common development environments using Homebrew and version managers.
 
@@ -1064,7 +1272,7 @@ echo "Done! Restart your terminal to use the new tools."
 
 ---
 
-## Part 7: Installing DDX
+## Part 9: Installing DDX
 
 Now let's install DDX itself!
 
@@ -1141,7 +1349,7 @@ ddx --help
 
 ---
 
-## Part 8: First Steps with DDX
+## Part 10: First Steps with DDX
 
 ### Initialize Your First Project
 
@@ -1257,7 +1465,7 @@ This automatically configures `.claude/settings.json`:
 
 ---
 
-## Part 9: Troubleshooting
+## Part 11: Troubleshooting
 
 ### Common Issues and Solutions
 
@@ -1357,7 +1565,7 @@ ddx list --verbose
 
 ---
 
-## Part 10: Next Steps
+## Part 12: Next Steps
 
 ### Recommended Learning Path
 
