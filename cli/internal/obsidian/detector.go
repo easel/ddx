@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// FileTypeDetector detects the type of a HELIX markdown file
+// FileTypeDetector detects the type of markdown files
 type FileTypeDetector struct {
 	patterns map[string]FileType
 }
@@ -14,31 +14,22 @@ type FileTypeDetector struct {
 // NewFileTypeDetector creates a new file type detector
 func NewFileTypeDetector() *FileTypeDetector {
 	return &FileTypeDetector{
-		patterns: map[string]FileType{
-			"phases/*/README.md":    FileTypePhase,
-			"phases/*/enforcer.md":  FileTypeEnforcer,
-			"*/template.md":         FileTypeTemplate,
-			"*/prompt.md":           FileTypePrompt,
-			"*/example.md":          FileTypeExample,
-			"coordinator.md":        FileTypeCoordinator,
-			"principles.md":         FileTypePrinciple,
-			"artifacts/*/README.md": FileTypeArtifact,
-		},
+		patterns: make(map[string]FileType),
 	}
 }
 
-// Detect determines the file type based on path patterns and content
+// Detect determines the file type based on path patterns
 func (d *FileTypeDetector) Detect(path string) FileType {
 	// Normalize path
 	path = filepath.ToSlash(path)
 	filename := filepath.Base(path)
 
-	// Check for HELIX document structure patterns first
-	if fileType := d.detectFromContent(path); fileType != FileTypeUnknown {
-		return fileType
+	// Check for feature specification pattern (generic pattern)
+	if matched, _ := regexp.MatchString(`FEAT-\d+`, filename); matched {
+		return FileTypeFeature
 	}
 
-	// Check exact filename matches
+	// Check exact filename matches (generic patterns)
 	switch filename {
 	case "coordinator.md":
 		return FileTypeCoordinator
@@ -53,7 +44,7 @@ func (d *FileTypeDetector) Detect(path string) FileType {
 	case "example.md":
 		return FileTypeExample
 	case "README.md":
-		// README could be phase or artifact based on location
+		// Determine type based on directory context
 		if strings.Contains(path, "/phases/") {
 			return FileTypePhase
 		}
@@ -62,62 +53,10 @@ func (d *FileTypeDetector) Detect(path string) FileType {
 		}
 	}
 
-	// Check directory-based patterns
-	if strings.Contains(path, "/phases/") {
-		if strings.HasSuffix(path, "/README.md") {
-			return FileTypePhase
-		}
-		if strings.HasSuffix(path, "/enforcer.md") {
-			return FileTypeEnforcer
-		}
-		if strings.Contains(path, "/artifacts/") {
-			switch filename {
-			case "template.md":
-				return FileTypeTemplate
-			case "prompt.md":
-				return FileTypePrompt
-			case "example.md":
-				return FileTypeExample
-			}
-		}
-	}
-
-	// Check docs directory patterns (for HELIX documents)
-	if strings.Contains(path, "/docs/") {
-		if strings.Contains(path, "/01-frame/") || strings.Contains(path, "/frame/") {
-			if strings.Contains(filename, "FEAT-") {
-				return FileTypeFeature
-			}
-		}
-		// Note: Phase-based docs don't get special file types - they use artifact types
-	}
-
-	// Use pattern matching as fallback
-	for pattern, fileType := range d.patterns {
-		if matched, _ := filepath.Match(pattern, path); matched {
-			return fileType
-		}
-	}
-
 	return FileTypeUnknown
 }
 
-// detectFromContent analyzes file content to determine type
-func (d *FileTypeDetector) detectFromContent(path string) FileType {
-	// This would ideally read the file content, but for now we'll use path-based detection
-	// In a real implementation, you might read the first few lines to check for specific patterns
-
-	filename := filepath.Base(path)
-
-	// Check for feature specification pattern
-	if matched, _ := regexp.MatchString(`FEAT-\d+`, filename); matched {
-		return FileTypeFeature
-	}
-
-	return FileTypeUnknown
-}
-
-// GetPhaseFromPath extracts the phase name from a file path
+// GetPhaseFromPath extracts the phase name from a file path (generic implementation)
 func GetPhaseFromPath(path string) string {
 	path = filepath.ToSlash(path)
 	parts := strings.Split(path, "/")
@@ -131,24 +70,16 @@ func GetPhaseFromPath(path string) string {
 			}
 			return phaseName
 		}
-		// Also check for docs structure
-		if strings.HasPrefix(part, "01-") || part == "frame" {
-			return "frame"
+		// Check for numbered directory patterns
+		if matched, _ := regexp.MatchString(`^\d+-`, part); matched {
+			if idx := strings.Index(part, "-"); idx > 0 {
+				return part[idx+1:]
+			}
 		}
-		if strings.HasPrefix(part, "02-") || part == "design" {
-			return "design"
-		}
-		if strings.HasPrefix(part, "03-") || part == "test" {
-			return "test"
-		}
-		if strings.HasPrefix(part, "04-") || part == "build" {
-			return "build"
-		}
-		if strings.HasPrefix(part, "05-") || part == "deploy" {
-			return "deploy"
-		}
-		if strings.HasPrefix(part, "06-") || part == "iterate" {
-			return "iterate"
+		// Check for common phase names as directory names
+		if part == "frame" || part == "design" || part == "test" ||
+			part == "build" || part == "deploy" || part == "iterate" {
+			return part
 		}
 	}
 	return ""
@@ -165,10 +96,8 @@ func GetArtifactCategory(path string) string {
 		}
 	}
 
-	// For docs structure, try to infer from filename
+	// For feature files, return feature-specification
 	filename := filepath.Base(path)
-
-	// Check for FEAT pattern - these are always feature specifications
 	if strings.Contains(filename, "FEAT-") {
 		return "feature-specification"
 	}
@@ -177,7 +106,9 @@ func GetArtifactCategory(path string) string {
 }
 
 // GetPhaseNumber returns the phase number for a given phase name
+// This could be made configurable, but for now uses common patterns
 func GetPhaseNumber(phaseName string) int {
+	// Common phase numbering - could be made configurable
 	phaseNumbers := map[string]int{
 		"frame":   1,
 		"design":  2,
@@ -195,6 +126,7 @@ func GetPhaseNumber(phaseName string) int {
 
 // GetNextPhase returns the next phase name
 func GetNextPhase(phaseName string) string {
+	// Common phase order - could be made configurable
 	phaseOrder := []string{"frame", "design", "test", "build", "deploy", "iterate"}
 
 	for i, phase := range phaseOrder {
@@ -278,33 +210,9 @@ func ExtractTitleFromPath(path string) string {
 	return strings.Title(title)
 }
 
-// IsHelixFile determines if a file is part of the HELIX workflow
-func IsHelixFile(path string) bool {
-	path = filepath.ToSlash(path)
-
-	// Check if it's in a HELIX directory
-	if strings.Contains(path, "/workflows/helix/") ||
-		strings.Contains(path, "/helix/") {
-		return true
-	}
-
-	// Check if it's in docs with HELIX structure
-	if strings.Contains(path, "/docs/") &&
-		(strings.Contains(path, "/01-frame/") ||
-			strings.Contains(path, "/02-design/") ||
-			strings.Contains(path, "/03-test/") ||
-			strings.Contains(path, "/04-build/") ||
-			strings.Contains(path, "/05-deploy/") ||
-			strings.Contains(path, "/06-iterate/")) {
-		return true
-	}
-
-	return false
-}
-
 // GetComplexityFromPath estimates complexity based on path structure
 func GetComplexityFromPath(path string) string {
-	// This is a simple heuristic - in practice you might want to analyze content
+	// Simple heuristic based on path patterns
 	if strings.Contains(path, "/example") ||
 		strings.Contains(path, "/simple") {
 		return "simple"

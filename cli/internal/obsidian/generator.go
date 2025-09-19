@@ -1,117 +1,131 @@
 package obsidian
 
 import (
-	"fmt"
 	"regexp"
 	"strings"
 	"time"
 )
 
-// FrontmatterGenerator generates appropriate frontmatter for files
+// FrontmatterGenerator generates YAML frontmatter for markdown files
 type FrontmatterGenerator struct {
-	detector *FileTypeDetector
+	titleExtractor *TitleExtractor
 }
 
 // NewFrontmatterGenerator creates a new frontmatter generator
 func NewFrontmatterGenerator() *FrontmatterGenerator {
 	return &FrontmatterGenerator{
-		detector: NewFileTypeDetector(),
+		titleExtractor: NewTitleExtractor(),
 	}
 }
 
-// Generate creates frontmatter for a given file
-func (g *FrontmatterGenerator) Generate(file *MarkdownFile) (*Frontmatter, error) {
+// Generate creates frontmatter for a markdown file
+func (fg *FrontmatterGenerator) Generate(file *MarkdownFile) (*Frontmatter, error) {
+	now := time.Now()
+
 	fm := &Frontmatter{
-		Created: time.Now(),
-		Updated: time.Now(),
-		Tags:    []string{},
+		Title:        fg.extractTitle(file),
+		Type:         file.FileType.String(),
+		Tags:         fg.generateTags(file),
+		Created:      now,
+		Updated:      now,
+		TimeEstimate: fg.getTimeEstimateByType(file.FileType),
 	}
 
-	// Extract title from content or path
-	fm.Title = g.extractTitle(file)
-
-	// Set type based on file type
-	fm.Type = string(file.FileType)
-
-	// Generate tags based on file type and location
-	fm.Tags = g.generateTags(file)
-
-	// Add type-specific metadata
+	// Add file type specific fields
 	switch file.FileType {
 	case FileTypePhase:
-		g.addPhaseMetadata(fm, file)
-	case FileTypeArtifact, FileTypeTemplate, FileTypePrompt, FileTypeExample:
-		g.addArtifactMetadata(fm, file)
+		fg.addPhaseMetadata(fm, file)
 	case FileTypeEnforcer:
-		g.addEnforcerMetadata(fm, file)
-	case FileTypeCoordinator:
-		g.addCoordinatorMetadata(fm, file)
-	case FileTypePrinciple:
-		g.addPrincipleMetadata(fm, file)
+		fg.addEnforcerFields(fm, file)
+	case FileTypeTemplate, FileTypePrompt, FileTypeExample:
+		fg.addArtifactMetadata(fm, file)
 	case FileTypeFeature:
-		g.addFeatureMetadata(fm, file)
+		fg.addFeatureFields(fm, file)
+	case FileTypeCoordinator:
+		fg.addCoordinatorFields(fm, file)
+	case FileTypePrinciple:
+		fg.addPrincipleFields(fm, file)
 	}
 
 	return fm, nil
 }
 
-// extractTitle extracts the title from markdown content or generates from path
-func (g *FrontmatterGenerator) extractTitle(file *MarkdownFile) string {
-	// First try to extract from content
-	if title := g.extractTitleFromContent(file.Content); title != "" {
+// extractTitle extracts or generates a title for the file
+func (fg *FrontmatterGenerator) extractTitle(file *MarkdownFile) string {
+	// Try to extract from content first
+	if title := fg.titleExtractor.ExtractFromContent(file.Content); title != "" {
 		return title
 	}
 
-	// Fallback to generating from path
+	// Fallback to path-based title
 	return ExtractTitleFromPath(file.Path)
 }
 
 // extractTitleFromContent extracts title from markdown content
-func (g *FrontmatterGenerator) extractTitleFromContent(content string) string {
-	// Look for first H1 heading
-	re := regexp.MustCompile(`(?m)^#\s+(.+)$`)
-	matches := re.FindStringSubmatch(content)
-	if len(matches) > 1 {
-		title := strings.TrimSpace(matches[1])
-		// Clean up common patterns
-		title = strings.TrimPrefix(title, "Feature Specification: ")
-		title = strings.TrimPrefix(title, "Technical Design: ")
-		title = strings.TrimPrefix(title, "Build Implementation: ")
-		// Remove FEAT-XXX patterns
-		if idx := strings.Index(title, " - "); idx > 0 {
-			if strings.HasPrefix(title, "FEAT-") || strings.HasPrefix(title, "[[FEAT-") {
-				title = title[idx+3:]
-			}
-		}
-		return strings.TrimSpace(title)
+func (fg *FrontmatterGenerator) extractTitleFromContent(content string) string {
+	return fg.titleExtractor.ExtractFromContent(content)
+}
+
+// extractFeatureID extracts feature ID from file path and content
+func (fg *FrontmatterGenerator) extractFeatureID(file *MarkdownFile) string {
+	// Try filename first
+	if featureID := fg.extractFeatureIDFromPath(file.Path); featureID != "" {
+		return featureID
+	}
+
+	// Try content
+	return fg.extractFeatureIDFromContent(file.Content)
+}
+
+// extractFeatureIDFromPath extracts feature ID from filename
+func (fg *FrontmatterGenerator) extractFeatureIDFromPath(path string) string {
+	re := regexp.MustCompile(`FEAT-(\d+)`)
+	if matches := re.FindStringSubmatch(path); len(matches) > 1 {
+		return "FEAT-" + matches[1]
 	}
 	return ""
 }
 
-// generateTags creates tags based on file type and path
-func (g *FrontmatterGenerator) generateTags(file *MarkdownFile) []string {
-	tags := []string{"helix"}
+// extractFeatureIDFromContent extracts feature ID from content
+func (fg *FrontmatterGenerator) extractFeatureIDFromContent(content string) string {
+	re := regexp.MustCompile(`FEAT-(\d+)`)
+	if matches := re.FindStringSubmatch(content); len(matches) > 1 {
+		return "FEAT-" + matches[1]
+	}
+	return ""
+}
 
-	// Add hierarchical tags based on file type
-	hierarchicalTags := file.FileType.GetHierarchicalTags()
-	for _, tag := range hierarchicalTags {
-		if tag != "helix" { // Don't duplicate base tag
-			tags = append(tags, tag)
+// extractFromContent extracts field values from content
+func (fg *FrontmatterGenerator) extractFromContent(content, field string) string {
+	// Pattern for field extraction: **Field**: value or Field: value
+	pattern := `(?:^\*\*` + regexp.QuoteMeta(field) + `\*\*|^` + regexp.QuoteMeta(field) + `):\s*(?:\[([^\]]+)\]|([^\n]+))`
+	re := regexp.MustCompile(`(?m)` + pattern)
+
+	if matches := re.FindStringSubmatch(content); len(matches) > 1 {
+		// Return first non-empty capture group
+		for i := 1; i < len(matches); i++ {
+			if matches[i] != "" {
+				return strings.TrimSpace(matches[i])
+			}
 		}
 	}
+	return ""
+}
 
-	// Add phase tag if applicable
+// generateTags generates hierarchical tags for a file
+func (fg *FrontmatterGenerator) generateTags(file *MarkdownFile) []string {
+	tags := file.FileType.GetHierarchicalTags()
+
+	// Add phase-specific tags
 	if phase := GetPhaseFromPath(file.Path); phase != "" {
-		phaseTag := fmt.Sprintf("helix/phase/%s", phase)
-		if !contains(tags, phaseTag) {
-			tags = append(tags, phaseTag)
-		}
+		tags = append(tags, "helix/phase/"+phase)
 	}
 
-	// Add artifact category tag
-	if category := GetArtifactCategory(file.Path); category != "" {
-		categoryTag := fmt.Sprintf("helix/artifact/%s", strings.ReplaceAll(category, "-", "/"))
-		if !contains(tags, categoryTag) {
+	// Add artifact-specific tags
+	if file.FileType.IsArtifact() {
+		if category := GetArtifactCategory(file.Path); category != "" {
+			// Convert hyphens to slashes for hierarchical tags
+			categoryTag := "helix/artifact/" + strings.ReplaceAll(category, "-", "/")
 			tags = append(tags, categoryTag)
 		}
 	}
@@ -119,239 +133,195 @@ func (g *FrontmatterGenerator) generateTags(file *MarkdownFile) []string {
 	return tags
 }
 
-// addPhaseMetadata adds phase-specific metadata
-func (g *FrontmatterGenerator) addPhaseMetadata(fm *Frontmatter, file *MarkdownFile) {
+// getTimeEstimateByType returns time estimate based on file type
+func (fg *FrontmatterGenerator) getTimeEstimateByType(fileType FileType) string {
+	switch fileType {
+	case FileTypeTemplate:
+		return "30-60 minutes"
+	case FileTypePrompt:
+		return "15-30 minutes"
+	case FileTypeExample:
+		return "5-15 minutes"
+	case FileTypeFeature, FileTypeArtifact, FileTypePhase:
+		return "1-2 hours"
+	default:
+		return "1-2 hours"
+	}
+}
+
+// addPhaseMetadata adds phase-specific frontmatter fields
+func (fg *FrontmatterGenerator) addPhaseMetadata(fm *Frontmatter, file *MarkdownFile) {
 	phase := GetPhaseFromPath(file.Path)
+	if phase == "" {
+		return
+	}
+
 	fm.PhaseID = phase
 	fm.PhaseNum = GetPhaseNumber(phase)
 
-	// Set next/previous phases
-	if nextPhase := GetNextPhase(phase); nextPhase != "" {
-		fm.NextPhase = fmt.Sprintf("[[%s Phase]]", strings.Title(nextPhase))
+	// Set navigation links
+	if next := GetNextPhase(phase); next != "" {
+		fm.NextPhase = "[[" + strings.Title(next) + " Phase]]"
 	}
-	if prevPhase := GetPreviousPhase(phase); prevPhase != "" {
-		fm.PrevPhase = fmt.Sprintf("[[%s Phase]]", strings.Title(prevPhase))
+	if prev := GetPreviousPhase(phase); prev != "" {
+		fm.PrevPhase = "[[" + strings.Title(prev) + " Phase]]"
 	}
 
-	// Add gates and artifacts placeholders
+	// Initialize gates and artifacts
 	fm.Gates = &Gates{
-		Entry: []string{"[[TODO: Define entry criteria]]"},
-		Exit:  []string{"[[TODO: Define exit criteria]]"},
+		Entry: []string{},
+		Exit:  []string{},
 	}
 	fm.Artifacts = &Artifacts{
-		Required: []string{"[[TODO: List required artifacts]]"},
-		Optional: []string{"[[TODO: List optional artifacts]]"},
+		Required: []string{},
+		Optional: []string{},
 	}
 
-	// Add phase-specific aliases
-	fm.Aliases = []string{
-		fmt.Sprintf("%s Phase", strings.Title(phase)),
+	// Add aliases
+	fm.Aliases = []string{strings.Title(phase) + " Phase"}
+}
+
+// addEnforcerFields adds enforcer-specific frontmatter fields
+func (fg *FrontmatterGenerator) addEnforcerFields(fm *Frontmatter, file *MarkdownFile) {
+	phase := GetPhaseFromPath(file.Path)
+	if phase != "" {
+		fm.Phase = phase
+		// Add enforcer-specific tag
+		fm.Tags = append(fm.Tags, "helix/phase/"+phase+"/enforcer")
+		// Add aliases
+		phaseName := strings.Title(phase)
+		fm.Aliases = []string{
+			phaseName + " Phase Enforcer",
+			phaseName + " Guardian",
+		}
 	}
 }
 
-// addArtifactMetadata adds artifact-specific metadata
-func (g *FrontmatterGenerator) addArtifactMetadata(fm *Frontmatter, file *MarkdownFile) {
-	fm.Phase = GetPhaseFromPath(file.Path)
-	fm.ArtifactCategory = GetArtifactCategory(file.Path)
+// addArtifactMetadata adds artifact-specific frontmatter fields
+func (fg *FrontmatterGenerator) addArtifactMetadata(fm *Frontmatter, file *MarkdownFile) {
+	category := GetArtifactCategory(file.Path)
+	if category != "" {
+		fm.ArtifactCategory = category
+	}
 
-	// Set complexity based on content or path
-	fm.Complexity = GetComplexityFromPath(file.Path)
+	phase := GetPhaseFromPath(file.Path)
+	if phase != "" {
+		fm.Phase = phase
+	}
 
-	// Add common artifact fields
+	complexity := GetComplexityFromPath(file.Path)
+	fm.Complexity = complexity
+
+	// Initialize prerequisites and outputs
 	fm.Prerequisites = []string{}
 	fm.Outputs = []string{}
-
-	// Estimate time based on file type
-	switch file.FileType {
-	case FileTypeTemplate:
-		fm.TimeEstimate = "30-60 minutes"
-	case FileTypePrompt:
-		fm.TimeEstimate = "15-30 minutes"
-	case FileTypeExample:
-		fm.TimeEstimate = "5-15 minutes"
-	default:
-		fm.TimeEstimate = "1-2 hours"
-	}
-
-	// Add relevant aliases
-	artifactName := strings.Title(strings.ReplaceAll(fm.ArtifactCategory, "-", " "))
-	switch file.FileType {
-	case FileTypeTemplate:
-		fm.Aliases = []string{
-			fmt.Sprintf("%s Template", artifactName),
-		}
-	case FileTypePrompt:
-		fm.Aliases = []string{
-			fmt.Sprintf("%s Prompt", artifactName),
-		}
-	case FileTypeExample:
-		fm.Aliases = []string{
-			fmt.Sprintf("%s Example", artifactName),
-		}
-	}
 }
 
-// addEnforcerMetadata adds enforcer-specific metadata
-func (g *FrontmatterGenerator) addEnforcerMetadata(fm *Frontmatter, file *MarkdownFile) {
+// addFeatureFields adds feature-specific frontmatter fields
+func (fg *FrontmatterGenerator) addFeatureFields(fm *Frontmatter, file *MarkdownFile) {
+	// Extract feature ID from filename
+	if featureID := fg.extractFeatureID(file); featureID != "" {
+		fm.FeatureID = featureID
+	}
+
 	phase := GetPhaseFromPath(file.Path)
-	fm.Phase = phase
-
-	// Add enforcer-specific tags
 	if phase != "" {
-		enforcerTag := fmt.Sprintf("helix/phase/%s/enforcer", phase)
-		if !contains(fm.Tags, enforcerTag) {
-			fm.Tags = append(fm.Tags, enforcerTag)
-		}
+		fm.WorkflowPhase = phase
 	}
 
-	fm.Aliases = []string{
-		fmt.Sprintf("%s Phase Enforcer", strings.Title(phase)),
-		fmt.Sprintf("%s Guardian", strings.Title(phase)),
+	// Extract priority from content or use default
+	if priority := fg.extractFromContent(file.Content, "Priority"); priority != "" {
+		fm.Priority = priority
+	} else {
+		fm.Priority = "P2"
 	}
+
+	// Extract owner from content
+	if owner := fg.extractFromContent(file.Content, "Owner"); owner != "" {
+		fm.Owner = owner
+	}
+
+	// Extract status from content or use default
+	if status := fg.extractFromContent(file.Content, "Status"); status != "" {
+		fm.Status = status
+	} else {
+		fm.Status = "draft"
+	}
+
+	// Set artifact type for feature files
+	fm.ArtifactType = "feature-specification"
 }
 
-// addCoordinatorMetadata adds coordinator-specific metadata
-func (g *FrontmatterGenerator) addCoordinatorMetadata(fm *Frontmatter, file *MarkdownFile) {
+// addCoordinatorFields adds coordinator-specific frontmatter fields
+func (fg *FrontmatterGenerator) addCoordinatorFields(fm *Frontmatter, file *MarkdownFile) {
+	// Add aliases
 	fm.Aliases = []string{
 		"HELIX Coordinator",
 		"Workflow Coordinator",
 	}
 }
 
-// addPrincipleMetadata adds principle-specific metadata
-func (g *FrontmatterGenerator) addPrincipleMetadata(fm *Frontmatter, file *MarkdownFile) {
-	fm.Aliases = []string{
-		"HELIX Principles",
-		"Workflow Principles",
+// addPrincipleFields adds principle-specific frontmatter fields
+func (fg *FrontmatterGenerator) addPrincipleFields(fm *Frontmatter, file *MarkdownFile) {
+	fm.Tags = append(fm.Tags, "helix/principle")
+}
+
+// TitleExtractor extracts titles from markdown content
+type TitleExtractor struct {
+	headingRegex *regexp.Regexp
+}
+
+// NewTitleExtractor creates a new title extractor
+func NewTitleExtractor() *TitleExtractor {
+	return &TitleExtractor{
+		headingRegex: regexp.MustCompile(`^#\s+(.+)$`),
 	}
 }
 
-// addFeatureMetadata adds feature specification metadata
-func (g *FrontmatterGenerator) addFeatureMetadata(fm *Frontmatter, file *MarkdownFile) {
-	fm.WorkflowPhase = "frame"
-	fm.ArtifactType = "feature-specification"
+// ExtractFromContent extracts the first H1 heading from markdown content
+func (te *TitleExtractor) ExtractFromContent(content string) string {
+	lines := strings.Split(content, "\n")
 
-	// Try to extract feature ID from filename or content
-	if featureID := g.extractFeatureID(file); featureID != "" {
-		fm.FeatureID = featureID
-	}
-
-	// Extract priority, owner, status from content if present
-	fm.Priority = g.extractFromContent(file.Content, "Priority")
-	fm.Owner = g.extractFromContent(file.Content, "Owner")
-	fm.Status = g.extractFromContent(file.Content, "Status")
-
-	// Default values if not found
-	if fm.Priority == "" {
-		fm.Priority = "P2"
-	}
-	if fm.Status == "" {
-		fm.Status = "draft"
-	}
-
-	// Add related artifacts
-	if fm.FeatureID != "" {
-		fm.Related = []string{
-			fmt.Sprintf("[[%s-technical-design]]", fm.FeatureID),
-			fmt.Sprintf("[[%s-implementation]]", fm.FeatureID),
-		}
-	}
-}
-
-// addDesignMetadata adds technical design metadata
-func (g *FrontmatterGenerator) addDesignMetadata(fm *Frontmatter, file *MarkdownFile) {
-	fm.WorkflowPhase = "design"
-	fm.ArtifactType = "technical-design"
-
-	// Try to extract feature ID from filename
-	if featureID := g.extractFeatureID(file); featureID != "" {
-		fm.FeatureID = featureID
-		fm.Related = []string{
-			fmt.Sprintf("[[%s-obsidian-integration]]", featureID),
-			fmt.Sprintf("[[%s-implementation]]", featureID),
-		}
-	}
-
-	fm.Status = "draft"
-}
-
-// addTestMetadata adds test specification metadata
-func (g *FrontmatterGenerator) addTestMetadata(fm *Frontmatter, file *MarkdownFile) {
-	fm.WorkflowPhase = "test"
-	fm.ArtifactType = "test-specification"
-
-	// Try to extract feature ID from filename
-	if featureID := g.extractFeatureID(file); featureID != "" {
-		fm.FeatureID = featureID
-	}
-
-	fm.Status = "draft"
-}
-
-// addImplementationMetadata adds implementation guide metadata
-func (g *FrontmatterGenerator) addImplementationMetadata(fm *Frontmatter, file *MarkdownFile) {
-	fm.WorkflowPhase = "build"
-	fm.ArtifactType = "implementation-guide"
-
-	// Try to extract feature ID from filename
-	if featureID := g.extractFeatureID(file); featureID != "" {
-		fm.FeatureID = featureID
-		fm.Related = []string{
-			fmt.Sprintf("[[%s-obsidian-integration]]", featureID),
-			fmt.Sprintf("[[%s-technical-design]]", featureID),
-		}
-	}
-
-	fm.Status = "ready"
-}
-
-// extractFeatureID extracts feature ID from filename or content
-func (g *FrontmatterGenerator) extractFeatureID(file *MarkdownFile) string {
-	// Check filename first
-	re := regexp.MustCompile(`FEAT-(\d+)`)
-	matches := re.FindStringSubmatch(file.Path)
-	if len(matches) > 1 {
-		return fmt.Sprintf("FEAT-%s", matches[1])
-	}
-
-	// Check content
-	matches = re.FindStringSubmatch(file.Content)
-	if len(matches) > 1 {
-		return fmt.Sprintf("FEAT-%s", matches[1])
-	}
-
-	return ""
-}
-
-// extractFromContent extracts a field value from markdown content
-func (g *FrontmatterGenerator) extractFromContent(content, field string) string {
-	// Look for patterns like "**Priority**: P1" or "Priority: P1"
-	patterns := []string{
-		fmt.Sprintf(`\*\*%s\*\*:\s*([^\n\r]+)`, field),
-		fmt.Sprintf(`%s:\s*([^\n\r]+)`, field),
-		fmt.Sprintf(`\*\*%s\*\*\s*([^\n\r]+)`, field),
-	}
-
-	for _, pattern := range patterns {
-		re := regexp.MustCompile(pattern)
-		matches := re.FindStringSubmatch(content)
-		if len(matches) > 1 {
-			value := strings.TrimSpace(matches[1])
-			// Clean up common markdown formatting
-			value = strings.Trim(value, "[]")
-			return value
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if matches := te.headingRegex.FindStringSubmatch(line); len(matches) > 1 {
+			title := strings.TrimSpace(matches[1])
+			if title != "" {
+				return te.cleanTitle(title)
+			}
 		}
 	}
 
 	return ""
 }
 
-// contains checks if a slice contains a string
-func contains(slice []string, item string) bool {
-	for _, s := range slice {
-		if s == item {
-			return true
+// cleanTitle extracts the core title from various title formats
+func (te *TitleExtractor) cleanTitle(title string) string {
+	// Handle patterns like "Feature Specification: FEAT-001 - User Authentication"
+	// Only clean if it contains ": FEAT-" followed by " - "
+	if strings.Contains(title, ": FEAT-") && strings.Contains(title, " - ") {
+		parts := strings.Split(title, " - ")
+		if len(parts) > 1 {
+			return strings.TrimSpace(parts[len(parts)-1])
 		}
 	}
-	return false
+
+	// Handle patterns like "[[FEAT-004]] - Database Migration"
+	if strings.Contains(title, "]] - ") {
+		parts := strings.Split(title, "]] - ")
+		if len(parts) > 1 {
+			return strings.TrimSpace(parts[1])
+		}
+	}
+
+	// Handle wikilinks in title like "[[FEAT-004]] Database Migration"
+	wikilinkRegex := regexp.MustCompile(`\[\[[^\]]+\]\]\s*(.*)`)
+	if matches := wikilinkRegex.FindStringSubmatch(title); len(matches) > 1 {
+		remaining := strings.TrimSpace(matches[1])
+		if remaining != "" {
+			return remaining
+		}
+	}
+
+	return title
 }

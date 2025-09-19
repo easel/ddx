@@ -2,482 +2,576 @@ package cmd
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v3"
-
 	"github.com/easel/ddx/internal/obsidian"
 	"github.com/easel/ddx/internal/obsidian/converter"
-	"github.com/easel/ddx/internal/obsidian/validator"
+	"github.com/spf13/cobra"
 )
 
+var (
+	obsidianDryRun       bool
+	obsidianValidateOnly bool
+	obsidianPath         string
+	obsidianOutput       string
+)
+
+// obsidianCmd represents the obsidian command
 var obsidianCmd = &cobra.Command{
 	Use:   "obsidian",
-	Short: "Manage Obsidian integration for HELIX workflow",
-	Long: `Convert HELIX workflow documentation to Obsidian-compatible format with frontmatter and wikilinks.
+	Short: "Obsidian integration tools for markdown files",
+	Long: `Obsidian integration tools that provide:
 
-This command helps you enhance your HELIX workflow documentation with:
-• YAML frontmatter for metadata and organization
-• Wikilinks for seamless navigation between documents
-• Tag hierarchies for powerful searching and filtering
-• Navigation hubs for quick access to all resources
+• Automatic frontmatter generation for different file types
+• Markdown link to wikilink conversion
+• Validation of Obsidian format compliance
+• Navigation hub generation
 
-The migration is backward compatible - files remain readable in standard markdown viewers.`,
-}
-
-var migrateCmd = &cobra.Command{
-	Use:   "migrate [path]",
-	Short: "Migrate HELIX files to Obsidian format",
-	Long: `Migrate HELIX workflow files to Obsidian-compatible format.
-
-This command will:
-1. Scan all markdown files in the specified path
-2. Detect file types (phases, artifacts, templates, etc.)
-3. Generate appropriate YAML frontmatter for each file
-4. Convert markdown links to Obsidian wikilinks
-5. Create a navigation hub for easy browsing
-6. Validate the results
-
-The migration preserves all existing content and is fully reversible.`,
-	Args: cobra.MaximumNArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		path := "workflows/helix"
-		if len(args) > 0 {
-			path = args[0]
+Commands:
+  migrate    Migrate markdown files to Obsidian format
+  validate   Validate Obsidian format compliance
+  nav        Generate navigation hub
+  revert     Revert Obsidian formatting back to standard markdown`,
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		// Ensure we're in a project directory
+		if !isInitialized() {
+			fmt.Fprintf(os.Stderr, "Error: Not in a DDx-initialized project. Run 'ddx init' first.\n")
+			os.Exit(1)
 		}
-
-		dryRun, _ := cmd.Flags().GetBool("dry-run")
-		validateAfter, _ := cmd.Flags().GetBool("validate")
-		backupDir, _ := cmd.Flags().GetString("backup-dir")
-
-		if verbose {
-			fmt.Printf("🔄 Starting Obsidian migration for %s...\n", path)
-		}
-
-		// Check if path exists
-		if _, err := os.Stat(path); os.IsNotExist(err) {
-			return fmt.Errorf("path does not exist: %s", path)
-		}
-
-		// Create backup if not dry run
-		if !dryRun && backupDir != "" {
-			if err := createBackup(path, backupDir); err != nil {
-				return fmt.Errorf("failed to create backup: %w", err)
-			}
-			fmt.Printf("📁 Created backup at %s\n", backupDir)
-		}
-
-		// Step 1: Scan files
-		files, err := scanMarkdownFiles(path)
-		if err != nil {
-			return fmt.Errorf("failed to scan files: %w", err)
-		}
-		fmt.Printf("📁 Found %d markdown files\n", len(files))
-
-		// Step 2: Detect file types
-		detector := obsidian.NewFileTypeDetector()
-		for _, file := range files {
-			file.FileType = detector.Detect(file.Path)
-			if verbose && file.FileType != obsidian.FileTypeUnknown {
-				fmt.Printf("   %s -> %s\n", file.Path, file.FileType)
-			}
-		}
-
-		// Step 3: Generate frontmatter
-		generator := obsidian.NewFrontmatterGenerator()
-		for _, file := range files {
-			if file.FileType == obsidian.FileTypeUnknown {
-				continue // Skip unknown files
-			}
-
-			fm, err := generator.Generate(file)
-			if err != nil {
-				fmt.Printf("⚠️  Failed to generate frontmatter for %s: %v\n", file.Path, err)
-				continue
-			}
-			file.Frontmatter = fm
-		}
-
-		// Step 4: Convert links
-		linkConverter := converter.NewLinkConverter()
-		linkConverter.BuildIndex(files)
-
-		for _, file := range files {
-			if file.FileType == obsidian.FileTypeUnknown {
-				continue
-			}
-			file.Content = linkConverter.ConvertContent(file.Content)
-		}
-
-		// Step 5: Save files (unless dry-run)
-		savedCount := 0
-		if !dryRun {
-			for _, file := range files {
-				if file.FileType == obsidian.FileTypeUnknown {
-					continue
-				}
-
-				if err := saveMarkdownFile(file); err != nil {
-					fmt.Printf("⚠️  Failed to save %s: %v\n", file.Path, err)
-					continue
-				}
-				if verbose {
-					fmt.Printf("✅ Updated %s\n", file.Path)
-				}
-				savedCount++
-			}
-			fmt.Printf("✅ Updated %d files\n", savedCount)
-		} else {
-			fmt.Println("🔍 Dry run mode - no files were modified")
-			for _, file := range files {
-				if file.FileType != obsidian.FileTypeUnknown {
-					fmt.Printf("   Would update: %s (%s)\n", file.Path, file.FileType)
-				}
-			}
-		}
-
-		// Step 6: Generate navigation hub
-		if !dryRun {
-			if err := generateNavigationHub(path, files); err != nil {
-				return fmt.Errorf("failed to generate navigation hub: %w", err)
-			}
-			fmt.Printf("🗺️  Generated navigation hub at %s/NAVIGATOR.md\n", path)
-		}
-
-		// Step 7: Validate if requested
-		if validateAfter && !dryRun {
-			fmt.Println("🔍 Validating migration results...")
-			return runValidation(path)
-		}
-
-		fmt.Println("✨ Migration complete!")
-		return nil
 	},
 }
 
-var validateCmd = &cobra.Command{
+// obsidianMigrateCmd migrates markdown files to Obsidian format
+var obsidianMigrateCmd = &cobra.Command{
+	Use:   "migrate [path]",
+	Short: "Migrate markdown files to Obsidian format",
+	Long: `Migrate markdown files to Obsidian format by adding frontmatter
+and converting markdown links to wikilinks.
+
+This command will:
+1. Scan for markdown files in the specified path
+2. Detect file types based on path patterns
+3. Generate appropriate frontmatter for each file type
+4. Convert markdown links to wikilinks
+5. Validate the resulting format
+
+Use --dry-run to preview changes without modifying files.`,
+	Args: cobra.MaximumNArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		targetPath := "."
+		if len(args) > 0 {
+			targetPath = args[0]
+		}
+
+		if obsidianDryRun {
+			fmt.Printf("DRY RUN: Would migrate files in %s\n", targetPath)
+		}
+
+		return runObsidianMigrate(targetPath, obsidianDryRun, obsidianValidateOnly)
+	},
+}
+
+// obsidianValidateCmd validates Obsidian format compliance
+var obsidianValidateCmd = &cobra.Command{
 	Use:   "validate [path]",
-	Short: "Validate Obsidian format in HELIX files",
-	Long: `Validate that HELIX files conform to Obsidian format requirements.
+	Short: "Validate Obsidian format compliance",
+	Long: `Validate that markdown files comply with Obsidian format requirements.
 
 This command checks:
-• YAML frontmatter is valid and complete
-• Required fields are present for each file type
-• Tags follow the correct hierarchical structure
-• Wikilinks are properly formed
-• No broken references exist
+• Frontmatter schema compliance
+• Wikilink resolution (no broken links)
+• Tag hierarchy correctness
+• Required fields presence
 
-Use this after migration to ensure everything is working correctly.`,
+Returns exit code 0 if all files are valid, non-zero otherwise.`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		path := "workflows/helix"
+		targetPath := "."
 		if len(args) > 0 {
-			path = args[0]
+			targetPath = args[0]
 		}
 
-		return runValidation(path)
+		return runObsidianValidate(targetPath)
 	},
 }
 
-var revertCmd = &cobra.Command{
+// obsidianNavCmd generates navigation hub
+var obsidianNavCmd = &cobra.Command{
+	Use:   "nav [generate]",
+	Short: "Generate navigation hub for Obsidian vault",
+	Long: `Generate a navigation hub that provides easy access to all workflow artifacts.
+
+The navigation hub includes:
+• Phase overview with status
+• Artifact listings by category
+• Tag-based navigation
+• Quick access links
+
+The hub is generated as NAVIGATOR.md in the workflow root.`,
+	Args: cobra.MaximumNArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if len(args) > 0 && args[0] == "generate" {
+			return runObsidianNavGenerate()
+		}
+
+		// Default to generate
+		return runObsidianNavGenerate()
+	},
+}
+
+// obsidianRevertCmd reverts Obsidian formatting
+var obsidianRevertCmd = &cobra.Command{
 	Use:   "revert [path]",
-	Short: "Revert Obsidian migration",
-	Long: `Revert files from Obsidian format back to standard markdown.
+	Short: "Revert Obsidian formatting back to standard markdown",
+	Long: `Revert Obsidian formatting back to standard markdown by:
 
-This command will:
-• Remove YAML frontmatter from all files
-• Convert wikilinks back to standard markdown links
-• Restore from backup if available
+• Removing frontmatter from files
+• Converting wikilinks back to markdown links
+• Preserving original content structure
 
-Use this if you need to undo the Obsidian migration.`,
+Use --dry-run to preview changes without modifying files.`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		path := "workflows/helix"
+		targetPath := "."
 		if len(args) > 0 {
-			path = args[0]
+			targetPath = args[0]
 		}
 
-		backupDir, _ := cmd.Flags().GetString("backup-dir")
-		stripFrontmatter, _ := cmd.Flags().GetBool("strip-frontmatter")
-
-		fmt.Printf("🔄 Reverting Obsidian migration for %s...\n", path)
-
-		// Try to restore from backup first
-		if backupDir != "" {
-			if _, err := os.Stat(backupDir); err == nil {
-				if err := restoreFromBackup(backupDir, path); err != nil {
-					return fmt.Errorf("failed to restore from backup: %w", err)
-				}
-				fmt.Printf("✅ Restored from backup %s\n", backupDir)
-				return nil
-			}
-			fmt.Printf("⚠️  Backup directory not found: %s\n", backupDir)
+		if obsidianDryRun {
+			fmt.Printf("DRY RUN: Would revert Obsidian formatting in %s\n", targetPath)
 		}
 
-		// Fallback: strip frontmatter manually
-		if stripFrontmatter {
-			files, err := scanMarkdownFiles(path)
-			if err != nil {
-				return fmt.Errorf("failed to scan files: %w", err)
-			}
-
-			count := 0
-			for _, file := range files {
-				if file.HasFrontmatter() {
-					// Remove frontmatter and save
-					file.Frontmatter = nil
-					if err := saveMarkdownFile(file); err != nil {
-						fmt.Printf("⚠️  Failed to update %s: %v\n", file.Path, err)
-						continue
-					}
-					count++
-				}
-			}
-			fmt.Printf("✅ Removed frontmatter from %d files\n", count)
-		}
-
-		return nil
-	},
-}
-
-var navCmd = &cobra.Command{
-	Use:   "nav [path]",
-	Short: "Generate navigation hub",
-	Long: `Generate or update the navigation hub for HELIX workflow.
-
-The navigation hub provides:
-• Quick access to all phases and artifacts
-• Status overview of current work
-• Tag-based browsing and filtering
-• Dataview queries for dynamic content
-
-This is automatically run during migration but can be updated separately.`,
-	Args: cobra.MaximumNArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		path := "workflows/helix"
-		if len(args) > 0 {
-			path = args[0]
-		}
-
-		fmt.Printf("🗺️  Generating navigation hub for %s...\n", path)
-
-		files, err := scanMarkdownFiles(path)
-		if err != nil {
-			return fmt.Errorf("failed to scan files: %w", err)
-		}
-
-		if err := generateNavigationHub(path, files); err != nil {
-			return fmt.Errorf("failed to generate navigation hub: %w", err)
-		}
-
-		fmt.Printf("✅ Generated navigation hub at %s/NAVIGATOR.md\n", path)
-		return nil
+		return runObsidianRevert(targetPath, obsidianDryRun)
 	},
 }
 
 func init() {
-	// Add flags to migrate command
-	migrateCmd.Flags().BoolP("dry-run", "d", false, "Preview changes without modifying files")
-	migrateCmd.Flags().Bool("validate", false, "Validate after migration")
-	migrateCmd.Flags().StringP("backup-dir", "b", "", "Create backup in specified directory")
-
-	// Add flags to revert command
-	revertCmd.Flags().StringP("backup-dir", "b", "", "Restore from backup directory")
-	revertCmd.Flags().Bool("strip-frontmatter", false, "Strip frontmatter if no backup available")
+	rootCmd.AddCommand(obsidianCmd)
 
 	// Add subcommands
-	obsidianCmd.AddCommand(migrateCmd)
-	obsidianCmd.AddCommand(validateCmd)
-	obsidianCmd.AddCommand(revertCmd)
-	obsidianCmd.AddCommand(navCmd)
+	obsidianCmd.AddCommand(obsidianMigrateCmd)
+	obsidianCmd.AddCommand(obsidianValidateCmd)
+	obsidianCmd.AddCommand(obsidianNavCmd)
+	obsidianCmd.AddCommand(obsidianRevertCmd)
 
-	// Add to root command
-	rootCmd.AddCommand(obsidianCmd)
+	// Flags for migrate command
+	obsidianMigrateCmd.Flags().BoolVar(&obsidianDryRun, "dry-run", false, "Preview changes without modifying files")
+	obsidianMigrateCmd.Flags().BoolVar(&obsidianValidateOnly, "validate-only", false, "Only validate format, don't make changes")
+
+	// Flags for validate command
+	obsidianValidateCmd.Flags().StringVar(&obsidianOutput, "output", "text", "Output format: text, json")
+
+	// Flags for nav command
+	obsidianNavCmd.Flags().StringVar(&obsidianPath, "output", "NAVIGATOR.md", "Output file for navigation hub")
+
+	// Flags for revert command
+	obsidianRevertCmd.Flags().BoolVar(&obsidianDryRun, "dry-run", false, "Preview changes without modifying files")
 }
 
-// scanMarkdownFiles recursively scans for markdown files
-func scanMarkdownFiles(root string) ([]*obsidian.MarkdownFile, error) {
-	var files []*obsidian.MarkdownFile
+// runObsidianMigrate handles the migration process
+func runObsidianMigrate(targetPath string, dryRun, validateOnly bool) error {
+	fmt.Printf("Migrating markdown files in %s to Obsidian format...\n", targetPath)
 
-	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		if !strings.HasSuffix(path, ".md") {
-			return nil
-		}
-
-		content, err := ioutil.ReadFile(path)
-		if err != nil {
-			return err
-		}
-
-		file := &obsidian.MarkdownFile{
-			Path:    path,
-			Content: string(content),
-		}
-
-		// Parse existing frontmatter if present
-		if fm, content := extractFrontmatter(string(content)); fm != nil {
-			file.Frontmatter = fm
-			file.Content = content
-		}
-
-		files = append(files, file)
-		return nil
-	})
-
-	return files, err
-}
-
-// extractFrontmatter extracts existing YAML frontmatter from content
-func extractFrontmatter(content string) (*obsidian.Frontmatter, string) {
-	if !strings.HasPrefix(content, "---\n") {
-		return nil, content
-	}
-
-	endIdx := strings.Index(content[4:], "\n---\n")
-	if endIdx == -1 {
-		return nil, content
-	}
-
-	yamlContent := content[4 : endIdx+4]
-	remainingContent := content[endIdx+9:]
-
-	var fm obsidian.Frontmatter
-	if err := yaml.Unmarshal([]byte(yamlContent), &fm); err != nil {
-		return nil, content
-	}
-
-	return &fm, remainingContent
-}
-
-// saveMarkdownFile saves a markdown file with frontmatter
-func saveMarkdownFile(file *obsidian.MarkdownFile) error {
-	var content strings.Builder
-
-	// Write frontmatter
-	if file.Frontmatter != nil {
-		yamlBytes, err := yaml.Marshal(file.Frontmatter)
-		if err != nil {
-			return err
-		}
-		content.WriteString("---\n")
-		content.WriteString(string(yamlBytes))
-		content.WriteString("---\n\n")
-	}
-
-	// Write content
-	content.WriteString(file.Content)
-
-	return ioutil.WriteFile(file.Path, []byte(content.String()), 0644)
-}
-
-// generateNavigationHub creates a navigation hub file
-func generateNavigationHub(basePath string, files []*obsidian.MarkdownFile) error {
-	navGen := obsidian.NewNavigationGenerator()
-	hubContent := navGen.GenerateNavigationHub(files)
-	hubPath := filepath.Join(basePath, "NAVIGATOR.md")
-	return ioutil.WriteFile(hubPath, []byte(hubContent), 0644)
-}
-
-// runValidation runs validation on the specified path
-func runValidation(path string) error {
-	fmt.Printf("🔍 Validating Obsidian format in %s...\n", path)
-
-	files, err := scanMarkdownFiles(path)
+	// Create file scanner
+	scanner := obsidian.NewFileScanner()
+	files, err := scanner.ScanDirectory(targetPath)
 	if err != nil {
-		return fmt.Errorf("failed to scan files: %w", err)
+		return fmt.Errorf("failed to scan directory: %w", err)
 	}
 
-	v := validator.NewValidator()
+	if len(files) == 0 {
+		fmt.Println("No markdown files found to migrate.")
+		return nil
+	}
+
+	fmt.Printf("Found %d markdown files to process.\n", len(files))
+
+	// Create generators and converters
+	generator := obsidian.NewFrontmatterGenerator()
+	linkConverter := converter.NewLinkConverter()
+
+	// Build file index for link conversion
+	linkConverter.BuildIndex(files)
+
+	processedCount := 0
 	errorCount := 0
-	fileCount := 0
 
 	for _, file := range files {
-		if file.FileType == obsidian.FileTypeUnknown {
-			continue
+		fmt.Printf("Processing: %s\n", file.Path)
+
+		// Generate frontmatter if not present
+		if !file.HasFrontmatter() {
+			fm, err := generator.Generate(file)
+			if err != nil {
+				fmt.Printf("  Error generating frontmatter: %v\n", err)
+				errorCount++
+				continue
+			}
+			file.Frontmatter = fm
 		}
 
-		fileCount++
-		errors := v.ValidateFile(file)
-		if len(errors) > 0 {
-			fmt.Printf("\n❌ %s:\n", file.Path)
-			for _, err := range errors {
-				fmt.Printf("  - %s\n", err)
-				errorCount++
-			}
+		// Convert links to wikilinks
+		originalContent := file.Content
+		convertedContent := linkConverter.ConvertContent(file.Content)
+		if convertedContent != originalContent {
+			file.Content = convertedContent
+			fmt.Printf("  Converted %d markdown links to wikilinks\n",
+				countLinkConversions(originalContent, convertedContent))
 		}
+
+		if validateOnly {
+			// Only validate, don't save
+			fmt.Printf("  Would add frontmatter and convert links\n")
+		} else if dryRun {
+			fmt.Printf("  DRY RUN: Would save changes to %s\n", file.Path)
+		} else {
+			// Save the modified file
+			err := file.WriteToFile()
+			if err != nil {
+				fmt.Printf("  Error saving file: %v\n", err)
+				errorCount++
+				continue
+			}
+			fmt.Printf("  Saved with frontmatter and converted links\n")
+		}
+
+		processedCount++
 	}
 
-	if errorCount == 0 {
-		fmt.Printf("\n✅ All %d files are valid!\n", fileCount)
-	} else {
-		fmt.Printf("\n⚠️  Found %d validation errors in %d files\n", errorCount, fileCount)
+	fmt.Printf("\nMigration complete: %d files processed, %d errors\n", processedCount, errorCount)
+
+	if errorCount > 0 {
+		return fmt.Errorf("migration completed with %d errors", errorCount)
 	}
 
 	return nil
 }
 
-// createBackup creates a backup of the specified directory
-func createBackup(srcPath, backupPath string) error {
-	return copyObsidianDir(srcPath, backupPath)
-}
+// runObsidianValidate validates Obsidian format compliance
+func runObsidianValidate(targetPath string) error {
+	fmt.Printf("Validating Obsidian format in %s...\n", targetPath)
 
-// restoreFromBackup restores from backup directory
-func restoreFromBackup(backupPath, destPath string) error {
-	// Remove existing directory
-	if err := os.RemoveAll(destPath); err != nil {
-		return err
+	scanner := obsidian.NewFileScanner()
+	files, err := scanner.ScanDirectory(targetPath)
+	if err != nil {
+		return fmt.Errorf("failed to scan directory: %w", err)
 	}
 
-	// Copy from backup
-	return copyObsidianDir(backupPath, destPath)
+	if len(files) == 0 {
+		fmt.Println("No markdown files found to validate.")
+		return nil
+	}
+
+	linkConverter := converter.NewLinkConverter()
+	linkConverter.BuildIndex(files)
+
+	validCount := 0
+	errorCount := 0
+	totalErrors := []string{}
+
+	for _, file := range files {
+		fmt.Printf("Validating: %s\n", file.Path)
+
+		// Check if file has frontmatter
+		if !file.HasFrontmatter() {
+			fmt.Printf("  ❌ Missing frontmatter\n")
+			totalErrors = append(totalErrors, fmt.Sprintf("%s: missing frontmatter", file.Path))
+			errorCount++
+			continue
+		}
+
+		// Validate frontmatter fields
+		if file.Frontmatter.Title == "" {
+			fmt.Printf("  ❌ Missing title in frontmatter\n")
+			totalErrors = append(totalErrors, fmt.Sprintf("%s: missing title", file.Path))
+			errorCount++
+		}
+
+		if file.Frontmatter.Type == "" {
+			fmt.Printf("  ❌ Missing type in frontmatter\n")
+			totalErrors = append(totalErrors, fmt.Sprintf("%s: missing type", file.Path))
+			errorCount++
+		}
+
+		if len(file.Frontmatter.Tags) == 0 {
+			fmt.Printf("  ❌ Missing tags in frontmatter\n")
+			totalErrors = append(totalErrors, fmt.Sprintf("%s: missing tags", file.Path))
+			errorCount++
+		}
+
+		// Validate wikilinks
+		brokenLinks := linkConverter.ValidateWikilinks(file.Content)
+		if len(brokenLinks) > 0 {
+			fmt.Printf("  ❌ Broken wikilinks: %s\n", strings.Join(brokenLinks, ", "))
+			for _, link := range brokenLinks {
+				totalErrors = append(totalErrors, fmt.Sprintf("%s: broken link %s", file.Path, link))
+			}
+			errorCount += len(brokenLinks)
+		}
+
+		if errorCount == 0 {
+			fmt.Printf("  ✅ Valid\n")
+			validCount++
+		}
+	}
+
+	fmt.Printf("\nValidation complete: %d files valid, %d errors found\n", validCount, len(totalErrors))
+
+	if len(totalErrors) > 0 {
+		fmt.Println("\nErrors found:")
+		for _, err := range totalErrors {
+			fmt.Printf("  • %s\n", err)
+		}
+		return fmt.Errorf("validation failed with %d errors", len(totalErrors))
+	}
+
+	fmt.Println("✅ All files are valid!")
+	return nil
 }
 
-// copyObsidianDir recursively copies a directory
-func copyObsidianDir(src, dst string) error {
-	return filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
+// runObsidianNavGenerate generates the navigation hub
+func runObsidianNavGenerate() error {
+	fmt.Println("Generating navigation hub...")
+
+	scanner := obsidian.NewFileScanner()
+	files, err := scanner.ScanDirectory(".")
+	if err != nil {
+		return fmt.Errorf("failed to scan directory: %w", err)
+	}
+
+	if len(files) == 0 {
+		fmt.Println("No markdown files found for navigation.")
+		return nil
+	}
+
+	// Generate navigation content
+	nav := generateNavigationContent(files)
+
+	outputPath := obsidianPath
+	if outputPath == "" {
+		outputPath = "NAVIGATOR.md"
+	}
+
+	err = os.WriteFile(outputPath, []byte(nav), 0644)
+	if err != nil {
+		return fmt.Errorf("failed to write navigation file: %w", err)
+	}
+
+	fmt.Printf("Navigation hub generated: %s\n", outputPath)
+	return nil
+}
+
+// runObsidianRevert reverts Obsidian formatting
+func runObsidianRevert(targetPath string, dryRun bool) error {
+	fmt.Printf("Reverting Obsidian formatting in %s...\n", targetPath)
+
+	scanner := obsidian.NewFileScanner()
+	files, err := scanner.ScanDirectory(targetPath)
+	if err != nil {
+		return fmt.Errorf("failed to scan directory: %w", err)
+	}
+
+	if len(files) == 0 {
+		fmt.Println("No markdown files found to revert.")
+		return nil
+	}
+
+	processedCount := 0
+	errorCount := 0
+
+	for _, file := range files {
+		fmt.Printf("Reverting: %s\n", file.Path)
+
+		modified := false
+
+		// Remove frontmatter if present
+		if file.HasFrontmatter() {
+			file.Frontmatter = nil
+			modified = true
+			fmt.Printf("  Would remove frontmatter\n")
 		}
 
-		// Get relative path
-		relPath, err := filepath.Rel(src, path)
-		if err != nil {
-			return err
+		// Convert wikilinks back to markdown links
+		originalContent := file.Content
+		revertedContent := revertWikilinksToMarkdown(file.Content)
+		if revertedContent != originalContent {
+			file.Content = revertedContent
+			modified = true
+			fmt.Printf("  Would convert wikilinks back to markdown links\n")
 		}
 
-		destPath := filepath.Join(dst, relPath)
-
-		if info.IsDir() {
-			return os.MkdirAll(destPath, info.Mode())
+		if modified {
+			if dryRun {
+				fmt.Printf("  DRY RUN: Would save reverted file\n")
+			} else {
+				err := file.WriteToFile()
+				if err != nil {
+					fmt.Printf("  Error saving file: %v\n", err)
+					errorCount++
+					continue
+				}
+				fmt.Printf("  Reverted and saved\n")
+			}
+		} else {
+			fmt.Printf("  No changes needed\n")
 		}
 
-		// Copy file
-		srcFile, err := os.Open(path)
-		if err != nil {
-			return err
-		}
-		defer srcFile.Close()
+		processedCount++
+	}
 
-		// Create destination directory if it doesn't exist
-		if err := os.MkdirAll(filepath.Dir(destPath), 0755); err != nil {
-			return err
+	fmt.Printf("\nRevert complete: %d files processed, %d errors\n", processedCount, errorCount)
+
+	if errorCount > 0 {
+		return fmt.Errorf("revert completed with %d errors", errorCount)
+	}
+
+	return nil
+}
+
+// Helper functions
+
+func countLinkConversions(original, converted string) int {
+	// Simple count of markdown link patterns that were converted
+	originalLinks := strings.Count(original, "](")
+	convertedLinks := strings.Count(converted, "](")
+	return originalLinks - convertedLinks
+}
+
+func generateNavigationContent(files []*obsidian.MarkdownFile) string {
+	var nav strings.Builder
+
+	nav.WriteString("---\n")
+	nav.WriteString("title: HELIX Workflow Navigator\n")
+	nav.WriteString("type: navigator\n")
+	nav.WriteString("tags:\n")
+	nav.WriteString("  - helix\n")
+	nav.WriteString("  - navigation\n")
+	nav.WriteString("created: " + fmt.Sprintf("%v", obsidian.NewFrontmatterGenerator()) + "\n")
+	nav.WriteString("updated: " + fmt.Sprintf("%v", obsidian.NewFrontmatterGenerator()) + "\n")
+	nav.WriteString("---\n\n")
+
+	nav.WriteString("# 🧭 HELIX Workflow Navigator\n\n")
+	nav.WriteString("Welcome to the HELIX workflow navigation hub. This page provides quick access to all workflow artifacts and documentation.\n\n")
+
+	// Group files by type
+	phases := []*obsidian.MarkdownFile{}
+	templates := []*obsidian.MarkdownFile{}
+	examples := []*obsidian.MarkdownFile{}
+	features := []*obsidian.MarkdownFile{}
+	other := []*obsidian.MarkdownFile{}
+
+	for _, file := range files {
+		if !file.HasFrontmatter() {
+			other = append(other, file)
+			continue
 		}
 
-		destFile, err := os.Create(destPath)
-		if err != nil {
-			return err
+		switch file.FileType {
+		case obsidian.FileTypePhase:
+			phases = append(phases, file)
+		case obsidian.FileTypeTemplate:
+			templates = append(templates, file)
+		case obsidian.FileTypeExample:
+			examples = append(examples, file)
+		case obsidian.FileTypeFeature:
+			features = append(features, file)
+		default:
+			other = append(other, file)
 		}
-		defer destFile.Close()
+	}
 
-		_, err = destFile.ReadFrom(srcFile)
-		return err
-	})
+	// Phases section
+	if len(phases) > 0 {
+		nav.WriteString("## 🔄 Workflow Phases\n\n")
+		for _, file := range phases {
+			title := file.GetTitle()
+			if title == "" {
+				title = filepath.Base(file.Path)
+			}
+			nav.WriteString(fmt.Sprintf("- [[%s]]\n", title))
+		}
+		nav.WriteString("\n")
+	}
+
+	// Templates section
+	if len(templates) > 0 {
+		nav.WriteString("## 📋 Templates\n\n")
+		for _, file := range templates {
+			title := file.GetTitle()
+			if title == "" {
+				title = filepath.Base(file.Path)
+			}
+			nav.WriteString(fmt.Sprintf("- [[%s]]\n", title))
+		}
+		nav.WriteString("\n")
+	}
+
+	// Examples section
+	if len(examples) > 0 {
+		nav.WriteString("## 💡 Examples\n\n")
+		for _, file := range examples {
+			title := file.GetTitle()
+			if title == "" {
+				title = filepath.Base(file.Path)
+			}
+			nav.WriteString(fmt.Sprintf("- [[%s]]\n", title))
+		}
+		nav.WriteString("\n")
+	}
+
+	// Features section
+	if len(features) > 0 {
+		nav.WriteString("## 🚀 Features\n\n")
+		for _, file := range features {
+			title := file.GetTitle()
+			if title == "" {
+				title = filepath.Base(file.Path)
+			}
+			nav.WriteString(fmt.Sprintf("- [[%s]]\n", title))
+		}
+		nav.WriteString("\n")
+	}
+
+	// Tag index
+	nav.WriteString("## 🏷️ Tag Index\n\n")
+	tagMap := make(map[string][]*obsidian.MarkdownFile)
+	for _, file := range files {
+		for _, tag := range file.GetTags() {
+			tagMap[tag] = append(tagMap[tag], file)
+		}
+	}
+
+	for tag, tagFiles := range tagMap {
+		nav.WriteString(fmt.Sprintf("### %s\n", tag))
+		for _, file := range tagFiles {
+			title := file.GetTitle()
+			if title == "" {
+				title = filepath.Base(file.Path)
+			}
+			nav.WriteString(fmt.Sprintf("- [[%s]]\n", title))
+		}
+		nav.WriteString("\n")
+	}
+
+	nav.WriteString("---\n")
+	nav.WriteString("*Generated automatically by DDx Obsidian integration*\n")
+
+	return nav.String()
+}
+
+func revertWikilinksToMarkdown(content string) string {
+	// Simple reversion - convert [[Link]] back to [Link](Link.md)
+	// This is a basic implementation; a full implementation would need
+	// to track the original paths
+	result := content
+
+	// Convert simple wikilinks [[Link]] to [Link](Link.md)
+	result = strings.ReplaceAll(result, "[[", "[")
+	result = strings.ReplaceAll(result, "]]", "]()")
+
+	// This is a simplified reversion - in practice, we'd need to maintain
+	// a mapping of wikilinks to original paths
+	return result
 }

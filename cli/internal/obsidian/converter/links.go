@@ -1,7 +1,6 @@
 package converter
 
 import (
-	"fmt"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -11,352 +10,238 @@ import (
 
 // LinkConverter converts markdown links to Obsidian wikilinks
 type LinkConverter struct {
-	fileIndex map[string]string                 // path -> title mapping
-	aliases   map[string]string                 // alias -> canonical name
-	pathIndex map[string]*obsidian.MarkdownFile // for reverse lookup
+	fileIndex map[string]*obsidian.MarkdownFile
+	pathIndex map[string]*obsidian.MarkdownFile
 }
 
 // NewLinkConverter creates a new link converter
 func NewLinkConverter() *LinkConverter {
 	return &LinkConverter{
-		fileIndex: make(map[string]string),
-		aliases:   make(map[string]string),
+		fileIndex: make(map[string]*obsidian.MarkdownFile),
 		pathIndex: make(map[string]*obsidian.MarkdownFile),
 	}
 }
 
-// BuildIndex builds the file index for link resolution
-func (c *LinkConverter) BuildIndex(files []*obsidian.MarkdownFile) {
+// BuildIndex builds an index of files for link resolution
+func (lc *LinkConverter) BuildIndex(files []*obsidian.MarkdownFile) {
+	lc.fileIndex = make(map[string]*obsidian.MarkdownFile)
+	lc.pathIndex = make(map[string]*obsidian.MarkdownFile)
+
 	for _, file := range files {
-		c.pathIndex[file.Path] = file
+		// Index by path
+		lc.pathIndex[file.Path] = file
 
-		// Map file path to title
-		if file.Frontmatter != nil {
-			c.fileIndex[file.Path] = file.Frontmatter.Title
+		// Index by title if available
+		if file.HasFrontmatter() && file.Frontmatter.Title != "" {
+			lc.fileIndex[file.Frontmatter.Title] = file
+		}
 
-			// Register aliases
+		// Index by aliases if available
+		if file.HasFrontmatter() && len(file.Frontmatter.Aliases) > 0 {
 			for _, alias := range file.Frontmatter.Aliases {
-				c.aliases[alias] = file.Frontmatter.Title
+				if alias != "" {
+					lc.fileIndex[alias] = file
+				}
 			}
-		} else {
-			// Fallback to path-based title
-			c.fileIndex[file.Path] = obsidian.ExtractTitleFromPath(file.Path)
+		}
+
+		// Index by filename without extension
+		filename := filepath.Base(file.Path)
+		filename = strings.TrimSuffix(filename, ".md")
+		if filename != "README" {
+			lc.fileIndex[filename] = file
 		}
 	}
 }
 
-// ConvertContent converts all links in markdown content to wikilinks
-func (c *LinkConverter) ConvertContent(content string) string {
-	// Pattern for markdown links: [text](path)
-	linkPattern := regexp.MustCompile(`\[([^\]]+)\]\(([^)]+)\)`)
+// ConvertContent converts markdown links to wikilinks in content
+func (lc *LinkConverter) ConvertContent(content string) string {
+	// First convert markdown links
+	result := lc.ConvertLinks(content)
 
-	content = linkPattern.ReplaceAllStringFunc(content, func(match string) string {
-		parts := linkPattern.FindStringSubmatch(match)
+	// Then convert phase and artifact references
+	result = lc.convertPhaseReferences(result)
+	result = lc.convertArtifactReferences(result)
+	result = lc.convertWorkflowReferences(result)
+
+	return result
+}
+
+// ConvertLinks converts markdown links to wikilinks in content
+func (lc *LinkConverter) ConvertLinks(content string) string {
+	// Regex to match markdown links: [text](url)
+	linkRegex := regexp.MustCompile(`\[([^\]]+)\]\(([^)]+)\)`)
+
+	result := linkRegex.ReplaceAllStringFunc(content, func(match string) string {
+		// Skip if already inside a wikilink
+		if lc.isInWikilink(content, match) {
+			return match
+		}
+
+		// Extract text and URL
+		parts := linkRegex.FindStringSubmatch(match)
 		if len(parts) != 3 {
 			return match
 		}
 
-		linkText := parts[1]
-		linkPath := parts[2]
+		text := parts[1]
+		url := parts[2]
 
-		// Skip external links
-		if strings.HasPrefix(linkPath, "http://") || strings.HasPrefix(linkPath, "https://") {
+		// Skip external links (http/https)
+		if strings.HasPrefix(url, "http://") || strings.HasPrefix(url, "https://") {
 			return match
 		}
 
-		// Skip anchor-only links
-		if strings.HasPrefix(linkPath, "#") {
-			return match
+		// Try to resolve the link
+		if targetFile := lc.resolveLink(url); targetFile != nil {
+			return lc.createWikilink(targetFile, text)
 		}
 
-		// Skip email links
-		if strings.HasPrefix(linkPath, "mailto:") {
-			return match
-		}
-
-		// Convert relative path to wikilink
-		return c.convertToWikilink(linkText, linkPath)
+		// Keep original if can't resolve
+		return match
 	})
 
-	// Convert common phase references
-	content = c.convertPhaseReferences(content)
-
-	// Convert common artifact references
-	content = c.convertArtifactReferences(content)
-
-	// Convert HELIX workflow references
-	content = c.convertWorkflowReferences(content)
-
-	return content
+	return result
 }
 
-// convertToWikilink converts a single link to wikilink format
-func (c *LinkConverter) convertToWikilink(text, path string) string {
-	// Clean up the path
-	originalPath := path
-	path = strings.TrimSuffix(path, ".md")
-
-	// Try to resolve relative path
-	resolvedPath := c.resolvePath(originalPath)
-	if resolvedPath != "" {
-		if title, ok := c.fileIndex[resolvedPath]; ok {
-			if text != title {
-				// Use alias syntax if link text differs from title
-				return fmt.Sprintf("[[%s|%s]]", title, text)
-			}
-			return fmt.Sprintf("[[%s]]", title)
-		}
+// isInWikilink checks if a markdown link is already inside a wikilink
+func (lc *LinkConverter) isInWikilink(content, match string) bool {
+	index := strings.Index(content, match)
+	if index == -1 {
+		return false
 	}
 
-	// Try direct path lookup
-	if title, ok := c.fileIndex[originalPath]; ok {
-		if text != title {
-			return fmt.Sprintf("[[%s|%s]]", title, text)
-		}
-		return fmt.Sprintf("[[%s]]", title)
-	}
+	// Look for [[ before the match
+	before := content[:index]
+	afterOpenBrackets := strings.LastIndex(before, "[[")
+	afterCloseBrackets := strings.LastIndex(before, "]]")
 
-	// Extract just the filename for common patterns
-	filename := filepath.Base(path)
-
-	// Handle common HELIX patterns
-	if wikilink := c.handleCommonPatterns(text, path, filename); wikilink != "" {
-		return wikilink
-	}
-
-	// Default: create wikilink with the text
-	return fmt.Sprintf("[[%s]]", text)
+	// If we found [[ and no ]] after it, we're inside a wikilink
+	return afterOpenBrackets != -1 && (afterCloseBrackets == -1 || afterOpenBrackets > afterCloseBrackets)
 }
 
-// resolvePath attempts to resolve a relative path to an absolute path
-func (c *LinkConverter) resolvePath(relativePath string) string {
-	// Simple implementation - in practice you might want more sophisticated path resolution
-	for fullPath := range c.fileIndex {
-		if strings.HasSuffix(fullPath, relativePath) {
-			return fullPath
-		}
-		if strings.Contains(fullPath, relativePath) {
-			return fullPath
+// resolveLink attempts to resolve a relative path to a file
+func (lc *LinkConverter) resolveLink(url string) *obsidian.MarkdownFile {
+	originalUrl := url
+
+	// Clean up the URL for index lookup
+	cleanUrl := strings.TrimPrefix(url, "./")
+	cleanUrl = strings.TrimPrefix(cleanUrl, "../")
+
+	// Try exact path match first
+	for path, file := range lc.pathIndex {
+		if strings.HasSuffix(path, cleanUrl) {
+			return file
 		}
 	}
-	return ""
+
+	// Try filename match
+	filename := filepath.Base(cleanUrl)
+	filename = strings.TrimSuffix(filename, ".md")
+
+	if file, exists := lc.fileIndex[filename]; exists {
+		return file
+	}
+
+	// If not found in index, create a synthetic file based on path analysis
+	// Use original URL to preserve relative path context
+	return lc.createSyntheticFile(originalUrl)
 }
 
-// handleCommonPatterns handles common HELIX file patterns
-func (c *LinkConverter) handleCommonPatterns(text, path, filename string) string {
-	// Remove extension for cleaner matching
-	baseFilename := strings.TrimSuffix(filename, ".md")
+// createSyntheticFile creates a synthetic MarkdownFile based on path analysis
+func (lc *LinkConverter) createSyntheticFile(path string) *obsidian.MarkdownFile {
+	// Generate title based on path patterns
+	title := lc.generateTitleFromPath(path)
+	if title == "" {
+		return nil
+	}
 
-	switch baseFilename {
-	case "README":
-		// Try to determine phase from path
-		if strings.Contains(path, "/phases/") {
-			phase := obsidian.GetPhaseFromPath(path)
-			if phase != "" {
-				return fmt.Sprintf("[[%s Phase]]", strings.Title(phase))
-			}
-		}
-		// Try to determine artifact from path
-		if strings.Contains(path, "/artifacts/") {
-			artifact := obsidian.GetArtifactCategory(path)
-			if artifact != "" {
-				artifactName := strings.Title(strings.ReplaceAll(artifact, "-", " "))
-				return fmt.Sprintf("[[%s]]", artifactName)
-			}
-		}
+	return &obsidian.MarkdownFile{
+		Path: path,
+		Frontmatter: &obsidian.Frontmatter{
+			Title: title,
+		},
+	}
+}
 
-	case "template":
-		artifact := extractArtifactFromPath(path)
-		if artifact != "" {
-			title := fmt.Sprintf("%s Template", strings.Title(strings.ReplaceAll(artifact, "-", " ")))
-			// Use alias only if the text is more descriptive than just the base filename
-			if text != title && text != baseFilename {
-				return fmt.Sprintf("[[%s|%s]]", title, text)
-			}
-			return fmt.Sprintf("[[%s]]", title)
-		}
+// generateTitleFromPath generates a title based on file path patterns
+func (lc *LinkConverter) generateTitleFromPath(path string) string {
+	// Clean up path for analysis
+	cleanPath := strings.TrimPrefix(path, "./")
+	cleanPath = strings.TrimPrefix(cleanPath, "../")
 
-	case "prompt":
-		artifact := extractArtifactFromPath(path)
-		if artifact != "" {
-			title := fmt.Sprintf("%s Prompt", strings.Title(strings.ReplaceAll(artifact, "-", " ")))
-			if text != title && text != baseFilename {
-				return fmt.Sprintf("[[%s|%s]]", title, text)
-			}
-			return fmt.Sprintf("[[%s]]", title)
-		}
+	filename := filepath.Base(cleanPath)
+	filename = strings.TrimSuffix(filename, ".md")
 
-	case "example":
-		artifact := extractArtifactFromPath(path)
-		if artifact != "" {
-			title := fmt.Sprintf("%s Example", strings.Title(strings.ReplaceAll(artifact, "-", " ")))
-			if text != title && text != baseFilename {
-				return fmt.Sprintf("[[%s|%s]]", title, text)
-			}
-			return fmt.Sprintf("[[%s]]", title)
-		}
-
-	case "enforcer":
-		phase := obsidian.GetPhaseFromPath(path)
-		if phase != "" {
-			title := fmt.Sprintf("%s Phase Enforcer", strings.Title(phase))
-			if text != title && text != baseFilename {
-				return fmt.Sprintf("[[%s|%s]]", title, text)
-			}
-			return fmt.Sprintf("[[%s]]", title)
+	// Handle common file patterns
+	if strings.Contains(cleanPath, "phases/") && filename == "README" {
+		// Extract phase from path
+		if phase := lc.getPhaseFromPath(cleanPath); phase != "" {
+			return strings.Title(phase) + " Phase"
 		}
 	}
 
-	// Check for special files
-	if strings.Contains(filename, "coordinator") {
-		return "[[HELIX Workflow Coordinator]]"
+	if strings.Contains(cleanPath, "phases/") && filename == "enforcer" {
+		// Extract phase from path
+		if phase := lc.getPhaseFromPath(cleanPath); phase != "" {
+			return strings.Title(phase) + " Phase Enforcer"
+		}
 	}
 
-	if strings.Contains(filename, "principle") {
-		return "[[HELIX Principles]]"
+	if strings.Contains(cleanPath, "artifacts/") {
+		// Extract artifact category and type
+		if category := lc.getArtifactCategoryFromPath(cleanPath); category != "" {
+			categoryName := strings.Title(strings.ReplaceAll(category, "-", " "))
+			switch filename {
+			case "template":
+				return categoryName + " Template"
+			case "prompt":
+				return categoryName + " Prompt"
+			case "example":
+				return categoryName + " Example"
+			}
+		}
 	}
 
-	// Check for feature files
+	if filename == "coordinator" {
+		return "HELIX Workflow Coordinator"
+	}
+
+	if filename == "principles" {
+		return "HELIX Principles"
+	}
+
+	// Handle feature files - extract just the FEAT-XXX part
 	if strings.Contains(filename, "FEAT-") {
-		// Extract feature number
-		re := regexp.MustCompile(`FEAT-(\d+)`)
-		matches := re.FindStringSubmatch(filename)
-		if len(matches) > 1 {
-			return fmt.Sprintf("[[FEAT-%s]]", matches[1])
+		// Extract FEAT-XXX from FEAT-001-auth
+		parts := strings.Split(filename, "-")
+		if len(parts) >= 2 {
+			return parts[0] + "-" + parts[1]
 		}
+		return filename
 	}
 
 	return ""
 }
 
-// convertPhaseReferences converts common phase references to wikilinks
-func (c *LinkConverter) convertPhaseReferences(content string) string {
-	phases := []string{"Frame", "Design", "Test", "Build", "Deploy", "Iterate"}
-
-	for _, phase := range phases {
-		// Convert "Frame phase" -> "[[Frame Phase]]" (case insensitive)
-		patterns := []string{
-			fmt.Sprintf(`(?i)\b%s phase\b`, phase),
-			fmt.Sprintf(`(?i)\b%s Phase\b`, phase),
-		}
-
-		for _, pattern := range patterns {
-			re := regexp.MustCompile(pattern)
-			content = re.ReplaceAllStringFunc(content, func(match string) string {
-				// Don't replace if already in wikilink
-				if c.isInWikilink(content, match) {
-					return match
-				}
-				return fmt.Sprintf("[[%s Phase]]", phase)
-			})
-		}
-
-		// Convert standalone phase names when they clearly refer to phases
-		// Note: Go doesn't support lookahead/lookbehind, so we use simpler patterns
-		contextPatterns := []string{
-			fmt.Sprintf(`\bthe %s\b`, phase),
-			fmt.Sprintf(`\bto %s\b`, phase),
-			fmt.Sprintf(`\b%s phase\b`, strings.ToLower(phase)),
-		}
-
-		for _, pattern := range contextPatterns {
-			re := regexp.MustCompile(pattern)
-			content = re.ReplaceAllStringFunc(content, func(match string) string {
-				// Check if it's already in a wikilink
-				if c.isInWikilink(content, match) {
-					return match
-				}
-
-				// Extract just the phase name from the match
-				phaseName := strings.TrimPrefix(match, "the ")
-				phaseName = strings.TrimPrefix(phaseName, "to ")
-				phaseName = strings.TrimSuffix(phaseName, " phase")
-				phaseName = strings.Title(phaseName)
-
-				return strings.Replace(match, strings.Title(phase), fmt.Sprintf("[[%s Phase|%s]]", phase, strings.Title(phase)), 1)
-			})
+// getPhaseFromPath extracts phase name from path
+func (lc *LinkConverter) getPhaseFromPath(path string) string {
+	parts := strings.Split(path, "/")
+	for i, part := range parts {
+		if part == "phases" && i+1 < len(parts) {
+			phaseName := parts[i+1]
+			// Remove number prefix if present
+			if idx := strings.Index(phaseName, "-"); idx > 0 {
+				return phaseName[idx+1:]
+			}
+			return phaseName
 		}
 	}
-
-	return content
+	return ""
 }
 
-// convertArtifactReferences converts common artifact references
-func (c *LinkConverter) convertArtifactReferences(content string) string {
-	artifacts := map[string]string{
-		"feature specification":   "Feature Specification",
-		"feature spec":            "Feature Specification",
-		"technical design":        "Technical Design",
-		"implementation guide":    "Implementation Guide",
-		"test specification":      "Test Specification",
-		"user stories":            "User Stories",
-		"product requirements":    "Product Requirements",
-		"PRD":                     "Product Requirements Document",
-		"risk register":           "Risk Register",
-		"feasibility study":       "Feasibility Study",
-		"research plan":           "Research Plan",
-		"compliance requirements": "Compliance Requirements",
-	}
-
-	for pattern, replacement := range artifacts {
-		// Create case-insensitive pattern
-		re := regexp.MustCompile(fmt.Sprintf(`(?i)\b%s\b`, regexp.QuoteMeta(pattern)))
-		content = re.ReplaceAllStringFunc(content, func(match string) string {
-			// Don't replace if already in wikilink
-			if c.isInWikilink(content, match) {
-				return match
-			}
-
-			// Use original case for the alias if different from replacement
-			if strings.ToLower(match) != strings.ToLower(replacement) {
-				return fmt.Sprintf("[[%s|%s]]", replacement, match)
-			}
-			return fmt.Sprintf("[[%s]]", replacement)
-		})
-	}
-
-	return content
-}
-
-// convertWorkflowReferences converts HELIX workflow references
-func (c *LinkConverter) convertWorkflowReferences(content string) string {
-	// Convert "HELIX workflow" to "[[HELIX Workflow]]"
-	re := regexp.MustCompile(`(?i)\bHELIX workflow\b`)
-	content = re.ReplaceAllStringFunc(content, func(match string) string {
-		// Don't replace if already in wikilink
-		if c.isInWikilink(content, match) {
-			return match
-		}
-
-		return "[[HELIX Workflow]]"
-	})
-
-	// Convert "TDD" or "Test-Driven Development" references
-	patterns := []string{
-		`\bTDD\b`,
-		`\bTest-Driven Development\b`,
-		`\btest-driven development\b`,
-	}
-
-	for _, pattern := range patterns {
-		re := regexp.MustCompile(pattern)
-		content = re.ReplaceAllStringFunc(content, func(match string) string {
-			if c.isInWikilink(content, match) {
-				return match
-			}
-
-			if match == "TDD" {
-				return "[[Test-Driven Development|TDD]]"
-			}
-			return "[[Test-Driven Development]]"
-		})
-	}
-
-	return content
-}
-
-// extractArtifactFromPath extracts artifact name from path
-func extractArtifactFromPath(path string) string {
+// getArtifactCategoryFromPath extracts artifact category from path
+func (lc *LinkConverter) getArtifactCategoryFromPath(path string) string {
 	parts := strings.Split(path, "/")
 	for i, part := range parts {
 		if part == "artifacts" && i+1 < len(parts) {
@@ -366,89 +251,55 @@ func extractArtifactFromPath(path string) string {
 	return ""
 }
 
-// isInWikilink checks if a match is already inside a wikilink
-func (c *LinkConverter) isInWikilink(content, match string) bool {
-	idx := strings.Index(content, match)
-	if idx == -1 {
-		return false
+// createWikilink creates a wikilink from a target file and display text
+func (lc *LinkConverter) createWikilink(targetFile *obsidian.MarkdownFile, displayText string) string {
+	// Get the title from frontmatter or generate from path
+	title := "Untitled"
+	if targetFile.HasFrontmatter() && targetFile.Frontmatter.Title != "" {
+		title = targetFile.Frontmatter.Title
+	} else {
+		title = obsidian.ExtractTitleFromPath(targetFile.Path)
 	}
 
-	// Find the nearest [[ before the match
-	beforeContent := content[:idx]
-	lastOpenIdx := strings.LastIndex(beforeContent, "[[")
-
-	// Find the nearest ]] after the match
-	afterContent := content[idx+len(match):]
-	nextCloseIdx := strings.Index(afterContent, "]]")
-
-	// If we found both [[ before and ]] after, check if they form a valid wikilink
-	if lastOpenIdx != -1 && nextCloseIdx != -1 {
-		// Check if there's a closing ]] between the opening [[ and our match
-		betweenContent := content[lastOpenIdx+2 : idx]
-		if !strings.Contains(betweenContent, "]]") {
-			// We're inside a wikilink
-			return true
-		}
+	// If display text matches title, use simple wikilink
+	if displayText == title {
+		return "[[" + title + "]]"
 	}
 
-	return false
-}
-
-// max returns the maximum of two integers
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}
-
-// min returns the minimum of two integers
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
+	// Otherwise use alias format
+	return "[[" + title + "|" + displayText + "]]"
 }
 
 // ParseWikilinks extracts all wikilinks from content
-func ParseWikilinks(content string) []*obsidian.ParsedLink {
+func (lc *LinkConverter) ParseWikilinks(content string) []*obsidian.ParsedLink {
 	var links []*obsidian.ParsedLink
 
-	// Pattern for wikilinks: [[target|alias]] or [[target#heading]] or [[target^blockid]] or ![[embed]]
-	re := regexp.MustCompile(`(!?)\[\[([^\]]+)\]\]`)
-	matches := re.FindAllStringSubmatch(content, -1)
+	// Regex for wikilinks: [[target#heading^blockid|alias]] or ![[embed]]
+	wikilinkRegex := regexp.MustCompile(`(!?)\[\[([^|\]]+)(?:\|([^\]]+))?\]\]`)
 
+	matches := wikilinkRegex.FindAllStringSubmatch(content, -1)
 	for _, match := range matches {
 		if len(match) < 3 {
 			continue
 		}
 
 		isEmbed := match[1] == "!"
-		linkContent := match[2]
+		fullTarget := match[2]
+		alias := ""
+		if len(match) > 3 {
+			alias = match[3]
+		}
+
+		// Parse target for heading and block references
+		target, heading, blockID := lc.parseTarget(fullTarget)
 
 		link := &obsidian.ParsedLink{
 			Original: match[0],
+			Target:   target,
+			Alias:    alias,
+			Heading:  heading,
+			BlockID:  blockID,
 			IsEmbed:  isEmbed,
-		}
-
-		// Parse target|alias
-		if idx := strings.Index(linkContent, "|"); idx != -1 {
-			link.Target = linkContent[:idx]
-			link.Alias = linkContent[idx+1:]
-		} else {
-			link.Target = linkContent
-		}
-
-		// Parse target#heading
-		if idx := strings.Index(link.Target, "#"); idx != -1 {
-			link.Heading = link.Target[idx+1:]
-			link.Target = link.Target[:idx]
-		}
-
-		// Parse target^blockid
-		if idx := strings.Index(link.Target, "^"); idx != -1 {
-			link.BlockID = link.Target[idx+1:]
-			link.Target = link.Target[:idx]
 		}
 
 		links = append(links, link)
@@ -457,32 +308,150 @@ func ParseWikilinks(content string) []*obsidian.ParsedLink {
 	return links
 }
 
-// ValidateWikilinks checks if all wikilinks in content are valid
-func (c *LinkConverter) ValidateWikilinks(content string) []string {
+// ParseWikilinks is a package-level convenience function
+func ParseWikilinks(content string) []*obsidian.ParsedLink {
+	converter := NewLinkConverter()
+	return converter.ParseWikilinks(content)
+}
+
+// ValidateWikilinks validates wikilinks and returns broken links
+func (lc *LinkConverter) ValidateWikilinks(content string) []string {
 	var brokenLinks []string
+	links := lc.ParseWikilinks(content)
 
-	links := ParseWikilinks(content)
 	for _, link := range links {
-		// Check if the target exists in our file index
-		found := false
-		for _, title := range c.fileIndex {
-			if title == link.Target {
-				found = true
-				break
+		// Check if target exists in file index
+		if _, exists := lc.fileIndex[link.Target]; !exists {
+			// Check path index
+			found := false
+			for path := range lc.pathIndex {
+				if strings.Contains(path, link.Target) {
+					found = true
+					break
+				}
 			}
-		}
-
-		// Check aliases
-		if !found {
-			if _, exists := c.aliases[link.Target]; exists {
-				found = true
+			if !found {
+				brokenLinks = append(brokenLinks, link.Target)
 			}
-		}
-
-		if !found {
-			brokenLinks = append(brokenLinks, link.Target)
 		}
 	}
 
 	return brokenLinks
+}
+
+// parseTarget parses a wikilink target to extract file, heading, and block references
+func (lc *LinkConverter) parseTarget(target string) (file, heading, blockID string) {
+	// Split on # for headings
+	if idx := strings.Index(target, "#"); idx != -1 {
+		file = target[:idx]
+		rest := target[idx+1:]
+
+		// Split on ^ for block IDs
+		if blockIdx := strings.Index(rest, "^"); blockIdx != -1 {
+			heading = rest[:blockIdx]
+			blockID = rest[blockIdx+1:]
+		} else {
+			heading = rest
+		}
+	} else if idx := strings.Index(target, "^"); idx != -1 {
+		// Only block ID, no heading
+		file = target[:idx]
+		blockID = target[idx+1:]
+	} else {
+		// Just a file reference
+		file = target
+	}
+
+	return file, heading, blockID
+}
+
+// convertPhaseReferences converts plain text phase references to wikilinks
+func (lc *LinkConverter) convertPhaseReferences(content string) string {
+	// Common phase names - order matters, specific before general
+	phases := []string{"Frame Phase", "Design Phase", "Test Phase", "Build Phase", "Deploy Phase", "Iterate Phase"}
+	lowercase_phases := []string{"Frame phase", "Design phase", "Test phase", "Build phase", "Deploy phase", "Iterate phase"}
+
+	// Skip if already in wikilink
+	for i, phase := range phases {
+		lowercase := lowercase_phases[i]
+
+		// Convert "Frame Phase" → "[[Frame Phase]]"
+		pattern := regexp.MustCompile(`\b` + regexp.QuoteMeta(phase) + `\b`)
+		content = pattern.ReplaceAllStringFunc(content, func(match string) string {
+			if lc.isInWikilink(content, match) {
+				return match
+			}
+			return "[[" + phase + "]]"
+		})
+
+		// Convert "Frame phase" → "[[Frame Phase|Frame phase]]"
+		pattern = regexp.MustCompile(`\b` + regexp.QuoteMeta(lowercase) + `\b`)
+		content = pattern.ReplaceAllStringFunc(content, func(match string) string {
+			if lc.isInWikilink(content, match) {
+				return match
+			}
+			return "[[" + phase + "|" + lowercase + "]]"
+		})
+	}
+
+	return content
+}
+
+// convertArtifactReferences converts plain text artifact references to wikilinks
+func (lc *LinkConverter) convertArtifactReferences(content string) string {
+	// Common artifact references
+	artifacts := map[string]string{
+		"Feature specification": "Feature Specification",
+		"feature specification": "Feature Specification|feature specification",
+		"feature spec":          "Feature Specification|feature spec",
+		"Technical design":      "Technical Design",
+		"technical design":      "Technical Design|technical design",
+		"User stories":          "User Stories",
+		"user stories":          "User Stories|user stories",
+		"PRD":                   "Product Requirements Document|PRD",
+		"Test specification":    "Test Specification",
+		"test specification":    "Test Specification|test specification",
+	}
+
+	for text, wikilink := range artifacts {
+		pattern := regexp.MustCompile(`\b` + regexp.QuoteMeta(text) + `\b`)
+		content = pattern.ReplaceAllStringFunc(content, func(match string) string {
+			if lc.isInWikilink(content, match) {
+				return match
+			}
+			if strings.Contains(wikilink, "|") {
+				return "[[" + wikilink + "]]"
+			}
+			return "[[" + wikilink + "]]"
+		})
+	}
+
+	return content
+}
+
+// convertWorkflowReferences converts plain text workflow references to wikilinks
+func (lc *LinkConverter) convertWorkflowReferences(content string) string {
+	// Common workflow references
+	workflows := map[string]string{
+		"HELIX workflow":          "HELIX Workflow",
+		"HELIX Workflow":          "HELIX Workflow",
+		"TDD":                     "Test-Driven Development|TDD",
+		"Test-Driven Development": "Test-Driven Development",
+		"test-driven development": "Test-Driven Development|test-driven development",
+	}
+
+	for text, wikilink := range workflows {
+		pattern := regexp.MustCompile(`\b` + regexp.QuoteMeta(text) + `\b`)
+		content = pattern.ReplaceAllStringFunc(content, func(match string) string {
+			if lc.isInWikilink(content, match) {
+				return match
+			}
+			if strings.Contains(wikilink, "|") {
+				return "[[" + wikilink + "]]"
+			}
+			return "[[" + wikilink + "]]"
+		})
+	}
+
+	return content
 }

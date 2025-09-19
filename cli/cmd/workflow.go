@@ -111,6 +111,7 @@ func init() {
 	workflowCmd.AddCommand(workflowInitCmd)
 	workflowCmd.AddCommand(workflowValidateCmd)
 	workflowCmd.AddCommand(workflowNextCmd)
+	workflowCmd.AddCommand(workflowAutoCmd)
 
 	// Flags
 	workflowSyncCmd.Flags().BoolVar(&workflowWatch, "watch", false, "Continuously watch and update context")
@@ -551,14 +552,24 @@ func generateWorkflowContext(state *WorkflowState) string {
 
 	// Auto-prompts section
 	sb.WriteString("<!-- AUTO-PROMPTS:START -->\n")
-	sb.WriteString("## Workflow Auto-Prompts\n\n")
-	sb.WriteString("When you complete a task, automatically ask:\n")
-	sb.WriteString(`"I've finished the previous task. Based on our HELIX workflow state, what should I work on next?"` + "\n\n")
+	sb.WriteString("## Workflow Auto-Continuation\n\n")
+	sb.WriteString("**CRITICAL**: When you complete a task, automatically continue to the next action without asking. Use this pattern:\n\n")
+	sb.WriteString("```\n")
+	sb.WriteString("I've completed [previous task]. Based on our HELIX workflow state, I'll now work on: [next action]\n")
+	sb.WriteString("```\n\n")
 
 	if len(state.NextActions) > 0 {
-		sb.WriteString("Current suggested next action:\n")
-		sb.WriteString(fmt.Sprintf(`"%s"`+"\n", state.NextActions[0]))
+		sb.WriteString(fmt.Sprintf("**Current Next Action**: %s\n\n", state.NextActions[0]))
 	}
+
+	sb.WriteString("**Auto-Loop Instructions**:\n")
+	sb.WriteString("1. After completing any task, immediately check the workflow state\n")
+	sb.WriteString("2. Automatically start the next action from the NextActions list\n")
+	sb.WriteString("3. Update workflow context and continue seamlessly\n")
+	sb.WriteString("4. No manual prompts or questions - maintain continuous flow\n")
+	sb.WriteString("5. If all phase tasks are complete, automatically validate and advance to next phase\n\n")
+
+	sb.WriteString("**Phase Completion Auto-Advance**: When current phase tasks are complete, automatically run `ddx workflow advance` and continue with the new phase's first task.\n")
 	sb.WriteString("<!-- AUTO-PROMPTS:END -->\n\n")
 
 	return sb.String()
@@ -634,21 +645,53 @@ func getNextActionSummary(actions []string) string {
 func updateTaskCompletionStatus(state *WorkflowState) error {
 	// Map of task patterns to file/directory checks
 	taskChecks := map[string]func() bool{
+		// Frame phase tasks
 		"Create problem statement document (docs/01-frame/problem.md)": func() bool {
-			return fileExists("docs/01-frame/problem.md")
+			return fileExists("docs/01-frame/problem.md") && hasMinimumContent("docs/01-frame/problem.md", 200)
 		},
 		"Define user stories and personas (docs/01-frame/user-stories/)": func() bool {
 			return dirExists("docs/01-frame/user-stories") && hasFiles("docs/01-frame/user-stories")
 		},
 		"Identify stakeholders and requirements (docs/01-frame/stakeholders.md)": func() bool {
-			return fileExists("docs/01-frame/stakeholders.md")
+			return fileExists("docs/01-frame/stakeholders.md") && hasMinimumContent("docs/01-frame/stakeholders.md", 200)
 		},
 		"Create risk assessment (docs/01-frame/risks.md)": func() bool {
-			return fileExists("docs/01-frame/risks.md")
+			return fileExists("docs/01-frame/risks.md") && hasMinimumContent("docs/01-frame/risks.md", 200)
 		},
 		"Define success metrics (docs/01-frame/metrics.md)": func() bool {
-			return fileExists("docs/01-frame/metrics.md")
+			return fileExists("docs/01-frame/metrics.md") && hasMinimumContent("docs/01-frame/metrics.md", 200)
 		},
+		// Design phase tasks
+		"Create architecture overview (docs/02-design/architecture.md)": func() bool {
+			return fileExists("docs/02-design/architecture.md") && hasMinimumContent("docs/02-design/architecture.md", 300)
+		},
+		"Define API contracts (docs/02-design/api-contracts/)": func() bool {
+			return dirExists("docs/02-design/api-contracts") && hasFiles("docs/02-design/api-contracts")
+		},
+		"Create database schema (docs/02-design/schema.md)": func() bool {
+			return fileExists("docs/02-design/schema.md") && hasMinimumContent("docs/02-design/schema.md", 200)
+		},
+		"Design component structure (docs/02-design/components.md)": func() bool {
+			return fileExists("docs/02-design/components.md") && hasMinimumContent("docs/02-design/components.md", 200)
+		},
+		"Create deployment strategy (docs/02-design/deployment.md)": func() bool {
+			return fileExists("docs/02-design/deployment.md") && hasMinimumContent("docs/02-design/deployment.md", 200)
+		},
+		// Test phase tasks
+		"Write failing unit tests for core functionality": func() bool {
+			return hasTestFiles() && hasFailingTests()
+		},
+		"Create integration test scenarios": func() bool {
+			return hasIntegrationTests()
+		},
+		"Define acceptance criteria tests": func() bool {
+			return fileExists("docs/03-test/acceptance-criteria.md")
+		},
+		// Build phase tasks
+		"Implement core functionality to pass tests": func() bool {
+			return hasImplementation() && hasPassingTests()
+		},
+		// Add more phases as needed
 	}
 
 	// Check each next action and move completed ones to completed list
@@ -680,6 +723,15 @@ func updateTaskCompletionStatus(state *WorkflowState) error {
 	if len(newlyCompleted) > 0 {
 		state.LastUpdated = time.Now().Format("2006-01-02 15:04:05")
 		fmt.Printf("✅ Detected completed tasks: %v\n", newlyCompleted)
+
+		// Check if phase is complete and auto-advance if needed
+		if len(remainingActions) == 0 {
+			fmt.Printf("🎉 Phase %s complete! Checking for auto-advance...\n", strings.Title(state.CurrentPhase))
+			if complete, _ := validatePhaseCompletion(state.CurrentPhase); complete {
+				fmt.Printf("🚀 Auto-advancing to next phase...\n")
+				triggerAutoAdvance(state)
+			}
+		}
 	}
 
 	return nil
@@ -706,6 +758,157 @@ func contains(slice []string, item string) bool {
 		}
 	}
 	return false
+}
+
+// Enhanced validation functions
+func hasMinimumContent(filepath string, minBytes int) bool {
+	if !fileExists(filepath) {
+		return false
+	}
+	info, err := os.Stat(filepath)
+	if err != nil {
+		return false
+	}
+	return info.Size() >= int64(minBytes)
+}
+
+func hasTestFiles() bool {
+	testDirs := []string{"test", "tests", "__tests__", "spec"}
+	for _, dir := range testDirs {
+		if dirExists(dir) && hasFiles(dir) {
+			return true
+		}
+	}
+	// Also check for *_test.go files in current directory
+	entries, err := os.ReadDir(".")
+	if err != nil {
+		return false
+	}
+	for _, entry := range entries {
+		if strings.HasSuffix(entry.Name(), "_test.go") {
+			return true
+		}
+	}
+	return false
+}
+
+func hasFailingTests() bool {
+	// This is a simplified check - in real implementation would run tests
+	// For now, just check if tests exist and no implementation is complete
+	return hasTestFiles() && !hasPassingTests()
+}
+
+func hasPassingTests() bool {
+	// Simplified check - would actually run test suite
+	// For now, assume tests pass if implementation exists
+	return hasImplementation()
+}
+
+func hasIntegrationTests() bool {
+	integrationDirs := []string{
+		"tests/integration",
+		"test/integration",
+		"integration",
+		"e2e",
+		"tests/e2e",
+	}
+	for _, dir := range integrationDirs {
+		if dirExists(dir) && hasFiles(dir) {
+			return true
+		}
+	}
+	return false
+}
+
+func hasImplementation() bool {
+	// Check for common implementation directories
+	implDirs := []string{"src", "lib", "app", "internal", "pkg"}
+	for _, dir := range implDirs {
+		if dirExists(dir) && hasFiles(dir) {
+			return true
+		}
+	}
+	// Also check for implementation files in root
+	entries, err := os.ReadDir(".")
+	if err != nil {
+		return false
+	}
+	for _, entry := range entries {
+		name := entry.Name()
+		if !entry.IsDir() && (strings.HasSuffix(name, ".go") ||
+			strings.HasSuffix(name, ".js") || strings.HasSuffix(name, ".ts") ||
+			strings.HasSuffix(name, ".py") || strings.HasSuffix(name, ".java")) {
+			if !strings.HasSuffix(name, "_test.go") && name != "main.go" {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func triggerAutoAdvance(state *WorkflowState) error {
+	// Advance to next phase
+	nextPhase := getNextPhase(state.CurrentPhase)
+	if nextPhase == "" {
+		fmt.Printf("✅ Workflow complete! All phases finished.\n")
+		state.NextActions = []string{"Workflow complete - ready for production!"}
+		return nil
+	}
+
+	state.PhasesCompleted = append(state.PhasesCompleted, state.CurrentPhase)
+	state.CurrentPhase = nextPhase
+	state.LastUpdated = time.Now().Format("2006-01-02 15:04:05")
+	state.NextActions = getPhaseNextActions(nextPhase)
+
+	fmt.Printf("🚀 Advanced to %s phase\n", strings.Title(nextPhase))
+	fmt.Printf("📋 Next actions loaded: %d tasks\n", len(state.NextActions))
+
+	return nil
+}
+
+// Add auto-loop command for continuous monitoring
+var workflowAutoCmd = &cobra.Command{
+	Use:   "auto",
+	Short: "Start automatic workflow monitoring and continuation",
+	Long: `Starts automatic monitoring of workflow state and provides continuous
+task progression without manual intervention. This creates an auto-loop that
+detects task completion and automatically moves to the next action.`,
+	RunE: runWorkflowAuto,
+}
+
+func runWorkflowAuto(cmd *cobra.Command, args []string) error {
+	fmt.Printf("🔄 Starting automatic workflow monitoring...\n")
+	fmt.Printf("This will continuously monitor and update workflow state\n")
+	fmt.Printf("Press Ctrl+C to stop\n\n")
+
+	// Initial sync
+	err := syncWorkflowContext()
+	if err != nil {
+		return err
+	}
+
+	// Continuous monitoring
+	ticker := time.NewTicker(10 * time.Second)
+	defer ticker.Stop()
+
+	lastSyncTime := time.Now()
+
+	for {
+		select {
+		case <-ticker.C:
+			// Check if any files have been modified
+			if getLastModTime().After(lastSyncTime) {
+				fmt.Printf("📄 Changes detected, syncing workflow state...\n")
+				err := syncWorkflowContext()
+				if err != nil {
+					fmt.Printf("❌ Error syncing: %v\n", err)
+				} else {
+					fmt.Printf("✅ Workflow state updated\n")
+				}
+				lastSyncTime = time.Now()
+			}
+		}
+	}
 }
 
 // Use existing fileExists and dirExists from diagnose.go

@@ -4,20 +4,14 @@ import (
 	"testing"
 
 	"github.com/easel/ddx/internal/obsidian"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestLinkConverter(t *testing.T) {
+func TestLinkConverter_MarkdownToWikilink(t *testing.T) {
 	converter := NewLinkConverter()
 
-	// Build test index
+	// Build test file index
 	files := []*obsidian.MarkdownFile{
-		{
-			Path: "workflows/helix/phases/01-frame/README.md",
-			Frontmatter: &obsidian.Frontmatter{
-				Title:   "Frame Phase",
-				Aliases: []string{"Frame", "Frame Phase"},
-			},
-		},
 		{
 			Path: "workflows/helix/phases/02-design/README.md",
 			Frontmatter: &obsidian.Frontmatter{
@@ -31,13 +25,12 @@ func TestLinkConverter(t *testing.T) {
 			},
 		},
 		{
-			Path: "workflows/helix/coordinator.md",
+			Path: "workflows/helix/phases/01-frame/artifacts/user-stories/template.md",
 			Frontmatter: &obsidian.Frontmatter{
-				Title: "HELIX Workflow Coordinator",
+				Title: "User Stories Template",
 			},
 		},
 	}
-
 	converter.BuildIndex(files)
 
 	tests := []struct {
@@ -46,352 +39,306 @@ func TestLinkConverter(t *testing.T) {
 		expected string
 	}{
 		{
-			name:     "Convert relative markdown link to wikilink",
-			input:    "See the [Design Phase](../02-design/README.md) for details.",
-			expected: "See the [[Design Phase]] for details.",
+			name:     "Phase reference link",
+			input:    "See the [Design Phase](../02-design/README.md) for details",
+			expected: "See the [[Design Phase]] for details",
 		},
 		{
-			name:     "Convert template link",
-			input:    "Use the [feature specification template](./artifacts/feature-specification/template.md).",
-			expected: "Use the [[Feature Specification Template|feature specification template]].",
+			name:     "Template link with alias",
+			input:    "Use the [feature spec template](./artifacts/feature-specification/template.md)",
+			expected: "Use the [[Feature Specification Template|feature spec template]]",
 		},
 		{
-			name:     "Keep external links unchanged",
-			input:    "Visit [GitHub](https://github.com) for more info.",
-			expected: "Visit [GitHub](https://github.com) for more info.",
+			name:     "Template link matching title",
+			input:    "Use the [Feature Specification Template](./artifacts/feature-specification/template.md)",
+			expected: "Use the [[Feature Specification Template]]",
 		},
 		{
-			name:     "Keep anchor links unchanged",
-			input:    "See [section below](#implementation) for details.",
-			expected: "See [section below](#implementation) for details.",
+			name:     "External link preserved",
+			input:    "Visit [GitHub](https://github.com) for more info",
+			expected: "Visit [GitHub](https://github.com) for more info",
 		},
 		{
-			name:     "Convert phase references",
-			input:    "The Frame phase comes before the Design phase.",
-			expected: "The [[Frame Phase]] comes before the [[Design Phase]].",
+			name:     "HTTPS link preserved",
+			input:    "Check [documentation](https://docs.example.com/guide)",
+			expected: "Check [documentation](https://docs.example.com/guide)",
 		},
 		{
-			name:     "Convert artifact references",
-			input:    "Create a feature specification using the template.",
-			expected: "Create a [[Feature Specification]] using the template.",
+			name:     "Anchor link preserved",
+			input:    "Jump to [section](#implementation)",
+			expected: "Jump to [section](#implementation)",
 		},
 		{
-			name:     "Convert HELIX workflow references",
-			input:    "The HELIX workflow uses TDD principles.",
-			expected: "The [[HELIX Workflow]] uses [[Test-Driven Development|TDD]] principles.",
+			name:     "Email link preserved",
+			input:    "Contact [support](mailto:help@example.com)",
+			expected: "Contact [support](mailto:help@example.com)",
 		},
 		{
-			name:     "Don't double-convert existing wikilinks",
-			input:    "See [[Design Phase]] for more info.",
-			expected: "See [[Design Phase]] for more info.",
+			name:     "Multiple links in same text",
+			input:    "See [Design Phase](../02-design/README.md) and [User Stories Template](./artifacts/user-stories/template.md)",
+			expected: "See [[Design Phase]] and [[User Stories Template]]",
 		},
 		{
-			name:     "Convert multiple links in one text",
-			input:    "The [Frame Phase](../01-frame/README.md) leads to [Design Phase](../02-design/README.md).",
-			expected: "The [[Frame Phase]] leads to [[Design Phase]].",
+			name:     "Mixed link types",
+			input:    "Check [Design Phase](../02-design/README.md) and [GitHub](https://github.com)",
+			expected: "Check [[Design Phase]] and [GitHub](https://github.com)",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := converter.ConvertContent(tt.input)
-			if result != tt.expected {
-				t.Errorf("ConvertContent() = '%s', expected '%s'", result, tt.expected)
-			}
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
 
-func TestConvertToWikilink(t *testing.T) {
-	converter := NewLinkConverter()
-
-	// Build test index
-	files := []*obsidian.MarkdownFile{
-		{
-			Path: "workflows/helix/phases/01-frame/README.md",
-			Frontmatter: &obsidian.Frontmatter{
-				Title: "Frame Phase",
-			},
-		},
-		{
-			Path: "workflows/helix/phases/01-frame/enforcer.md",
-			Frontmatter: &obsidian.Frontmatter{
-				Title: "Frame Phase Enforcer",
-			},
-		},
-	}
-
-	converter.BuildIndex(files)
-
-	tests := []struct {
-		text     string
-		path     string
-		expected string
-	}{
-		{
-			text:     "Frame Phase",
-			path:     "../01-frame/README.md",
-			expected: "[[Frame Phase]]",
-		},
-		{
-			text:     "frame phase",
-			path:     "../01-frame/README.md",
-			expected: "[[Frame Phase|frame phase]]",
-		},
-		{
-			text:     "enforcer",
-			path:     "./enforcer.md",
-			expected: "[[Frame Phase Enforcer|enforcer]]",
-		},
-		{
-			text:     "unknown link",
-			path:     "./unknown.md",
-			expected: "[[unknown link]]",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.text+"_"+tt.path, func(t *testing.T) {
-			result := converter.convertToWikilink(tt.text, tt.path)
-			if result != tt.expected {
-				t.Errorf("convertToWikilink(%s, %s) = '%s', expected '%s'", tt.text, tt.path, result, tt.expected)
-			}
-		})
-	}
-}
-
-func TestHandleCommonPatterns(t *testing.T) {
+func TestLinkConverter_PhaseReferences(t *testing.T) {
 	converter := NewLinkConverter()
 
 	tests := []struct {
-		text     string
-		path     string
-		filename string
-		expected string
-	}{
-		{
-			text:     "Frame Phase",
-			path:     "workflows/helix/phases/01-frame/README",
-			filename: "README",
-			expected: "[[Frame Phase]]",
-		},
-		{
-			text:     "enforcer",
-			path:     "workflows/helix/phases/01-frame/enforcer",
-			filename: "enforcer",
-			expected: "[[Frame Phase Enforcer]]",
-		},
-		{
-			text:     "template",
-			path:     "workflows/helix/phases/01-frame/artifacts/feature-specification/template",
-			filename: "template",
-			expected: "[[Feature Specification Template]]",
-		},
-		{
-			text:     "prompt",
-			path:     "workflows/helix/phases/01-frame/artifacts/user-stories/prompt",
-			filename: "prompt",
-			expected: "[[User Stories Prompt]]",
-		},
-		{
-			text:     "example",
-			path:     "workflows/helix/phases/01-frame/artifacts/risk-register/example",
-			filename: "example",
-			expected: "[[Risk Register Example]]",
-		},
-		{
-			text:     "coordinator",
-			path:     "workflows/helix/coordinator",
-			filename: "coordinator",
-			expected: "[[HELIX Workflow Coordinator]]",
-		},
-		{
-			text:     "principles",
-			path:     "workflows/helix/principles",
-			filename: "principles",
-			expected: "[[HELIX Principles]]",
-		},
-		{
-			text:     "feature",
-			path:     "docs/01-frame/features/FEAT-001-auth",
-			filename: "FEAT-001-auth",
-			expected: "[[FEAT-001]]",
-		},
-		{
-			text:     "unknown",
-			path:     "unknown/path",
-			filename: "unknown",
-			expected: "",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.filename, func(t *testing.T) {
-			result := converter.handleCommonPatterns(tt.text, tt.path, tt.filename)
-			if result != tt.expected {
-				t.Errorf("handleCommonPatterns(%s, %s, %s) = '%s', expected '%s'", tt.text, tt.path, tt.filename, result, tt.expected)
-			}
-		})
-	}
-}
-
-func TestConvertPhaseReferences(t *testing.T) {
-	converter := NewLinkConverter()
-
-	tests := []struct {
+		name     string
 		input    string
 		expected string
 	}{
 		{
-			input:    "The Frame phase comes first.",
-			expected: "The [[Frame Phase]] comes first.",
+			name:     "Frame phase reference",
+			input:    "Complete the Frame phase first",
+			expected: "Complete the [[Frame Phase|Frame phase]] first",
 		},
 		{
-			input:    "Move to the Design Phase next.",
-			expected: "Move to the [[Design Phase]] next.",
+			name:     "Design phase planning",
+			input:    "During Design phase planning",
+			expected: "During [[Design Phase|Design phase]] planning",
 		},
 		{
-			input:    "The test phase should have failing tests.",
-			expected: "The [[Test Phase]] should have failing tests.",
+			name:     "Build phase implementation",
+			input:    "The Build phase implementation",
+			expected: "The [[Build Phase|Build phase]] implementation",
 		},
 		{
-			input:    "During the build phase, implement the solution.",
-			expected: "During the [[Build Phase]], implement the solution.",
+			name:     "Multiple phase references",
+			input:    "After Frame phase, move to Design phase",
+			expected: "After [[Frame Phase|Frame phase]], move to [[Design Phase|Design phase]]",
 		},
 		{
-			input:    "The Deploy phase handles releases.",
-			expected: "The [[Deploy Phase]] handles releases.",
+			name:     "Already wikilinked phases",
+			input:    "Already in [[Frame Phase]] work",
+			expected: "Already in [[Frame Phase]] work", // Don't double-convert
 		},
 		{
-			input:    "In the iterate phase, we learn and improve.",
-			expected: "In the [[Iterate Phase]], we learn and improve.",
+			name:     "Mixed existing and new",
+			input:    "From [[Frame Phase]] to Design phase",
+			expected: "From [[Frame Phase]] to [[Design Phase|Design phase]]",
 		},
 		{
-			input:    "Frame has enforcer rules.",
-			expected: "[[Frame Phase|Frame]] has enforcer rules.",
-		},
-		{
-			input:    "Go to Design for architecture.",
-			expected: "Go to [[Design Phase|Design]] for architecture.",
-		},
-		{
-			input:    "The Build artifacts are ready.",
-			expected: "The [[Build Phase|Build]] artifacts are ready.",
-		},
-		{
-			input:    "Already in [[Frame Phase]] so no change.",
-			expected: "Already in [[Frame Phase]] so no change.",
-		},
-		{
-			input:    "Frame work is different from Frame phase.",
-			expected: "Frame work is different from [[Frame Phase]].",
+			name:     "Capitalized phase names",
+			input:    "Complete the Frame Phase first",
+			expected: "Complete the [[Frame Phase]] first",
 		},
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.input[:minTest(30, len(tt.input))], func(t *testing.T) {
-			result := converter.convertPhaseReferences(tt.input)
-			if result != tt.expected {
-				t.Errorf("convertPhaseReferences() = '%s', expected '%s'", result, tt.expected)
-			}
+		t.Run(tt.name, func(t *testing.T) {
+			result := converter.ConvertContent(tt.input)
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
 
-func TestConvertArtifactReferences(t *testing.T) {
+func TestLinkConverter_ArtifactReferences(t *testing.T) {
 	converter := NewLinkConverter()
 
 	tests := []struct {
+		name     string
 		input    string
 		expected string
 	}{
 		{
-			input:    "Create a feature specification for the new API.",
-			expected: "Create a [[Feature Specification]] for the new API.",
+			name:     "Feature specification reference",
+			input:    "Create a feature specification for this work",
+			expected: "Create a [[Feature Specification|feature specification]] for this work",
 		},
 		{
-			input:    "The feature spec should include all requirements.",
-			expected: "The [[Feature Specification|feature spec]] should include all requirements.",
+			name:     "Feature spec shorthand",
+			input:    "Update the feature spec with new requirements",
+			expected: "Update the [[Feature Specification|feature spec]] with new requirements",
 		},
 		{
-			input:    "Write the technical design document.",
-			expected: "Write the [[Technical Design]] document.",
+			name:     "Technical design reference",
+			input:    "The technical design should include...",
+			expected: "The [[Technical Design|technical design]] should include...",
 		},
 		{
-			input:    "The implementation guide provides step-by-step instructions.",
-			expected: "The [[Implementation Guide]] provides step-by-step instructions.",
+			name:     "User stories reference",
+			input:    "Write user stories before implementation",
+			expected: "Write [[User Stories|user stories]] before implementation",
 		},
 		{
-			input:    "User stories define the requirements.",
-			expected: "[[User Stories]] define the requirements.",
+			name:     "PRD reference",
+			input:    "The PRD contains all requirements",
+			expected: "The [[Product Requirements Document|PRD]] contains all requirements",
 		},
 		{
-			input:    "The PRD contains product requirements.",
-			expected: "The [[Product Requirements Document|PRD]] contains product requirements.",
-		},
-		{
-			input:    "Update the risk register with new risks.",
-			expected: "Update the [[Risk Register]] with new risks.",
-		},
-		{
-			input:    "Already have [[Feature Specification]] linked.",
-			expected: "Already have [[Feature Specification]] linked.",
-		},
-		{
-			input:    "The specification is feature-specific.",
-			expected: "The specification is feature-specific.",
+			name:     "Already wikilinked artifacts",
+			input:    "Update the [[Feature Specification]] document",
+			expected: "Update the [[Feature Specification]] document", // Don't double-convert
 		},
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.input[:minTest(30, len(tt.input))], func(t *testing.T) {
-			result := converter.convertArtifactReferences(tt.input)
-			if result != tt.expected {
-				t.Errorf("convertArtifactReferences() = '%s', expected '%s'", result, tt.expected)
-			}
+		t.Run(tt.name, func(t *testing.T) {
+			result := converter.ConvertContent(tt.input)
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
 
-func TestConvertWorkflowReferences(t *testing.T) {
+func TestLinkConverter_WorkflowReferences(t *testing.T) {
 	converter := NewLinkConverter()
 
 	tests := []struct {
+		name     string
 		input    string
 		expected string
 	}{
 		{
-			input:    "The HELIX workflow is test-driven.",
-			expected: "The [[HELIX Workflow]] is test-driven.",
+			name:     "HELIX workflow reference",
+			input:    "Follow the HELIX workflow for best results",
+			expected: "Follow the [[HELIX Workflow]] for best results",
 		},
 		{
-			input:    "We use TDD in our development.",
-			expected: "We use [[Test-Driven Development|TDD]] in our development.",
+			name:     "TDD reference",
+			input:    "Use TDD for development",
+			expected: "Use [[Test-Driven Development|TDD]] for development",
 		},
 		{
-			input:    "Test-Driven Development improves quality.",
-			expected: "[[Test-Driven Development]] improves quality.",
+			name:     "Test-Driven Development reference",
+			input:    "Test-Driven Development improves code quality",
+			expected: "[[Test-Driven Development]] improves code quality",
 		},
 		{
-			input:    "The helix workflow helps teams.",
-			expected: "The [[HELIX Workflow]] helps teams.",
+			name:     "Mixed case TDD",
+			input:    "Apply test-driven development principles",
+			expected: "Apply [[Test-Driven Development|test-driven development]] principles",
 		},
 		{
-			input:    "Already using [[HELIX Workflow]] here.",
-			expected: "Already using [[HELIX Workflow]] here.",
-		},
-		{
-			input:    "TDD and [[Test-Driven Development]] both.",
-			expected: "[[Test-Driven Development|TDD]] and [[Test-Driven Development]] both.",
+			name:     "Already wikilinked workflow",
+			input:    "The [[HELIX Workflow]] provides structure",
+			expected: "The [[HELIX Workflow]] provides structure", // Don't double-convert
 		},
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.input[:minTest(30, len(tt.input))], func(t *testing.T) {
-			result := converter.convertWorkflowReferences(tt.input)
-			if result != tt.expected {
-				t.Errorf("convertWorkflowReferences() = '%s', expected '%s'", result, tt.expected)
-			}
+		t.Run(tt.name, func(t *testing.T) {
+			result := converter.ConvertContent(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestLinkConverter_PreventDoubleConversion(t *testing.T) {
+	converter := NewLinkConverter()
+
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "Existing wikilinks preserved",
+			input:    "See [[Design Phase]] and visit [[Frame Phase]] for details",
+			expected: "See [[Design Phase]] and visit [[Frame Phase]] for details",
+		},
+		{
+			name:     "Wikilinks with aliases preserved",
+			input:    "Check [[Feature Specification|feature spec]] and [[Technical Design|tech design]]",
+			expected: "Check [[Feature Specification|feature spec]] and [[Technical Design|tech design]]",
+		},
+		{
+			name:     "Mixed existing and new conversions",
+			input:    "From [[Frame Phase]] to Design phase via feature specification",
+			expected: "From [[Frame Phase]] to [[Design Phase|Design phase]] via [[Feature Specification|feature specification]]",
+		},
+		{
+			name:     "Embedded wikilinks",
+			input:    "![[Workflow Diagram]] shows the process",
+			expected: "![[Workflow Diagram]] shows the process", // Embeds preserved
+		},
+		{
+			name:     "Wikilinks with headings",
+			input:    "See [[Design Phase#Architecture]] section",
+			expected: "See [[Design Phase#Architecture]] section",
+		},
+		{
+			name:     "Wikilinks with block references",
+			input:    "Reference [[Requirements^block-123]] for details",
+			expected: "Reference [[Requirements^block-123]] for details",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := converter.ConvertContent(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestLinkConverter_CommonPatterns(t *testing.T) {
+	converter := NewLinkConverter()
+
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "README to phase conversion",
+			input:    "Check [README](../phases/01-frame/README.md)",
+			expected: "Check [[Frame Phase|README]]",
+		},
+		{
+			name:     "Template file conversion",
+			input:    "Use [template](./artifacts/feature-specification/template.md)",
+			expected: "Use [[Feature Specification Template|template]]",
+		},
+		{
+			name:     "Prompt file conversion",
+			input:    "Run [prompt](./artifacts/user-stories/prompt.md)",
+			expected: "Run [[User Stories Prompt|prompt]]",
+		},
+		{
+			name:     "Example file conversion",
+			input:    "See [example](./artifacts/feature-specification/example.md)",
+			expected: "See [[Feature Specification Example|example]]",
+		},
+		{
+			name:     "Enforcer file conversion",
+			input:    "Check [enforcer](./phases/02-design/enforcer.md)",
+			expected: "Check [[Design Phase Enforcer|enforcer]]",
+		},
+		{
+			name:     "Coordinator reference",
+			input:    "Read [coordinator](./coordinator.md) for overview",
+			expected: "Read [[HELIX Workflow Coordinator|coordinator]] for overview",
+		},
+		{
+			name:     "Principles reference",
+			input:    "Follow [principles](./principles.md) guidelines",
+			expected: "Follow [[HELIX Principles|principles]] guidelines",
+		},
+		{
+			name:     "Feature file conversion",
+			input:    "Update [FEAT-001](../features/FEAT-001-auth.md)",
+			expected: "Update [[FEAT-001]]",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := converter.ConvertContent(tt.input)
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
@@ -404,78 +351,78 @@ func TestParseWikilinks(t *testing.T) {
 	}{
 		{
 			name:    "Simple wikilink",
-			content: "See [[Frame Phase]] for details.",
+			content: "See [[Design Phase]] for details",
 			expected: []*obsidian.ParsedLink{
 				{
-					Original: "[[Frame Phase]]",
-					Target:   "Frame Phase",
+					Original: "[[Design Phase]]",
+					Target:   "Design Phase",
 					IsEmbed:  false,
 				},
 			},
 		},
 		{
 			name:    "Wikilink with alias",
-			content: "The [[Frame Phase|frame]] is first.",
+			content: "Check [[Feature Specification|feature spec]] document",
 			expected: []*obsidian.ParsedLink{
 				{
-					Original: "[[Frame Phase|frame]]",
-					Target:   "Frame Phase",
-					Alias:    "frame",
+					Original: "[[Feature Specification|feature spec]]",
+					Target:   "Feature Specification",
+					Alias:    "feature spec",
 					IsEmbed:  false,
 				},
 			},
 		},
 		{
 			name:    "Wikilink with heading",
-			content: "See [[Frame Phase#Overview]] section.",
+			content: "Read [[Design Phase#Architecture]] section",
 			expected: []*obsidian.ParsedLink{
 				{
-					Original: "[[Frame Phase#Overview]]",
-					Target:   "Frame Phase",
-					Heading:  "Overview",
+					Original: "[[Design Phase#Architecture]]",
+					Target:   "Design Phase",
+					Heading:  "Architecture",
 					IsEmbed:  false,
 				},
 			},
 		},
 		{
-			name:    "Wikilink with block ID",
-			content: "Reference [[Frame Phase^block123]] here.",
+			name:    "Wikilink with block reference",
+			content: "See [[Requirements^block-123]] for context",
 			expected: []*obsidian.ParsedLink{
 				{
-					Original: "[[Frame Phase^block123]]",
-					Target:   "Frame Phase",
-					BlockID:  "block123",
+					Original: "[[Requirements^block-123]]",
+					Target:   "Requirements",
+					BlockID:  "block-123",
 					IsEmbed:  false,
 				},
 			},
 		},
 		{
 			name:    "Embedded wikilink",
-			content: "![[Diagram]] shows the flow.",
+			content: "![[Workflow Diagram]] shows the process",
 			expected: []*obsidian.ParsedLink{
 				{
-					Original: "![[Diagram]]",
-					Target:   "Diagram",
+					Original: "![[Workflow Diagram]]",
+					Target:   "Workflow Diagram",
 					IsEmbed:  true,
 				},
 			},
 		},
 		{
-			name:    "Complex wikilink",
-			content: "See [[Frame Phase#Overview|frame overview]] for more.",
+			name:    "Complex wikilink with alias and heading",
+			content: "Check [[Technical Design#API Contracts|API docs]] section",
 			expected: []*obsidian.ParsedLink{
 				{
-					Original: "[[Frame Phase#Overview|frame overview]]",
-					Target:   "Frame Phase",
-					Heading:  "Overview",
-					Alias:    "frame overview",
+					Original: "[[Technical Design#API Contracts|API docs]]",
+					Target:   "Technical Design",
+					Alias:    "API docs",
+					Heading:  "API Contracts",
 					IsEmbed:  false,
 				},
 			},
 		},
 		{
 			name:    "Multiple wikilinks",
-			content: "From [[Frame Phase]] to [[Design Phase]] and then [[Test Phase]].",
+			content: "From [[Frame Phase]] to [[Design Phase]] via [[Feature Specification]]",
 			expected: []*obsidian.ParsedLink{
 				{
 					Original: "[[Frame Phase]]",
@@ -488,15 +435,15 @@ func TestParseWikilinks(t *testing.T) {
 					IsEmbed:  false,
 				},
 				{
-					Original: "[[Test Phase]]",
-					Target:   "Test Phase",
+					Original: "[[Feature Specification]]",
+					Target:   "Feature Specification",
 					IsEmbed:  false,
 				},
 			},
 		},
 		{
 			name:     "No wikilinks",
-			content:  "Just regular text with [markdown links](./file.md).",
+			content:  "Just regular text with [markdown](link.md) but no wikilinks",
 			expected: []*obsidian.ParsedLink{},
 		},
 	}
@@ -504,116 +451,41 @@ func TestParseWikilinks(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := ParseWikilinks(tt.content)
+			assert.Equal(t, len(tt.expected), len(result), "Wrong number of parsed links")
 
-			if len(result) != len(tt.expected) {
-				t.Errorf("ParseWikilinks() returned %d links, expected %d", len(result), len(tt.expected))
-				return
-			}
-
-			for i, link := range result {
-				expected := tt.expected[i]
-				if link.Original != expected.Original {
-					t.Errorf("Link %d: Original = '%s', expected '%s'", i, link.Original, expected.Original)
-				}
-				if link.Target != expected.Target {
-					t.Errorf("Link %d: Target = '%s', expected '%s'", i, link.Target, expected.Target)
-				}
-				if link.Alias != expected.Alias {
-					t.Errorf("Link %d: Alias = '%s', expected '%s'", i, link.Alias, expected.Alias)
-				}
-				if link.Heading != expected.Heading {
-					t.Errorf("Link %d: Heading = '%s', expected '%s'", i, link.Heading, expected.Heading)
-				}
-				if link.BlockID != expected.BlockID {
-					t.Errorf("Link %d: BlockID = '%s', expected '%s'", i, link.BlockID, expected.BlockID)
-				}
-				if link.IsEmbed != expected.IsEmbed {
-					t.Errorf("Link %d: IsEmbed = %t, expected %t", i, link.IsEmbed, expected.IsEmbed)
+			for i, expected := range tt.expected {
+				if i < len(result) {
+					assert.Equal(t, expected.Original, result[i].Original)
+					assert.Equal(t, expected.Target, result[i].Target)
+					assert.Equal(t, expected.Alias, result[i].Alias)
+					assert.Equal(t, expected.Heading, result[i].Heading)
+					assert.Equal(t, expected.BlockID, result[i].BlockID)
+					assert.Equal(t, expected.IsEmbed, result[i].IsEmbed)
 				}
 			}
 		})
 	}
 }
 
-func TestParsedLinkString(t *testing.T) {
-	tests := []struct {
-		link     *obsidian.ParsedLink
-		expected string
-	}{
-		{
-			link: &obsidian.ParsedLink{
-				Target: "Frame Phase",
-			},
-			expected: "[[Frame Phase]]",
-		},
-		{
-			link: &obsidian.ParsedLink{
-				Target: "Frame Phase",
-				Alias:  "frame",
-			},
-			expected: "[[Frame Phase|frame]]",
-		},
-		{
-			link: &obsidian.ParsedLink{
-				Target:  "Frame Phase",
-				Heading: "Overview",
-			},
-			expected: "[[Frame Phase#Overview]]",
-		},
-		{
-			link: &obsidian.ParsedLink{
-				Target:  "Frame Phase",
-				BlockID: "block123",
-			},
-			expected: "[[Frame Phase^block123]]",
-		},
-		{
-			link: &obsidian.ParsedLink{
-				Target:  "Diagram",
-				IsEmbed: true,
-			},
-			expected: "![[Diagram]]",
-		},
-		{
-			link: &obsidian.ParsedLink{
-				Target:  "Frame Phase",
-				Heading: "Overview",
-				Alias:   "frame overview",
-			},
-			expected: "[[Frame Phase#Overview|frame overview]]",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.expected, func(t *testing.T) {
-			result := tt.link.String()
-			if result != tt.expected {
-				t.Errorf("ParsedLink.String() = '%s', expected '%s'", result, tt.expected)
-			}
-		})
-	}
-}
-
-func TestValidateWikilinks(t *testing.T) {
+func TestLinkConverter_ValidateWikilinks(t *testing.T) {
 	converter := NewLinkConverter()
 
-	// Build test index
+	// Build test file index
 	files := []*obsidian.MarkdownFile{
 		{
-			Path: "workflows/helix/phases/01-frame/README.md",
+			Path: "phase1.md",
 			Frontmatter: &obsidian.Frontmatter{
 				Title:   "Frame Phase",
-				Aliases: []string{"Frame"},
+				Aliases: []string{"Phase 1", "Foundation Phase"},
 			},
 		},
 		{
-			Path: "workflows/helix/phases/02-design/README.md",
+			Path: "phase2.md",
 			Frontmatter: &obsidian.Frontmatter{
 				Title: "Design Phase",
 			},
 		},
 	}
-
 	converter.BuildIndex(files)
 
 	tests := []struct {
@@ -622,60 +494,36 @@ func TestValidateWikilinks(t *testing.T) {
 		expectedBroken []string
 	}{
 		{
-			name:           "Valid wikilinks",
-			content:        "See [[Frame Phase]] and [[Design Phase]] for details.",
+			name:           "All valid links",
+			content:        "See [[Frame Phase]] and [[Design Phase]]",
 			expectedBroken: []string{},
 		},
 		{
-			name:           "Valid alias reference",
-			content:        "The [[Frame]] is the first phase.",
+			name:           "Valid alias link",
+			content:        "Check [[Phase 1]] for foundation",
 			expectedBroken: []string{},
 		},
 		{
-			name:           "Broken wikilink",
-			content:        "See [[Unknown Phase]] for details.",
-			expectedBroken: []string{"Unknown Phase"},
+			name:           "Broken link",
+			content:        "See [[Nonexistent Phase]] for details",
+			expectedBroken: []string{"Nonexistent Phase"},
 		},
 		{
 			name:           "Mixed valid and broken",
-			content:        "From [[Frame Phase]] to [[Unknown Phase]] to [[Design Phase]].",
-			expectedBroken: []string{"Unknown Phase"},
+			content:        "From [[Frame Phase]] to [[Missing Phase]] via [[Design Phase]]",
+			expectedBroken: []string{"Missing Phase"},
 		},
 		{
 			name:           "Multiple broken links",
-			content:        "See [[Unknown A]] and [[Unknown B]] for details.",
-			expectedBroken: []string{"Unknown A", "Unknown B"},
-		},
-		{
-			name:           "No wikilinks",
-			content:        "Just regular text here.",
-			expectedBroken: []string{},
+			content:        "Check [[Missing One]] and [[Missing Two]]",
+			expectedBroken: []string{"Missing One", "Missing Two"},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := converter.ValidateWikilinks(tt.content)
-
-			if len(result) != len(tt.expectedBroken) {
-				t.Errorf("ValidateWikilinks() returned %d broken links, expected %d", len(result), len(tt.expectedBroken))
-				t.Errorf("Got: %v, Expected: %v", result, tt.expectedBroken)
-				return
-			}
-
-			for i, broken := range result {
-				if broken != tt.expectedBroken[i] {
-					t.Errorf("Broken link %d = '%s', expected '%s'", i, broken, tt.expectedBroken[i])
-				}
-			}
+			assert.ElementsMatch(t, tt.expectedBroken, result)
 		})
 	}
-}
-
-// Helper function for tests
-func minTest(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }

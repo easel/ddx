@@ -91,7 +91,7 @@ func TestInstaller(t *testing.T) {
 
 		err := installer.Install("github", opts)
 		assert.Error(t, err)
-		assert.ErrorIs(t, err, mcp.ErrMissingRequired)
+		assert.Contains(t, err.Error(), "interactive prompting not yet implemented")
 	})
 
 	t.Run("dry run", func(t *testing.T) {

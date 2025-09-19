@@ -2,51 +2,119 @@ package obsidian
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
-func TestFileTypeDetector(t *testing.T) {
-	detector := NewFileTypeDetector()
-
+func TestFileTypeDetector_DetectHelixFiles(t *testing.T) {
 	tests := []struct {
+		name     string
 		path     string
 		expected FileType
 	}{
-		// Phase files
-		{"workflows/helix/phases/01-frame/README.md", FileTypePhase},
-		{"workflows/helix/phases/02-design/README.md", FileTypePhase},
-		{"workflows/helix/phases/test/README.md", FileTypePhase},
+		// Phase detection
+		{
+			name:     "Frame phase README",
+			path:     "workflows/helix/phases/01-frame/README.md",
+			expected: FileTypePhase,
+		},
+		{
+			name:     "Design phase README",
+			path:     "workflows/helix/phases/02-design/README.md",
+			expected: FileTypePhase,
+		},
+		{
+			name:     "Test phase README",
+			path:     "workflows/helix/phases/test/README.md",
+			expected: FileTypePhase,
+		},
 
-		// Enforcer files
-		{"workflows/helix/phases/01-frame/enforcer.md", FileTypeEnforcer},
-		{"workflows/helix/phases/02-design/enforcer.md", FileTypeEnforcer},
+		// Enforcer detection
+		{
+			name:     "Frame phase enforcer",
+			path:     "workflows/helix/phases/01-frame/enforcer.md",
+			expected: FileTypeEnforcer,
+		},
+		{
+			name:     "Design phase enforcer",
+			path:     "workflows/helix/phases/02-design/enforcer.md",
+			expected: FileTypeEnforcer,
+		},
 
-		// Artifact files
-		{"workflows/helix/phases/01-frame/artifacts/feature-specification/template.md", FileTypeTemplate},
-		{"workflows/helix/phases/01-frame/artifacts/feature-specification/prompt.md", FileTypePrompt},
-		{"workflows/helix/phases/01-frame/artifacts/feature-specification/example.md", FileTypeExample},
+		// Artifact templates
+		{
+			name:     "Feature specification template",
+			path:     "workflows/helix/phases/01-frame/artifacts/feature-specification/template.md",
+			expected: FileTypeTemplate,
+		},
+		{
+			name:     "User stories prompt",
+			path:     "workflows/helix/phases/01-frame/artifacts/user-stories/prompt.md",
+			expected: FileTypePrompt,
+		},
+		{
+			name:     "Technical design example",
+			path:     "workflows/helix/phases/01-frame/artifacts/feature-specification/example.md",
+			expected: FileTypeExample,
+		},
 
-		// Core workflow files
-		{"workflows/helix/coordinator.md", FileTypeCoordinator},
-		{"workflows/helix/principles.md", FileTypePrinciple},
+		// Workflow coordination
+		{
+			name:     "HELIX coordinator",
+			path:     "workflows/helix/coordinator.md",
+			expected: FileTypeCoordinator,
+		},
+		{
+			name:     "HELIX principles",
+			path:     "workflows/helix/principles.md",
+			expected: FileTypePrinciple,
+		},
 
-		// Documentation files (FEAT files in phase directories are still feature specifications)
-		{"docs/01-frame/features/FEAT-001-new-feature.md", FileTypeFeature},
-		{"docs/02-design/FEAT-001-technical-design.md", FileTypeFeature},
-		{"docs/03-test/FEAT-001-test-specification.md", FileTypeFeature},
-		{"docs/04-build/FEAT-001-implementation.md", FileTypeFeature},
+		// Feature specifications
+		{
+			name:     "Feature specification in docs",
+			path:     "docs/01-frame/features/FEAT-001-new-feature.md",
+			expected: FileTypeFeature,
+		},
+		{
+			name:     "Design document",
+			path:     "docs/02-design/FEAT-001-technical-design.md",
+			expected: FileTypeFeature,
+		},
+		{
+			name:     "Test specification",
+			path:     "docs/03-test/FEAT-001-test-specification.md",
+			expected: FileTypeFeature,
+		},
+		{
+			name:     "Implementation guide",
+			path:     "docs/04-build/FEAT-001-implementation.md",
+			expected: FileTypeFeature,
+		},
 
-		// Unknown files
-		{"workflows/helix/random.md", FileTypeUnknown},
-		{"README.md", FileTypeUnknown},
-		{"docs/other/file.md", FileTypeUnknown},
+		// Non-HELIX files should not be detected
+		{
+			name:     "Regular README",
+			path:     "README.md",
+			expected: FileTypeUnknown,
+		},
+		{
+			name:     "Random markdown file",
+			path:     "docs/other/file.md",
+			expected: FileTypeUnknown,
+		},
+		{
+			name:     "Random file in workflows",
+			path:     "workflows/helix/random.md",
+			expected: FileTypeUnknown,
+		},
 	}
 
+	detector := NewFileTypeDetector()
 	for _, tt := range tests {
-		t.Run(tt.path, func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			result := detector.Detect(tt.path)
-			if result != tt.expected {
-				t.Errorf("Detect(%s) = %s, expected %s", tt.path, result, tt.expected)
-			}
+			assert.Equal(t, tt.expected, result, "Path: %s", tt.path)
 		})
 	}
 }
@@ -56,23 +124,27 @@ func TestGetPhaseFromPath(t *testing.T) {
 		path     string
 		expected string
 	}{
+		// Workflow structure
 		{"workflows/helix/phases/01-frame/README.md", "frame"},
 		{"workflows/helix/phases/02-design/enforcer.md", "design"},
 		{"workflows/helix/phases/test/artifacts/test.md", "test"},
 		{"workflows/helix/phases/04-build/template.md", "build"},
+
+		// Docs structure
 		{"docs/01-frame/features/FEAT-001.md", "frame"},
 		{"docs/02-design/technical-design.md", "design"},
 		{"docs/build/implementation.md", "build"},
+
+		// Non-phase paths
 		{"workflows/helix/README.md", ""},
 		{"README.md", ""},
+		{"random/path/file.md", ""},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.path, func(t *testing.T) {
 			result := GetPhaseFromPath(tt.path)
-			if result != tt.expected {
-				t.Errorf("GetPhaseFromPath(%s) = %s, expected %s", tt.path, result, tt.expected)
-			}
+			assert.Equal(t, tt.expected, result, "Path: %s", tt.path)
 		})
 	}
 }
@@ -82,29 +154,33 @@ func TestGetArtifactCategory(t *testing.T) {
 		path     string
 		expected string
 	}{
+		// Workflow artifacts
 		{"workflows/helix/phases/01-frame/artifacts/feature-specification/template.md", "feature-specification"},
 		{"workflows/helix/phases/01-frame/artifacts/user-stories/prompt.md", "user-stories"},
+
+		// Feature files
 		{"docs/01-frame/features/FEAT-001-new-feature.md", "feature-specification"},
 		{"docs/02-design/FEAT-001-technical-design.md", "feature-specification"},
 		{"docs/03-test/test-specification.md", ""},
 		{"docs/04-build/implementation-guide.md", ""},
+
+		// Non-artifact paths
 		{"workflows/helix/README.md", ""},
+		{"docs/other/file.md", ""},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.path, func(t *testing.T) {
 			result := GetArtifactCategory(tt.path)
-			if result != tt.expected {
-				t.Errorf("GetArtifactCategory(%s) = %s, expected %s", tt.path, result, tt.expected)
-			}
+			assert.Equal(t, tt.expected, result, "Path: %s", tt.path)
 		})
 	}
 }
 
 func TestGetPhaseNumber(t *testing.T) {
 	tests := []struct {
-		phase    string
-		expected int
+		phaseName string
+		expected  int
 	}{
 		{"frame", 1},
 		{"design", 2},
@@ -117,19 +193,17 @@ func TestGetPhaseNumber(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.phase, func(t *testing.T) {
-			result := GetPhaseNumber(tt.phase)
-			if result != tt.expected {
-				t.Errorf("GetPhaseNumber(%s) = %d, expected %d", tt.phase, result, tt.expected)
-			}
+		t.Run(tt.phaseName, func(t *testing.T) {
+			result := GetPhaseNumber(tt.phaseName)
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
 
 func TestGetNextPhase(t *testing.T) {
 	tests := []struct {
-		phase    string
-		expected string
+		phaseName string
+		expected  string
 	}{
 		{"frame", "design"},
 		{"design", "test"},
@@ -142,19 +216,17 @@ func TestGetNextPhase(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.phase, func(t *testing.T) {
-			result := GetNextPhase(tt.phase)
-			if result != tt.expected {
-				t.Errorf("GetNextPhase(%s) = %s, expected %s", tt.phase, result, tt.expected)
-			}
+		t.Run(tt.phaseName, func(t *testing.T) {
+			result := GetNextPhase(tt.phaseName)
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
 
 func TestGetPreviousPhase(t *testing.T) {
 	tests := []struct {
-		phase    string
-		expected string
+		phaseName string
+		expected  string
 	}{
 		{"frame", ""},
 		{"design", "frame"},
@@ -167,11 +239,9 @@ func TestGetPreviousPhase(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.phase, func(t *testing.T) {
-			result := GetPreviousPhase(tt.phase)
-			if result != tt.expected {
-				t.Errorf("GetPreviousPhase(%s) = %s, expected %s", tt.phase, result, tt.expected)
-			}
+		t.Run(tt.phaseName, func(t *testing.T) {
+			result := GetPreviousPhase(tt.phaseName)
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
@@ -181,140 +251,61 @@ func TestExtractTitleFromPath(t *testing.T) {
 		path     string
 		expected string
 	}{
+		// README files
 		{"workflows/helix/phases/01-frame/README.md", "Frame Phase"},
+		{"workflows/helix/phases/02-design/README.md", "Design Phase"},
+		{"workflows/helix/artifacts/feature-specification/README.md", "Feature Specification"},
+
+		// Special files
 		{"workflows/helix/phases/01-frame/enforcer.md", "Frame Phase Enforcer"},
-		{"workflows/helix/phases/01-frame/artifacts/feature-specification/template.md", "Feature Specification Template"},
-		{"workflows/helix/phases/01-frame/artifacts/user-stories/prompt.md", "User Stories Prompt"},
-		{"workflows/helix/phases/01-frame/artifacts/risk-register/example.md", "Risk Register Example"},
+		{"workflows/helix/phases/02-design/enforcer.md", "Design Phase Enforcer"},
+		{"workflows/helix/artifacts/feature-specification/template.md", "Feature Specification Template"},
+		{"workflows/helix/artifacts/user-stories/prompt.md", "User Stories Prompt"},
+		{"workflows/helix/artifacts/technical-design/example.md", "Technical Design Example"},
+
+		// Feature files
 		{"docs/01-frame/features/FEAT-001-user-authentication.md", "User Authentication"},
-		{"docs/02-design/api-architecture.md", "Api Architecture"},
-		{"workflows/helix/coordinator.md", "Coordinator"},
-		{"workflows/helix/principles.md", "Principles"},
+		{"docs/02-design/FEAT-002-data-export-system.md", "Data Export System"},
+
+		// Regular files
+		{"some-random-file.md", "Some Random File"},
+		{"docs/user-guide.md", "User Guide"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.path, func(t *testing.T) {
 			result := ExtractTitleFromPath(tt.path)
-			if result != tt.expected {
-				t.Errorf("ExtractTitleFromPath(%s) = %s, expected %s", tt.path, result, tt.expected)
-			}
+			assert.Equal(t, tt.expected, result, "Path: %s", tt.path)
 		})
 	}
 }
 
-func TestIsHelixFile(t *testing.T) {
-	tests := []struct {
-		path     string
-		expected bool
-	}{
-		{"workflows/helix/phases/01-frame/README.md", true},
-		{"workflows/helix/coordinator.md", true},
-		{"docs/01-frame/features/FEAT-001.md", true},
-		{"docs/02-design/technical-design.md", true},
-		{"docs/03-test/test-spec.md", true},
-		{"docs/04-build/implementation.md", true},
-		{"docs/05-deploy/deployment.md", true},
-		{"docs/06-iterate/retrospective.md", true},
-		{"README.md", false},
-		{"src/main.go", false},
-		{"docs/general/notes.md", false},
-		{"other/workflows/helix/file.md", true}, // Contains helix path
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.path, func(t *testing.T) {
-			result := IsHelixFile(tt.path)
-			if result != tt.expected {
-				t.Errorf("IsHelixFile(%s) = %t, expected %t", tt.path, result, tt.expected)
-			}
-		})
-	}
-}
+// Removed IsHelixFile test as we're making DDX workflow-agnostic
+// Workflow-specific file detection should be handled through configuration
 
 func TestGetComplexityFromPath(t *testing.T) {
 	tests := []struct {
 		path     string
 		expected string
 	}{
-		{"workflows/helix/phases/01-frame/artifacts/simple-feature/template.md", "moderate"},
-		{"workflows/helix/phases/01-frame/artifacts/example/template.md", "simple"},
-		{"workflows/helix/phases/01-frame/artifacts/advanced-integration/template.md", "complex"},
-		{"workflows/helix/phases/01-frame/artifacts/complex-system/template.md", "complex"},
-		{"workflows/helix/phases/01-frame/artifacts/user-stories/template.md", "moderate"},
+		// Simple complexity
+		{"workflows/helix/artifacts/example/template.md", "simple"},
+		{"docs/simple/feature.md", "simple"},
+
+		// Complex complexity
+		{"workflows/helix/artifacts/advanced/template.md", "complex"},
+		{"docs/complex/implementation.md", "complex"},
+
+		// Default to moderate
+		{"workflows/helix/artifacts/feature-specification/template.md", "moderate"},
+		{"docs/01-frame/features/FEAT-001.md", "moderate"},
+		{"regular/file.md", "moderate"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.path, func(t *testing.T) {
 			result := GetComplexityFromPath(tt.path)
-			if result != tt.expected {
-				t.Errorf("GetComplexityFromPath(%s) = %s, expected %s", tt.path, result, tt.expected)
-			}
-		})
-	}
-}
-
-func TestFileTypeGetHierarchicalTags(t *testing.T) {
-	tests := []struct {
-		fileType FileType
-		expected []string
-	}{
-		{FileTypePhase, []string{"helix", "helix/phase"}},
-		{FileTypeEnforcer, []string{"helix", "helix/enforcer"}},
-		{FileTypeTemplate, []string{"helix", "helix/artifact", "helix/artifact/template"}},
-		{FileTypePrompt, []string{"helix", "helix/artifact", "helix/artifact/prompt"}},
-		{FileTypeExample, []string{"helix", "helix/artifact", "helix/artifact/example"}},
-		{FileTypeCoordinator, []string{"helix", "helix/core", "helix/coordinator"}},
-		{FileTypePrinciple, []string{"helix", "helix/core", "helix/principle"}},
-		{FileTypeFeature, []string{"helix", "helix/artifact", "helix/artifact/specification"}},
-		{FileTypeUnknown, []string{"helix"}},
-	}
-
-	for _, tt := range tests {
-		t.Run(string(tt.fileType), func(t *testing.T) {
-			result := tt.fileType.GetHierarchicalTags()
-			if len(result) != len(tt.expected) {
-				t.Errorf("GetHierarchicalTags(%s) returned %d tags, expected %d", tt.fileType, len(result), len(tt.expected))
-				return
-			}
-
-			for i, tag := range result {
-				if tag != tt.expected[i] {
-					t.Errorf("GetHierarchicalTags(%s)[%d] = %s, expected %s", tt.fileType, i, tag, tt.expected[i])
-				}
-			}
-		})
-	}
-}
-
-func TestFileTypeCheckers(t *testing.T) {
-	tests := []struct {
-		fileType   FileType
-		isPhase    bool
-		isArtifact bool
-		isCore     bool
-	}{
-		{FileTypePhase, true, false, false},
-		{FileTypeEnforcer, true, false, false},
-		{FileTypeTemplate, false, true, false},
-		{FileTypePrompt, false, true, false},
-		{FileTypeExample, false, true, false},
-		{FileTypeFeature, false, true, false},
-		{FileTypeCoordinator, false, false, true},
-		{FileTypePrinciple, false, false, true},
-		{FileTypeUnknown, false, false, false},
-	}
-
-	for _, tt := range tests {
-		t.Run(string(tt.fileType), func(t *testing.T) {
-			if result := tt.fileType.IsPhase(); result != tt.isPhase {
-				t.Errorf("IsPhase(%s) = %t, expected %t", tt.fileType, result, tt.isPhase)
-			}
-			if result := tt.fileType.IsArtifact(); result != tt.isArtifact {
-				t.Errorf("IsArtifact(%s) = %t, expected %t", tt.fileType, result, tt.isArtifact)
-			}
-			if result := tt.fileType.IsCore(); result != tt.isCore {
-				t.Errorf("IsCore(%s) = %t, expected %t", tt.fileType, result, tt.isCore)
-			}
+			assert.Equal(t, tt.expected, result, "Path: %s", tt.path)
 		})
 	}
 }

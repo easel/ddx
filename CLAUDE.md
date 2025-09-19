@@ -247,8 +247,8 @@ When responding, adopt the appropriate persona based on the task.
 ## Current HELIX Workflow State
 
 **Phase**: Design
-**Started**: 2025-09-18 02:45:27
-**Last Updated**: 2025-09-18 02:49:47
+**Started**: 2025-09-19 19:45:57
+**Last Updated**: 2025-09-19 19:46:07
 
 ### Completed This Phase:
 - ✅ Create problem statement document (docs/01-frame/problem.md)
@@ -269,14 +269,29 @@ The Design Phase Enforcer is currently active. Focus on HOW to architect the sol
 <!-- WORKFLOW:END -->
 
 <!-- AUTO-PROMPTS:START -->
-## Workflow Auto-Prompts
+## Workflow Auto-Continuation
 
-When you complete a task, automatically ask:
-"I've finished the previous task. Based on our HELIX workflow state, what should I work on next?"
+**CRITICAL**: When you complete a task, automatically continue to the next action without asking. Use this pattern:
 
-Current suggested next action:
-"Create architecture overview (docs/02-design/architecture.md)"
+```
+I've completed [previous task]. Based on our HELIX workflow state, I'll now work on: [next action]
+```
+
+**Current Next Action**: Create architecture overview (docs/02-design/architecture.md)
+
+**Auto-Loop Instructions**:
+1. After completing any task, immediately check the workflow state
+2. Automatically start the next action from the NextActions list
+3. Update workflow context and continue seamlessly
+4. No manual prompts or questions - maintain continuous flow
+5. If all phase tasks are complete, automatically validate and advance to next phase
+
+**Phase Completion Auto-Advance**: When current phase tasks are complete, automatically run `ddx workflow advance` and continue with the new phase's first task.
 <!-- AUTO-PROMPTS:END -->
+
+
+
+
 
 
 

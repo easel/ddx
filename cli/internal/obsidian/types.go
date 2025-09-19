@@ -5,63 +5,6 @@ import (
 	"time"
 )
 
-// Frontmatter represents the YAML frontmatter for any markdown file
-type Frontmatter struct {
-	Title   string    `yaml:"title"`
-	Type    string    `yaml:"type"`
-	Tags    []string  `yaml:"tags"`
-	Created time.Time `yaml:"created"`
-	Updated time.Time `yaml:"updated"`
-	Status  string    `yaml:"status,omitempty"`
-	Version string    `yaml:"version,omitempty"`
-	Aliases []string  `yaml:"aliases,omitempty"`
-	Related []string  `yaml:"related,omitempty"`
-
-	// Phase-specific fields
-	PhaseID   string     `yaml:"phase_id,omitempty"`
-	PhaseNum  int        `yaml:"phase_number,omitempty"`
-	NextPhase string     `yaml:"next_phase,omitempty"`
-	PrevPhase string     `yaml:"previous_phase,omitempty"`
-	Gates     *Gates     `yaml:"gates,omitempty"`
-	Artifacts *Artifacts `yaml:"artifacts,omitempty"`
-
-	// Artifact-specific fields
-	ArtifactCategory string   `yaml:"artifact_category,omitempty"`
-	Phase            string   `yaml:"phase,omitempty"`
-	Complexity       string   `yaml:"complexity,omitempty"`
-	Prerequisites    []string `yaml:"prerequisites,omitempty"`
-	Outputs          []string `yaml:"outputs,omitempty"`
-	TimeEstimate     string   `yaml:"time_estimate,omitempty"`
-	SkillsRequired   []string `yaml:"skills_required,omitempty"`
-
-	// Feature-specific fields
-	FeatureID string `yaml:"feature_id,omitempty"`
-	Priority  string `yaml:"priority,omitempty"`
-	Owner     string `yaml:"owner,omitempty"`
-
-	// Workflow-specific fields
-	WorkflowPhase string `yaml:"workflow_phase,omitempty"`
-	ArtifactType  string `yaml:"artifact_type,omitempty"`
-}
-
-type Gates struct {
-	Entry []string `yaml:"entry,omitempty"`
-	Exit  []string `yaml:"exit,omitempty"`
-}
-
-type Artifacts struct {
-	Required []string `yaml:"required,omitempty"`
-	Optional []string `yaml:"optional,omitempty"`
-}
-
-// MarkdownFile represents a markdown file with optional frontmatter
-type MarkdownFile struct {
-	Path        string
-	Content     string
-	Frontmatter *Frontmatter
-	FileType    FileType
-}
-
 // FileType represents the type of HELIX file
 type FileType string
 
@@ -126,17 +69,73 @@ func (ft FileType) GetHierarchicalTags() []string {
 	}
 }
 
+// Frontmatter represents the YAML frontmatter for any markdown file
+type Frontmatter struct {
+	Title   string    `yaml:"title"`
+	Type    string    `yaml:"type"`
+	Tags    []string  `yaml:"tags"`
+	Created time.Time `yaml:"created"`
+	Updated time.Time `yaml:"updated"`
+	Status  string    `yaml:"status,omitempty"`
+	Version string    `yaml:"version,omitempty"`
+	Aliases []string  `yaml:"aliases,omitempty"`
+	Related []string  `yaml:"related,omitempty"`
+
+	// Phase-specific fields
+	PhaseID   string     `yaml:"phase_id,omitempty"`
+	PhaseNum  int        `yaml:"phase_number,omitempty"`
+	NextPhase string     `yaml:"next_phase,omitempty"`
+	PrevPhase string     `yaml:"previous_phase,omitempty"`
+	Gates     *Gates     `yaml:"gates,omitempty"`
+	Artifacts *Artifacts `yaml:"artifacts,omitempty"`
+
+	// Artifact-specific fields
+	ArtifactCategory string   `yaml:"artifact_category,omitempty"`
+	Phase            string   `yaml:"phase,omitempty"`
+	Complexity       string   `yaml:"complexity,omitempty"`
+	Prerequisites    []string `yaml:"prerequisites,omitempty"`
+	Outputs          []string `yaml:"outputs,omitempty"`
+	TimeEstimate     string   `yaml:"time_estimate,omitempty"`
+	SkillsRequired   []string `yaml:"skills_required,omitempty"`
+
+	// Feature-specific fields
+	FeatureID string `yaml:"feature_id,omitempty"`
+	Priority  string `yaml:"priority,omitempty"`
+	Owner     string `yaml:"owner,omitempty"`
+
+	// Workflow-specific fields
+	WorkflowPhase string `yaml:"workflow_phase,omitempty"`
+	ArtifactType  string `yaml:"artifact_type,omitempty"`
+}
+
+type Gates struct {
+	Entry []string `yaml:"entry,omitempty"`
+	Exit  []string `yaml:"exit,omitempty"`
+}
+
+type Artifacts struct {
+	Required []string `yaml:"required,omitempty"`
+	Optional []string `yaml:"optional,omitempty"`
+}
+
+// MarkdownFile represents a markdown file with optional frontmatter
+type MarkdownFile struct {
+	Path        string
+	Content     string
+	Frontmatter *Frontmatter
+	FileType    FileType
+}
+
 // HasFrontmatter returns true if the file has frontmatter
 func (mf *MarkdownFile) HasFrontmatter() bool {
 	return mf.Frontmatter != nil
 }
 
-// GetTitle returns the title from frontmatter or extracts from content
+// GetTitle returns the title from frontmatter or fallback
 func (mf *MarkdownFile) GetTitle() string {
 	if mf.HasFrontmatter() && mf.Frontmatter.Title != "" {
 		return mf.Frontmatter.Title
 	}
-	// Fallback to extracting from content would go here
 	return "Untitled"
 }
 
@@ -156,7 +155,6 @@ func (mf *MarkdownFile) GetPhase() string {
 	if mf.HasFrontmatter() && mf.Frontmatter.PhaseID != "" {
 		return mf.Frontmatter.PhaseID
 	}
-	// Fallback to extracting from path would go here
 	return ""
 }
 

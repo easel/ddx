@@ -396,4 +396,4 @@ site/
 
 # Keep configuration examples
 !config.example.*
-!settings.example.*
+!settings.example.*ddx-test
