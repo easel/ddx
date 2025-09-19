@@ -43,7 +43,7 @@ dependencies:
       path: adr
 
 output:
-  location: docs/02-design/spikes/
+  location: docs/helix/02-design/spikes/
   format: markdown
   naming: SPIKE-{number}-{title-with-hyphens}.md
   structure: per-spike

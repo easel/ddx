@@ -76,6 +76,14 @@ These principles define the core values and guidelines that govern DDx developme
 - Semantic versioning strictly followed
 - Deprecation warnings before removal
 
+### 11. Functional Completeness
+**No stub implementations or placeholder functionality in user-facing commands.**
+- CLI commands must execute actual functionality, never mock responses
+- TODO comments are prohibited in production code paths
+- Stub implementations are engineering debt that misleads users
+- If functionality isn't ready, the command shouldn't be exposed
+- Success messages must reflect actual completed operations
+
 ## Application
 
 ### In Development
@@ -105,6 +113,8 @@ These principles are enforced through:
    - CI checks enforce standards
    - PR templates include principle checklists
    - Review process includes principle assessment
+   - Automated detection of TODO comments in user-facing code paths
+   - Stub implementation scanning in CLI command handlers
 
 2. **Tooling Support**
    - Templates embed principle guidance

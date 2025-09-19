@@ -31,7 +31,7 @@ dependencies:
       phase: build
 
 output:
-  location: docs/01-frame/user-stories/
+  location: docs/helix/01-frame/user-stories/
   format: markdown
   naming: US-{number}-{feature}.md
   structure: per-feature

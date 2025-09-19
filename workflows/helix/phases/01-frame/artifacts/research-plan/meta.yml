@@ -33,7 +33,7 @@ dependencies:
       path: feasibility-study
 
 output:
-  location: docs/01-frame/research-plan.md
+  location: docs/helix/01-frame/research-plan.md
   format: markdown
   naming: research-plan.md
 

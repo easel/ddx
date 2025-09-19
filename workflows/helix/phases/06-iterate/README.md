@@ -79,7 +79,7 @@ All artifacts for this phase are located in the `artifacts/` directory. Each art
 
 #### 1. Metrics Dashboard
 **Artifact Location**: `artifacts/metrics-dashboard/`
-**Output Location**: `docs/06-iterate/metrics-dashboard.md`
+**Output Location**: `docs/helix/06-iterate/metrics-dashboard.md`
 
 Real-time KPI tracking with AI anomaly detection:
 - Business metrics vs. targets
@@ -97,7 +97,7 @@ Real-time KPI tracking with AI anomaly detection:
 
 #### 2. Feedback Analysis
 **Artifact Location**: `artifacts/feedback-analysis/`
-**Output Location**: `docs/06-iterate/feedback-analysis.md`
+**Output Location**: `docs/helix/06-iterate/feedback-analysis.md`
 
 Synthesized user feedback with sentiment analysis:
 - User feedback aggregation
@@ -115,7 +115,7 @@ Synthesized user feedback with sentiment analysis:
 
 #### 3. Performance Insights
 **Artifact Location**: `artifacts/performance-insights/`
-**Output Location**: `docs/06-iterate/performance-insights.md`
+**Output Location**: `docs/helix/06-iterate/performance-insights.md`
 
 System performance analysis and optimization opportunities:
 - Response time analysis
@@ -133,7 +133,7 @@ System performance analysis and optimization opportunities:
 
 #### 4. Lessons Learned
 **Artifact Location**: `artifacts/lessons-learned/`
-**Output Location**: `docs/06-iterate/lessons-learned.md`
+**Output Location**: `docs/helix/06-iterate/lessons-learned.md`
 
 Knowledge capture and pattern recognition:
 - What worked well
@@ -151,7 +151,7 @@ Knowledge capture and pattern recognition:
 
 #### 5. Improvement Backlog
 **Artifact Location**: `artifacts/improvement-backlog/`
-**Output Location**: `docs/06-iterate/improvement-backlog.md`
+**Output Location**: `docs/helix/06-iterate/improvement-backlog.md`
 
 Prioritized list of improvements with impact analysis:
 - Feature enhancements
@@ -169,7 +169,7 @@ Prioritized list of improvements with impact analysis:
 
 #### 6. Retrospective
 **Artifact Location**: `artifacts/retrospective/`
-**Output Location**: `docs/06-iterate/retrospective.md`
+**Output Location**: `docs/helix/06-iterate/retrospective.md`
 
 Team reflection and process improvement:
 - Sprint/iteration review
@@ -187,7 +187,7 @@ Team reflection and process improvement:
 
 #### 7. Incident Review
 **Artifact Location**: `artifacts/incident-review/`
-**Output Location**: `docs/06-iterate/incidents/INC-XXX-[title].md`
+**Output Location**: `docs/helix/06-iterate/incidents/INC-XXX-[title].md`
 
 Post-incident analysis and prevention:
 - Incident timeline
@@ -205,7 +205,7 @@ Post-incident analysis and prevention:
 
 #### 8. Iteration Planning
 **Artifact Location**: `artifacts/iteration-planning/`
-**Output Location**: `docs/06-iterate/next-iteration.md`
+**Output Location**: `docs/helix/06-iterate/next-iteration.md`
 
 Strategic planning for the next cycle:
 - Priority features for next iteration
@@ -223,7 +223,7 @@ Strategic planning for the next cycle:
 
 #### 9. Security Metrics and Analysis
 **Artifact Location**: `artifacts/security-metrics/`
-**Output Location**: `docs/06-iterate/security-metrics.md`
+**Output Location**: `docs/helix/06-iterate/security-metrics.md`
 
 Security posture monitoring and improvement tracking:
 - **Security incident response metrics (MTTD, MTTR)**
@@ -436,7 +436,7 @@ The AI excels at pattern recognition and data synthesis but human judgment is es
   - Templates for capturing and analyzing learnings
   - Prompts for AI-assisted insight generation
 
-- **Generated Insights**: `docs/06-iterate/`
+- **Generated Insights**: `docs/helix/06-iterate/`
   - Completed analyses and reports
   - Lessons learned documentation
   - Planning documents for next iteration

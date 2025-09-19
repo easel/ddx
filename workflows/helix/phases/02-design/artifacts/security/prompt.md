@@ -4,7 +4,7 @@ Create comprehensive security architecture documentation that defines threat mod
 
 ## Storage Location
 
-Store security design documentation at: `docs/02-design/security.md`
+Store security design documentation at: `docs/helix/02-design/security.md`
 
 ## Purpose
 

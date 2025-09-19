@@ -4,7 +4,7 @@ Create a comprehensive deployment checklist that ensures all prerequisites are m
 
 ## Storage Location
 
-Store the deployment checklist at: `docs/05-deploy/deployment-checklist.md`
+Store the deployment checklist at: `docs/helix/05-deploy/deployment-checklist.md`
 
 ## Purpose
 

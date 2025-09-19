@@ -32,7 +32,7 @@ dependencies:
       phase: design
 
 output:
-  location: docs/01-frame/prd.md
+  location: docs/helix/01-frame/prd.md
   format: markdown
   naming: prd.md
 

@@ -16,7 +16,7 @@ dependencies:
     - legal_counsel_input
 
 output:
-  location: docs/01-frame/compliance-requirements.md
+  location: docs/helix/01-frame/compliance-requirements.md
   format: markdown
 
 variables:

@@ -29,7 +29,7 @@ dependencies:
       phase: build
 
 output:
-  location: docs/01-frame/principles.md
+  location: docs/helix/01-frame/principles.md
   format: markdown
   naming: principles.md
 
@@ -117,7 +117,7 @@ relationships:
 
 monitoring:
   track_violations: true
-  violation_log: docs/principle-violations.log
+  violation_log: docs/helix/principle-violations.log
   review_frequency: sprint
 
 tags:

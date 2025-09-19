@@ -31,7 +31,7 @@ Let's walk through building a TODO list API using the HELIX workflow.
 ddx apply prompts/helix/frame/prd
 
 # Or create manually
-cat > docs/01-frame/prd.md << 'EOF'
+cat > docs/helix/01-frame/prd.md << 'EOF'
 # Product Requirements Document: TODO API
 
 ## Problem Statement
@@ -57,7 +57,7 @@ EOF
 ddx apply prompts/helix/frame/user-stories
 
 # Example user story
-cat > docs/01-frame/user-stories/US-001-create-task.md << 'EOF'
+cat > docs/helix/01-frame/user-stories/US-001-create-task.md << 'EOF'
 # US-001: Create Task
 
 As a developer, I want to create a new task via API,
@@ -90,7 +90,7 @@ ddx validate frame
 ddx apply prompts/helix/design/architecture
 
 # Key decisions to document:
-cat > docs/02-design/architecture.md << 'EOF'
+cat > docs/helix/02-design/architecture.md << 'EOF'
 # TODO API Architecture
 
 ## Technology Stack
@@ -110,7 +110,7 @@ EOF
 #### Step 4: Define API Contracts
 ```bash
 # Create OpenAPI specification
-cat > docs/02-design/contracts/api-spec.yaml << 'EOF'
+cat > docs/helix/02-design/contracts/api-spec.yaml << 'EOF'
 openapi: 3.0.0
 info:
   title: TODO API
@@ -249,7 +249,7 @@ ddx apply prompts/helix/iterate/metrics-analysis
 # - User feedback: "Need task categories"
 
 # Plan next iteration
-echo "FEAT-002: Add task categories" >> docs/06-iterate/backlog.md
+echo "FEAT-002: Add task categories" >> docs/helix/06-iterate/backlog.md
 ```
 
 ## 🎯 Common Scenarios

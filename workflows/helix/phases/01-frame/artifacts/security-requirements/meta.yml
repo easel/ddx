@@ -14,7 +14,7 @@ dependencies:
     - compliance_policies
 
 output:
-  location: docs/01-frame/security-requirements.md
+  location: docs/helix/01-frame/security-requirements.md
   format: markdown
 
 variables:

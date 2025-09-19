@@ -4,7 +4,7 @@ Transform business requirements into a concrete technical approach that bridges 
 
 ## Storage Location
 
-Store the solution design at: `docs/02-design/solution-design.md`
+Store the solution design at: `docs/helix/02-design/solution-design.md`
 
 ## Purpose
 

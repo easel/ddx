@@ -208,6 +208,102 @@ func TestUpdateConfiguration(t *testing.T) {
 
 ### Contract Test Cases
 
+#### CT-000: CLI Integration Verification (RED PHASE)
+```go
+func TestCLICommandsConnectedToImplementations(t *testing.T) {
+    // These tests MUST FAIL initially to verify stub implementations are removed
+
+    tests := []struct {
+        name     string
+        command  []string
+        wantText string  // Text that indicates placeholder/stub
+        mustFail bool    // Must fail during RED phase
+    }{
+        {
+            name:     "install command not stubbed",
+            command:  []string{"mcp", "install", "nonexistent-server"},
+            wantText: "Installation would complete here", // Placeholder text
+            mustFail: true, // Should fail with real error, not placeholder
+        },
+        {
+            name:     "list command not stubbed",
+            command:  []string{"mcp", "list"},
+            wantText: "Available MCP Servers", // Should show real registry
+            mustFail: false, // Should work but not show placeholders
+        },
+        {
+            name:     "status command not stubbed",
+            command:  []string{"mcp", "status"},
+            wantText: "No servers installed", // Should show real status
+            mustFail: false, // Should work but not show placeholders
+        },
+        {
+            name:     "configure command not stubbed",
+            command:  []string{"mcp", "configure", "nonexistent"},
+            wantText: "Configuring", // Placeholder message
+            mustFail: true, // Should fail with real error
+        },
+        {
+            name:     "remove command not stubbed",
+            command:  []string{"mcp", "remove", "nonexistent"},
+            wantText: "Removing", // Placeholder message
+            mustFail: true, // Should fail with real error
+        },
+        {
+            name:     "update command not stubbed",
+            command:  []string{"mcp", "update"},
+            wantText: "Registry is up to date", // Placeholder message
+            mustFail: true, // Should attempt real registry update
+        },
+    }
+
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            output := runCommand(tt.command...)
+
+            if tt.mustFail {
+                // These should fail with REAL errors, not placeholder success
+                assert.NotContains(t, output, tt.wantText,
+                    "Command returned placeholder text instead of real implementation")
+                assert.NotContains(t, output, "✅",
+                    "Command showed success for non-existent operation")
+            } else {
+                // These should work but not show placeholder text
+                assert.NotContains(t, output, "would complete",
+                    "Command contains placeholder implementation")
+                assert.NotContains(t, output, "TODO",
+                    "Command contains TODO markers")
+            }
+        })
+    }
+}
+
+// CRITICAL: This test MUST FAIL in RED phase to prove stubs are removed
+func TestNoPlaceholderImplementations(t *testing.T) {
+    // Scan CLI command source for TODO/placeholder patterns
+    cliFiles := []string{
+        "cli/cmd/mcp.go",
+    }
+
+    forbiddenPatterns := []string{
+        "TODO: Implement",
+        "Installation would complete here",
+        "✅ Installation would complete here",
+        "fmt.Printf.*would complete",
+    }
+
+    for _, file := range cliFiles {
+        content, err := os.ReadFile(file)
+        require.NoError(t, err)
+
+        for _, pattern := range forbiddenPatterns {
+            assert.NotRegexp(t, pattern, string(content),
+                "Found placeholder implementation in %s", file)
+        }
+    }
+}
+```
+
 #### CT-001: List Command Output
 ```go
 func TestListCommandContract(t *testing.T) {

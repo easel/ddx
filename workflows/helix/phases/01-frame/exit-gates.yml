@@ -10,7 +10,7 @@ exit_gates:
       - Problem statement clearly defined
       - Success metrics are specific and measurable
       - All stakeholders have reviewed and signed off
-    evidence: docs/01-frame/prd.md
+    evidence: docs/helix/01-frame/prd.md
 
   - criteria: All P0 requirements have specifications
     required: true
@@ -18,7 +18,7 @@ exit_gates:
       - Each P0 requirement has a corresponding feature specification
       - No [NEEDS CLARIFICATION] markers remain in P0 specs
       - Acceptance criteria defined for all P0 features
-    evidence: docs/01-frame/features/
+    evidence: docs/helix/01-frame/features/
 
   - criteria: User personas validated with actual data
     required: true
@@ -26,7 +26,7 @@ exit_gates:
       - Primary persona based on user research or interviews
       - Specific scenarios documented for each persona
       - Pain points are quantified where possible
-    evidence: docs/01-frame/prd.md#users-and-personas
+    evidence: docs/helix/01-frame/prd.md#users-and-personas
 
   - criteria: Success metrics are measurable
     required: true
@@ -35,7 +35,7 @@ exit_gates:
       - Each metric has a target value
       - Measurement method is specified
       - Timeline for achievement is defined
-    evidence: docs/01-frame/prd.md#success-metrics
+    evidence: docs/helix/01-frame/prd.md#success-metrics
 
   - criteria: Project principles are established
     required: true
@@ -44,7 +44,7 @@ exit_gates:
       - Technology constraints defined
       - Quality standards specified
       - Exception handling process defined
-    evidence: docs/01-frame/principles.md
+    evidence: docs/helix/01-frame/principles.md
 
   - criteria: Feature registry is initialized
     required: true
@@ -53,7 +53,7 @@ exit_gates:
       - Dependencies between features documented
       - Priority (P0/P1/P2) assigned to each feature
       - Owner assigned to each feature
-    evidence: docs/01-frame/feature-registry.md
+    evidence: docs/helix/01-frame/feature-registry.md
 
   - criteria: User stories created for P0 features
     required: true
@@ -62,7 +62,7 @@ exit_gates:
       - Acceptance criteria use Given/When/Then format
       - Definition of Done specified
       - Stories are estimated (optional but recommended)
-    evidence: docs/01-frame/user-stories/
+    evidence: docs/helix/01-frame/user-stories/
 
   - criteria: Risk assessment completed
     required: false
@@ -71,7 +71,7 @@ exit_gates:
       - Risk probability and impact assessed
       - Mitigation strategies defined
       - Risk owners assigned
-    evidence: docs/01-frame/risk-register.md
+    evidence: docs/helix/01-frame/risk-register.md
 
   - criteria: Stakeholder alignment achieved
     required: false
@@ -80,7 +80,7 @@ exit_gates:
       - RACI matrix completed
       - Communication plan established
       - Escalation path defined
-    evidence: docs/01-frame/stakeholder-map.md
+    evidence: docs/helix/01-frame/stakeholder-map.md
 
   - criteria: Scope boundaries are clear
     required: true
@@ -89,7 +89,7 @@ exit_gates:
       - Out-of-scope items explicitly listed
       - Dependencies on external systems identified
       - Timeline and resource constraints acknowledged
-    evidence: docs/01-frame/prd.md#scope
+    evidence: docs/helix/01-frame/prd.md#scope
 
   # Quality Gates
   - criteria: No ambiguous requirements
@@ -98,7 +98,7 @@ exit_gates:
       - All requirements are testable
       - Vague terms like "fast" or "user-friendly" are quantified
       - Edge cases are identified and documented
-    evidence: docs/01-frame/features/
+    evidence: docs/helix/01-frame/features/
 
   - criteria: Assumptions and constraints documented
     required: false
@@ -107,7 +107,7 @@ exit_gates:
       - Business assumptions listed
       - Known constraints identified
       - Impact of assumptions assessed
-    evidence: docs/01-frame/assumptions-constraints.md
+    evidence: docs/helix/01-frame/assumptions-constraints.md
 
   # Process Gates
   - criteria: Validation checklist completed
@@ -117,7 +117,7 @@ exit_gates:
       - Cross-references between documents verified
       - Consistency across artifacts confirmed
       - Quality review performed
-    evidence: docs/01-frame/validation-checklist.md
+    evidence: docs/helix/01-frame/validation-checklist.md
 
   - criteria: Glossary of terms established
     required: false
@@ -126,7 +126,7 @@ exit_gates:
       - Acronyms expanded
       - Technical terms explained
       - Shared understanding confirmed
-    evidence: docs/01-frame/glossary.md
+    evidence: docs/helix/01-frame/glossary.md
 
   # Security and Compliance Gates (Optional)
   - criteria: Security requirements defined
@@ -135,7 +135,7 @@ exit_gates:
       - Security user stories documented
       - Authentication requirements specified
       - Data protection requirements identified
-    evidence: docs/01-frame/security-requirements.md
+    evidence: docs/helix/01-frame/security-requirements.md
 
   - criteria: Threat model completed
     required: false
@@ -143,7 +143,7 @@ exit_gates:
       - Threat analysis performed
       - Risk assessment documented
       - Mitigation strategies identified
-    evidence: docs/01-frame/threat-model.md
+    evidence: docs/helix/01-frame/threat-model.md
 
   - criteria: Compliance requirements documented
     required: false
@@ -151,33 +151,33 @@ exit_gates:
       - Applicable regulations identified
       - Compliance matrix created
       - Data handling requirements specified
-    evidence: docs/01-frame/compliance-requirements.md
+    evidence: docs/helix/01-frame/compliance-requirements.md
 
 # Automated Validation Rules
 validation_rules:
   - rule: no_clarification_markers
     description: No [NEEDS CLARIFICATION] markers in P0 specifications
-    path: docs/01-frame/features/
+    path: docs/helix/01-frame/features/
     pattern: "\\[NEEDS CLARIFICATION"
     expected: 0
     severity: blocking
 
   - rule: feature_ids_unique
     description: All FEAT-XXX IDs are unique
-    path: docs/01-frame/feature-registry.md
+    path: docs/helix/01-frame/feature-registry.md
     check: unique_ids
     severity: blocking
 
   - rule: user_story_format
     description: User stories follow correct format
-    path: docs/01-frame/user-stories/
+    path: docs/helix/01-frame/user-stories/
     pattern: "As a .* I want .* So that"
     expected: present
     severity: warning
 
   - rule: metrics_quantified
     description: Success metrics have numeric targets
-    path: docs/01-frame/prd.md
+    path: docs/helix/01-frame/prd.md
     check: metrics_have_numbers
     severity: blocking
 

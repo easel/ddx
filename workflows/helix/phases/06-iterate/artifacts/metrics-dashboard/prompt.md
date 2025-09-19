@@ -4,7 +4,7 @@ Create a comprehensive metrics dashboard with AI-powered insights for production
 
 ## Storage Location
 
-Store the dashboard at: `docs/06-iterate/metrics-dashboard.md`
+Store the dashboard at: `docs/helix/06-iterate/metrics-dashboard.md`
 
 Update this dashboard regularly (daily/weekly) to track trends and identify patterns across iterations.
 

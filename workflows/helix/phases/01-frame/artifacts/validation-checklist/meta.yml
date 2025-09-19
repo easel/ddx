@@ -31,7 +31,7 @@ dependencies:
       phase: design
 
 output:
-  location: docs/01-frame/validation-checklist.md
+  location: docs/helix/01-frame/validation-checklist.md
   format: markdown
   naming: validation-checklist.md
   timing: end_of_phase

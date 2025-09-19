@@ -4,7 +4,7 @@ Create a comprehensive monitoring and observability setup that provides real-tim
 
 ## Storage Location
 
-Store the monitoring setup at: `docs/05-deploy/monitoring-setup.md`
+Store the monitoring setup at: `docs/helix/05-deploy/monitoring-setup.md`
 
 ## Purpose
 

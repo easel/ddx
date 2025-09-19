@@ -45,7 +45,7 @@ All artifacts for this phase are located in the `artifacts/` directory. Each art
 
 #### 1. Product Requirements Document (PRD)
 **Artifact Location**: `artifacts/prd/`
-**Output Location**: `docs/01-frame/prd.md`
+**Output Location**: `docs/helix/01-frame/prd.md`
 
 The business vision document that:
 - Defines the problem and opportunity
@@ -64,7 +64,7 @@ The business vision document that:
 
 #### 2. Principles Document
 **Artifact Location**: `artifacts/principles/`
-**Output Location**: `docs/01-frame/principles.md`
+**Output Location**: `docs/helix/01-frame/principles.md`
 
 Technical and project constraints that will guide all development:
 - Core development principles (e.g., library-first, test-first)
@@ -74,7 +74,7 @@ Technical and project constraints that will guide all development:
 
 #### 3. User Stories
 **Artifact Location**: `artifacts/user-stories/`
-**Output Location**: `docs/01-frame/user-stories/US-XXX-[name].md`
+**Output Location**: `docs/helix/01-frame/user-stories/US-XXX-[name].md`
 
 Concrete user needs with clear acceptance criteria:
 - Story format: As a [user], I want [goal], so that [value]
@@ -85,7 +85,7 @@ Concrete user needs with clear acceptance criteria:
 
 #### 4. Feature Specification
 **Artifact Location**: `artifacts/feature-specification/`
-**Output Location**: `docs/01-frame/features/FEAT-XXX-[name].md`
+**Output Location**: `docs/helix/01-frame/features/FEAT-XXX-[name].md`
 
 Detailed requirements and constraints:
 - Functional requirements (what the system must do)
@@ -96,7 +96,7 @@ Detailed requirements and constraints:
 
 #### 5. Feature Registry
 **Artifact Location**: `artifacts/feature-registry/`
-**Output Location**: `docs/01-frame/feature-registry.md`
+**Output Location**: `docs/helix/01-frame/feature-registry.md`
 
 Centralized registry of all features:
 - Feature identification with FEAT-XXX IDs
@@ -108,7 +108,7 @@ Centralized registry of all features:
 
 #### 6. Stakeholder Map
 **Artifact Location**: `artifacts/stakeholder-map/`
-**Output Location**: `docs/01-frame/stakeholder-map.md`
+**Output Location**: `docs/helix/01-frame/stakeholder-map.md`
 
 Comprehensive stakeholder analysis and engagement planning:
 - Stakeholder identification and categorization
@@ -119,7 +119,7 @@ Comprehensive stakeholder analysis and engagement planning:
 
 #### 7. Risk Register
 **Artifact Location**: `artifacts/risk-register/`
-**Output Location**: `docs/01-frame/risk-register.md`
+**Output Location**: `docs/helix/01-frame/risk-register.md`
 
 Systematic risk identification and management:
 - Risk assessment (probability × impact)
@@ -130,7 +130,7 @@ Systematic risk identification and management:
 
 #### 8. Validation Checklist
 **Artifact Location**: `artifacts/validation-checklist/`
-**Output Location**: `docs/01-frame/validation-checklist.md`
+**Output Location**: `docs/helix/01-frame/validation-checklist.md`
 
 Phase completion validation and quality assurance:
 - Comprehensive artifact review
@@ -143,7 +143,7 @@ Phase completion validation and quality assurance:
 
 #### 9. Security Requirements
 **Artifact Location**: `artifacts/security-requirements/`
-**Output Location**: `docs/01-frame/security-requirements.md`
+**Output Location**: `docs/helix/01-frame/security-requirements.md`
 
 Comprehensive security requirements definition:
 - Security user stories with acceptance criteria
@@ -154,7 +154,7 @@ Comprehensive security requirements definition:
 
 #### 10. Threat Model
 **Artifact Location**: `artifacts/threat-model/`
-**Output Location**: `docs/01-frame/threat-model.md`
+**Output Location**: `docs/helix/01-frame/threat-model.md`
 
 Systematic threat identification and analysis:
 - STRIDE-based threat analysis
@@ -165,7 +165,7 @@ Systematic threat identification and analysis:
 
 #### 11. Compliance Requirements
 **Artifact Location**: `artifacts/compliance-requirements/`
-**Output Location**: `docs/01-frame/compliance-requirements.md`
+**Output Location**: `docs/helix/01-frame/compliance-requirements.md`
 
 Regulatory and compliance obligations:
 - Applicable regulations and standards identification
@@ -176,7 +176,7 @@ Regulatory and compliance obligations:
 
 #### 12. Assumptions & Constraints (Optional)
 **Artifact Location**: `artifacts/assumptions-constraints/`
-**Output Location**: `docs/01-frame/assumptions-constraints.md`
+**Output Location**: `docs/helix/01-frame/assumptions-constraints.md`
 
 Explicit documentation of project boundaries:
 - Technical assumptions and their impact
@@ -186,7 +186,7 @@ Explicit documentation of project boundaries:
 
 #### 10. Glossary (Optional)
 **Artifact Location**: `artifacts/glossary/`
-**Output Location**: `docs/01-frame/glossary.md`
+**Output Location**: `docs/helix/01-frame/glossary.md`
 
 Shared understanding of terminology:
 - Domain-specific terms and definitions
@@ -195,7 +195,7 @@ Shared understanding of terminology:
 
 #### 11. Traceability Matrix (Optional)
 **Artifact Location**: `artifacts/traceability-matrix/`
-**Output Location**: `docs/01-frame/traceability-matrix.md`
+**Output Location**: `docs/helix/01-frame/traceability-matrix.md`
 
 Requirements tracking and alignment:
 - Requirements to user stories mapping
@@ -209,7 +209,7 @@ When significant unknowns exist about the problem space, market opportunity, or 
 
 #### 12. Research Plan (Optional)
 **Artifact Location**: `artifacts/research-plan/`
-**Output Location**: `docs/01-frame/research-plan.md`
+**Output Location**: `docs/helix/01-frame/research-plan.md`
 
 Structured investigation plan for unknown requirements:
 - **When to Use**: Problem space unclear, user needs unknown, market validation required
@@ -228,7 +228,7 @@ Structured investigation plan for unknown requirements:
 
 #### 13. Feasibility Study (Optional)
 **Artifact Location**: `artifacts/feasibility-study/`
-**Output Location**: `docs/01-frame/feasibility-study.md`
+**Output Location**: `docs/helix/01-frame/feasibility-study.md`
 
 Systematic viability analysis across multiple dimensions:
 - **When to Use**: Large investment, complex project, unclear viability, significant constraints
@@ -323,7 +323,7 @@ The workflow's overarching principles guide all decisions and ensure consistency
   - Contains templates, prompts, and examples for each artifact
   - Defines the structure and guidance for artifact creation
 
-- **Generated Outputs**: `docs/01-frame/`
+- **Generated Outputs**: `docs/helix/01-frame/`
   - Where completed artifacts are stored in the project
   - Makes documentation easily accessible to all stakeholders
   - Features organized by FEAT-XXX identifier

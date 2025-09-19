@@ -30,7 +30,7 @@ dependencies:
       phase: build
 
 output:
-  location: docs/01-frame/risk-register.md
+  location: docs/helix/01-frame/risk-register.md
   format: markdown
   naming: risk-register.md
   update_frequency: weekly

@@ -31,7 +31,7 @@ dependencies:
       phase: deploy
 
 output:
-  location: docs/01-frame/feature-registry.md
+  location: docs/helix/01-frame/feature-registry.md
   format: markdown
   naming: feature-registry.md
   update_frequency: continuous

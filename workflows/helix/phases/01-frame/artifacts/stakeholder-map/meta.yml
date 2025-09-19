@@ -29,7 +29,7 @@ dependencies:
       phase: frame
 
 output:
-  location: docs/01-frame/stakeholder-map.md
+  location: docs/helix/01-frame/stakeholder-map.md
   format: markdown
   naming: stakeholder-map.md
   update_frequency: monthly

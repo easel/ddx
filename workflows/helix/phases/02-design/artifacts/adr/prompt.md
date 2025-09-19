@@ -4,7 +4,7 @@ Document significant architectural decisions with clear rationale and trade-offs
 
 ## Storage Location
 
-Store ADRs at: `docs/02-design/adr/ADR-{number}-{title-with-hyphens}.md`
+Store ADRs at: `docs/helix/02-design/adr/ADR-{number}-{title-with-hyphens}.md`
 
 ## Naming Convention
 

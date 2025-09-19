@@ -4,7 +4,7 @@ Create a comprehensive risk register to identify, assess, and plan mitigation fo
 
 ## Storage Location
 
-Store the risk register at: `docs/01-frame/risk-register.md`
+Store the risk register at: `docs/helix/01-frame/risk-register.md`
 
 This central location ensures risks are visible and actively managed throughout the project.
 

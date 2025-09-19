@@ -4,7 +4,7 @@ Create a comprehensive stakeholder map to identify, analyze, and plan engagement
 
 ## Storage Location
 
-Store the stakeholder map at: `docs/01-frame/stakeholder-map.md`
+Store the stakeholder map at: `docs/helix/01-frame/stakeholder-map.md`
 
 This ensures the stakeholder analysis is readily accessible for communication planning and risk management.
 

@@ -78,7 +78,7 @@ Comprehensive data architecture:
 
 #### 6. Security Architecture
 **Artifact Location**: `artifacts/security-architecture/`
-**Output Location**: `docs/02-design/security-architecture.md`
+**Output Location**: `docs/helix/02-design/security-architecture.md`
 
 Comprehensive security architecture and controls:
 - **Security principles and patterns applied**
@@ -89,7 +89,7 @@ Comprehensive security architecture and controls:
 
 #### 7. Authentication and Authorization Design
 **Artifact Location**: `artifacts/auth-design/`
-**Output Location**: `docs/02-design/auth-design.md`
+**Output Location**: `docs/helix/02-design/auth-design.md`
 
 Detailed identity and access management design:
 - **Identity provider integration and SSO design**
@@ -100,7 +100,7 @@ Detailed identity and access management design:
 
 #### 8. Data Protection Plan
 **Artifact Location**: `artifacts/data-protection/`
-**Output Location**: `docs/02-design/data-protection.md`
+**Output Location**: `docs/helix/02-design/data-protection.md`
 
 Data security and privacy implementation:
 - **Data classification and handling procedures**
@@ -115,7 +115,7 @@ When significant technical unknowns exist about architecture, technology choices
 
 #### 7. Technical Spike (Optional)
 **Artifact Location**: `artifacts/tech-spike/`
-**Output Location**: `docs/02-design/spikes/SPIKE-XXX-[name].md`
+**Output Location**: `docs/helix/02-design/spikes/SPIKE-XXX-[name].md`
 
 Time-boxed technical investigation for unknowns:
 - **When to Use**: Technical approach unclear, architecture decision risk, implementation complexity unknown
@@ -134,7 +134,7 @@ Time-boxed technical investigation for unknowns:
 
 #### 8. Proof of Concept (Optional)
 **Artifact Location**: `artifacts/proof-of-concept/`
-**Output Location**: `docs/02-design/proofs-of-concept/POC-XXX-[name].md`
+**Output Location**: `docs/helix/02-design/proofs-of-concept/POC-XXX-[name].md`
 
 Minimal working implementation to validate technical concepts:
 - **When to Use**: High-risk technical approach, novel architecture, complex integration, end-to-end validation needed
@@ -271,7 +271,7 @@ Each artifact should reference related artifacts:
 - Solution Designs should reference both the ADR (why) and Tech Spike (what technology)
 
 ### Reference
-For complete artifact boundary definitions, see [ADR-011: Design Phase Artifact Boundaries](/docs/02-design/adr/adr-011-design-artifact-boundaries.md) in the DDX documentation.
+For complete artifact boundary definitions, see [ADR-011: Design Phase Artifact Boundaries](/docs/helix/02-design/adr/adr-011-design-artifact-boundaries.md) in the DDX documentation.
 
 ## Process Flow
 

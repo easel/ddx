@@ -4,7 +4,7 @@ Synthesize user feedback using AI-powered sentiment analysis, pattern recognitio
 
 ## Storage Location
 
-Store the analysis at: `docs/06-iterate/feedback-analysis.md`
+Store the analysis at: `docs/helix/06-iterate/feedback-analysis.md`
 
 Update this analysis weekly or after significant feedback volumes to maintain pulse on user satisfaction.
 

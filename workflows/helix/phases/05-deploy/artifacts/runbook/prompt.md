@@ -4,7 +4,7 @@ Create a comprehensive operational runbook that provides step-by-step procedures
 
 ## Storage Location
 
-Store the runbook at: `docs/05-deploy/runbook.md`
+Store the runbook at: `docs/helix/05-deploy/runbook.md`
 
 ## Purpose
 

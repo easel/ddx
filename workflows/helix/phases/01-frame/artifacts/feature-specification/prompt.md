@@ -4,7 +4,7 @@ Create a complete feature specification with explicit uncertainty markers.
 
 ## Storage Location
 
-Store feature specifications at: `docs/01-frame/features/FEAT-{number}-{title-with-hyphens}.md`
+Store feature specifications at: `docs/helix/01-frame/features/FEAT-{number}-{title-with-hyphens}.md`
 
 ## Naming Convention
 

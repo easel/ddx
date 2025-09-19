@@ -19,7 +19,7 @@ The Frame phase establishes the project foundation by focusing on understanding 
 ### CRITICAL: Always Check Existing Documentation First
 
 Before creating any new document:
-1. **Search for existing feature specs**: Use pattern FEAT-* in docs/01-frame/features/
+1. **Search for existing feature specs**: Use pattern FEAT-* in docs/helix/01-frame/features/
 2. **Check for existing PRD sections**: Extend the PRD rather than creating new ones
 3. **Review existing user stories**: Add to collections rather than duplicate
 4. **Update existing registers**: Risk register, stakeholder map, feature registry

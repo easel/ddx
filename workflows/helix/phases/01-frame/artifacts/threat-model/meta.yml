@@ -15,7 +15,7 @@ dependencies:
     - data_flow_diagrams
 
 output:
-  location: docs/01-frame/threat-model.md
+  location: docs/helix/01-frame/threat-model.md
   format: markdown
 
 variables:

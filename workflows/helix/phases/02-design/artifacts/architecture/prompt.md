@@ -4,7 +4,7 @@ Create comprehensive architecture documentation that visualizes system structure
 
 ## Storage Location
 
-Store architecture documentation at: `docs/02-design/architecture.md`
+Store architecture documentation at: `docs/helix/02-design/architecture.md`
 
 ## Purpose
 

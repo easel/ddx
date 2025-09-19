@@ -27,7 +27,7 @@ Before starting Build phase, verify Test phase outputs:
 
 ### 1. Implementation Plan
 **Location**: `artifacts/implementation-plan/`
-**Output**: `docs/build/implementation-plan.md`
+**Output**: `docs/helix/04-build/implementation-plan.md`
 
 Technical execution strategy:
 - **Build Phases**: Incremental delivery approach
@@ -39,7 +39,7 @@ Technical execution strategy:
 
 ### 2. Build Procedures
 **Location**: `artifacts/build-procedures/`
-**Output**: `docs/build/build-procedures.md`
+**Output**: `docs/helix/04-build/build-procedures.md`
 
 TDD implementation guide:
 - **Red-Green-Refactor procedures**: Step-by-step TDD process
@@ -51,7 +51,7 @@ TDD implementation guide:
 
 ### 3. Secure Coding Checklist
 **Artifact Location**: `artifacts/secure-coding/`
-**Output Location**: `docs/04-build/secure-coding-checklist.md`
+**Output Location**: `docs/helix/04-build/secure-coding-checklist.md`
 
 Security implementation validation:
 - **Input validation and sanitization checks**

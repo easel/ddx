@@ -33,7 +33,7 @@ Prerequisites to enter this phase (defined in `input-gates.yml`):
 
 2. **User stories have clear acceptance criteria**
    - Requirement: Each story has testable Given/When/Then scenarios
-   - Validation: All stories in `docs/01-frame/user-stories/` have criteria
+   - Validation: All stories in `docs/helix/01-frame/user-stories/` have criteria
    - Source: 01-frame phase
 
 3. **Non-functional requirements defined**
@@ -74,7 +74,7 @@ graph TD
 
 #### 1. Test Plan
 **Artifact Location**: `artifacts/test-plan/`
-**Output Location**: `docs/03-test/test-plan.md`
+**Output Location**: `docs/helix/03-test/test-plan.md`
 
 Comprehensive testing strategy (follows IEEE 829):
 - Test scope and objectives
@@ -87,7 +87,7 @@ Comprehensive testing strategy (follows IEEE 829):
 
 #### 2. Test Procedures
 **Artifact Location**: `artifacts/test-procedures/`
-**Output Location**: `docs/03-test/test-procedures.md`
+**Output Location**: `docs/helix/03-test/test-procedures.md`
 
 Step-by-step test execution guide:
 - Test writing procedures for each type
@@ -285,7 +285,7 @@ The Test phase is complete and Build phase can begin when:
 5. **CI/CD Configured**: Automated test execution ready
    - Validation: Pipeline runs tests on commit
 6. **Documentation Complete**: Test plan and strategies documented
-   - Validation: `docs/03-test/test-plan.md` exists and is complete
+   - Validation: `docs/helix/03-test/test-plan.md` exists and is complete
 
 ## Next Phase: Build
 

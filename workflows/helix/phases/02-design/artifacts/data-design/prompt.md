@@ -4,7 +4,7 @@ Create comprehensive data architecture documentation that defines how data is st
 
 ## Storage Location
 
-Store data design documentation at: `docs/02-design/data-design.md`
+Store data design documentation at: `docs/helix/02-design/data-design.md`
 
 ## Purpose
 

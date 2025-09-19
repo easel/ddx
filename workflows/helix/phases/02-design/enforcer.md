@@ -19,7 +19,7 @@ The Design phase transforms requirements from Frame into technical architecture,
 ### CRITICAL: Extend Existing Design Documents
 
 Before creating new design docs:
-1. **Check existing architecture**: docs/02-design/architecture/
+1. **Check existing architecture**: docs/helix/02-design/architecture/
 2. **Review API contracts**: Extend existing contract definitions
 3. **Update data models**: Add to existing schemas
 4. **Extend security design**: Build on existing security architecture

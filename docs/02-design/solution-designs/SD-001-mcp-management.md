@@ -163,6 +163,97 @@ type ServerConfig struct {
 
 ## Technical Architecture
 
+### CLI Integration Architecture
+
+The CLI commands must be connected to their internal implementations through a clear architectural pattern that eliminates stub implementations.
+
+#### Command Handler Pattern
+```go
+// cmd/mcp.go - Command Definition Layer
+func newMCPInstallCommand() *cobra.Command {
+    cmd := &cobra.Command{
+        Use:   "install <server-name>",
+        RunE: func(cmd *cobra.Command, args []string) error {
+            // Extract CLI options
+            opts := extractInstallOptions(cmd, args)
+
+            // Create and invoke service
+            installer := mcp.NewInstaller()
+            return installer.Install(args[0], opts)
+        },
+    }
+    return cmd
+}
+```
+
+#### Service Layer Integration
+```go
+// internal/mcp/installer.go - Implementation Layer
+type Installer struct {
+    registry  *Registry
+    config    *ConfigManager
+    validator *Validator
+}
+
+func (i *Installer) Install(serverName string, opts InstallOptions) error {
+    // Actual implementation logic
+    // This eliminates the "TODO: Implement" placeholder
+}
+```
+
+#### Integration Flow
+```mermaid
+graph TB
+    subgraph "CLI Layer (cmd/mcp.go)"
+        A[Command Parser]
+        B[Option Extractor]
+        C[Error Handler]
+    end
+
+    subgraph "Service Layer (internal/mcp/)"
+        D[Installer Service]
+        E[Registry Service]
+        F[Config Service]
+    end
+
+    A --> B
+    B --> D
+    D --> E
+    D --> F
+    F --> C
+    E --> C
+```
+
+#### Stub Implementation Elimination Strategy
+
+1. **Command Factory Pattern**
+   - Each command creates its service instance
+   - Services contain actual business logic
+   - No TODO comments in command handlers
+
+2. **Dependency Injection**
+   - Services injected at command creation
+   - Enables testing with mock services
+   - Clear separation of concerns
+
+3. **Error Boundary Pattern**
+   - CLI layer handles user-facing errors
+   - Service layer handles business logic errors
+   - Consistent error handling across commands
+
+#### Command-to-Service Mapping
+
+| CLI Command | Service Method | Implementation |
+|-------------|----------------|----------------|
+| `ddx mcp list` | `Registry.List(filters)` | Load registry, apply filters, format output |
+| `ddx mcp install` | `Installer.Install(name, opts)` | Complete installation flow |
+| `ddx mcp configure` | `ConfigManager.UpdateServer(name, config)` | Update existing configuration |
+| `ddx mcp remove` | `ConfigManager.RemoveServer(name, opts)` | Remove with backup |
+| `ddx mcp status` | `StatusChecker.Check(name)` | Verify installation status |
+| `ddx mcp update` | `Registry.Update(opts)` | Refresh registry data |
+
+Each command handler MUST call its corresponding service method - no placeholder implementations allowed.
+
 ### Data Flow
 
 #### Installation Flow
@@ -229,6 +320,7 @@ graph LR
 2. Interactive prompts with masking
 3. Progress indicators
 4. Error handling and recovery
+5. **CLI-to-Implementation Binding**: Connect command handlers to internal services
 
 ### Phase 3: Configuration Management
 1. Claude detection logic

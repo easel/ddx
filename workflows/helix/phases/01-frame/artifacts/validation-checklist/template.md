@@ -22,7 +22,7 @@ This checklist ensures all Frame phase deliverables are complete, consistent, an
 ## 1. Documentation Completeness
 
 ### Product Requirements Document (PRD)
-- [ ] **Created**: PRD exists at `docs/01-frame/prd.md`
+- [ ] **Created**: PRD exists at `docs/helix/01-frame/prd.md`
 - [ ] **Executive Summary**: Written and reflects current state
 - [ ] **Problem Statement**: Clear and quantified
 - [ ] **Success Metrics**: Specific, measurable, with targets
@@ -35,7 +35,7 @@ This checklist ensures all Frame phase deliverables are complete, consistent, an
 **Notes**: [Any issues or conditions]
 
 ### Principles Document
-- [ ] **Created**: Exists at `docs/01-frame/principles.md`
+- [ ] **Created**: Exists at `docs/helix/01-frame/principles.md`
 - [ ] **Core Principles**: Defined and enforceable
 - [ ] **Technology Constraints**: Specified
 - [ ] **Quality Standards**: Clear and measurable
@@ -46,7 +46,7 @@ This checklist ensures all Frame phase deliverables are complete, consistent, an
 
 ### Feature Specifications
 - [ ] **Coverage**: All P0 features have specifications
-- [ ] **Location**: Stored in `docs/01-frame/features/`
+- [ ] **Location**: Stored in `docs/helix/01-frame/features/`
 - [ ] **Naming**: Follow FEAT-XXX-title format
 - [ ] **Completeness**: All sections filled
 - [ ] **Clarifications**: No [NEEDS CLARIFICATION] in P0 specs
@@ -57,7 +57,7 @@ This checklist ensures all Frame phase deliverables are complete, consistent, an
 
 ### User Stories
 - [ ] **Coverage**: P0 features have user stories
-- [ ] **Location**: Stored in `docs/01-frame/user-stories/`
+- [ ] **Location**: Stored in `docs/helix/01-frame/user-stories/`
 - [ ] **Format**: Follow "As a... I want... So that..."
 - [ ] **Acceptance Criteria**: Given/When/Then format
 - [ ] **Definition of Done**: Specified for each story
@@ -66,7 +66,7 @@ This checklist ensures all Frame phase deliverables are complete, consistent, an
 **Notes**: [Any issues or conditions]
 
 ### Feature Registry
-- [ ] **Created**: Exists at `docs/01-frame/feature-registry.md`
+- [ ] **Created**: Exists at `docs/helix/01-frame/feature-registry.md`
 - [ ] **Completeness**: All features registered
 - [ ] **IDs**: Unique FEAT-XXX identifiers
 - [ ] **Dependencies**: Documented
@@ -76,7 +76,7 @@ This checklist ensures all Frame phase deliverables are complete, consistent, an
 **Notes**: [Any issues or conditions]
 
 ### Stakeholder Map
-- [ ] **Created**: Exists at `docs/01-frame/stakeholder-map.md`
+- [ ] **Created**: Exists at `docs/helix/01-frame/stakeholder-map.md`
 - [ ] **Identification**: All stakeholders identified
 - [ ] **RACI Matrix**: Complete and consistent
 - [ ] **Communication Plan**: Defined
@@ -86,7 +86,7 @@ This checklist ensures all Frame phase deliverables are complete, consistent, an
 **Notes**: [Any issues or conditions]
 
 ### Risk Register
-- [ ] **Created**: Exists at `docs/01-frame/risk-register.md`
+- [ ] **Created**: Exists at `docs/helix/01-frame/risk-register.md`
 - [ ] **Risk Identification**: Major risks identified
 - [ ] **Assessment**: Probability and impact scored
 - [ ] **Mitigation**: Strategies defined for high risks

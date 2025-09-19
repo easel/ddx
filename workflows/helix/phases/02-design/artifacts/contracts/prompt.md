@@ -4,7 +4,7 @@ Define precise API contracts that will be tested before implementation.
 
 ## Storage Location
 
-Store API contracts at: `docs/02-design/contracts/API-{number}-{title-with-hyphens}.md`
+Store API contracts at: `docs/helix/02-design/contracts/API-{number}-{title-with-hyphens}.md`
 
 ## Naming Convention
 

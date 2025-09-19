@@ -4,7 +4,7 @@ Create comprehensive user stories with testable acceptance criteria.
 
 ## Storage Location
 
-Store user stories at: `docs/01-frame/user-stories/US-{number}-{title-with-hyphens}.md`
+Store user stories at: `docs/helix/01-frame/user-stories/US-{number}-{title-with-hyphens}.md`
 
 ## Naming Convention
 

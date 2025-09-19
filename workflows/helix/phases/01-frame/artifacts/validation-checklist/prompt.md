@@ -4,7 +4,7 @@ Create a comprehensive validation checklist to ensure Frame phase completeness a
 
 ## Storage Location
 
-Store the validation checklist at: `docs/01-frame/validation-checklist.md`
+Store the validation checklist at: `docs/helix/01-frame/validation-checklist.md`
 
 This ensures the validation is documented and can be referenced for phase gate reviews.
 

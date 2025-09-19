@@ -54,6 +54,20 @@ CLI agents have become ubiquitous and powerful, creating the perfect conditions 
 
 The window is ideal - early enough to establish standards, mature enough that users understand the need.
 
+### Critical Implementation Gap Identified
+
+**Current Issue**: MCP (Model Context Protocol) server management CLI commands exist but are not connected to their internal implementations. Commands like `ddx mcp install` return placeholder messages instead of executing actual functionality.
+
+**Impact**:
+- Users receive misleading feedback suggesting successful installation
+- MCP server management feature appears broken/incomplete
+- Reduces confidence in DDX as a production-ready tool
+- Creates potential user confusion and frustration
+
+**Root Cause**: CLI command handlers contain TODO placeholders rather than calling existing internal MCP management services. The implementation logic exists in `internal/mcp/` but CLI commands in `cmd/mcp.go` don't invoke it.
+
+This gap must be resolved to meet the PRD's "Core CLI Commands" requirement and ensure MCP server management functions as specified.
+
 ## Goals and Objectives
 
 ### Business Goals

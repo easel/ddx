@@ -58,21 +58,28 @@ Developers using Claude Code and Claude Desktop struggle with discovering, downl
 - Prevent path traversal in configuration paths
 - Secure storage recommendations for credentials
 
+#### FR-005: CLI Implementation Integration
+- Connect CLI command interface to internal implementation logic
+- Replace placeholder responses with actual functionality
+- Ensure all MCP commands invoke their corresponding internal services
+- Provide consistent error handling and user feedback across all commands
+- Validate that CLI commands match their documented behavior specifications
+
 ### P1 - Important (Post-MVP)
 
-#### FR-005: Template Integration
+#### FR-006: Template Integration
 - Include MCP server configs in project templates
 - Variable substitution for project-specific values
 - Support for development vs production configurations
 
-#### FR-006: Registry Management
+#### FR-007: Registry Management
 - Support custom MCP server registries
 - Cache registry data for offline use
 - Version management for server definitions
 
 ### P2 - Nice to Have
 
-#### FR-007: Advanced Features
+#### FR-008: Advanced Features
 - Bulk installation of multiple servers
 - Server dependency management
 - Configuration profiles for different environments
@@ -216,6 +223,9 @@ New connection string (or press Enter to keep):
 - [ ] Configuration is correctly written to Claude settings
 - [ ] Can update existing server configuration
 - [ ] Can remove server configuration with backup
+- [ ] CLI commands execute actual functionality (not placeholder messages)
+- [ ] All MCP commands are connected to their internal implementations
+- [ ] Error handling is consistent across all CLI commands
 - [ ] Works on macOS, Linux, and Windows
 - [ ] All commands have --help documentation
 - [ ] Security validation prevents malicious configurations

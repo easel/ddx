@@ -4,7 +4,7 @@ Create a comprehensive test plan that defines the strategy, structure, and appro
 
 ## Storage Location
 
-Store the test plan at: `docs/03-test/test-plan.md`
+Store the test plan at: `docs/helix/03-test/test-plan.md`
 
 ## Purpose
 

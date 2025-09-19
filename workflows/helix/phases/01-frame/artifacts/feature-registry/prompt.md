@@ -4,7 +4,7 @@ Create and maintain a comprehensive registry of all features in the system.
 
 ## Storage Location
 
-Store the feature registry at: `docs/01-frame/feature-registry.md`
+Store the feature registry at: `docs/helix/01-frame/feature-registry.md`
 
 ## Purpose
 

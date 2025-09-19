@@ -34,7 +34,7 @@ dependencies:
       phase: test
 
 output:
-  location: docs/01-frame/features/
+  location: docs/helix/01-frame/features/
   format: markdown
   naming: FEAT-{number}-{title-with-hyphens}.md
   structure: per-feature

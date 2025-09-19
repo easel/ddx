@@ -418,6 +418,144 @@ Teams can develop domain-specific AI prompts.
 ### 4. Tool Configurations
 Shareable configurations for linters, formatters, etc.
 
+### 5. MCP Server Configuration
+Project-local MCP server definitions for Claude Code integration.
+
+## MCP Server Management Architecture
+
+### MCP Installation Strategy
+
+DDx implements a **project-local, dependency-managed** approach for MCP (Model Context Protocol) servers:
+
+#### 1. Local Dependency Management
+
+**Package Manager Abstraction:**
+DDx supports multiple package managers through intelligent detection and abstraction:
+
+- **Auto-Detection**: Automatically detects package manager from lock files
+  - `pnpm-lock.yaml` → pnpm (recommended for efficiency)
+  - `yarn.lock` → yarn
+  - `bun.lockb` → bun
+  - `package-lock.json` or none → npm (default)
+- **Configuration Override**: Can be specified in `.ddx.yml`
+- **Unified Interface**: Same DDx commands work with any package manager
+
+**Package Installation Strategy:**
+- **Local Dependencies**: MCP servers installed as project-local packages in `node_modules/`
+- **Package.json Management**: Automatic `package.json` creation/update for MCP dependencies
+- **Version Locking**: Specific versions pinned for reproducible environments
+- **Team Synchronization**: Dependencies and lock files committed to version control
+
+**Installation Flow:**
+```
+ddx mcp install <server> → Detect PM → [npm/pnpm/yarn/bun] install → Update Claude config → Verify
+```
+
+#### 2. Configuration Hierarchy Design
+
+DDx implements a **local-first** configuration strategy for MCP servers:
+
+1. **Project-Local** (Primary): `.claude/settings.local.json`
+   - Project-specific MCP server definitions
+   - References local `node_modules/` installations
+   - Version-controlled with project code
+   - Shared across team members
+   - Isolated from other projects
+
+2. **Global** (Secondary): `~/.claude/settings.local.json`
+   - User-wide MCP server definitions
+   - Uses global npm packages or system installations
+   - Personal development preferences
+   - Available across all projects
+
+#### 3. MCP Server Lifecycle Management
+
+**Installation Phase:**
+```mermaid
+graph LR
+    A[ddx mcp install] --> B[Check package.json]
+    B --> C[npm install package]
+    C --> D[Update Claude config]
+    D --> E[Verify connectivity]
+    E --> F[Success confirmation]
+```
+
+**Configuration Generation:**
+- **Command Path Resolution**: Resolves to local `node_modules/.bin/` executables
+- **Environment Setup**: Configures project-specific environment variables
+- **Path Variables**: Substitutes `$PWD` with actual project directory
+- **Validation**: Ensures all required dependencies are available
+
+#### 4. Dependency Architecture
+
+**Package Management:**
+```json
+{
+  "devDependencies": {
+    "@modelcontextprotocol/server-filesystem": "^1.0.0",
+    "@modelcontextprotocol/server-sequential-thinking": "^1.0.0",
+    "@playwright/mcp": "^1.0.0"
+  }
+}
+```
+
+**Generated Configuration (adapts to package manager):**
+```json
+// npm/pnpm:
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",  // or "pnpx" for pnpm
+      "args": ["@modelcontextprotocol/server-filesystem", "$PWD"],
+      "env": {}
+    }
+  }
+}
+
+// yarn:
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "yarn",
+      "args": ["dlx", "@modelcontextprotocol/server-filesystem", "$PWD"],
+      "env": {}
+    }
+  }
+}
+
+// bun:
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "bunx",
+      "args": ["@modelcontextprotocol/server-filesystem", "$PWD"],
+      "env": {}
+    }
+  }
+}
+```
+
+#### 5. Design Principles
+
+- **Project Isolation**: Each project manages its own MCP dependencies and versions
+- **Team Consistency**: `package.json` and `.claude/` configs ensure identical AI tooling across team
+- **Reproducible Environments**: Locked dependency versions prevent drift
+- **Graceful Degradation**: Falls back to global configuration when local not available
+- **Zero-Config Defaults**: Projects work without explicit MCP configuration
+- **Dependency Transparency**: All MCP requirements visible in `package.json`
+
+#### 6. Security & Isolation Model
+
+**Dependency Isolation:**
+- Each project maintains separate MCP server versions
+- No cross-project MCP server interference
+- Local installations prevent version conflicts
+
+**Path Security:**
+- All file paths resolved relative to project root
+- `$PWD` substitution ensures proper sandboxing
+- No access to parent directories without explicit configuration
+
 ## Security Considerations
 
 - **No Network Dependencies** - Works offline after initial setup

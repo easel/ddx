@@ -41,7 +41,7 @@ dependencies:
     - principles
 
 output:
-  location: docs/01-frame/feasibility-study.md
+  location: docs/helix/01-frame/feasibility-study.md
   format: markdown
   naming: feasibility-study.md
 

@@ -22,8 +22,8 @@ Coordinate the HELIX workflow by detecting the current phase and activating the 
    ```
 
 2. **Analyze Project Artifacts**
-   - No `docs/01-frame/`? → Start Frame phase
-   - Frame complete, no `docs/02-design/`? → Design phase
+   - No `docs/helix/01-frame/`? → Start Frame phase
+   - Frame complete, no `docs/helix/02-design/`? → Design phase
    - Design complete, no failing tests? → Test phase
    - Tests failing? → Build phase
    - Tests passing, not deployed? → Deploy phase

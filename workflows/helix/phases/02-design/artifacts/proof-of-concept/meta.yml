@@ -42,7 +42,7 @@ dependencies:
       path: contracts
 
 output:
-  location: docs/02-design/proofs-of-concept/
+  location: docs/helix/02-design/proofs-of-concept/
   format: markdown
   naming: POC-{number}-{title-with-hyphens}.md
   structure: per-poc
