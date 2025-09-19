@@ -456,103 +456,273 @@ docker run -it --rm -v "$PWD":/ddx -w /ddx golang:1.21 go test ./...
 
 ## Part 5: Installing Claude Code
 
-Claude Code is an AI-powered development assistant that works seamlessly with DDX.
+[Claude Code](https://claude.ai/code) is an AI-powered development assistant that transforms how you write and understand code. It works seamlessly with DDX for enhanced AI-assisted development.
 
 ### What is Claude Code?
 
-Claude Code is a desktop application that provides:
-- AI-powered code generation and review
-- Intelligent refactoring suggestions
-- Natural language to code translation
-- Integration with your development workflow
+Claude Code provides:
+- 🤖 **AI Pair Programming**: Real-time coding assistance and suggestions
+- 📁 **Project Context**: Understands your entire codebase
+- 🔧 **Code Generation**: Write functions, tests, and documentation
+- 🔍 **Code Analysis**: Debug issues and understand complex code
+- ♻️ **Refactoring**: Improve code quality and performance
+- 🚀 **Multi-file Editing**: Make changes across your entire project
 
-### Installation Process
+### Installation
 
-#### Step 1: Download Claude Code
-
-Visit [claude.ai/download](https://claude.ai/download) and download for your platform:
-- **macOS**: Claude-Code-x.x.x.dmg
-- **Windows**: Claude-Code-Setup-x.x.x.exe
-- **Linux**: Claude-Code-x.x.x.AppImage
-
-#### Step 2: Install
-
-**macOS:**
-1. Open the .dmg file
-2. Drag Claude Code to Applications folder
-3. Launch from Applications
-
-**Windows:**
-1. Run the installer
-2. Follow the setup wizard
-3. Launch from Start Menu
-
-**Linux:**
+#### macOS
 ```bash
-# Make AppImage executable
-chmod +x Claude-Code-*.AppImage
+# Install with Homebrew (when available)
+# brew install --cask claude-code
 
-# Run it
-./Claude-Code-*.AppImage
-
-# Optional: Move to Applications
-sudo mv Claude-Code-*.AppImage /opt/claude-code
-sudo ln -s /opt/claude-code /usr/local/bin/claude-code
+# Or download directly:
+# Visit https://claude.ai/download
+# Download Claude-x.x.x-mac.zip
+# Extract and move to Applications folder
 ```
 
-#### Step 3: Initial Setup
+#### Windows
+```bash
+# Download from https://claude.ai/download
+# Run Claude-Setup-x.x.x.exe
+# Follow the installation wizard
+```
 
-1. Launch Claude Code
-2. Sign in with your Anthropic account
-3. Complete the welcome tour
-4. Configure your preferences:
-   - Theme (Light/Dark)
-   - Font size
-   - Key bindings
+#### Linux
+```bash
+# Download AppImage from https://claude.ai/download
+wget https://claude.ai/download/claude-x.x.x-linux.AppImage
+chmod +x claude-x.x.x-linux.AppImage
+
+# Run directly
+./claude-x.x.x-linux.AppImage
+
+# Or install system-wide
+sudo mv claude-x.x.x-linux.AppImage /opt/Claude.AppImage
+sudo ln -s /opt/Claude.AppImage /usr/local/bin/claude
+```
+
+### Initial Setup
+
+1. **Launch Claude Code**
+   - macOS: Open from Applications or `open -a "Claude"`
+   - Windows: Launch from Start Menu
+   - Linux: Run from terminal or application menu
+
+2. **Sign In**
+   - Create or sign in to your Anthropic account
+   - Choose your subscription plan (Pro recommended for development)
+
+3. **Configure Settings**
+   ```
+   Settings → Preferences:
+   - Theme: Dark/Light/System
+   - Editor Font: Adjust size and family
+   - Model: Claude 3.5 Sonnet (recommended)
+   - Context Window: Maximum for large projects
+   ```
 
 ### Creating CLAUDE.md Files
 
-CLAUDE.md files provide context to Claude about your project:
+CLAUDE.md files provide persistent context about your project. DDX can automatically manage these:
 
 ```bash
-# Create a CLAUDE.md in your project root
+# DDX automatically creates CLAUDE.md with persona bindings
+ddx persona load
+
+# Or create manually with project context
 cat > CLAUDE.md << 'EOF'
-# Project Context for Claude
+# Project Context for Claude Code
 
-## Project Overview
-This project uses DDX for development workflow management.
+## Overview
+This project uses DDX for development workflow management with HELIX methodology.
 
-## Technology Stack
-- Language: [Your language]
-- Framework: [Your framework]
-- Database: [Your database]
+## Architecture
+- **Language**: Go 1.21+
+- **Framework**: Cobra CLI
+- **Testing**: Go test with high coverage requirements
+- **Deployment**: Docker containers
 
-## Development Guidelines
-- Follow test-driven development
-- Use descriptive variable names
-- Write comprehensive documentation
+## Coding Standards
+- Follow Go idioms and best practices
+- Maintain 80%+ test coverage
+- Use meaningful variable names
+- Document all public APIs
 
 ## DDX Integration
-This project uses DDX personas and workflows.
-Check .ddx.yml for configuration.
+- Personas defined in .ddx.yml
+- HELIX workflow active in Design phase
+- MCP servers configured for enhanced capabilities
 EOF
 ```
 
-### Integrating Claude Code with Your Editor
+### Keyboard Shortcuts
 
-#### VS Code Integration
+Essential shortcuts for productivity:
+
+| Action | Mac | Windows/Linux |
+|--------|-----|---------------|
+| New Chat | `Cmd+N` | `Ctrl+N` |
+| Open File | `Cmd+O` | `Ctrl+O` |
+| Save Chat | `Cmd+S` | `Ctrl+S` |
+| Search | `Cmd+F` | `Ctrl+F` |
+| Settings | `Cmd+,` | `Ctrl+,` |
+| Toggle Sidebar | `Cmd+B` | `Ctrl+B` |
+
+### Project Setup Best Practices
+
+#### 1. Add Project to Claude Code
 ```bash
-# Install Claude Code extension
-code --install-extension anthropic.claude-code
+# Open your project in Claude Code
+cd your-project
+open -a "Claude" .  # macOS
+# or
+claude .  # If symlinked
 ```
 
-#### Cursor Integration
-Cursor has Claude built-in:
+#### 2. Configure .clignore
+Create a `.clignore` file to exclude files from context:
 ```bash
-# Install Cursor
+cat > .clignore << 'EOF'
+# Dependencies
+node_modules/
+vendor/
+.venv/
+
+# Build outputs
+dist/
+build/
+*.exe
+*.dll
+
+# Large files
+*.log
+*.sqlite
+*.mp4
+*.zip
+
+# Secrets
+.env
+*.key
+*.pem
+EOF
+```
+
+#### 3. Use DDX Personas
+```bash
+# Bind personas for consistent AI behavior
+ddx persona bind code-reviewer strict-code-reviewer
+ddx persona bind architect systems-thinker
+ddx persona load  # Updates CLAUDE.md
+```
+
+### MCP Server Integration
+
+Claude Code supports MCP (Model Context Protocol) servers for enhanced capabilities:
+
+```bash
+# Install MCP servers with DDX
+ddx mcp install filesystem      # File system access
+ddx mcp install github          # GitHub integration
+ddx mcp install sequential-thinking  # Advanced reasoning
+
+# Servers are automatically configured in:
+# .claude/settings.local.json
+```
+
+### Tips for Effective Use
+
+#### 1. Project Context
+- Keep CLAUDE.md updated with project changes
+- Use clear folder structures
+- Document non-obvious design decisions
+
+#### 2. Prompt Engineering
+```markdown
+Good: "Create a REST API endpoint for user authentication using JWT"
+Better: "Create a REST API endpoint for user authentication using JWT,
+        following our existing pattern in handlers/, with tests"
+```
+
+#### 3. Iterative Development
+- Start with high-level design
+- Break down into smaller tasks
+- Use Claude Code to implement each piece
+- Review and refine
+
+#### 4. Code Review
+```bash
+# Use Claude Code for reviews
+"Review this code for security vulnerabilities and performance issues"
+```
+
+### Integrating with Other Tools
+
+#### VS Code
+```bash
+# Install Claude Code extension (when available)
+code --install-extension anthropic.claude-code
+
+# Or use via web interface while coding
+```
+
+#### Cursor
+Cursor has Claude integration built-in:
+```bash
+# Install Cursor with Homebrew
 brew install --cask cursor
 
-# Or download from: https://cursor.sh
+# Configure Claude in Cursor
+# Settings → Models → Claude 3.5 Sonnet
+```
+
+#### Terminal Integration
+```bash
+# Use Claude Code CLI (when available)
+claude "explain this error: $(cat error.log)"
+claude "write a script to process these CSV files"
+```
+
+### Troubleshooting
+
+#### Common Issues
+
+**"Cannot connect to Claude"**
+- Check internet connection
+- Verify subscription is active
+- Try logging out and back in
+
+**"Context window exceeded"**
+- Use `.clignore` to exclude unnecessary files
+- Break large projects into smaller contexts
+- Focus on specific directories
+
+**"Slow response times"**
+- Reduce context size
+- Check for large files in project
+- Ensure good internet connection
+
+### Advanced Features
+
+#### Custom Instructions
+Add persistent instructions in Settings:
+```
+Always:
+- Follow TDD practices
+- Write comprehensive tests
+- Use meaningful variable names
+- Add error handling
+- Document complex logic
+```
+
+#### Project Templates
+Save and reuse project configurations:
+```bash
+# Export current setup
+cp CLAUDE.md ~/.claude/templates/my-template.md
+
+# Use in new projects
+cp ~/.claude/templates/my-template.md ./CLAUDE.md
 ```
 
 ---
