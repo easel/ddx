@@ -250,45 +250,75 @@ git --version
 # Should output: git version 2.x.x
 ```
 
-### Setting Up SSH for GitHub
+### GitHub CLI (gh) Installation and Setup
 
-SSH keys allow secure communication with GitHub without passwords.
+The GitHub CLI provides secure authentication and powerful GitHub features directly from your terminal.
 
-#### Generate SSH Key
+#### Install GitHub CLI
 ```bash
-# Generate a new SSH key (replace with your email)
-ssh-keygen -t ed25519 -C "your.email@example.com"
+# macOS/Linux with Homebrew
+brew install gh
 
-# Press Enter to accept default location
-# Optionally set a passphrase (or press Enter for none)
+# Ubuntu/Debian
+curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+sudo apt update
+sudo apt install gh
+
+# Fedora/RHEL
+sudo dnf install gh
+
+# Windows with Chocolatey
+choco install gh
+
+# Windows with Scoop
+scoop install gh
 ```
 
-#### Add SSH Key to SSH Agent
+#### Authenticate with GitHub
 ```bash
-# Start the ssh-agent
-eval "$(ssh-agent -s)"
+# Login to GitHub via OAuth in your browser
+gh auth login
 
-# Add your SSH key
-ssh-add ~/.ssh/id_ed25519
+# Follow the prompts:
+# - Choose GitHub.com
+# - Choose HTTPS for git protocol
+# - Authenticate with your web browser
+# - The browser will open for OAuth authentication
 ```
 
-#### Add SSH Key to GitHub
+#### Verify Authentication
 ```bash
-# Copy your public key
-cat ~/.ssh/id_ed25519.pub
-# This displays your key - copy the entire output
+# Check authentication status
+gh auth status
+# Should show: "✓ Logged in to github.com as username"
+
+# Test with a simple command
+gh repo list --limit 5
+# Lists your first 5 repositories
 ```
 
-Then:
-1. Go to [GitHub SSH Settings](https://github.com/settings/keys)
-2. Click "New SSH key"
-3. Paste your key and save
-
-#### Test Connection
+#### Using gh with Git
+Once authenticated, gh automatically configures git to use HTTPS with your credentials:
 ```bash
-ssh -T git@github.com
-# Should see: "Hi username! You've successfully authenticated..."
+# Clone a repository
+gh repo clone owner/repository
+
+# Create a new repository
+gh repo create my-new-project --public
+
+# Create a pull request
+gh pr create --title "My feature" --body "Description"
+
+# Check PR status
+gh pr status
 ```
+
+#### Benefits of GitHub CLI
+- 🔒 **Secure OAuth**: No need to manage SSH keys
+- 🌐 **Works everywhere**: HTTPS works behind firewalls and proxies
+- ⚡ **Powerful features**: PR management, issue tracking, releases
+- 🔄 **Automatic auth**: Credentials handled seamlessly
 
 ---
 
@@ -1275,16 +1305,18 @@ git config --global user.name "Your Name"
 git config --global user.email "your@email.com"
 ```
 
-**SSH key not working:**
+**GitHub authentication issues:**
 ```bash
-# Check if ssh-agent is running
-eval "$(ssh-agent -s)"
+# Re-authenticate with GitHub CLI
+gh auth logout
+gh auth login
 
-# Re-add your key
-ssh-add ~/.ssh/id_ed25519
+# Check authentication status
+gh auth status
 
-# Test GitHub connection
-ssh -T git@github.com
+# If behind a proxy, set environment variables
+export HTTP_PROXY=http://proxy.example.com:8080
+export HTTPS_PROXY=http://proxy.example.com:8080
 ```
 
 #### DDX Issues
