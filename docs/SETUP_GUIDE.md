@@ -10,9 +10,10 @@ Before we begin, here's what we'll be setting up:
 - ✅ **Git** - Version control system
 - ✅ **Container runtime** - Docker or Podman for isolated environments
 - ✅ **Claude Code** - AI-powered development assistant
+- ✅ **Language runtimes** - Python, Node.js, Go, or Rust (as needed)
 - ✅ **DDX** - Document-Driven Development toolkit
 
-**Time needed**: 30-45 minutes for complete setup
+**Time needed**: 45-60 minutes for complete setup
 
 ---
 
@@ -727,7 +728,313 @@ cp ~/.claude/templates/my-template.md ./CLAUDE.md
 
 ---
 
-## Part 6: Installing DDX
+## Part 6: Development Language Runtimes
+
+If you're not using containers, you'll need to install the runtime for your programming language. Here's how to set up the most common development environments using Homebrew and version managers.
+
+### Python
+
+Python is essential for many development tasks, data science, and scripting.
+
+#### Install Python with Homebrew
+```bash
+# Install latest Python 3
+brew install python@3.12
+
+# Verify installation
+python3 --version
+pip3 --version
+```
+
+#### Using pyenv (Python Version Manager)
+For projects requiring different Python versions:
+```bash
+# Install pyenv
+brew install pyenv
+
+# Add to shell configuration
+echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.zshrc
+echo '[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.zshrc
+echo 'eval "$(pyenv init -)"' >> ~/.zshrc
+source ~/.zshrc
+
+# Install Python versions
+pyenv install 3.12.0
+pyenv install 3.11.7
+pyenv install 3.10.13
+
+# Set global default
+pyenv global 3.12.0
+
+# Set project-specific version
+cd your-project
+pyenv local 3.11.7  # Creates .python-version file
+```
+
+#### Virtual Environments
+```bash
+# Create virtual environment
+python3 -m venv .venv
+
+# Activate it
+source .venv/bin/activate  # macOS/Linux
+# or
+.venv\Scripts\activate  # Windows
+
+# Install packages
+pip install -r requirements.txt
+
+# Deactivate when done
+deactivate
+```
+
+### Node.js
+
+Node.js is required for JavaScript/TypeScript development and many modern tools.
+
+#### Install Node.js with Homebrew
+```bash
+# Install latest LTS Node.js
+brew install node
+
+# Verify installation
+node --version
+npm --version
+```
+
+#### Using nvm (Node Version Manager)
+For managing multiple Node versions:
+```bash
+# Install nvm
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+
+# Add to shell configuration (if not auto-added)
+echo 'export NVM_DIR="$HOME/.nvm"' >> ~/.zshrc
+echo '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' >> ~/.zshrc
+echo '[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"' >> ~/.zshrc
+source ~/.zshrc
+
+# Install Node versions
+nvm install --lts  # Latest LTS
+nvm install 20     # Specific major version
+nvm install 18.19.0  # Specific version
+
+# Set default
+nvm alias default 20
+
+# Use specific version in project
+cd your-project
+nvm use 18
+echo "18" > .nvmrc  # Save version for project
+```
+
+#### Package Managers
+```bash
+# npm comes with Node.js
+
+# Install pnpm (faster, more efficient)
+brew install pnpm
+
+# Install yarn
+brew install yarn
+
+# Install bun (all-in-one toolkit)
+curl -fsSL https://bun.sh/install | bash
+```
+
+### Go
+
+Go is perfect for building fast, reliable, and efficient software.
+
+#### Install Go with Homebrew
+```bash
+# Install latest Go
+brew install go
+
+# Verify installation
+go version
+
+# Set up Go workspace (optional, Go 1.13+ uses modules)
+echo 'export GOPATH=$HOME/go' >> ~/.zshrc
+echo 'export PATH=$PATH:$GOPATH/bin' >> ~/.zshrc
+source ~/.zshrc
+```
+
+#### Using g (Go Version Manager)
+```bash
+# Install g
+curl -sSL https://git.io/g-install | sh -s
+
+# Install Go versions
+g install 1.21.5
+g install 1.20.12
+
+# List installed versions
+g list
+
+# Switch versions
+g use 1.21.5
+
+# Set for project
+cd your-project
+echo "1.21.5" > .go-version
+```
+
+#### Go Module Setup
+```bash
+# Initialize new module
+cd your-project
+go mod init github.com/yourusername/yourproject
+
+# Download dependencies
+go mod download
+
+# Tidy dependencies
+go mod tidy
+
+# Build project
+go build ./...
+
+# Run tests
+go test ./...
+```
+
+### Rust
+
+Rust provides memory safety and blazing performance.
+
+#### Install Rust with rustup
+```bash
+# Install rustup (Rust's official installer)
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+# Add to PATH (if not auto-added)
+echo 'source "$HOME/.cargo/env"' >> ~/.zshrc
+source ~/.zshrc
+
+# Verify installation
+rustc --version
+cargo --version
+```
+
+#### Managing Rust Toolchains
+```bash
+# Update Rust
+rustup update
+
+# Install specific version
+rustup toolchain install 1.75.0
+rustup toolchain install nightly
+
+# Set default toolchain
+rustup default stable
+
+# Use specific toolchain for project
+cd your-project
+rustup override set 1.75.0
+
+# Or use rust-toolchain.toml
+cat > rust-toolchain.toml << 'EOF'
+[toolchain]
+channel = "1.75.0"
+components = ["rustfmt", "clippy"]
+EOF
+```
+
+#### Rust Development Tools
+```bash
+# Install essential tools
+rustup component add rustfmt   # Code formatter
+rustup component add clippy    # Linter
+rustup component add rust-src   # Source code for std library
+
+# Install cargo extensions
+cargo install cargo-watch   # Auto-rebuild on changes
+cargo install cargo-edit    # Add/remove dependencies
+cargo install cargo-audit   # Security audit
+cargo install sccache      # Compilation cache
+```
+
+### Language-Specific DDX Integration
+
+#### Python Projects
+```bash
+# Initialize DDX with Python template
+ddx init --template python-api
+
+# Common Python DDX patterns
+ddx patterns apply python-error-handling
+ddx patterns apply python-testing
+```
+
+#### Node.js Projects
+```bash
+# Initialize DDX with Node.js template
+ddx init --template nodejs-api
+ddx init --template nextjs
+
+# Install MCP servers (Node.js based)
+ddx mcp install filesystem
+```
+
+#### Go Projects
+```bash
+# Initialize DDX with Go template
+ddx init --template go-cli
+ddx init --template go-api
+
+# Apply Go patterns
+ddx patterns apply go-error-handling
+ddx patterns apply go-testing
+```
+
+#### Rust Projects
+```bash
+# Initialize DDX with Rust template
+ddx init --template rust-cli
+ddx init --template rust-wasm
+
+# Apply Rust patterns
+ddx patterns apply rust-error-handling
+ddx patterns apply rust-async
+```
+
+### Version Management Best Practices
+
+1. **Use Version Files**: Create `.python-version`, `.nvmrc`, `.go-version`, or `rust-toolchain.toml` in your projects
+2. **Document Requirements**: Always specify language versions in README
+3. **CI/CD Alignment**: Ensure CI uses same versions as development
+4. **Team Consistency**: Share version files in git
+
+### Quick Setup Script
+
+Save this as `setup-languages.sh`:
+```bash
+#!/bin/bash
+
+echo "Setting up development languages..."
+
+# Python
+brew install python@3.12 pyenv
+pyenv install 3.12.0
+
+# Node.js
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+source ~/.zshrc
+nvm install --lts
+
+# Go
+brew install go
+
+# Rust
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+
+echo "Done! Restart your terminal to use the new tools."
+```
+
+---
+
+## Part 7: Installing DDX
 
 Now let's install DDX itself!
 
@@ -804,7 +1111,7 @@ ddx --help
 
 ---
 
-## Part 7: First Steps with DDX
+## Part 8: First Steps with DDX
 
 ### Initialize Your First Project
 
@@ -920,7 +1227,7 @@ This automatically configures `.claude/settings.json`:
 
 ---
 
-## Part 8: Troubleshooting
+## Part 9: Troubleshooting
 
 ### Common Issues and Solutions
 
@@ -1018,7 +1325,7 @@ ddx list --verbose
 
 ---
 
-## Part 9: Next Steps
+## Part 10: Next Steps
 
 ### Recommended Learning Path
 
