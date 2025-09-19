@@ -8,6 +8,7 @@ Before we begin, here's what we'll be setting up:
 - ✅ **Homebrew** - Package manager for installing tools
 - ✅ **Terminal emulator** - Your command-line interface
 - ✅ **Git** - Version control system
+- ✅ **Container runtime** - Docker or Podman for isolated environments
 - ✅ **Claude Code** - AI-powered development assistant
 - ✅ **DDX** - Document-Driven Development toolkit
 
@@ -290,7 +291,170 @@ ssh -T git@github.com
 
 ---
 
-## Part 4: Installing Claude Code
+## Part 4: Container Runtimes (Docker/Podman)
+
+Container runtimes are essential for modern development, allowing you to run isolated environments, test deployments, and ensure consistency across different systems. DDX uses containers for various workflows and testing scenarios.
+
+### Why You Need Container Runtime
+
+- 🔧 **Isolated Environments**: Run different versions of tools without conflicts
+- 📦 **Consistent Development**: Same environment across all team members
+- 🚀 **Easy Deployment**: Test production configurations locally
+- 🧪 **Safe Testing**: Experiment without affecting your system
+
+### Docker (macOS and Windows)
+
+Docker Desktop provides an easy-to-use container runtime with a GUI.
+
+#### macOS Installation
+```bash
+# Install Docker Desktop with Homebrew
+brew install --cask docker
+
+# Launch Docker Desktop
+open -a Docker
+
+# Wait for Docker to start, then verify
+docker --version
+docker run hello-world
+```
+
+#### Windows Installation
+
+**Option 1: Docker Desktop with WSL2 (Recommended)**
+1. Ensure WSL2 is installed (from Part 1)
+2. Download [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop)
+3. Run the installer
+4. Enable "Use WSL 2 based engine" during setup
+5. Launch Docker Desktop from Start Menu
+
+Verify installation in WSL2 terminal:
+```bash
+docker --version
+docker run hello-world
+```
+
+**Option 2: Install via Chocolatey**
+```powershell
+# In PowerShell as Administrator
+choco install docker-desktop
+```
+
+### Podman (Fedora/RHEL/Linux)
+
+Podman is a daemonless container runtime that's Docker-compatible and doesn't require root privileges.
+
+#### Fedora Installation
+```bash
+# Install Podman
+sudo dnf install -y podman podman-compose
+
+# Optional: Install podman-docker for Docker compatibility
+sudo dnf install -y podman-docker
+
+# Verify installation
+podman --version
+podman run hello-world
+
+# Enable Docker compatibility (optional)
+# This creates 'docker' as an alias to 'podman'
+sudo touch /etc/containers/nodocker
+```
+
+#### Ubuntu/Debian Installation
+```bash
+# Add Kubic repository
+. /etc/os-release
+echo "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_${VERSION_ID}/ /" | sudo tee /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list
+curl -L "https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_${VERSION_ID}/Release.key" | sudo apt-key add -
+
+# Install Podman
+sudo apt update
+sudo apt install -y podman
+
+# Verify
+podman --version
+```
+
+#### macOS (Alternative to Docker)
+```bash
+# Install Podman with Homebrew
+brew install podman
+
+# Initialize and start Podman machine
+podman machine init
+podman machine start
+
+# Verify
+podman --version
+podman run hello-world
+```
+
+### Container Runtime Configuration
+
+After installing your container runtime, configure it for optimal development:
+
+#### Docker Configuration
+```bash
+# Add your user to docker group (Linux only)
+sudo usermod -aG docker $USER
+newgrp docker
+
+# Configure Docker resources (via Docker Desktop GUI on Mac/Windows)
+# Recommended: 4GB RAM, 2 CPUs minimum
+```
+
+#### Podman Configuration
+```bash
+# Enable user namespaces for rootless containers
+echo "$USER:100000:65536" | sudo tee -a /etc/subuid
+echo "$USER:100000:65536" | sudo tee -a /etc/subgid
+
+# Set Podman as Docker replacement (optional)
+echo 'alias docker=podman' >> ~/.bashrc
+echo 'alias docker-compose=podman-compose' >> ~/.bashrc
+source ~/.bashrc
+```
+
+### Testing Your Container Runtime
+
+Run these commands to ensure everything works:
+
+```bash
+# Pull and run a test container
+docker run --rm alpine echo "Containers are working!"
+# or with Podman
+podman run --rm alpine echo "Containers are working!"
+
+# Run an interactive container
+docker run -it --rm ubuntu:latest bash
+# Type 'exit' to leave
+
+# Check running containers
+docker ps
+# or
+podman ps
+```
+
+### Container Tips for DDX
+
+DDX can leverage containers for:
+- Running different Node.js versions for MCP servers
+- Testing in clean environments
+- Deploying HELIX workflow applications
+- Isolating development dependencies
+
+```bash
+# Example: Run Node.js in a container for MCP servers
+docker run -it --rm -v "$PWD":/workspace -w /workspace node:18 npm install
+
+# Example: Test DDX in a clean environment
+docker run -it --rm -v "$PWD":/ddx -w /ddx golang:1.21 go test ./...
+```
+
+---
+
+## Part 5: Installing Claude Code
 
 Claude Code is an AI-powered development assistant that works seamlessly with DDX.
 
@@ -393,7 +557,7 @@ brew install --cask cursor
 
 ---
 
-## Part 5: Installing DDX
+## Part 6: Installing DDX
 
 Now let's install DDX itself!
 
@@ -470,7 +634,7 @@ ddx --help
 
 ---
 
-## Part 6: First Steps with DDX
+## Part 7: First Steps with DDX
 
 ### Initialize Your First Project
 
@@ -586,7 +750,7 @@ This automatically configures `.claude/settings.json`:
 
 ---
 
-## Part 7: Troubleshooting
+## Part 8: Troubleshooting
 
 ### Common Issues and Solutions
 
@@ -684,7 +848,7 @@ ddx list --verbose
 
 ---
 
-## Part 8: Next Steps
+## Part 9: Next Steps
 
 ### Recommended Learning Path
 
