@@ -5,8 +5,8 @@
 ## Prerequisites Overview
 
 Before we begin, here's what we'll be setting up:
-- ✅ **Terminal emulator** - Your command-line interface
 - ✅ **Homebrew** - Package manager for installing tools
+- ✅ **Terminal emulator** - Your command-line interface
 - ✅ **Git** - Version control system
 - ✅ **Claude Code** - AI-powered development assistant
 - ✅ **DDX** - Document-Driven Development toolkit
@@ -15,86 +15,21 @@ Before we begin, here's what we'll be setting up:
 
 ---
 
-## Part 1: Terminal Setup
+## Part 1: Installing Homebrew
 
-The terminal (command line) is where you'll interact with DDX and other development tools. Let's get you set up with a modern terminal.
+[Homebrew](https://brew.sh) is the missing package manager for macOS and Linux. Think of it as an app store for command-line tools. We'll install this first, then use it to install everything else.
 
-### macOS
+### Quick Start Terminal
 
-macOS comes with Terminal.app built-in, but you have better options:
+To run the Homebrew installation, you'll need a terminal. Use your system's default for now:
 
-#### Option 1: Built-in Terminal (Quick Start)
-1. Press `Cmd + Space` and type "Terminal"
-2. Press Enter to open Terminal.app
-3. You're ready! (Though consider upgrading to Option 2 or 3)
-
-#### Option 2: iTerm2 (Recommended)
-```bash
-# Download from: https://iterm2.com
-# Or install via Homebrew (after Part 2):
-brew install --cask iterm2
-```
-
-#### Option 3: Warp (Modern Alternative)
-```bash
-# Download from: https://www.warp.dev
-# Or install via Homebrew (after Part 2):
-brew install --cask warp
-```
-
-### Windows
-
-Windows users should use Windows Terminal with WSL2 for the best experience.
-
-#### Step 1: Install Windows Terminal
-1. Open Microsoft Store
-2. Search for "Windows Terminal"
-3. Click Install
-4. Launch Windows Terminal from Start Menu
-
-#### Step 2: Install WSL2 (Windows Subsystem for Linux)
-Open PowerShell as Administrator and run:
-```powershell
-# Enable WSL
-wsl --install
-
-# Restart your computer when prompted
-# After restart, WSL will complete Ubuntu installation
-# Create a username and password when prompted
-```
-
-#### Step 3: Configure Windows Terminal
-1. Open Windows Terminal
-2. Click the dropdown arrow → Settings
-3. Set "Ubuntu" as default profile
-4. Save settings
-
-**Important**: Use the Ubuntu/WSL2 terminal for all following commands.
-
-### Linux
-
-Linux distributions come with capable terminals:
-
-#### Ubuntu/Debian
-- Default: GNOME Terminal (already installed)
-- Alternative: `sudo apt install terminator`
-
-#### Fedora/RHEL
-- Default: GNOME Terminal (already installed)
-- Alternative: `sudo dnf install tilix`
-
-#### Arch
-- Install: `sudo pacman -S alacritty`
-
----
-
-## Part 2: Installing Homebrew
-
-Homebrew is a package manager that makes installing development tools simple. Think of it as an app store for command-line tools.
+**macOS**: Press `Cmd + Space`, type "Terminal", press Enter
+**Windows**: Open PowerShell as Administrator (we'll set up WSL2 later)
+**Linux**: Open your default terminal application
 
 ### macOS and Linux
 
-Open your terminal and run this single command:
+Visit [brew.sh](https://brew.sh) for the official installation instructions, or run this command:
 
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
@@ -105,7 +40,7 @@ Open your terminal and run this single command:
 - Sets up Homebrew in the correct location
 - Configures your system to use Homebrew
 
-#### Post-Installation Setup
+### Post-Installation Setup
 
 After installation completes, you'll see instructions. Run these commands:
 
@@ -127,7 +62,7 @@ echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> ~/.profile
 eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 ```
 
-#### Verify Installation
+### Verify Installation
 ```bash
 brew --version
 # Should output: Homebrew 4.x.x
@@ -165,6 +100,116 @@ In PowerShell (as Administrator):
 Set-ExecutionPolicy Bypass -Scope Process -Force
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
 iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+```
+
+---
+
+## Part 2: Modern Terminal Emulator
+
+Now that you have Homebrew installed, let's upgrade to a modern terminal emulator with better features, performance, and customization options.
+
+### macOS
+
+#### Option 1: Ghostty (Primary Recommendation)
+[Ghostty](https://ghostty.org) is a fast, feature-rich, native terminal emulator with excellent performance:
+
+```bash
+# Install with Homebrew
+brew install --cask ghostty
+
+# Launch Ghostty
+open -a Ghostty
+```
+
+**Why Ghostty:**
+- ⚡ Native performance (written in Zig)
+- 🎨 Beautiful rendering with proper font support
+- ⌨️ Excellent keyboard shortcuts
+- 🔧 Simple configuration
+
+#### Option 2: Kitty (Alternative Recommendation)
+[Kitty](https://sw.kovidgoyal.net/kitty/) is a GPU-accelerated terminal with advanced features:
+
+```bash
+# Install with Homebrew
+brew install --cask kitty
+
+# Launch Kitty
+open -a kitty
+```
+
+**Why Kitty:**
+- 🚀 GPU-accelerated rendering
+- 🖼️ Image and graphics support
+- 📑 Tabs and splits
+- 🎯 Extensive customization
+
+#### Option 3: iTerm2 (Traditional Choice)
+```bash
+brew install --cask iterm2
+```
+
+#### Option 4: Warp (AI-Enhanced)
+```bash
+brew install --cask warp
+```
+
+### Linux
+
+#### Ghostty (Recommended)
+```bash
+# For Linux, build from source or check ghostty.org for packages
+# Alternatively, use Kitty:
+```
+
+#### Kitty (Recommended)
+```bash
+# Install with package manager
+curl -L https://sw.kovidgoyal.net/kitty/installer.sh | sh /dev/stdin
+
+# Or via package manager (Ubuntu/Debian)
+sudo apt install kitty
+
+# Or via Homebrew on Linux
+brew install --cask kitty
+```
+
+#### Alternative Options
+```bash
+# Alacritty (Rust-based, fast)
+brew install --cask alacritty
+
+# WezTerm (feature-rich)
+brew install --cask wezterm
+```
+
+### Windows (WSL2)
+
+For Windows users, after setting up WSL2, you can use Windows Terminal with WSL2, or install a better terminal:
+
+#### Windows Terminal + WSL2 (Built-in)
+Already configured in Part 1 if you followed the WSL2 setup.
+
+#### Ghostty or Kitty for Windows
+Check the official websites for Windows builds:
+- [Ghostty for Windows](https://ghostty.org)
+- [Kitty for Windows](https://sw.kovidgoyal.net/kitty/)
+
+### Terminal Configuration Tips
+
+After installing your terminal, consider these quick improvements:
+
+```bash
+# Install a better shell prompt (Starship)
+brew install starship
+echo 'eval "$(starship init zsh)"' >> ~/.zshrc  # For zsh
+echo 'eval "$(starship init bash)"' >> ~/.bashrc # For bash
+
+# Install useful terminal tools
+brew install eza  # Better ls
+brew install bat  # Better cat
+brew install fd   # Better find
+brew install ripgrep # Better grep
 ```
 
 ---
