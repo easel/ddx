@@ -608,6 +608,9 @@ func TestAcceptance_InstallationFeatures(t *testing.T) {
 
 // Helper function to setup MCP test environment
 func setupMCPTestProject(t *testing.T) {
+	// Set library base path for tests to find registry
+	os.Setenv("DDX_LIBRARY_BASE_PATH", "/host-home/erik/Projects/ddx/library")
+
 	// Create .ddx.yml configuration
 	config := `
 name: test-project
