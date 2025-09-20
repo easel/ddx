@@ -286,5 +286,5 @@ All environments in this library are part of the DDX toolkit and follow the same
 ## See Also
 
 - [DDX Documentation](../../docs/README.md)
-- [Feature Specification](../../docs/01-frame/features/FEAT-013-environment-assets.md)
+- [Feature Specification](../../docs/helix/01-frame/features/FEAT-013-environment-assets.md)
 - [Contributing Guide](../../CONTRIBUTING.md)
