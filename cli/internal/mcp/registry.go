@@ -2,6 +2,7 @@ package mcp
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -328,13 +329,18 @@ func (rc *RegistryCache) Invalidate() {
 
 // List displays servers according to options (CLI interface method)
 func (r *Registry) List(opts ListOptions) error {
+	return r.ListWithWriter(os.Stdout, opts)
+}
+
+// ListWithWriter lists available MCP servers to the specified writer
+func (r *Registry) ListWithWriter(w io.Writer, opts ListOptions) error {
 	servers, err := r.ListServers(opts)
 	if err != nil {
 		return err
 	}
 
 	// Format and display output
-	return r.formatOutput(servers, opts)
+	return r.formatOutput(w, servers, opts)
 }
 
 // Update updates the registry (CLI interface method)
@@ -345,20 +351,20 @@ func (r *Registry) Update(opts UpdateOptions) error {
 }
 
 // formatOutput formats and displays server list
-func (r *Registry) formatOutput(servers []*ServerReference, opts ListOptions) error {
+func (r *Registry) formatOutput(w io.Writer, servers []*ServerReference, opts ListOptions) error {
 	switch opts.Format {
 	case "json":
-		return r.formatJSON(servers, opts)
+		return r.formatJSON(w, servers, opts)
 	case "yaml":
-		return r.formatYAML(servers, opts)
+		return r.formatYAML(w, servers, opts)
 	default:
-		return r.formatTable(servers, opts)
+		return r.formatTable(w, servers, opts)
 	}
 }
 
 // formatTable formats servers as a table
-func (r *Registry) formatTable(servers []*ServerReference, opts ListOptions) error {
-	fmt.Printf("📋 Available MCP Servers (%d total)\n\n", len(servers))
+func (r *Registry) formatTable(w io.Writer, servers []*ServerReference, opts ListOptions) error {
+	fmt.Fprintf(w, "📋 Available MCP Servers (%d total)\n\n", len(servers))
 
 	// Group by category
 	categories := make(map[string][]*ServerReference)
@@ -367,25 +373,25 @@ func (r *Registry) formatTable(servers []*ServerReference, opts ListOptions) err
 	}
 
 	for category, categoryServers := range categories {
-		fmt.Printf("%s:\n", strings.Title(category))
+		fmt.Fprintf(w, "%s:\n", strings.Title(category))
 		for _, server := range categoryServers {
 			status := "⬜"
-			fmt.Printf("  %s %-15s - %s\n", status, server.Name, server.Description)
+			fmt.Fprintf(w, "  %s %-15s - %s\n", status, server.Name, server.Description)
 		}
-		fmt.Println()
+		fmt.Fprintln(w)
 	}
 
 	return nil
 }
 
 // formatJSON formats servers as JSON
-func (r *Registry) formatJSON(servers []*ServerReference, opts ListOptions) error {
+func (r *Registry) formatJSON(w io.Writer, servers []*ServerReference, opts ListOptions) error {
 	// TODO: Implement JSON output
-	return r.formatTable(servers, opts)
+	return r.formatTable(w, servers, opts)
 }
 
 // formatYAML formats servers as YAML
-func (r *Registry) formatYAML(servers []*ServerReference, opts ListOptions) error {
+func (r *Registry) formatYAML(w io.Writer, servers []*ServerReference, opts ListOptions) error {
 	// TODO: Implement YAML output
-	return r.formatTable(servers, opts)
+	return r.formatTable(w, servers, opts)
 }

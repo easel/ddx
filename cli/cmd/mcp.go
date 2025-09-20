@@ -177,7 +177,8 @@ Filter by category, search by name or description, and see installation status.`
 				return fmt.Errorf("loading registry: %w", err)
 			}
 
-			return registry.List(opts)
+			// Use the command's output writer for proper output capture in tests
+			return registry.ListWithWriter(cmd.OutOrStdout(), opts)
 		},
 	}
 
@@ -222,7 +223,7 @@ This command will:
 			opts := extractInstallOptions(cmd, env, yes, configPath)
 
 			// Create and invoke installer service
-			installer := mcp.NewInstaller()
+			installer := mcp.NewInstallerWithWriter(cmd.OutOrStdout())
 			return installer.Install(serverName, opts)
 		},
 	}
@@ -261,7 +262,7 @@ func newMCPConfigureCommand() *cobra.Command {
 
 			// Create and invoke config manager service
 			configManager := mcp.NewConfigManager("")
-			return configManager.UpdateServer(serverName, opts)
+			return configManager.UpdateServer(serverName, opts, cmd.OutOrStdout())
 		},
 	}
 
@@ -297,7 +298,7 @@ func newMCPRemoveCommand() *cobra.Command {
 
 			// Create and invoke config manager service
 			configManager := mcp.NewConfigManager("")
-			return configManager.RemoveServer(serverName, opts)
+			return configManager.RemoveServer(serverName, opts, cmd.OutOrStdout())
 		},
 	}
 
@@ -333,7 +334,7 @@ func newMCPStatusCommand() *cobra.Command {
 			opts := extractStatusOptions(cmd, serverName)
 
 			// Create and invoke status checker service
-			statusChecker := mcp.NewStatusChecker()
+			statusChecker := mcp.NewStatusCheckerWithWriter(cmd.OutOrStdout())
 			return statusChecker.Check(opts)
 		},
 	}

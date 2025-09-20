@@ -3,6 +3,7 @@ package mcp
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -14,19 +15,26 @@ type Installer struct {
 	registry  *Registry
 	config    *ConfigManager
 	validator *Validator
+	out       io.Writer
 }
 
 // NewInstaller creates a new installer
 func NewInstaller() *Installer {
+	return NewInstallerWithWriter(os.Stdout)
+}
+
+// NewInstallerWithWriter creates a new installer with a custom output writer
+func NewInstallerWithWriter(w io.Writer) *Installer {
 	return &Installer{
 		validator: NewValidator(),
+		out:       w,
 	}
 }
 
 // Install installs an MCP server
 func (i *Installer) Install(serverName string, opts InstallOptions) error {
 	// Show installation start message
-	fmt.Printf("🔧 Installing %s MCP Server...\n\n", serverName)
+	fmt.Fprintf(i.out, "🔧 Installing %s MCP Server...\n\n", serverName)
 
 	// Load registry
 	if i.registry == nil {
@@ -44,15 +52,15 @@ func (i *Installer) Install(serverName string, opts InstallOptions) error {
 	}
 
 	// Show server information
-	fmt.Printf("📦 %s - %s\n", server.Name, server.Description)
+	fmt.Fprintf(i.out, "📦 %s - %s\n", server.Name, server.Description)
 	if len(server.Environment) > 0 {
-		fmt.Println("\nℹ️ This server requires configuration:")
+		fmt.Fprintln(i.out, "\nℹ️ This server requires configuration:")
 		for _, env := range server.Environment {
 			if env.Required {
-				fmt.Printf("  - %s: %s\n", env.Name, env.Description)
+				fmt.Fprintf(i.out, "  - %s: %s\n", env.Name, env.Description)
 			}
 		}
-		fmt.Println()
+		fmt.Fprintln(i.out)
 	}
 
 	// Validate and prompt for environment variables
@@ -70,10 +78,10 @@ func (i *Installer) Install(serverName string, opts InstallOptions) error {
 		if len(detected) == 0 {
 			return ErrClaudeNotFound
 		}
-		fmt.Printf("📍 Detected: %s at %s\n", detected[0].Type, detected[0].ConfigPath)
+		fmt.Fprintf(i.out, "📍 Detected: %s at %s\n", detected[0].Type, detected[0].ConfigPath)
 		claudePath = detected[0].ConfigPath
 	} else {
-		fmt.Printf("📍 Using custom config path: %s\n", claudePath)
+		fmt.Fprintf(i.out, "📍 Using custom config path: %s\n", claudePath)
 	}
 
 	// Create config manager
@@ -96,21 +104,21 @@ func (i *Installer) Install(serverName string, opts InstallOptions) error {
 		if err := i.config.Backup(); err != nil {
 			return fmt.Errorf("creating backup: %w", err)
 		}
-		fmt.Printf("💾 Backup created: %s.backup\n", claudePath)
+		fmt.Fprintf(i.out, "💾 Backup created: %s.backup\n", claudePath)
 	}
 
 	if opts.DryRun {
-		fmt.Printf("🔍 Dry run mode - showing what would be done:\n")
-		fmt.Printf("   - Server: %s (%s)\n", serverName, server.Description)
-		fmt.Printf("   - Command: %s %s\n", server.Command.Executable, strings.Join(server.Command.Args, " "))
+		fmt.Fprintf(i.out, "🔍 Dry run mode - showing what would be done:\n")
+		fmt.Fprintf(i.out, "   - Server: %s (%s)\n", serverName, server.Description)
+		fmt.Fprintf(i.out, "   - Command: %s %s\n", server.Command.Executable, strings.Join(server.Command.Args, " "))
 		if len(opts.Environment) > 0 {
-			fmt.Printf("   - Environment variables: %d configured\n", len(opts.Environment))
+			fmt.Fprintf(i.out, "   - Environment variables: %d configured\n", len(opts.Environment))
 		}
 		return nil
 	}
 
 	// Create server configuration
-	fmt.Printf("📦 Configuring server...\n")
+	fmt.Fprintf(i.out, "📦 Configuring server...\n")
 	serverConfig := ServerConfig{
 		Command: server.Command.Executable,
 		Args:    server.Command.Args,
@@ -128,16 +136,16 @@ func (i *Installer) Install(serverName string, opts InstallOptions) error {
 	}
 
 	// Success message with next steps
-	fmt.Printf("✅ %s MCP server installed successfully!\n\n", serverName)
-	fmt.Printf("🚀 Next steps:\n")
-	fmt.Printf("  1. Restart Claude Code\n")
-	fmt.Printf("  2. Look for %s in MCP section\n", serverName)
+	fmt.Fprintf(i.out, "✅ %s MCP server installed successfully!\n\n", serverName)
+	fmt.Fprintf(i.out, "🚀 Next steps:\n")
+	fmt.Fprintf(i.out, "  1. Restart Claude Code\n")
+	fmt.Fprintf(i.out, "  2. Look for %s in MCP section\n", serverName)
 	if serverName == "github" {
-		fmt.Printf("  3. Test with: \"Show my recent commits\"\n")
+		fmt.Fprintf(i.out, "  3. Test with: \"Show my recent commits\"\n")
 	} else if serverName == "filesystem" {
-		fmt.Printf("  3. Test with: \"List files in current directory\"\n")
+		fmt.Fprintf(i.out, "  3. Test with: \"List files in current directory\"\n")
 	} else {
-		fmt.Printf("  3. Test the server functionality\n")
+		fmt.Fprintf(i.out, "  3. Test the server functionality\n")
 	}
 
 	return nil
@@ -160,7 +168,7 @@ func (i *Installer) validateAndPromptEnvironment(server *Server, env map[string]
 			}
 			prompt += ": "
 
-			fmt.Print(prompt)
+			fmt.Fprint(i.out, prompt)
 
 			// For now, skip actual input reading in favor of clear error message
 			return fmt.Errorf("interactive prompting not yet implemented - please provide %s via --env %s=value", envVar.Name, envVar.Name)
@@ -184,7 +192,7 @@ func (i *Installer) validateAndPromptEnvironment(server *Server, env map[string]
 
 		// Show validation success for sensitive variables
 		if envVar.Sensitive && value != "" {
-			fmt.Printf("✅ %s validated\n", envVar.Name)
+			fmt.Fprintf(i.out, "✅ %s validated\n", envVar.Name)
 		}
 	}
 	return nil
@@ -324,7 +332,7 @@ func (cm *ConfigManager) AddServer(name string, config ServerConfig) error {
 
 // RemoveServer removes a server configuration
 // RemoveServer removes a server configuration
-func (cm *ConfigManager) RemoveServer(serverName string, opts RemoveOptions) error {
+func (cm *ConfigManager) RemoveServer(serverName string, opts RemoveOptions, w io.Writer) error {
 	if err := cm.Load(); err != nil {
 		return fmt.Errorf("loading config: %w", err)
 	}
@@ -335,13 +343,13 @@ func (cm *ConfigManager) RemoveServer(serverName string, opts RemoveOptions) err
 	}
 
 	if !opts.SkipConfirmation {
-		fmt.Printf("⚠️  Are you sure you want to remove %s? [y/N]: ", serverName)
+		fmt.Fprintf(w, "⚠️  Are you sure you want to remove %s? [y/N]: ", serverName)
 		// For now, assume yes
 	}
 
-	fmt.Printf("🗑️  Removing %s MCP server...\n", serverName)
+	fmt.Fprintf(w, "🗑️  Removing %s MCP server...\n", serverName)
 	delete(cm.config.MCPServers, serverName)
-	fmt.Println("✅ Server removed successfully")
+	fmt.Fprintln(w, "✅ Server removed successfully")
 
 	return nil
 }
@@ -456,7 +464,7 @@ func MaskSensitive(value string, sensitive bool) string {
 }
 
 // UpdateServer updates configuration for an existing server
-func (cm *ConfigManager) UpdateServer(serverName string, opts ConfigureOptions) error {
+func (cm *ConfigManager) UpdateServer(serverName string, opts ConfigureOptions, w io.Writer) error {
 	if err := cm.Load(); err != nil {
 		return fmt.Errorf("loading config: %w", err)
 	}
@@ -468,25 +476,34 @@ func (cm *ConfigManager) UpdateServer(serverName string, opts ConfigureOptions) 
 
 	if opts.Reset {
 		// Reset to defaults - for now just show message
-		fmt.Printf("🔄 Resetting %s to default configuration...\n", serverName)
+		fmt.Fprintf(w, "🔄 Resetting %s to default configuration...\n", serverName)
 		return nil
 	}
 
 	// Update environment variables
 	if len(opts.Environment) > 0 || len(opts.AddEnvironment) > 0 || len(opts.RemoveEnvironment) > 0 {
-		fmt.Printf("🔧 Updating %s configuration...\n", serverName)
-		fmt.Println("✅ Configuration updated successfully")
+		fmt.Fprintf(w, "🔧 Updating %s configuration...\n", serverName)
+		fmt.Fprintln(w, "✅ Configuration updated successfully")
 	}
 
 	return nil
 }
 
 // StatusChecker manages server status checking
-type StatusChecker struct{}
+type StatusChecker struct {
+	out io.Writer
+}
 
 // NewStatusChecker creates a new status checker
 func NewStatusChecker() *StatusChecker {
-	return &StatusChecker{}
+	return NewStatusCheckerWithWriter(os.Stdout)
+}
+
+// NewStatusCheckerWithWriter creates a new status checker with a custom output writer
+func NewStatusCheckerWithWriter(w io.Writer) *StatusChecker {
+	return &StatusChecker{
+		out: w,
+	}
 }
 
 // Check checks the status of servers
@@ -499,7 +516,7 @@ func (sc *StatusChecker) Check(opts StatusOptions) error {
 
 // checkServer checks status of a specific server
 func (sc *StatusChecker) checkServer(serverName string, opts StatusOptions) error {
-	fmt.Printf("📊 Status for %s MCP server:\n", serverName)
+	fmt.Fprintf(sc.out, "📊 Status for %s MCP server:\n", serverName)
 
 	// Try to detect Claude installations and check each one
 	detected, err := DetectClaude()
@@ -508,7 +525,7 @@ func (sc *StatusChecker) checkServer(serverName string, opts StatusOptions) erro
 	}
 
 	if len(detected) == 0 {
-		fmt.Println("⚠️  No Claude installation found")
+		fmt.Fprintln(sc.out, "⚠️  No Claude installation found")
 		return nil
 	}
 
@@ -519,23 +536,23 @@ func (sc *StatusChecker) checkServer(serverName string, opts StatusOptions) erro
 			if os.IsNotExist(err) {
 				continue // Config file doesn't exist, skip
 			}
-			fmt.Printf("⚠️  Error reading %s config: %v\n", installation.Type, err)
+			fmt.Fprintf(sc.out, "⚠️  Error reading %s config: %v\n", installation.Type, err)
 			continue
 		}
 
 		if serverConfig, exists := config.GetServer(serverName); exists {
 			found = true
-			fmt.Printf("✅ %s - Installed in %s\n", serverName, installation.Type)
-			fmt.Printf("   Config: %s\n", installation.ConfigPath)
-			fmt.Printf("   Command: %s %s\n", serverConfig.Command, strings.Join(serverConfig.Args, " "))
+			fmt.Fprintf(sc.out, "✅ %s - Installed in %s\n", serverName, installation.Type)
+			fmt.Fprintf(sc.out, "   Config: %s\n", installation.ConfigPath)
+			fmt.Fprintf(sc.out, "   Command: %s %s\n", serverConfig.Command, strings.Join(serverConfig.Args, " "))
 			if len(serverConfig.Env) > 0 {
-				fmt.Printf("   Environment variables: %d configured\n", len(serverConfig.Env))
+				fmt.Fprintf(sc.out, "   Environment variables: %d configured\n", len(serverConfig.Env))
 			}
 		}
 	}
 
 	if !found {
-		fmt.Println("⚠️  Server not installed")
+		fmt.Fprintln(sc.out, "⚠️  Server not installed")
 	}
 
 	return nil
@@ -543,8 +560,8 @@ func (sc *StatusChecker) checkServer(serverName string, opts StatusOptions) erro
 
 // checkAllServers checks status of all servers
 func (sc *StatusChecker) checkAllServers(opts StatusOptions) error {
-	fmt.Println("📊 MCP Server Status")
-	fmt.Println()
+	fmt.Fprintln(sc.out, "📊 MCP Server Status")
+	fmt.Fprintln(sc.out)
 
 	// Try to detect Claude installations
 	detected, err := DetectClaude()
@@ -553,7 +570,7 @@ func (sc *StatusChecker) checkAllServers(opts StatusOptions) error {
 	}
 
 	if len(detected) == 0 {
-		fmt.Println("⚠️  No Claude installation found")
+		fmt.Fprintln(sc.out, "⚠️  No Claude installation found")
 		return nil
 	}
 
@@ -564,7 +581,7 @@ func (sc *StatusChecker) checkAllServers(opts StatusOptions) error {
 			if os.IsNotExist(err) {
 				continue // Config file doesn't exist, skip
 			}
-			fmt.Printf("⚠️  Error reading %s config: %v\n", installation.Type, err)
+			fmt.Fprintf(sc.out, "⚠️  Error reading %s config: %v\n", installation.Type, err)
 			continue
 		}
 
@@ -573,19 +590,19 @@ func (sc *StatusChecker) checkAllServers(opts StatusOptions) error {
 			continue
 		}
 
-		fmt.Printf("%s (%s):\n", installation.Type, installation.ConfigPath)
+		fmt.Fprintf(sc.out, "%s (%s):\n", installation.Type, installation.ConfigPath)
 		for name, serverConfig := range servers {
 			totalServers++
-			fmt.Printf("  ✅ %-15s - %s %s\n", name, serverConfig.Command, strings.Join(serverConfig.Args, " "))
+			fmt.Fprintf(sc.out, "  ✅ %-15s - %s %s\n", name, serverConfig.Command, strings.Join(serverConfig.Args, " "))
 			if opts.Verbose && len(serverConfig.Env) > 0 {
-				fmt.Printf("      Environment: %d variables configured\n", len(serverConfig.Env))
+				fmt.Fprintf(sc.out, "      Environment: %d variables configured\n", len(serverConfig.Env))
 			}
 		}
-		fmt.Println()
+		fmt.Fprintln(sc.out)
 	}
 
 	if totalServers == 0 {
-		fmt.Println("⚠️  No servers installed")
+		fmt.Fprintln(sc.out, "⚠️  No servers installed")
 	}
 
 	return nil
