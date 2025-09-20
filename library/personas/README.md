@@ -221,8 +221,8 @@ Warning: Skipping invalid persona 'broken.md'
 ## Learn More
 
 - See existing personas in `/personas/` for examples
-- Read the [Feature Specification](../docs/01-frame/features/FEAT-011-persona-system.md)
-- Check the [Solution Design](../docs/02-design/solution-designs/SD-011-persona-system.md)
+- Read the [Feature Specification](../../docs/helix/01-frame/features/FEAT-011-persona-system.md)
+- Check the [Solution Design](../../docs/helix/02-design/solution-designs/SD-011-persona-system.md)
 
 ---
 

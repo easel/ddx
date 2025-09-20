@@ -71,7 +71,7 @@ This is the foundation phase where we define **WHAT** we're building.
 Move to [Design Phase](../02-design/README.md) after completing requirements.
 EOF
 
-cat > cli/test/fixtures/helix-workflow/docs/01-frame/features/FEAT-001-authentication.md << 'EOF'
+cat > cli/test/fixtures/helix-workflow/docs/helix/01-frame/features/FEAT-001-authentication.md << 'EOF'
 # Feature Specification: FEAT-001 - User Authentication
 
 **Priority**: P1
@@ -113,7 +113,7 @@ func TestFileTypeDetector_DetectHelixFiles(t *testing.T) {
         },
         {
             name:     "Feature specification",
-            path:     "docs/01-frame/features/FEAT-014-obsidian-integration.md",
+            path:     "docs/helix/01-frame/features/FEAT-014-obsidian-integration.md",
             expected: FileTypeFeature,
         },
         {
@@ -138,7 +138,7 @@ func TestGetPhaseFromPath(t *testing.T) {
         expected string
     }{
         {"workflows/helix/phases/01-frame/README.md", "frame"},
-        {"docs/02-design/FEAT-001-technical-design.md", "design"},
+        {"docs/helix/02-design/FEAT-001-technical-design.md", "design"},
         {"random/path/file.md", ""},
     }
 
@@ -186,7 +186,7 @@ func TestFrontmatterGenerator_FeatureFiles(t *testing.T) {
     generator := NewFrontmatterGenerator()
 
     file := &MarkdownFile{
-        Path:     "docs/01-frame/features/FEAT-014-obsidian-integration.md",
+        Path:     "docs/helix/01-frame/features/FEAT-014-obsidian-integration.md",
         Content:  "# Feature Specification: FEAT-014\n\n**Priority**: P1\n**Owner**: Platform Team",
         FileType: FileTypeFeature,
     }
@@ -416,17 +416,17 @@ cd /tmp/real-helix-test
 ../ddx init --workflow helix
 
 # Add some content
-echo "# Test Feature" > docs/01-frame/features/FEAT-TEST.md
-echo "See [Frame Phase](../phases/01-frame/README.md)" >> docs/01-frame/features/FEAT-TEST.md
+echo "# Test Feature" > docs/helix/01-frame/features/FEAT-TEST.md
+echo "See [Frame Phase](../phases/01-frame/README.md)" >> docs/helix/01-frame/features/FEAT-TEST.md
 
 # Migrate to Obsidian
 ../ddx obsidian migrate
 
 # Verify results
-grep "^---" docs/01-frame/features/FEAT-TEST.md
+grep "^---" docs/helix/01-frame/features/FEAT-TEST.md
 # Should show frontmatter was added
 
-grep "\[\[.*\]\]" docs/01-frame/features/FEAT-TEST.md
+grep "\[\[.*\]\]" docs/helix/01-frame/features/FEAT-TEST.md
 # Should show wikilinks were created
 ```
 

@@ -84,6 +84,15 @@ These principles define the core values and guidelines that govern DDx developme
 - If functionality isn't ready, the command shouldn't be exposed
 - Success messages must reflect actual completed operations
 
+### 12. Extensibility Through Composition
+**Core CLI remains minimal; features are added through library resources.**
+- The CLI core provides only fundamental operations: init, update, apply, list
+- Tool-specific integrations (Obsidian, VSCode, etc.) belong in library scripts/tools
+- Workflow implementations are loaded from library definitions, not hard-coded
+- New capabilities are added as templates, prompts, or scripts, not CLI commands
+- The CLI is a delivery mechanism, not a feature repository
+- Third-party tools integrate through the library, maintaining CLI simplicity
+
 ## Application
 
 ### In Development

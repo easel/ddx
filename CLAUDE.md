@@ -71,6 +71,30 @@ The CLI uses git subtree for managing the relationship between individual projec
 4. **Git Integration**: Built on git subtree for reliable version control and contribution workflows
 5. **Cross-Platform Support**: Makefile supports building for multiple platforms (macOS, Linux, Windows)
 
+### Architectural Principles
+
+**CRITICAL**: The DDx CLI follows the principle of "Extensibility Through Composition" - keep the CLI core minimal and add features through library resources.
+
+1. **CLI Core Minimalism**:
+   - The CLI should only contain fundamental operations: init, update, apply, list, diagnose, contribute
+   - Tool-specific integrations (Obsidian, VSCode, etc.) belong in `library/scripts/` or `library/tools/`
+   - Workflow implementations must be loaded from `library/workflows/`, never hard-coded in the CLI
+
+2. **Feature Addition Pattern**:
+   - New capabilities are added as templates, prompts, or scripts in the library
+   - The CLI is a delivery mechanism, not a feature repository
+   - Third-party tool integrations go through the library, not CLI commands
+
+3. **Correct Implementation Pattern**:
+   ```go
+   // BAD: Hard-coding features in CLI
+   var obsidianCmd = &cobra.Command{...}  // Don't do this
+
+   // GOOD: Loading features from library
+   ddx apply tools/obsidian/migrate.sh     // Use library scripts
+   ddx workflow init helix                 // Load workflow from library
+   ```
+
 ### Testing and Quality
 
 - Go tests are in `*_test.go` files alongside source code
@@ -278,7 +302,7 @@ The Build Phase Enforcer is currently active. Implement ONLY what's needed to ma
 I've completed [previous task]. Based on our HELIX workflow state, I'll now work on: [next action]
 ```
 
-**Current Next Action**: Create architecture overview (docs/02-design/architecture.md)
+**Current Next Action**: Create architecture overview (docs/helix/02-design/architecture.md)
 
 **Auto-Loop Instructions**:
 1. After completing any task, immediately check the workflow state
@@ -326,9 +350,9 @@ The HELIX workflow consists of six phases, each with its own enforcer:
 
 Check for phase indicators:
 - `.helix-state.yml` - Workflow state file
-- `docs/01-frame/` - Frame phase artifacts
-- `docs/02-design/` - Design phase artifacts
-- `docs/03-test/` - Test phase artifacts
+- `docs/helix/01-frame/` - Frame phase artifacts
+- `docs/helix/02-design/` - Design phase artifacts
+- `docs/helix/03-test/` - Test phase artifacts
 - Test status (failing = Build phase needed)
 - Deployment status (deployed = Iterate phase)
 

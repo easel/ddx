@@ -89,7 +89,7 @@ func TestFileTypeDetector_DetectHelixFiles(t *testing.T) {
         // Feature specifications
         {
             name:     "Feature specification in docs",
-            path:     "docs/01-frame/features/FEAT-014-obsidian-integration.md",
+            path:     "docs/helix/01-frame/features/FEAT-014-obsidian-integration.md",
             expected: FileTypeFeature,
         },
 
@@ -122,12 +122,12 @@ func TestFileTypeDetector_PhaseExtraction(t *testing.T) {
     }{
         {"workflows/helix/phases/01-frame/README.md", "frame"},
         {"workflows/helix/phases/02-design/enforcer.md", "design"},
-        {"docs/01-frame/features/FEAT-014.md", "frame"},
-        {"docs/02-design/FEAT-014-technical-design.md", "design"},
-        {"docs/03-test/test-spec.md", "test"},
-        {"docs/04-build/implementation.md", "build"},
-        {"docs/05-deploy/deployment.md", "deploy"},
-        {"docs/06-iterate/retrospective.md", "iterate"},
+        {"docs/helix/01-frame/features/FEAT-014.md", "frame"},
+        {"docs/helix/02-design/FEAT-014-technical-design.md", "design"},
+        {"docs/helix/03-test/test-spec.md", "test"},
+        {"docs/helix/04-build/implementation.md", "build"},
+        {"docs/helix/05-deploy/deployment.md", "deploy"},
+        {"docs/helix/06-iterate/retrospective.md", "iterate"},
         {"random/path/file.md", ""},
     }
 
@@ -208,7 +208,7 @@ func TestFrontmatterGenerator_FeatureFiles(t *testing.T) {
     generator := NewFrontmatterGenerator()
 
     file := &MarkdownFile{
-        Path:     "docs/01-frame/features/FEAT-014-obsidian-integration.md",
+        Path:     "docs/helix/01-frame/features/FEAT-014-obsidian-integration.md",
         Content:  "# Feature Specification: FEAT-014 - Obsidian Integration\n\n**Priority**: P1\n**Owner**: Platform Team",
         FileType: FileTypeFeature,
     }

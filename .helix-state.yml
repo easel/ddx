@@ -8,16 +8,16 @@ active_features: {}
 started_at: "2025-09-19 19:45:57"
 last_updated: "2025-01-20 18:25:00"
 tasks_completed:
-    - Create problem statement document (docs/01-frame/problem.md)
-    - Define user stories and personas (docs/01-frame/user-stories/)
-    - Identify stakeholders and requirements (docs/01-frame/stakeholders.md)
-    - Create risk assessment (docs/01-frame/risks.md)
-    - Define success metrics (docs/01-frame/metrics.md)
-    - Create architecture overview (docs/02-design/architecture.md)
-    - Define API contracts (docs/02-design/api-contracts/)
-    - Create database schema (docs/02-design/schema.md)
-    - Design component structure (docs/02-design/components.md)
-    - Create deployment strategy (docs/02-design/deployment.md)
+    - Create problem statement document (docs/helix/01-frame/problem.md)
+    - Define user stories and personas (docs/helix/01-frame/user-stories/)
+    - Identify stakeholders and requirements (docs/helix/01-frame/stakeholders.md)
+    - Create risk assessment (docs/helix/01-frame/risks.md)
+    - Define success metrics (docs/helix/01-frame/metrics.md)
+    - Create architecture overview (docs/helix/02-design/architecture.md)
+    - Define API contracts (docs/helix/02-design/api-contracts/)
+    - Create database schema (docs/helix/02-design/schema.md)
+    - Design component structure (docs/helix/02-design/components.md)
+    - Create deployment strategy (docs/helix/02-design/deployment.md)
     - Write failing tests for US-004 Update Assets from Master
     - Write failing tests for US-005 Contribute Improvements
     - Write failing tests for US-009 Pull Updates from Upstream

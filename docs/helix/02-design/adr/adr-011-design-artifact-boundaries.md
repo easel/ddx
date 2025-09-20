@@ -173,9 +173,9 @@ This decision should be reviewed if:
 ## References
 
 ### Internal References
-- [ADR-001: Workflow Structure](/docs/02-design/adr/adr-001-workflow-structure.md)
+- [ADR-001: Workflow Structure](/docs/helix/02-design/adr/adr-001-workflow-structure.md)
 - [Helix Workflow Design Phase](/workflows/helix/phases/02-design/README.md)
-- [FEAT-005: Workflow Execution Engine](/docs/01-frame/features/FEAT-005-workflow-execution-engine.md)
+- [FEAT-005: Workflow Execution Engine](/docs/helix/01-frame/features/FEAT-005-workflow-execution-engine.md)
 
 ### External References
 - [Documenting Architecture Decisions](https://cognitect.com/blog/2011/11/15/documenting-architecture-decisions) - Michael Nygard

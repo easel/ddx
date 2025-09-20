@@ -102,70 +102,70 @@ Track high-level metrics:
 ## Cross-References
 
 ### Related Documents
-- **PRD**: `docs/01-frame/prd.md` - Overall product vision
-- **Principles**: `docs/01-frame/principles.md` - Guiding principles
-- **Feature Specs**: `docs/01-frame/features/FEAT-XXX-[name].md`
+- **PRD**: `docs/helix/01-frame/prd.md` - Overall product vision
+- **Principles**: `docs/helix/01-frame/principles.md` - Guiding principles
+- **Feature Specs**: `docs/helix/01-frame/features/FEAT-XXX-[name].md`
 
 ### Artifact Locations by Feature
 For each feature, artifacts are located at:
-- **Specification**: `docs/01-frame/features/FEAT-XXX-[name].md`
-- **User Stories**: `docs/01-frame/user-stories/US-XXX-[name].md`
-- **Solution Design**: `docs/02-design/solution-designs/SD-XXX-[name].md`
-- **Contracts**: `docs/02-design/contracts/API-XXX-[name].md`
+- **Specification**: `docs/helix/01-frame/features/FEAT-XXX-[name].md`
+- **User Stories**: `docs/helix/01-frame/user-stories/US-XXX-[name].md`
+- **Solution Design**: `docs/helix/02-design/solution-designs/SD-XXX-[name].md`
+- **Contracts**: `docs/helix/02-design/contracts/API-XXX-[name].md`
 - **Tests**: `tests/FEAT-XXX-[name]/`
 - **Implementation**: `src/features/FEAT-XXX-[name]/`
 
 ### FEAT-001 Artifacts (Core CLI Framework)
-- **Specification**: `docs/01-frame/features/FEAT-001-core-cli-framework.md` ✓
+- **Specification**: `docs/helix/01-frame/features/FEAT-001-core-cli-framework.md` ✓
 - **User Stories**: US-001 through US-008 (referenced in specification)
-- **Solution Design**: `docs/02-design/solution-designs/SD-001-core-cli-framework.md` ✓
-- **Contracts**: `docs/02-design/contracts/API-001-cli-interfaces.md` [To be created]
+- **Solution Design**: `docs/helix/02-design/solution-designs/SD-001-core-cli-framework.md` ✓
+- **Contracts**: `docs/helix/02-design/contracts/API-001-cli-interfaces.md` [To be created]
 - **Tests**: `tests/FEAT-001-core-cli-framework/` [To be created]
 - **Implementation**: `cli/` [Existing]
 - **Tech Spikes**:
-  - `docs/02-design/tech-spikes/TS-001-large-repository-performance.md` ✓
+  - `docs/helix/02-design/tech-spikes/TS-001-large-repository-performance.md` ✓
 
 ### FEAT-002 Artifacts (Upstream Synchronization System)
-- **Specification**: `docs/01-frame/features/FEAT-002-upstream-synchronization.md` ✓
+- **Specification**: `docs/helix/01-frame/features/FEAT-002-upstream-synchronization.md` ✓
 - **User Stories**: US-009 through US-016 (referenced in specification)
-- **Solution Design**: `docs/02-design/solution-design-feat-002.md` ✓
-- **Contracts**: `docs/02-design/contracts/API-002-sync-interfaces.md` [To be created]
+- **Solution Design**: `docs/helix/02-design/solution-design-feat-002.md` ✓
+- **Contracts**: `docs/helix/02-design/contracts/API-002-sync-interfaces.md` [To be created]
 - **Tests**: `tests/FEAT-002-upstream-synchronization/` [To be created]
 - **Implementation**: `cli/internal/git/` [Partial - needs refactoring]
 - **Tech Spikes**:
-  - `docs/02-design/tech-spikes/TS-001-large-repository-performance.md` ✓
+  - `docs/helix/02-design/tech-spikes/TS-001-large-repository-performance.md` ✓
 
 ### FEAT-003 Artifacts (Configuration Management)
-- **Specification**: `docs/01-frame/features/FEAT-003-configuration-management.md` ✓
+- **Specification**: `docs/helix/01-frame/features/FEAT-003-configuration-management.md` ✓
 - **User Stories**: US-017 through US-024 (referenced in specification)
-- **Solution Design**: `docs/02-design/solution-designs/SD-003-configuration-management.md` ✓
-- **Contracts**: `docs/02-design/contracts/API-003-config-interfaces.md` [To be created]
+- **Solution Design**: `docs/helix/02-design/solution-designs/SD-003-configuration-management.md` ✓
+- **Contracts**: `docs/helix/02-design/contracts/API-003-config-interfaces.md` [To be created]
 - **Tests**: `tests/FEAT-003-configuration-management/` [To be created]
 - **Implementation**: `cli/internal/config/` [Partial]
 - **Tech Spikes**:
-  - `docs/02-design/tech-spikes/TS-003-configuration-schema-validation-performance.md` ✓
+  - `docs/helix/02-design/tech-spikes/TS-003-configuration-schema-validation-performance.md` ✓
 
 ### FEAT-004 Artifacts (Cross-Platform Installation)
-- **Specification**: `docs/01-frame/features/FEAT-004-cross-platform-installation.md` ✓
+- **Specification**: `docs/helix/01-frame/features/FEAT-004-cross-platform-installation.md` ✓
 - **User Stories**: US-028 through US-035 (referenced in specification)
-- **Solution Design**: `docs/02-design/solution-designs/SD-004-cross-platform-installation.md` ✓
+- **Solution Design**: `docs/helix/02-design/solution-designs/SD-004-cross-platform-installation.md` ✓
 - **Tests**: `tests/FEAT-004-cross-platform-installation/` [To be created]
 - **Implementation**: `scripts/install.sh` [Partial]
 - **Tech Spikes**:
-  - `docs/02-design/tech-spikes/TS-002-cross-platform-installation-mechanisms.md` ✓
+  - `docs/helix/02-design/tech-spikes/TS-002-cross-platform-installation-mechanisms.md` ✓
 
 ### FEAT-005 Artifacts (Workflow Execution Engine with Observability)
-- **Specification**: `docs/01-frame/features/FEAT-005-workflow-execution-engine.md` ✓
+- **Specification**: `docs/helix/01-frame/features/FEAT-005-workflow-execution-engine.md` ✓
 - **User Stories**: US-024 through US-027 (workflow-related)
-- **Solution Design**: `docs/02-design/solution-designs/SD-005-workflow-execution-engine.md` ✓
-- **Contracts**: `docs/02-design/contracts/API-005-workflow-interfaces.md` [To be created]
-- **ADR**: `docs/02-design/adr/ADR-004-starlark-workflow-extensions.md` ✓ (related)
+- **Solution Design**: `docs/helix/02-design/solution-designs/SD-005-workflow-execution-engine.md` ✓
+- **Contracts**: `docs/helix/02-design/contracts/API-005-workflow-interfaces.md` [To be created]
+- **ADR**: `docs/helix/02-design/adr/ADR-004-starlark-workflow-extensions.md` ✓ (related)
 - **Security Design**: [To be created - will detail encryption and access control]
 - **Data Design**: [To be created - will define schema for logs and audit trails]
 - **Tests**: `tests/FEAT-005-workflow-execution-engine/` [To be created]
 - **Implementation**: `src/features/FEAT-005-workflow-execution-engine/` [To be created]
 - **Tech Spikes**:
-  - `docs/02-design/tech-spikes/TS-001-large-repository-performance.md` ✓
+  - `docs/helix/02-design/tech-spikes/TS-001-large-repository-performance.md` ✓
 
 ## Tech Spikes Created
 

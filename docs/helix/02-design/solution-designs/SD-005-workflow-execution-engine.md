@@ -442,7 +442,7 @@ phases:
     gates_passed: true
     exit_criteria_met: true
     artifacts:
-      - path: docs/01-frame/prd.md
+      - path: docs/helix/01-frame/prd.md
         location: project  # vs .ddx/local
         template: prd
         created_at: 2025-01-14T13:00:00Z
