@@ -14,6 +14,7 @@ import (
 var (
 	initTemplate string
 	initForce    bool
+	initNoGit    bool
 )
 
 var initCmd = &cobra.Command{
@@ -34,6 +35,7 @@ func init() {
 
 	initCmd.Flags().StringVarP(&initTemplate, "template", "t", "", "Use specific template")
 	initCmd.Flags().BoolVarP(&initForce, "force", "f", false, "Force initialization even if DDx already exists")
+	initCmd.Flags().BoolVar(&initNoGit, "no-git", false, "Skip git subtree setup")
 }
 
 func runInit(cmd *cobra.Command, args []string) error {
@@ -106,19 +108,18 @@ func runInit(cmd *cobra.Command, args []string) error {
 		return NewExitError(1, fmt.Sprintf("Failed to save configuration: %v", err))
 	}
 
-	// Copy resources if library exists
-	if libraryExists {
+	// Always create .ddx directory (required for isInitialized check)
+	localDDxPath := ".ddx"
+	if err := os.MkdirAll(localDDxPath, 0755); err != nil {
+		cmd.SilenceUsage = true
+		return NewExitError(1, fmt.Sprintf("Failed to create .ddx directory: %v", err))
+	}
+
+	// Copy resources if library exists and not using --no-git
+	if libraryExists && !initNoGit {
 		s := spinner.New(spinner.CharSets[14], 100)
 		s.Prefix = "Setting up DDx... "
 		s.Start()
-
-		// Create local .ddx directory
-		localDDxPath := ".ddx"
-		if err := os.MkdirAll(localDDxPath, 0755); err != nil {
-			s.Stop()
-			cmd.SilenceUsage = true
-			return NewExitError(1, fmt.Sprintf("Failed to create .ddx directory: %v", err))
-		}
 
 		// Copy selected resources
 		for _, include := range localConfig.Includes {
