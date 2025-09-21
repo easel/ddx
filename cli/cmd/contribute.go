@@ -16,9 +16,10 @@ import (
 )
 
 var (
-	contributeMessage string
-	contributeBranch  string
-	contributeDryRun  bool
+	contributeMessage  string
+	contributeBranch   string
+	contributeDryRun   bool
+	contributeCreatePR bool
 )
 
 var contributeCmd = &cobra.Command{
@@ -46,6 +47,7 @@ func init() {
 	contributeCmd.Flags().StringVarP(&contributeMessage, "message", "m", "", "Contribution message")
 	contributeCmd.Flags().StringVar(&contributeBranch, "branch", "", "Feature branch name")
 	contributeCmd.Flags().BoolVar(&contributeDryRun, "dry-run", false, "Show what would be contributed without actually doing it")
+	contributeCmd.Flags().BoolVar(&contributeCreatePR, "create-pr", false, "Create a pull request after pushing")
 }
 
 func runContribute(cmd *cobra.Command, args []string) error {
@@ -209,7 +211,7 @@ func runContribute(cmd *cobra.Command, args []string) error {
 	fmt.Fprintf(out, "   Resource: %s\n", yellow.Sprint(resourcePath))
 	fmt.Fprintln(out)
 
-	fmt.Fprintf(out, "2. %s\n", cyan.Sprint("Create a Pull Request"))
+	fmt.Fprintf(out, "2. %s\n", cyan.Sprint("Push to your fork and create a Pull Request"))
 	if cfg.Repository.URL != "" {
 		// Extract repo info from URL
 		repoURL := strings.TrimSuffix(cfg.Repository.URL, ".git")

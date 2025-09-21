@@ -228,6 +228,11 @@ func TestAcceptance_US005_ContributeImprovements(t *testing.T) {
 		t.Setenv("DDX_TEST_MODE", "1")
 		setupTestProject(t)
 
+		// Create pattern to contribute
+		patternPath := filepath.Join(".ddx", "patterns", "test")
+		os.MkdirAll(filepath.Dir(patternPath), 0755)
+		os.WriteFile(patternPath, []byte("# Test Pattern"), 0644)
+
 		// When: Contributing with validation
 		contributeCmd := rootCmd
 		contributeBuf := new(bytes.Buffer)
@@ -249,6 +254,11 @@ func TestAcceptance_US005_ContributeImprovements(t *testing.T) {
 		os.Chdir(tempDir)
 		t.Setenv("DDX_TEST_MODE", "1")
 		setupTestProject(t)
+
+		// Create prompt to contribute
+		promptPath := filepath.Join(".ddx", "prompts", "new-prompt.md")
+		os.MkdirAll(filepath.Dir(promptPath), 0755)
+		os.WriteFile(promptPath, []byte("# New Prompt"), 0644)
 
 		// When: Contributing with PR creation
 		contributeCmd := rootCmd
@@ -427,6 +437,11 @@ func TestAcceptance_US011_ContributeChangesUpstream(t *testing.T) {
 		t.Setenv("DDX_TEST_MODE", "1")
 		setupTestProject(t)
 
+		// Create template to contribute
+		templatePath := filepath.Join(".ddx", "templates", "test", "README.md")
+		os.MkdirAll(filepath.Dir(templatePath), 0755)
+		os.WriteFile(templatePath, []byte("# Test Template"), 0644)
+
 		// When: Contributing
 		contributeCmd := rootCmd
 		contributeBuf := new(bytes.Buffer)
@@ -448,12 +463,17 @@ func TestAcceptance_US011_ContributeChangesUpstream(t *testing.T) {
 		t.Setenv("DDX_TEST_MODE", "1")
 		setupTestProject(t)
 
+		// Create prompt to contribute
+		promptPath := filepath.Join(".ddx", "prompts", "test.md")
+		os.MkdirAll(filepath.Dir(promptPath), 0755)
+		os.WriteFile(promptPath, []byte("# Test Prompt"), 0644)
+
 		// When: Pushing to fork
 		contributeCmd := rootCmd
 		contributeBuf := new(bytes.Buffer)
 		contributeCmd.SetOut(contributeBuf)
 		contributeCmd.SetErr(contributeBuf)
-		contributeCmd.SetArgs([]string{"contribute", "prompts/test.md", "--push"})
+		contributeCmd.SetArgs([]string{"contribute", "prompts/test.md", "--create-pr"})
 
 		_ = contributeCmd.Execute()
 
