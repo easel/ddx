@@ -135,6 +135,13 @@ func (i *Installer) Install(serverName string, opts InstallOptions) error {
 		return fmt.Errorf("saving config: %w", err)
 	}
 
+	// Create package.json if it's a Node.js-based server and doesn't exist
+	if strings.HasPrefix(server.Command.Executable, "npx") || strings.HasPrefix(server.Command.Executable, "node") {
+		if err := i.ensurePackageJSON(); err != nil {
+			fmt.Fprintf(i.out, "⚠️  Warning: Could not create package.json: %v\n", err)
+		}
+	}
+
 	// Success message with next steps
 	fmt.Fprintf(i.out, "✅ %s MCP server installed successfully!\n\n", serverName)
 	fmt.Fprintf(i.out, "🚀 Next steps:\n")
@@ -195,6 +202,35 @@ func (i *Installer) validateAndPromptEnvironment(server *Server, env map[string]
 			fmt.Fprintf(i.out, "✅ %s validated\n", envVar.Name)
 		}
 	}
+	return nil
+}
+
+// ensurePackageJSON creates a basic package.json if it doesn't exist
+func (i *Installer) ensurePackageJSON() error {
+	// Check if package.json already exists
+	if _, err := os.Stat("package.json"); err == nil {
+		return nil // Already exists
+	}
+
+	// Create a basic package.json
+	packageJSON := map[string]interface{}{
+		"name":         "mcp-servers",
+		"version":      "1.0.0",
+		"description":  "MCP server dependencies for DDx",
+		"private":      true,
+		"dependencies": make(map[string]string),
+	}
+
+	data, err := json.MarshalIndent(packageJSON, "", "  ")
+	if err != nil {
+		return fmt.Errorf("marshaling package.json: %w", err)
+	}
+
+	if err := os.WriteFile("package.json", data, 0644); err != nil {
+		return fmt.Errorf("writing package.json: %w", err)
+	}
+
+	fmt.Fprintf(i.out, "📄 Created package.json for MCP server dependencies\n")
 	return nil
 }
 

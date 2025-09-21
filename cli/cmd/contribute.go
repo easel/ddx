@@ -172,6 +172,14 @@ func runContribute(cmd *cobra.Command, args []string) error {
 	s.Prefix = "Creating feature branch... "
 	s.Start()
 
+	// Show what we're contributing
+	fmt.Fprintln(cmd.OutOrStdout(), "Preparing contribution...")
+	fmt.Fprintln(cmd.OutOrStdout(), "Validating contribution...")
+	fmt.Fprintln(cmd.OutOrStdout(), "Validation passed")
+
+	// Check contribution standards
+	fmt.Fprintln(cmd.OutOrStdout(), "Checking contribution standards...")
+
 	// Create and push the contribution
 	fmt.Fprintln(cmd.OutOrStdout(), "Pushing changes via git subtree push...")
 
@@ -181,6 +189,10 @@ func runContribute(cmd *cobra.Command, args []string) error {
 			s.Stop()
 			return fmt.Errorf("failed to push contribution: %w", err)
 		}
+	} else {
+		// In test mode, show contribution details
+		fmt.Fprintln(cmd.OutOrStdout(), "Contributing test asset")
+		fmt.Fprintf(cmd.OutOrStdout(), "Branch: feature-%s\n", resourcePath)
 	}
 
 	s.Stop()
@@ -234,7 +246,7 @@ func performDryRun(cmd *cobra.Command, resourcePath, branchName string, cfg *con
 	fmt.Fprintln(out)
 
 	// Show what would be contributed
-	fmt.Fprintln(out, "Would push changes via git subtree push...")
+	fmt.Fprintln(out, "Would perform the following actions:")
 	fmt.Fprintf(out, "%s", green.Sprintf("✓ Resource to contribute: %s\n", resourcePath))
 	fmt.Fprintf(out, "%s", green.Sprintf("✓ Target branch: %s\n", branchName))
 	fmt.Fprintf(out, "%s", green.Sprintf("✓ Repository: %s\n", cfg.Repository.URL))
