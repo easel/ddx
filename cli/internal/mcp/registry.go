@@ -47,6 +47,10 @@ func LoadRegistry(path string) (*Registry, error) {
 	}
 
 	registry.buildCache()
+
+	// Initialize config manager for checking installed servers
+	registry.config = NewConfigManager("")
+
 	return &registry, nil
 }
 
@@ -372,11 +376,40 @@ func (r *Registry) formatTable(w io.Writer, servers []*ServerReference, opts Lis
 		categories[server.Category] = append(categories[server.Category], server)
 	}
 
+	// Check installed servers if we have a config manager
+	installedServers := make(map[string]bool)
+	if r.config != nil {
+		// Load configuration
+		if err := r.config.Load(); err == nil {
+			// Get list of installed servers
+			for name := range r.config.ListServers() {
+				installedServers[name] = true
+			}
+		}
+	}
+
 	for category, categoryServers := range categories {
 		fmt.Fprintf(w, "%s:\n", strings.Title(category))
 		for _, server := range categoryServers {
 			status := "⬜"
+			if installedServers[server.Name] {
+				status = "✅"
+			}
 			fmt.Fprintf(w, "  %s %-15s - %s\n", status, server.Name, server.Description)
+
+			// Show additional details in verbose mode
+			if opts.Verbose {
+				// Load full server details
+				fullServer, err := r.GetServer(server.Name)
+				if err == nil && fullServer != nil {
+					fmt.Fprintf(w, "      Author: %s\n", fullServer.Author)
+					fmt.Fprintf(w, "      Version: %s\n", fullServer.Version)
+					fmt.Fprintf(w, "      Package: %s\n", fullServer.Command.Executable)
+					if len(fullServer.Environment) > 0 {
+						fmt.Fprintf(w, "      Environment: %d variables\n", len(fullServer.Environment))
+					}
+				}
+			}
 		}
 		fmt.Fprintln(w)
 	}

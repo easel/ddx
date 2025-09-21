@@ -85,6 +85,9 @@ type Registry struct {
 	// Private fields for caching
 	cache    map[string]*Server
 	cacheTTL time.Time
+
+	// Config manager for checking installed servers
+	config *ConfigManager
 }
 
 // ServerReference is a lightweight reference in the registry

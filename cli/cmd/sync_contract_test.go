@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"os"
+	"os/exec"
 	"strings"
 	"testing"
 
@@ -18,6 +19,13 @@ func TestUpdateCommand_Contract(t *testing.T) {
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
 		createTestConfig(t)
+
+		// Reset flags
+		updateForce = false
+		updateCheck = false
+		updateReset = false
+		updateSync = false
+		updateStrategy = ""
 
 		// When: Running update successfully
 		cmd := rootCmd
@@ -39,6 +47,13 @@ func TestUpdateCommand_Contract(t *testing.T) {
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
 
+		// Reset flags
+		updateForce = false
+		updateCheck = false
+		updateReset = false
+		updateSync = false
+		updateStrategy = ""
+
 		// When: Running update without config
 		cmd := rootCmd
 		buf := new(bytes.Buffer)
@@ -58,6 +73,14 @@ func TestUpdateCommand_Contract(t *testing.T) {
 		// Given: Network is unavailable
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
+
+		// Reset flags
+		updateForce = false
+		updateCheck = false
+		updateReset = false
+		updateSync = false
+		updateStrategy = ""
+
 		createTestConfig(t)
 
 		// Simulate network failure by using invalid URL
@@ -89,6 +112,14 @@ repository:
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
 		createTestConfig(t)
+		os.MkdirAll(".ddx", 0755) // Create .ddx directory so isInitialized() passes
+
+		// Reset flags
+		updateForce = false
+		updateCheck = false
+		updateReset = false
+		updateSync = false
+		updateStrategy = ""
 
 		// When: Running with --check flag
 		cmd := rootCmd
@@ -113,13 +144,29 @@ repository:
 		// Given: Local changes exist
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
+
+		// Initialize git repo so the command runs fully
+		execCommand("git", "init")
+		execCommand("git", "config", "user.email", "test@example.com")
+		execCommand("git", "config", "user.name", "Test User")
+
 		createTestConfig(t)
 
 		// Create local changes
 		os.MkdirAll(".ddx", 0755)
 		os.WriteFile(".ddx/local.txt", []byte("local changes"), 0644)
 
+		execCommand("git", "add", ".")
+		execCommand("git", "commit", "-m", "Initial commit")
+
 		// When: Running with --force flag
+		// Reset flags to avoid state from previous tests
+		updateForce = false
+		updateCheck = false
+		updateReset = false
+		updateSync = false
+		updateStrategy = ""
+
 		cmd := rootCmd
 		buf := new(bytes.Buffer)
 		cmd.SetOut(buf)
@@ -130,10 +177,11 @@ repository:
 
 		// Then: Should override local changes
 		output := buf.String()
-		if err == nil {
-			assert.Contains(t, output, "force", "Should indicate force mode")
-			assert.Contains(t, output, "override", "Should mention overriding")
-		}
+		// The command should succeed and show force mode
+		assert.NoError(t, err, "Command should execute successfully")
+		t.Logf("Force flag output:\n%s", output)
+		assert.Contains(t, output, "force", "Should indicate force mode")
+		assert.Contains(t, output, "override", "Should mention overriding")
 	})
 
 	t.Run("contract_output_format", func(t *testing.T) {
@@ -141,6 +189,14 @@ repository:
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
 		createTestConfig(t)
+		os.MkdirAll(".ddx", 0755) // Create .ddx directory so isInitialized() passes
+
+		// Reset flags
+		updateForce = false
+		updateCheck = false
+		updateReset = false
+		updateSync = false
+		updateStrategy = ""
 
 		// When: Running update
 		cmd := rootCmd
@@ -174,11 +230,26 @@ func TestContributeCommand_Contract(t *testing.T) {
 		// Given: Valid contribution
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
+
+		// Reset flags
+		contributeMessage = ""
+		contributeBranch = ""
+		contributeDryRun = false
+
+		// Initialize git repo
+		execCommand("git", "init")
+		execCommand("git", "config", "user.email", "test@example.com")
+		execCommand("git", "config", "user.name", "Test User")
+
 		createTestConfig(t)
 
 		// Create asset to contribute
 		os.MkdirAll(".ddx/templates/test", 0755)
 		os.WriteFile(".ddx/templates/test/README.md", []byte("# Test"), 0644)
+
+		// Commit initial state so HasSubtree can work
+		execCommand("git", "add", ".")
+		execCommand("git", "commit", "-m", "Initial commit")
 
 		// When: Contributing successfully
 		cmd := rootCmd
@@ -199,7 +270,22 @@ func TestContributeCommand_Contract(t *testing.T) {
 		// Given: Asset doesn't exist
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
+
+		// Reset flags
+		contributeMessage = ""
+		contributeBranch = ""
+		contributeDryRun = false
+
+		// Initialize git repo
+		execCommand("git", "init")
+		execCommand("git", "config", "user.email", "test@example.com")
+		execCommand("git", "config", "user.name", "Test User")
+
 		createTestConfig(t)
+		os.MkdirAll(".ddx", 0755) // Create .ddx directory so isInitialized() passes
+
+		execCommand("git", "add", ".")
+		execCommand("git", "commit", "-m", "Initial commit")
 
 		// When: Contributing non-existent asset
 		cmd := rootCmd
@@ -220,10 +306,24 @@ func TestContributeCommand_Contract(t *testing.T) {
 		// Given: Valid contribution
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
+
+		// Reset flags
+		contributeMessage = ""
+		contributeBranch = ""
+		contributeDryRun = false
+
+		// Initialize git repo
+		execCommand("git", "init")
+		execCommand("git", "config", "user.email", "test@example.com")
+		execCommand("git", "config", "user.name", "Test User")
+
 		createTestConfig(t)
 
 		os.MkdirAll(".ddx/patterns", 0755)
 		os.WriteFile(".ddx/patterns/test.md", []byte("pattern"), 0644)
+
+		execCommand("git", "add", ".")
+		execCommand("git", "commit", "-m", "Initial commit")
 
 		// When: Running with --dry-run
 		cmd := rootCmd
@@ -248,10 +348,24 @@ func TestContributeCommand_Contract(t *testing.T) {
 		// Given: No message provided
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
+
+		// Reset flags
+		contributeMessage = ""
+		contributeBranch = ""
+		contributeDryRun = false
+
+		// Initialize git repo
+		execCommand("git", "init")
+		execCommand("git", "config", "user.email", "test@example.com")
+		execCommand("git", "config", "user.name", "Test User")
+
 		createTestConfig(t)
 
 		os.MkdirAll(".ddx/prompts", 0755)
 		os.WriteFile(".ddx/prompts/test.md", []byte("prompt"), 0644)
+
+		execCommand("git", "add", ".")
+		execCommand("git", "commit", "-m", "Initial commit")
 
 		// When: Contributing without message
 		cmd := rootCmd
@@ -268,7 +382,7 @@ func TestContributeCommand_Contract(t *testing.T) {
 			assert.Contains(t, output, "message", "Should mention message requirement")
 		} else {
 			// If successful, should have generated a message
-			assert.Contains(t, output, "Contributing", "Should have default message")
+			assert.Contains(t, output, "Contributing test asset", "Should have default message")
 		}
 	})
 
@@ -276,11 +390,25 @@ func TestContributeCommand_Contract(t *testing.T) {
 		// Given: Asset to contribute
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
+
+		// Reset flags
+		contributeMessage = ""
+		contributeBranch = ""
+		contributeDryRun = false
+
+		// Initialize git repo
+		execCommand("git", "init")
+		execCommand("git", "config", "user.email", "test@example.com")
+		execCommand("git", "config", "user.name", "Test User")
+
 		createTestConfig(t)
 
 		// Create invalid asset (missing metadata)
 		os.MkdirAll(".ddx/templates/invalid", 0755)
 		os.WriteFile(".ddx/templates/invalid/template.txt", []byte("content"), 0644)
+
+		execCommand("git", "add", ".")
+		execCommand("git", "commit", "-m", "Initial commit")
 		// Missing metadata.yml
 
 		// When: Contributing invalid asset
@@ -306,6 +434,14 @@ func TestUpdateCommand_ConflictHandling(t *testing.T) {
 		// Given: Conflicting changes
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
+
+		// Reset flags
+		updateForce = false
+		updateCheck = false
+		updateReset = false
+		updateSync = false
+		updateStrategy = ""
+
 		createTestConfig(t)
 
 		// Simulate conflict scenario
@@ -332,7 +468,16 @@ func TestUpdateCommand_ConflictHandling(t *testing.T) {
 		// Given: Conflicts exist
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
+
+		// Reset flags
+		updateForce = false
+		updateCheck = false
+		updateReset = false
+		updateSync = false
+		updateStrategy = ""
+
 		createTestConfig(t)
+		os.MkdirAll(".ddx", 0755) // Create .ddx directory so isInitialized() passes
 
 		// When: Using --strategy=theirs
 		cmd := rootCmd
@@ -352,7 +497,16 @@ func TestUpdateCommand_ConflictHandling(t *testing.T) {
 		// Given: Conflicts exist
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
+
+		// Reset flags
+		updateForce = false
+		updateCheck = false
+		updateReset = false
+		updateSync = false
+		updateStrategy = ""
+
 		createTestConfig(t)
+		os.MkdirAll(".ddx", 0755) // Create .ddx directory so isInitialized() passes
 
 		// When: Using --strategy=ours
 		cmd := rootCmd
@@ -382,6 +536,7 @@ func TestSyncCommand_GitSubtree(t *testing.T) {
 		execCommand("git", "config", "user.name", "Test User")
 
 		createTestConfig(t)
+		os.MkdirAll(".ddx", 0755) // Create .ddx directory so isInitialized() passes
 		execCommand("git", "add", ".")
 		execCommand("git", "commit", "-m", "Initial commit")
 
@@ -412,7 +567,7 @@ func TestSyncCommand_GitSubtree(t *testing.T) {
 		execCommand("git", "config", "user.name", "Test User")
 
 		createTestConfig(t)
-		os.MkdirAll(".ddx/new", 0755)
+		os.MkdirAll(".ddx/new", 0755) // Ensure .ddx directory exists
 		os.WriteFile(".ddx/new/file.txt", []byte("content"), 0644)
 
 		// When: Pushing via subtree
@@ -447,6 +602,6 @@ repository:
 
 // Helper to execute shell commands (for git operations)
 func execCommand(command string, args ...string) error {
-	// This is a simplified version - real implementation would use exec.Command
-	return nil
+	cmd := exec.Command(command, args...)
+	return cmd.Run()
 }
