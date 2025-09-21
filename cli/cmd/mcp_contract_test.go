@@ -13,6 +13,9 @@ import (
 
 // TestMCPListCommand_Contract tests the contract for ddx mcp list command
 func TestMCPListCommand_Contract(t *testing.T) {
+	// Ensure we're in a valid directory first
+	ensureValidWorkingDirectory(t)
+
 	// Save current directory before any changes
 	originalDir, err := os.Getwd()
 	require.NoError(t, err, "Should get working directory")
@@ -158,6 +161,9 @@ func TestMCPListCommand_Contract(t *testing.T) {
 
 // TestMCPInstallCommand_Contract tests the contract for ddx mcp install command
 func TestMCPInstallCommand_Contract(t *testing.T) {
+	// Ensure we're in a valid directory first
+	ensureValidWorkingDirectory(t)
+
 	// Save current directory before any changes
 	originalDir, err := os.Getwd()
 	require.NoError(t, err, "Should get working directory")
@@ -298,6 +304,9 @@ func TestMCPInstallCommand_Contract(t *testing.T) {
 
 // TestConfigCommand_Contract tests configuration command contracts
 func TestConfigCommand_ContractExtended(t *testing.T) {
+	// Ensure we're in a valid directory first
+	ensureValidWorkingDirectory(t)
+
 	// Save current directory before any changes
 	originalDir, err := os.Getwd()
 	require.NoError(t, err, "Should get working directory")
@@ -509,6 +518,9 @@ func TestInstallationCommands_Contract(t *testing.T) {
 
 // TestWorkflowCommands_Contract tests workflow command contracts
 func TestWorkflowCommands_Contract(t *testing.T) {
+	// Ensure we're in a valid directory first
+	ensureValidWorkingDirectory(t)
+
 	// Save current directory before any changes
 	originalDir, err := os.Getwd()
 	require.NoError(t, err, "Should get working directory")

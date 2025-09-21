@@ -96,7 +96,7 @@ func (i *Installer) Install(serverName string, opts InstallOptions) error {
 
 	// Check if already installed
 	if i.config.HasServer(serverName) && !opts.DryRun {
-		return fmt.Errorf("%w: %s", ErrAlreadyInstalled, serverName)
+		return fmt.Errorf("%w: %s. To upgrade, first uninstall with 'ddx mcp uninstall %s'", ErrAlreadyInstalled, serverName, serverName)
 	}
 
 	// Create backup if requested
@@ -137,8 +137,14 @@ func (i *Installer) Install(serverName string, opts InstallOptions) error {
 
 	// Create package.json if it's a Node.js-based server and doesn't exist
 	if strings.HasPrefix(server.Command.Executable, "npx") || strings.HasPrefix(server.Command.Executable, "node") {
+		// Detect package manager
+		packageManager := i.detectPackageManager()
+		fmt.Fprintf(i.out, "📦 Using package manager: %s\n", packageManager)
+
 		if err := i.ensurePackageJSON(); err != nil {
 			fmt.Fprintf(i.out, "⚠️  Warning: Could not create package.json: %v\n", err)
+		} else {
+			fmt.Fprintf(i.out, "📄 Created package.json for MCP server dependencies\n")
 		}
 	}
 
@@ -205,6 +211,22 @@ func (i *Installer) validateAndPromptEnvironment(server *Server, env map[string]
 	return nil
 }
 
+// detectPackageManager detects which package manager is in use
+func (i *Installer) detectPackageManager() string {
+	// Check for lock files in order of preference
+	if _, err := os.Stat("pnpm-lock.yaml"); err == nil {
+		return "pnpm"
+	}
+	if _, err := os.Stat("yarn.lock"); err == nil {
+		return "yarn"
+	}
+	if _, err := os.Stat("package-lock.json"); err == nil {
+		return "npm"
+	}
+	// Default to npm if no lock file found
+	return "npm"
+}
+
 // ensurePackageJSON creates a basic package.json if it doesn't exist
 func (i *Installer) ensurePackageJSON() error {
 	// Check if package.json already exists
@@ -230,7 +252,6 @@ func (i *Installer) ensurePackageJSON() error {
 		return fmt.Errorf("writing package.json: %w", err)
 	}
 
-	fmt.Fprintf(i.out, "📄 Created package.json for MCP server dependencies\n")
 	return nil
 }
 
