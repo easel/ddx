@@ -82,6 +82,13 @@ func runConfig(cmd *cobra.Command, args []string) error {
 			return setConfigValueWithWriter(args[1], args[2], cmd.OutOrStdout())
 		case "validate":
 			return validateConfigWithWriter(cmd.OutOrStdout())
+		case "export":
+			return exportConfigWithWriter(cmd.OutOrStdout())
+		case "import":
+			if len(args) < 2 {
+				return fmt.Errorf("import requires a file path")
+			}
+			return importConfigWithWriter(args[1], cmd.OutOrStdout())
 		default:
 			return fmt.Errorf("unknown subcommand: %s", args[0])
 		}
@@ -400,5 +407,50 @@ func openEditor(filePath string) error {
 	// to open the editor properly. This is simplified for the example.
 	color.Yellow("Please edit the file manually: %s", filePath)
 
+	return nil
+}
+
+// exportConfigWithWriter exports the current configuration to the specified writer
+func exportConfigWithWriter(w io.Writer) error {
+	cfg, err := config.Load()
+	if err != nil {
+		return fmt.Errorf("failed to load configuration: %w", err)
+	}
+
+	// Export as YAML
+	yamlData, err := yaml.Marshal(cfg)
+	if err != nil {
+		return fmt.Errorf("failed to marshal configuration: %w", err)
+	}
+
+	fmt.Fprint(w, string(yamlData))
+	return nil
+}
+
+// importConfigWithWriter imports configuration from a file
+func importConfigWithWriter(filePath string, w io.Writer) error {
+	// Read the import file
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to read import file: %w", err)
+	}
+
+	// Parse the YAML
+	var cfg config.Config
+	if err := yaml.Unmarshal(data, &cfg); err != nil {
+		return fmt.Errorf("failed to parse configuration: %w", err)
+	}
+
+	// Validate the imported config
+	if err := cfg.Validate(); err != nil {
+		return fmt.Errorf("invalid configuration: %w", err)
+	}
+
+	// Save to local config
+	if err := config.SaveLocal(&cfg); err != nil {
+		return fmt.Errorf("failed to save configuration: %w", err)
+	}
+
+	fmt.Fprintf(w, "Configuration imported successfully from %s\n", filePath)
 	return nil
 }

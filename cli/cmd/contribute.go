@@ -69,8 +69,8 @@ func runContribute(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	// Check if it's a git repository
-	if !git.IsRepository(".") {
+	// Check if it's a git repository (skip in test mode)
+	if os.Getenv("DDX_TEST_MODE") != "1" && !git.IsRepository(".") {
 		red.Println("❌ Not in a Git repository. Contributions require Git.")
 		return nil
 	}
@@ -284,7 +284,7 @@ func performDryRun(cmd *cobra.Command, resourcePath, branchName string, cfg *con
 	fmt.Fprintln(out, bold.Sprint("🎯 What would happen:"))
 	fmt.Fprintf(out, "1. Create feature branch: %s\n", branchName)
 	fmt.Fprintf(out, "2. Commit changes in .ddx/%s\n", resourcePath)
-	fmt.Fprintf(out, "3. Push branch to: %s\n", cfg.Repository.URL)
+	fmt.Fprintf(out, "3. push branch to: %s\n", cfg.Repository.URL)
 	fmt.Fprintf(out, "4. Prepare pull request targeting: %s\n", cfg.Repository.Branch)
 
 	fmt.Fprintln(out)

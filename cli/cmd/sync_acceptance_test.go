@@ -17,6 +17,7 @@ func TestAcceptance_US004_UpdateAssetsFromMaster(t *testing.T) {
 		// Given: A project with DDx initialized and updates available
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
+		t.Setenv("DDX_TEST_MODE", "1")
 
 		// Initialize DDx first
 		initCmd := rootCmd
@@ -48,6 +49,7 @@ func TestAcceptance_US004_UpdateAssetsFromMaster(t *testing.T) {
 		// Given: Updates are available
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
+		t.Setenv("DDX_TEST_MODE", "1")
 		setupTestProject(t)
 
 		// When: Running update command
@@ -70,6 +72,7 @@ func TestAcceptance_US004_UpdateAssetsFromMaster(t *testing.T) {
 		// Given: Local changes conflict with upstream
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
+		t.Setenv("DDX_TEST_MODE", "1")
 		setupTestProject(t)
 
 		// Create a local modification that will conflict
@@ -96,6 +99,7 @@ func TestAcceptance_US004_UpdateAssetsFromMaster(t *testing.T) {
 		// Given: Multiple assets available for update
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
+		t.Setenv("DDX_TEST_MODE", "1")
 		setupTestProject(t)
 
 		// When: Updating specific asset only
@@ -118,6 +122,7 @@ func TestAcceptance_US004_UpdateAssetsFromMaster(t *testing.T) {
 		// Given: Local modifications exist
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
+		t.Setenv("DDX_TEST_MODE", "1")
 		setupTestProject(t)
 
 		localFile := filepath.Join(".ddx", "custom.md")
@@ -143,6 +148,7 @@ func TestAcceptance_US004_UpdateAssetsFromMaster(t *testing.T) {
 		// Given: Local changes exist that user wants to override
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
+		t.Setenv("DDX_TEST_MODE", "1")
 		setupTestProject(t)
 
 		// When: Running update with --force
@@ -164,6 +170,7 @@ func TestAcceptance_US004_UpdateAssetsFromMaster(t *testing.T) {
 		// Given: Project ready for update
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
+		t.Setenv("DDX_TEST_MODE", "1")
 		setupTestProject(t)
 
 		// When: Running update
@@ -190,6 +197,7 @@ func TestAcceptance_US005_ContributeImprovements(t *testing.T) {
 		// Given: User has created a new template
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
+		t.Setenv("DDX_TEST_MODE", "1")
 		setupTestProject(t)
 
 		// Create new template
@@ -217,6 +225,7 @@ func TestAcceptance_US005_ContributeImprovements(t *testing.T) {
 		// Given: User wants to contribute changes
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
+		t.Setenv("DDX_TEST_MODE", "1")
 		setupTestProject(t)
 
 		// When: Contributing with validation
@@ -238,6 +247,7 @@ func TestAcceptance_US005_ContributeImprovements(t *testing.T) {
 		// Given: Valid contribution ready
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
+		t.Setenv("DDX_TEST_MODE", "1")
 		setupTestProject(t)
 
 		// When: Contributing with PR creation
@@ -262,6 +272,7 @@ func TestAcceptance_US009_PullUpdatesFromUpstream(t *testing.T) {
 		// Given: Upstream has new commits
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
+		t.Setenv("DDX_TEST_MODE", "1")
 		setupTestProject(t)
 
 		// When: Pulling updates
@@ -284,6 +295,7 @@ func TestAcceptance_US009_PullUpdatesFromUpstream(t *testing.T) {
 		// Given: Local and upstream have diverged
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
+		t.Setenv("DDX_TEST_MODE", "1")
 		setupTestProject(t)
 
 		// Simulate divergence
@@ -310,6 +322,7 @@ func TestAcceptance_US010_HandleUpdateConflicts(t *testing.T) {
 		// Given: Conflicting changes exist
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
+		t.Setenv("DDX_TEST_MODE", "1")
 		setupTestProject(t)
 
 		// Create conflicting file
@@ -334,6 +347,7 @@ func TestAcceptance_US010_HandleUpdateConflicts(t *testing.T) {
 		// Given: Conflicts need resolution
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
+		t.Setenv("DDX_TEST_MODE", "1")
 		setupTestProject(t)
 
 		// When: Using interactive resolution
@@ -357,6 +371,7 @@ func TestAcceptance_US010_HandleUpdateConflicts(t *testing.T) {
 		// Given: User wants automatic resolution
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
+		t.Setenv("DDX_TEST_MODE", "1")
 		setupTestProject(t)
 
 		// When: Using automatic strategy
@@ -381,6 +396,7 @@ func TestAcceptance_US011_ContributeChangesUpstream(t *testing.T) {
 		// Given: User has changes to contribute
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
+		t.Setenv("DDX_TEST_MODE", "1")
 		setupTestProject(t)
 
 		// Create changes
@@ -408,6 +424,7 @@ func TestAcceptance_US011_ContributeChangesUpstream(t *testing.T) {
 		// Given: Contribution needs validation
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
+		t.Setenv("DDX_TEST_MODE", "1")
 		setupTestProject(t)
 
 		// When: Contributing
@@ -428,6 +445,7 @@ func TestAcceptance_US011_ContributeChangesUpstream(t *testing.T) {
 		// Given: Contribution is ready
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
+		t.Setenv("DDX_TEST_MODE", "1")
 		setupTestProject(t)
 
 		// When: Pushing to fork

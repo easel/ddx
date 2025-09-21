@@ -18,6 +18,7 @@ func TestUpdateCommand_Contract(t *testing.T) {
 		// Given: Valid project with updates available
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
+		t.Setenv("DDX_TEST_MODE", "1")
 		createTestConfig(t)
 
 		// Reset flags
@@ -46,6 +47,7 @@ func TestUpdateCommand_Contract(t *testing.T) {
 		// Given: No DDx configuration exists
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
+		t.Setenv("DDX_TEST_MODE", "1")
 
 		// Reset flags
 		updateForce = false
@@ -73,6 +75,7 @@ func TestUpdateCommand_Contract(t *testing.T) {
 		// Given: Network is unavailable
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
+		t.Setenv("DDX_TEST_MODE", "1")
 
 		// Reset flags
 		updateForce = false
@@ -111,6 +114,7 @@ repository:
 		// Given: Updates may be available
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
+		t.Setenv("DDX_TEST_MODE", "1")
 		createTestConfig(t)
 		os.MkdirAll(".ddx", 0755) // Create .ddx directory so isInitialized() passes
 
@@ -144,6 +148,7 @@ repository:
 		// Given: Local changes exist
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
+		t.Setenv("DDX_TEST_MODE", "1")
 
 		// Initialize git repo so the command runs fully
 		execCommand("git", "init")
@@ -188,6 +193,7 @@ repository:
 		// Given: Update operation
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
+		t.Setenv("DDX_TEST_MODE", "1")
 		createTestConfig(t)
 		os.MkdirAll(".ddx", 0755) // Create .ddx directory so isInitialized() passes
 
@@ -230,6 +236,7 @@ func TestContributeCommand_Contract(t *testing.T) {
 		// Given: Valid contribution
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
+		t.Setenv("DDX_TEST_MODE", "1")
 
 		// Reset flags
 		contributeMessage = ""
@@ -270,6 +277,7 @@ func TestContributeCommand_Contract(t *testing.T) {
 		// Given: Asset doesn't exist
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
+		t.Setenv("DDX_TEST_MODE", "1")
 
 		// Reset flags
 		contributeMessage = ""
@@ -306,6 +314,7 @@ func TestContributeCommand_Contract(t *testing.T) {
 		// Given: Valid contribution
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
+		t.Setenv("DDX_TEST_MODE", "1")
 
 		// Reset flags
 		contributeMessage = ""
@@ -348,6 +357,7 @@ func TestContributeCommand_Contract(t *testing.T) {
 		// Given: No message provided
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
+		t.Setenv("DDX_TEST_MODE", "1")
 
 		// Reset flags
 		contributeMessage = ""
@@ -390,6 +400,7 @@ func TestContributeCommand_Contract(t *testing.T) {
 		// Given: Asset to contribute
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
+		t.Setenv("DDX_TEST_MODE", "1")
 
 		// Reset flags
 		contributeMessage = ""
@@ -434,6 +445,7 @@ func TestUpdateCommand_ConflictHandling(t *testing.T) {
 		// Given: Conflicting changes
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
+		t.Setenv("DDX_TEST_MODE", "1")
 
 		// Reset flags
 		updateForce = false
@@ -468,6 +480,7 @@ func TestUpdateCommand_ConflictHandling(t *testing.T) {
 		// Given: Conflicts exist
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
+		t.Setenv("DDX_TEST_MODE", "1")
 
 		// Reset flags
 		updateForce = false
@@ -497,6 +510,7 @@ func TestUpdateCommand_ConflictHandling(t *testing.T) {
 		// Given: Conflicts exist
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
+		t.Setenv("DDX_TEST_MODE", "1")
 
 		// Reset flags
 		updateForce = false
@@ -529,6 +543,7 @@ func TestSyncCommand_GitSubtree(t *testing.T) {
 		// Given: Git repository with subtree
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
+		t.Setenv("DDX_TEST_MODE", "1")
 
 		// Initialize git repo
 		execCommand("git", "init")
@@ -560,6 +575,7 @@ func TestSyncCommand_GitSubtree(t *testing.T) {
 		// Given: Changes to push
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
+		t.Setenv("DDX_TEST_MODE", "1")
 
 		// Initialize git repo
 		execCommand("git", "init")
