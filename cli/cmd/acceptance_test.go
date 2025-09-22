@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"strings"
@@ -510,4 +511,212 @@ func TestAcceptance_ErrorScenarios(t *testing.T) {
 			})
 		}
 	})
+}
+
+// TestAcceptance_US042_WorkflowCommandExecution tests US-042: Workflow Command Execution
+func TestAcceptance_US042_WorkflowCommandExecution(t *testing.T) {
+	tests := []struct {
+		name     string
+		scenario string
+		given    func(t *testing.T) string
+		when     func(t *testing.T, workDir string) (string, error)
+		then     func(t *testing.T, workDir string, output string, err error)
+	}{
+		{
+			name:     "list_helix_commands",
+			scenario: "AC-001: Command Discovery",
+			given: func(t *testing.T) string {
+				// Given: I have the HELIX workflow available
+				workDir := t.TempDir()
+				require.NoError(t, os.Chdir(workDir))
+
+				// Create library structure with helix commands
+				commandsDir := filepath.Join(workDir, "library", "workflows", "helix", "commands")
+				require.NoError(t, os.MkdirAll(commandsDir, 0755))
+
+				// Create build-story command
+				buildStoryContent := `# HELIX Command: Build Story
+
+You are a HELIX workflow executor...`
+				require.NoError(t, os.WriteFile(
+					filepath.Join(commandsDir, "build-story.md"),
+					[]byte(buildStoryContent), 0644))
+
+				// Create continue command
+				continueContent := `# HELIX Command: Continue
+
+Continue work on current story...`
+				require.NoError(t, os.WriteFile(
+					filepath.Join(commandsDir, "continue.md"),
+					[]byte(continueContent), 0644))
+
+				return workDir
+			},
+			when: func(t *testing.T, workDir string) (string, error) {
+				// When: I run `ddx workflow helix commands`
+				rootCmd := getTestRootCommand()
+				buf := new(bytes.Buffer)
+				rootCmd.SetOut(buf)
+				rootCmd.SetErr(buf)
+				rootCmd.SetArgs([]string{"workflow", "helix", "commands"})
+
+				err := rootCmd.Execute()
+				return buf.String(), err
+			},
+			then: func(t *testing.T, workDir string, output string, err error) {
+				// Then: I see a list of available commands with descriptions
+				assert.NoError(t, err)
+				assert.Contains(t, output, "Available commands for helix workflow:")
+				assert.Contains(t, output, "build-story")
+				assert.Contains(t, output, "continue")
+			},
+		},
+		{
+			name:     "execute_build_story_command",
+			scenario: "AC-002: Command Execution",
+			given: func(t *testing.T) string {
+				// Given: I have a workflow with commands available
+				workDir := t.TempDir()
+				require.NoError(t, os.Chdir(workDir))
+
+				commandsDir := filepath.Join(workDir, "library", "workflows", "helix", "commands")
+				require.NoError(t, os.MkdirAll(commandsDir, 0755))
+
+				buildStoryContent := `# HELIX Command: Build Story
+
+You are a HELIX workflow executor tasked with implementing work on a specific user story.
+
+## Command Input
+
+You will receive a user story ID as an argument (e.g., US-001, US-042, etc.).`
+				require.NoError(t, os.WriteFile(
+					filepath.Join(commandsDir, "build-story.md"),
+					[]byte(buildStoryContent), 0644))
+
+				return workDir
+			},
+			when: func(t *testing.T, workDir string) (string, error) {
+				// When: I run `ddx workflow helix execute build-story US-001`
+				rootCmd := getTestRootCommand()
+				buf := new(bytes.Buffer)
+				rootCmd.SetOut(buf)
+				rootCmd.SetErr(buf)
+				rootCmd.SetArgs([]string{"workflow", "helix", "execute", "build-story", "US-001"})
+
+				err := rootCmd.Execute()
+				return buf.String(), err
+			},
+			then: func(t *testing.T, workDir string, output string, err error) {
+				// Then: The build-story command prompt is loaded and displayed
+				assert.NoError(t, err)
+				assert.Contains(t, output, "HELIX Command: Build Story")
+				assert.Contains(t, output, "You are a HELIX workflow executor")
+				assert.Contains(t, output, "Command Arguments: [US-001]")
+			},
+		},
+		{
+			name:     "invalid_workflow_error",
+			scenario: "AC-003: Error Handling - Invalid Workflow",
+			given: func(t *testing.T) string {
+				// Given: I specify a non-existent workflow
+				workDir := t.TempDir()
+				require.NoError(t, os.Chdir(workDir))
+				return workDir
+			},
+			when: func(t *testing.T, workDir string) (string, error) {
+				// When: I run `ddx workflow invalid commands`
+				rootCmd := getTestRootCommand()
+				buf := new(bytes.Buffer)
+				rootCmd.SetOut(buf)
+				rootCmd.SetErr(buf)
+				rootCmd.SetArgs([]string{"workflow", "invalid", "commands"})
+
+				err := rootCmd.Execute()
+				return buf.String(), err
+			},
+			then: func(t *testing.T, workDir string, output string, err error) {
+				// Then: I receive an error message about the workflow not being found
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), "workflow 'invalid' not found")
+			},
+		},
+		{
+			name:     "invalid_command_error",
+			scenario: "AC-004: Error Handling - Invalid Command",
+			given: func(t *testing.T) string {
+				// Given: I specify a non-existent command
+				workDir := t.TempDir()
+				require.NoError(t, os.Chdir(workDir))
+
+				commandsDir := filepath.Join(workDir, "library", "workflows", "helix", "commands")
+				require.NoError(t, os.MkdirAll(commandsDir, 0755))
+
+				return workDir
+			},
+			when: func(t *testing.T, workDir string) (string, error) {
+				// When: I run `ddx workflow helix execute invalid-command`
+				rootCmd := getTestRootCommand()
+				buf := new(bytes.Buffer)
+				rootCmd.SetOut(buf)
+				rootCmd.SetErr(buf)
+				rootCmd.SetArgs([]string{"workflow", "helix", "execute", "invalid-command"})
+
+				err := rootCmd.Execute()
+				return buf.String(), err
+			},
+			then: func(t *testing.T, workDir string, output string, err error) {
+				// Then: I receive an error about the command not being found
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), "command 'invalid-command' not found")
+			},
+		},
+		{
+			name:     "command_with_arguments",
+			scenario: "AC-005: Command Arguments",
+			given: func(t *testing.T) string {
+				// Given: A command requires arguments
+				workDir := t.TempDir()
+				require.NoError(t, os.Chdir(workDir))
+
+				commandsDir := filepath.Join(workDir, "library", "workflows", "helix", "commands")
+				require.NoError(t, os.MkdirAll(commandsDir, 0755))
+
+				buildStoryContent := `# HELIX Command: Build Story
+
+Command accepts arguments for user story processing.`
+				require.NoError(t, os.WriteFile(
+					filepath.Join(commandsDir, "build-story.md"),
+					[]byte(buildStoryContent), 0644))
+
+				return workDir
+			},
+			when: func(t *testing.T, workDir string) (string, error) {
+				// When: I execute it with arguments
+				rootCmd := getTestRootCommand()
+				buf := new(bytes.Buffer)
+				rootCmd.SetOut(buf)
+				rootCmd.SetErr(buf)
+				rootCmd.SetArgs([]string{"workflow", "helix", "execute", "build-story", "US-001", "extra-arg"})
+
+				err := rootCmd.Execute()
+				return buf.String(), err
+			},
+			then: func(t *testing.T, workDir string, output string, err error) {
+				// Then: The arguments are passed to the command context
+				assert.NoError(t, err)
+				assert.Contains(t, output, "Command Arguments: [US-001 extra-arg]")
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			originalDir, _ := os.Getwd()
+			defer os.Chdir(originalDir)
+
+			workDir := tt.given(t)
+			output, err := tt.when(t, workDir)
+			tt.then(t, workDir, output, err)
+		})
+	}
 }

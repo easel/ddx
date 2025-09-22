@@ -10,4 +10,6 @@ includes:
     - templates/common
 variables:
     ai_model: claude-3-opus
+    author: Test User
+    email: test@example.com
     project_name: cli

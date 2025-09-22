@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -777,6 +778,59 @@ func TestWorkflowCommands_Contract(t *testing.T) {
 			assert.Contains(t, output, "phase", "Should mention phase")
 		}
 	})
+
+	t.Run("contract_workflow_helix_commands", func(t *testing.T) {
+		// Save and restore working directory
+		origDir, _ := os.Getwd()
+		defer os.Chdir(origDir)
+
+		// Given: HELIX workflow with commands available
+		tempDir := t.TempDir()
+		os.Chdir(tempDir)
+		createWorkflowWithCommands(t)
+
+		// When: Listing HELIX commands
+		cmd := getFreshRootCmd()
+		buf := new(bytes.Buffer)
+		cmd.SetOut(buf)
+		cmd.SetErr(buf)
+		cmd.SetArgs([]string{"workflow", "helix", "commands"})
+
+		err := cmd.Execute()
+
+		// Then: Should list available commands
+		if err == nil {
+			output := buf.String()
+			assert.Contains(t, output, "Available commands")
+			assert.Contains(t, output, "build-story")
+		}
+	})
+
+	t.Run("contract_workflow_helix_execute", func(t *testing.T) {
+		// Save and restore working directory
+		origDir, _ := os.Getwd()
+		defer os.Chdir(origDir)
+
+		// Given: HELIX workflow with commands available
+		tempDir := t.TempDir()
+		os.Chdir(tempDir)
+		createWorkflowWithCommands(t)
+
+		// When: Executing HELIX command
+		cmd := getFreshRootCmd()
+		buf := new(bytes.Buffer)
+		cmd.SetOut(buf)
+		cmd.SetErr(buf)
+		cmd.SetArgs([]string{"workflow", "helix", "execute", "build-story", "US-001"})
+
+		err := cmd.Execute()
+
+		// Then: Should execute command
+		if err == nil {
+			output := buf.String()
+			assert.Contains(t, output, "HELIX Command")
+		}
+	})
 }
 
 // Helper to create workflow state
@@ -789,4 +843,26 @@ phases_completed:
 `
 	err := os.WriteFile(".helix-state.yml", []byte(state), 0644)
 	require.NoError(t, err)
+}
+
+// Helper to create workflow with commands for testing
+func createWorkflowWithCommands(t *testing.T) {
+	commandsDir := filepath.Join("library", "workflows", "helix", "commands")
+	require.NoError(t, os.MkdirAll(commandsDir, 0755))
+
+	// Create build-story command
+	buildStoryContent := `# HELIX Command: Build Story
+
+You are a HELIX workflow executor tasked with implementing work on a specific user story.`
+	require.NoError(t, os.WriteFile(
+		filepath.Join(commandsDir, "build-story.md"),
+		[]byte(buildStoryContent), 0644))
+
+	// Create continue command
+	continueContent := `# HELIX Command: Continue
+
+Continue work on current story.`
+	require.NoError(t, os.WriteFile(
+		filepath.Join(commandsDir, "continue.md"),
+		[]byte(continueContent), 0644))
 }
