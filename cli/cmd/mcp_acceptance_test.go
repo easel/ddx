@@ -384,6 +384,61 @@ servers:
     description: Access GitHub repositories
 `
 			os.WriteFile(filepath.Join(mcpDir, "registry.yml"), []byte(registry), 0644)
+
+			// Create the server files referenced in the registry
+			serversDir := filepath.Join(mcpDir, "servers")
+			os.MkdirAll(serversDir, 0755)
+
+			// Create filesystem.yml
+			filesystemYaml := `name: filesystem
+description: Access local files
+category: core
+author: DDx Team
+version: 1.0.0
+tags: ["core", "filesystem"]
+command:
+  executable: npx
+  args: ["@modelcontextprotocol/server-filesystem"]
+environment:
+  - name: FILESYSTEM_ROOT
+    description: Root directory for filesystem access
+    required: false
+    default: "."
+documentation:
+  setup: "Install with npm install @modelcontextprotocol/server-filesystem"
+  permissions: ["read", "write"]
+compatibility:
+  platforms: ["linux", "macos", "windows"]
+  claude_versions: ["*"]
+`
+			os.WriteFile(filepath.Join(serversDir, "filesystem.yml"), []byte(filesystemYaml), 0644)
+
+			// Create github.yml
+			githubYaml := `name: github
+description: Access GitHub repositories
+category: development
+author: DDx Team
+version: 2.1.0
+tags: ["git", "github", "development"]
+command:
+  executable: npx
+  args: ["@modelcontextprotocol/server-github"]
+environment:
+  - name: GITHUB_PERSONAL_ACCESS_TOKEN
+    description: GitHub personal access token
+    required: true
+    sensitive: true
+    validation: "^ghp_[a-zA-Z0-9]{36}$"
+    example: "ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+documentation:
+  setup: "Install with npm install @modelcontextprotocol/server-github"
+  permissions: ["repo", "read:user"]
+  security_notes: "Requires GitHub personal access token"
+compatibility:
+  platforms: ["linux", "macos", "windows"]
+  claude_versions: ["*"]
+`
+			os.WriteFile(filepath.Join(serversDir, "github.yml"), []byte(githubYaml), 0644)
 		}
 	}
 }

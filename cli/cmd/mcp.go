@@ -63,11 +63,8 @@ func runMCPListWithOptions(cmd *cobra.Command, category, search string, verbose 
 	// Check installed servers via Claude CLI
 	claude := mcp.NewClaudeWrapper()
 
-	if claude.IsAvailable() == nil {
-		if _, err := claude.ListServers(); err == nil {
-			// TODO: Pass installed servers status to registry
-		}
-	}
+	// Set Claude wrapper on registry for installation status checking
+	registry.SetClaudeWrapper(claude)
 
 	// Use registry to list servers with installed status
 	opts := mcp.ListOptions{

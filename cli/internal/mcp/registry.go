@@ -324,6 +324,11 @@ func (rc *RegistryCache) Get() (*Registry, error) {
 	return registry, nil
 }
 
+// SetClaudeWrapper sets the Claude CLI wrapper for installation status checking
+func (r *Registry) SetClaudeWrapper(claude *ClaudeWrapper) {
+	r.claude = claude
+}
+
 // Invalidate clears the cache
 func (rc *RegistryCache) Invalidate() {
 	rc.mu.Lock()
