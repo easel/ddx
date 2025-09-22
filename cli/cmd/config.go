@@ -21,6 +21,7 @@ import (
 func runConfig(cmd *cobra.Command, args []string) error {
 	// Get flag values locally
 	showFlag, _ := cmd.Flags().GetBool("show")
+	showFilesFlag, _ := cmd.Flags().GetBool("show-files")
 	editFlag, _ := cmd.Flags().GetBool("edit")
 	resetFlag, _ := cmd.Flags().GetBool("reset")
 	wizardFlag, _ := cmd.Flags().GetBool("wizard")
@@ -30,6 +31,10 @@ func runConfig(cmd *cobra.Command, args []string) error {
 	// Handle flags
 	if showFlag {
 		return showConfig(cmd, globalFlag)
+	}
+
+	if showFilesFlag {
+		return showConfigFiles(cmd)
 	}
 
 	if editFlag {
@@ -321,4 +326,44 @@ func copyFile(src, dst string) error {
 	}
 
 	return destFile.Sync()
+}
+
+// showConfigFiles displays all config file locations
+func showConfigFiles(cmd *cobra.Command) error {
+	fmt.Fprintln(cmd.OutOrStdout(), "📋 DDx Configuration File Locations:")
+	fmt.Fprintln(cmd.OutOrStdout())
+
+	// Current directory config
+	localConfig := ".ddx.yml"
+	if _, err := os.Stat(localConfig); err == nil {
+		fmt.Fprintf(cmd.OutOrStdout(), "✅ Project config: %s (exists)\n", localConfig)
+	} else {
+		fmt.Fprintf(cmd.OutOrStdout(), "⬜ Project config: %s (not found)\n", localConfig)
+	}
+
+	// Global config
+	home, err := os.UserHomeDir()
+	if err != nil {
+		fmt.Fprintf(cmd.OutOrStdout(), "❌ Global config: Error getting home directory: %v\n", err)
+	} else {
+		globalConfig := filepath.Join(home, ".ddx.yml")
+		if _, err := os.Stat(globalConfig); err == nil {
+			fmt.Fprintf(cmd.OutOrStdout(), "✅ Global config: %s (exists)\n", globalConfig)
+		} else {
+			fmt.Fprintf(cmd.OutOrStdout(), "⬜ Global config: %s (not found)\n", globalConfig)
+		}
+	}
+
+	// Config directory
+	configDir := filepath.Join(home, ".ddx")
+	if _, err := os.Stat(configDir); err == nil {
+		fmt.Fprintf(cmd.OutOrStdout(), "✅ Config directory: %s (exists)\n", configDir)
+	} else {
+		fmt.Fprintf(cmd.OutOrStdout(), "⬜ Config directory: %s (not found)\n", configDir)
+	}
+
+	fmt.Fprintln(cmd.OutOrStdout())
+	fmt.Fprintln(cmd.OutOrStdout(), "Priority order: Environment variables > Project config > Global config > Defaults")
+
+	return nil
 }

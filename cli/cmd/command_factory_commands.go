@@ -204,6 +204,7 @@ Examples:
 	}
 
 	cmd.Flags().Bool("show", false, "Display current configuration")
+	cmd.Flags().Bool("show-files", false, "Display all config file locations")
 	cmd.Flags().Bool("edit", false, "Edit configuration file directly")
 	cmd.Flags().Bool("reset", false, "Reset to default configuration")
 	cmd.Flags().Bool("wizard", false, "Run configuration wizard")

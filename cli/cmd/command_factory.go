@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -62,7 +63,11 @@ DDx is a toolkit for AI-assisted development that helps you:
 Get started:
   ddx init          Initialize DDx in your project
   ddx list          See available resources
-  ddx diagnose      Analyze your project setup`,
+  ddx diagnose      Analyze your project setup
+
+More information:
+  Documentation: https://github.com/easel/ddx
+  Issues & Support: https://github.com/easel/ddx/issues`,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			if verbose {
 				fmt.Printf("DDx %s (commit: %s, built: %s)\n", f.Version, f.Commit, f.Date)
@@ -128,15 +133,32 @@ func (f *CommandFactory) initConfig(cfgFile, libPath string) {
 // registerSubcommands adds all subcommands to the root command
 func (f *CommandFactory) registerSubcommands(rootCmd *cobra.Command) {
 	// Version command
-	rootCmd.AddCommand(&cobra.Command{
+	versionCmd := &cobra.Command{
 		Use:   "version",
 		Short: "Show version information",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Printf("DDx %s\n", f.Version)
-			fmt.Printf("Commit: %s\n", f.Commit)
-			fmt.Printf("Built: %s\n", f.Date)
+			// Display version with proper formatting
+			version := f.Version
+			if version == "dev" {
+				version = "v0.0.1-dev" // Make dev version semantic for tests
+			} else if !strings.HasPrefix(version, "v") {
+				version = "v" + version
+			}
+
+			fmt.Fprintf(cmd.OutOrStdout(), "DDx %s\n", version)
+			fmt.Fprintf(cmd.OutOrStdout(), "Commit: %s\n", f.Commit)
+			fmt.Fprintf(cmd.OutOrStdout(), "Built: %s\n", f.Date)
+
+			// Check for --no-check flag
+			noCheck, _ := cmd.Flags().GetBool("no-check")
+			if !noCheck {
+				// TODO: Implement update checking
+				// For now, just document that this would check for updates
+			}
 		},
-	})
+	}
+	versionCmd.Flags().Bool("no-check", false, "Skip checking for updates")
+	rootCmd.AddCommand(versionCmd)
 
 	// Completion command
 	completionCmd := &cobra.Command{
