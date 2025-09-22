@@ -8,12 +8,12 @@ This document defines conventions for projects using the HELIX workflow, ensurin
 
 ### Phase-Based Organization
 
-Projects using HELIX should organize their documentation using the `docs/helix-phases/` convention:
+Projects using HELIX should organize their documentation using the `docs/helix/` convention:
 
 ```
 project-root/
 ├── docs/
-│   ├── helix-phases/           # HELIX phase artifacts
+│   ├── helix/                  # HELIX phase artifacts
 │   │   ├── 01-frame/          # Problem definition & requirements
 │   │   ├── 02-design/         # Architecture & design decisions
 │   │   ├── 03-test/           # Test strategies & plans
@@ -79,7 +79,8 @@ Each phase directory contains artifacts directly (no `artifacts/` subdirectory):
 ├── metrics-dashboard/         # Performance metrics
 ├── feedback-analysis/        # User feedback
 ├── lessons-learned/          # Retrospectives
-└── improvement-backlog/      # Enhancement ideas
+├── improvement-backlog/      # Enhancement ideas
+└── refinements/              # Story refinement logs and tracking
 ```
 
 ## Naming Conventions
@@ -161,17 +162,17 @@ Projects should validate their documentation structure:
 
 ```bash
 # Check required phase directories exist
-test -d docs/helix-phases/01-frame || echo "Missing frame phase"
-test -d docs/helix-phases/02-design || echo "Missing design phase"
+test -d docs/helix/01-frame || echo "Missing frame phase"
+test -d docs/helix/02-design || echo "Missing design phase"
 # ... etc
 
 # Verify README files in each phase
-for phase in docs/helix-phases/*/; do
+for phase in docs/helix/*/; do
   test -f "$phase/README.md" || echo "Missing README in $phase"
 done
 
 # Check for orphaned references
-grep -r "\.\./" docs/helix-phases/ | grep -v "helix-phases"
+grep -r "\.\./" docs/helix/ | grep -v "helix"
 ```
 
 ## Templates
@@ -184,7 +185,7 @@ ddx apply workflows/helix/phases/01-frame/artifacts/prd
 
 # Copy template structure
 cp -r $DDX_HOME/workflows/helix/phases/01-frame/artifacts/prd/template.md \
-      docs/helix-phases/01-frame/prd/
+      docs/helix/01-frame/prd/
 ```
 
 ## Best Practices
@@ -203,8 +204,8 @@ cp -r $DDX_HOME/workflows/helix/phases/01-frame/artifacts/prd/template.md \
 ### Q: Can I add custom directories to phases?
 A: Yes, phases can have project-specific subdirectories. Document them in the phase README.
 
-### Q: Should code live in helix-phases/?
-A: No, code belongs in the project's source directories. Documentation only in helix-phases.
+### Q: Should code live in helix/?
+A: No, code belongs in the project's source directories. Documentation only in helix.
 
 ### Q: How do I handle multiple features in parallel?
 A: Create feature-specific subdirectories within each artifact type (e.g., `prd/feature-a/`, `prd/feature-b/`).
@@ -214,6 +215,121 @@ A: Store them alongside the documents that reference them, or in a phase-level `
 
 ### Q: Can I skip phases?
 A: While not recommended, if skipping phases, document why in the project root README.
+
+## Story Refinement Conventions
+
+### Refinement Documentation Structure
+
+Story refinements are tracked in the iterate phase to maintain learning and traceability:
+
+```
+docs/helix/06-iterate/refinements/
+├── README.md                           # Refinement process overview
+├── US-001-refinement-001.md           # First refinement of US-001
+├── US-001-refinement-002.md           # Second refinement of US-001
+├── US-042-refinement-001.md           # First refinement of US-042
+└── refinement-index.md                # Cross-reference index
+```
+
+### Refinement Naming Convention
+
+**File Naming Pattern**: `{{STORY_ID}}-refinement-{{NUMBER}}.md`
+- `{{STORY_ID}}`: Original user story identifier (e.g., US-001, US-042)
+- `{{NUMBER}}`: Zero-padded refinement sequence (001, 002, 003...)
+
+Examples:
+- `US-001-refinement-001.md` - First refinement of US-001
+- `US-042-refinement-003.md` - Third refinement of US-042
+
+### Refinement Linking Strategy
+
+**Story Updates**: Original user stories reference their refinements:
+```markdown
+## Refinement History
+- [Refinement 001](../06-iterate/refinements/US-001-refinement-001.md) - Bug fixes for error handling
+- [Refinement 002](../06-iterate/refinements/US-001-refinement-002.md) - Scope expansion for mobile support
+```
+
+**Cross-Phase References**: Refinement logs link to all affected documents:
+```markdown
+### Updated Documents
+- [User Story](../01-frame/user-stories/US-001.md) - Updated acceptance criteria
+- [Technical Design](../02-design/architecture/auth-service.md) - Added error handling flows
+- [Test Plan](../03-test/test-procedures/US-001-tests.md) - Added regression tests
+```
+
+### Refinement Categories
+
+**Standard Categories** for consistent tracking:
+- `bugs` - Issues discovered during implementation or testing
+- `requirements` - New or evolved business requirements
+- `enhancement` - Improvements identified during development
+- `mixed` - Combination of multiple refinement types
+
+### Version Control Integration
+
+**Branch Strategy** for refinements:
+- Create refinement branches: `refinement/US-001-001`
+- Commit refinement log first, then affected documents
+- Ensure atomic commits for traceability
+
+**Commit Message Format**:
+```
+refine(US-001): fix error handling specification gaps
+
+- Add refinement log US-001-refinement-001
+- Update acceptance criteria for edge cases
+- Add regression test requirements
+- Update error handling design patterns
+
+Addresses bugs discovered during implementation phase.
+```
+
+### Quality Gates for Refinements
+
+**Pre-Refinement Checklist**:
+- [ ] Issues clearly documented and categorized
+- [ ] Impact assessment completed
+- [ ] Stakeholder approval obtained (if scope changes)
+- [ ] Current implementation status captured
+
+**Post-Refinement Validation**:
+- [ ] All affected phase documents updated
+- [ ] Cross-references verified and functional
+- [ ] Traceability maintained from issue to resolution
+- [ ] No conflicts introduced between requirements
+- [ ] Team communication completed
+
+### Refinement Index Maintenance
+
+**Index Structure** for discoverability:
+```markdown
+# Story Refinement Index
+
+## Active Stories with Refinements
+- US-001: [3 refinements](US-001-refinement-001.md) - Authentication Service
+- US-042: [1 refinement](US-042-refinement-001.md) - Workflow Commands
+
+## Refinement Categories
+### Bugs (High Impact)
+- [US-001-refinement-001](US-001-refinement-001.md) - Critical error handling gaps
+- [US-018-refinement-002](US-018-refinement-002.md) - Input validation issues
+
+### Requirements Evolution
+- [US-025-refinement-001](US-025-refinement-001.md) - Mobile support addition
+- [US-042-refinement-001](US-042-refinement-001.md) - Enhanced command discovery
+```
+
+### Template Usage
+
+Use the standard refinement template for consistency:
+```bash
+# Apply refinement template
+ddx apply workflows/helix/templates/refinement-log.md docs/helix/06-iterate/refinements/US-001-refinement-001.md
+
+# Fill template variables
+STORY_ID=US-001 REFINEMENT_NUMBER=001 REFINEMENT_TYPE=bugs ddx apply ...
+```
 
 ## Evolution
 
