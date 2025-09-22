@@ -14,6 +14,12 @@ import (
 // Acceptance tests validate persona system user stories and business requirements
 // These tests follow the Given/When/Then pattern from user stories US-030 through US-035
 
+// Helper function to create a fresh root command for tests
+func getPersonaTestRootCommand() *cobra.Command {
+	factory := NewCommandFactory()
+	return factory.NewRootCommand()
+}
+
 // TestAcceptance_US030_LoadPersonasForSession tests US-030: Developer Loading Personas for Session
 func TestAcceptance_US030_LoadPersonasForSession(t *testing.T) {
 	tests := []struct {
@@ -146,12 +152,9 @@ You think in terms of system boundaries, data flow, and long-term evolution.
 			},
 			when: func(t *testing.T, workDir string) error {
 				// When: I run `ddx persona load` to load all bound personas
-				rootCmd := &cobra.Command{
-					Use:   "ddx",
-					Short: "DDx CLI",
-				}
+				rootCmd := getPersonaTestRootCommand()
 				// TODO: Add persona command when implemented
-				rootCmd.AddCommand(personaCmd)
+				// Commands already registered
 				_, err := executeCommand(rootCmd, "persona", "load")
 				return err
 			},
@@ -235,12 +238,9 @@ You are a security analyst focused on identifying vulnerabilities and security i
 			},
 			when: func(t *testing.T, workDir string) error {
 				// When: I run `ddx persona load security-analyst`
-				rootCmd := &cobra.Command{
-					Use:   "ddx",
-					Short: "DDx CLI",
-				}
+				rootCmd := getPersonaTestRootCommand()
 				// TODO: Add persona command when implemented
-				rootCmd.AddCommand(personaCmd)
+				// Commands already registered
 				_, err := executeCommand(rootCmd, "persona", "load", "security-analyst")
 				return err
 			},
@@ -264,17 +264,7 @@ You are a security analyst focused on identifying vulnerabilities and security i
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Reset persona command flags to avoid test pollution
-			if personaListCmd.Flags().Lookup("role") != nil {
-				personaListCmd.Flags().Set("role", "")
-			}
-			if tagFlag := personaListCmd.Flags().Lookup("tag"); tagFlag != nil {
-				tagFlag.Value.Set("")
-				tagFlag.Changed = false
-			}
-			if personaLoadCmd.Flags().Lookup("role") != nil {
-				personaLoadCmd.Flags().Set("role", "")
-			}
+			// Commands are isolated via factory, no need to reset
 
 			originalDir, _ := os.Getwd()
 			defer os.Chdir(originalDir)
@@ -352,12 +342,9 @@ You provide constructive, balanced code reviews that consider both quality and t
 			},
 			when: func(t *testing.T, workDir string) error {
 				// When: I run `ddx persona bind code-reviewer balanced-code-reviewer`
-				rootCmd := &cobra.Command{
-					Use:   "ddx",
-					Short: "DDx CLI",
-				}
+				rootCmd := getPersonaTestRootCommand()
 				// TODO: Add persona command when implemented
-				rootCmd.AddCommand(personaCmd)
+				// Commands already registered
 				_, err := executeCommand(rootCmd, "persona", "bind", "code-reviewer", "balanced-code-reviewer")
 				return err
 			},
@@ -435,12 +422,9 @@ tags: [modern, efficient]
 			},
 			when: func(t *testing.T, workDir string) error {
 				// When: I bind a new persona to an existing role
-				rootCmd := &cobra.Command{
-					Use:   "ddx",
-					Short: "DDx CLI",
-				}
+				rootCmd := getPersonaTestRootCommand()
 				// TODO: Add persona command when implemented
-				rootCmd.AddCommand(personaCmd)
+				// Commands already registered
 				_, err := executeCommand(rootCmd, "persona", "bind", "code-reviewer", "new-reviewer")
 				return err
 			},
@@ -467,17 +451,7 @@ tags: [modern, efficient]
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Reset persona command flags to avoid test pollution
-			if personaListCmd.Flags().Lookup("role") != nil {
-				personaListCmd.Flags().Set("role", "")
-			}
-			if tagFlag := personaListCmd.Flags().Lookup("tag"); tagFlag != nil {
-				tagFlag.Value.Set("")
-				tagFlag.Changed = false
-			}
-			if personaLoadCmd.Flags().Lookup("role") != nil {
-				personaLoadCmd.Flags().Set("role", "")
-			}
+			// Commands are isolated via factory, no need to reset
 
 			originalDir, _ := os.Getwd()
 			defer os.Chdir(originalDir)
@@ -628,17 +602,7 @@ tags: [testing]
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Reset persona command flags to avoid test pollution
-			if personaListCmd.Flags().Lookup("role") != nil {
-				personaListCmd.Flags().Set("role", "")
-			}
-			if tagFlag := personaListCmd.Flags().Lookup("tag"); tagFlag != nil {
-				tagFlag.Value.Set("")
-				tagFlag.Changed = false
-			}
-			if personaLoadCmd.Flags().Lookup("role") != nil {
-				personaLoadCmd.Flags().Set("role", "")
-			}
+			// Commands are isolated via factory, no need to reset
 
 			originalDir, _ := os.Getwd()
 			defer os.Chdir(originalDir)
@@ -757,17 +721,7 @@ Your reviews prioritize performance characteristics and efficient resource utili
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Reset persona command flags to avoid test pollution
-			if personaListCmd.Flags().Lookup("role") != nil {
-				personaListCmd.Flags().Set("role", "")
-			}
-			if tagFlag := personaListCmd.Flags().Lookup("tag"); tagFlag != nil {
-				tagFlag.Value.Set("")
-				tagFlag.Changed = false
-			}
-			if personaLoadCmd.Flags().Lookup("role") != nil {
-				personaLoadCmd.Flags().Set("role", "")
-			}
+			// Commands are isolated via factory, no need to reset
 
 			originalDir, _ := os.Getwd()
 			defer os.Chdir(originalDir)
@@ -856,12 +810,9 @@ tags: [security, vulnerability]
 			},
 			when: func(t *testing.T, workDir string) (string, error) {
 				// When: I search for personas by role
-				rootCmd := &cobra.Command{
-					Use:   "ddx",
-					Short: "DDx CLI",
-				}
+				rootCmd := getPersonaTestRootCommand()
 				// TODO: Add persona command when implemented
-				rootCmd.AddCommand(personaCmd)
+				// Commands already registered
 				return executeCommand(rootCmd, "persona", "list", "--role", "code-reviewer")
 			},
 			then: func(t *testing.T, workDir string, output string, err error) {
@@ -937,12 +888,9 @@ tags: [security, code-review, strict]
 			},
 			when: func(t *testing.T, workDir string) (string, error) {
 				// When: I search for personas by tag
-				rootCmd := &cobra.Command{
-					Use:   "ddx",
-					Short: "DDx CLI",
-				}
+				rootCmd := getPersonaTestRootCommand()
 				// TODO: Add persona command when implemented
-				rootCmd.AddCommand(personaCmd)
+				// Commands already registered
 				return executeCommand(rootCmd, "persona", "list", "--tag", "security")
 			},
 			then: func(t *testing.T, workDir string, output string, err error) {
@@ -962,17 +910,7 @@ tags: [security, code-review, strict]
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Reset persona command flags to avoid test pollution
-			if personaListCmd.Flags().Lookup("role") != nil {
-				personaListCmd.Flags().Set("role", "")
-			}
-			if tagFlag := personaListCmd.Flags().Lookup("tag"); tagFlag != nil {
-				tagFlag.Value.Set("")
-				tagFlag.Changed = false
-			}
-			if personaLoadCmd.Flags().Lookup("role") != nil {
-				personaLoadCmd.Flags().Set("role", "")
-			}
+			// Commands are isolated via factory, no need to reset
 
 			originalDir, _ := os.Getwd()
 			defer os.Chdir(originalDir)
@@ -1096,17 +1034,7 @@ tags: [bdd, behavior]
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Reset persona command flags to avoid test pollution
-			if personaListCmd.Flags().Lookup("role") != nil {
-				personaListCmd.Flags().Set("role", "")
-			}
-			if tagFlag := personaListCmd.Flags().Lookup("tag"); tagFlag != nil {
-				tagFlag.Value.Set("")
-				tagFlag.Changed = false
-			}
-			if personaLoadCmd.Flags().Lookup("role") != nil {
-				personaLoadCmd.Flags().Set("role", "")
-			}
+			// Commands are isolated via factory, no need to reset
 
 			originalDir, _ := os.Getwd()
 			defer os.Chdir(originalDir)

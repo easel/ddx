@@ -16,6 +16,12 @@ import (
 
 // Performance benchmarks for CLI commands
 
+// Helper function to create a fresh root command for tests
+func getPerfTestRootCommand() *cobra.Command {
+	factory := NewCommandFactory()
+	return factory.NewRootCommand()
+}
+
 // BenchmarkInitCommand benchmarks the init command
 func BenchmarkInitCommand(b *testing.B) {
 	for i := 0; i < b.N; i++ {
@@ -24,11 +30,7 @@ func BenchmarkInitCommand(b *testing.B) {
 		originalDir, _ := os.Getwd()
 		os.Chdir(tempDir)
 
-		rootCmd := &cobra.Command{
-			Use:   "ddx",
-			Short: "DDx CLI",
-		}
-		rootCmd.AddCommand(initCmd)
+		rootCmd := getPerfTestRootCommand()
 
 		b.StartTimer()
 		executeCommand(rootCmd, "init")
@@ -64,11 +66,8 @@ func BenchmarkListCommand(b *testing.B) {
 				os.WriteFile(filepath.Join(dir, "README.md"), []byte("Test"), 0644)
 			}
 
-			rootCmd := &cobra.Command{
-				Use:   "ddx",
-				Short: "DDx CLI",
-			}
-			rootCmd.AddCommand(listCmd)
+			rootCmd := getPerfTestRootCommand()
+			// Commands already registered in factory
 
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
@@ -116,11 +115,8 @@ func BenchmarkApplyTemplate(b *testing.B) {
 				config := `version: "1.0"`
 				os.WriteFile(filepath.Join(workDir, ".ddx.yml"), []byte(config), 0644)
 
-				rootCmd := &cobra.Command{
-					Use:   "ddx",
-					Short: "DDx CLI",
-				}
-				rootCmd.AddCommand(applyCmd)
+				rootCmd := getPerfTestRootCommand()
+				// Commands already registered in factory
 
 				b.StartTimer()
 				executeCommand(rootCmd, "apply", "templates/perf-test")
@@ -143,11 +139,8 @@ func TestPerformance_MemoryUsage(t *testing.T) {
 		{
 			name: "list_command_memory",
 			operation: func() {
-				rootCmd := &cobra.Command{
-					Use:   "ddx",
-					Short: "DDx CLI",
-				}
-				rootCmd.AddCommand(listCmd)
+				rootCmd := getPerfTestRootCommand()
+				// Commands already registered in factory
 				executeCommand(rootCmd, "list")
 			},
 			maxMemoryMB: 50, // Max 50MB for list operation
@@ -161,11 +154,8 @@ func TestPerformance_MemoryUsage(t *testing.T) {
 				config := `version: "1.0"`
 				os.WriteFile(filepath.Join(workDir, ".ddx.yml"), []byte(config), 0644)
 
-				rootCmd := &cobra.Command{
-					Use:   "ddx",
-					Short: "DDx CLI",
-				}
-				rootCmd.AddCommand(configCmd)
+				rootCmd := getPerfTestRootCommand()
+				// Commands already registered in factory
 				executeCommand(rootCmd, "config")
 			},
 			maxMemoryMB: 30, // Max 30MB for config operation
@@ -241,14 +231,11 @@ func TestPerformance_ResponseTime(t *testing.T) {
 				tt.setup()
 			}
 
-			rootCmd := &cobra.Command{
-				Use:   "ddx",
-				Short: "DDx CLI",
-			}
-			rootCmd.AddCommand(initCmd)
-			rootCmd.AddCommand(listCmd)
-			rootCmd.AddCommand(applyCmd)
-			rootCmd.AddCommand(configCmd)
+			rootCmd := getPerfTestRootCommand()
+			// Commands already registered
+			// Commands already registered in factory
+			// Commands already registered
+			// Commands already registered
 
 			start := time.Now()
 			executeCommand(rootCmd, tt.args...)
@@ -291,11 +278,8 @@ func TestPerformance_ConcurrentOperations(t *testing.T) {
 			defer wg.Done()
 
 			for j := 0; j < numOperations; j++ {
-				rootCmd := &cobra.Command{
-					Use:   "ddx",
-					Short: "DDx CLI",
-				}
-				rootCmd.AddCommand(listCmd)
+				rootCmd := getPerfTestRootCommand()
+				// Commands already registered in factory
 
 				_, err := executeCommand(rootCmd, "list")
 				if err != nil {
@@ -366,11 +350,8 @@ func TestPerformance_LargeFileHandling(t *testing.T) {
 			config := `version: "1.0"`
 			os.WriteFile(filepath.Join(workDir, ".ddx.yml"), []byte(config), 0644)
 
-			rootCmd := &cobra.Command{
-				Use:   "ddx",
-				Short: "DDx CLI",
-			}
-			rootCmd.AddCommand(applyCmd)
+			rootCmd := getPerfTestRootCommand()
+			// Commands already registered
 
 			// Measure time to apply large template
 			start := time.Now()
@@ -397,14 +378,10 @@ func TestPerformance_StartupTime(t *testing.T) {
 	for i := 0; i < iterations; i++ {
 		start := time.Now()
 
-		rootCmd := &cobra.Command{
-			Use:   "ddx",
-			Short: "DDx CLI",
-		}
-		rootCmd.AddCommand(initCmd)
-		rootCmd.AddCommand(listCmd)
-		rootCmd.AddCommand(applyCmd)
-		rootCmd.AddCommand(configCmd)
+		rootCmd := getPerfTestRootCommand()
+		// Commands already registered
+		// Commands already registered
+		// Commands already registered
 
 		// Just initialize, don't execute
 		rootCmd.InitDefaultHelpCmd()
@@ -475,11 +452,8 @@ func TestPerformance_ResourceCleanup(t *testing.T) {
 
 	// Run multiple operations
 	for i := 0; i < 100; i++ {
-		rootCmd := &cobra.Command{
-			Use:   "ddx",
-			Short: "DDx CLI",
-		}
-		rootCmd.AddCommand(listCmd)
+		rootCmd := getPerfTestRootCommand()
+		// Commands already registered
 		executeCommand(rootCmd, "list")
 	}
 

@@ -12,6 +12,12 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// Helper function to create a fresh root command for tests
+func getInitTestRootCommand() *cobra.Command {
+	factory := NewCommandFactory()
+	return factory.NewRootCommand()
+}
+
 // Helper to execute command with captured output
 func executeCommand(root *cobra.Command, args ...string) (output string, err error) {
 	buf := new(bytes.Buffer)
@@ -120,9 +126,8 @@ repository:
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Reset global flag variables to ensure test isolation
-			initTemplate = ""
-			initForce = false
+			// Create a fresh command for test isolation
+			// (flags are now local to the command)
 
 			dir, cleanup := setupTestDir(t)
 			defer cleanup()
@@ -132,11 +137,7 @@ repository:
 			}
 
 			// Create new root command for each test
-			rootCmd := &cobra.Command{
-				Use:   "ddx",
-				Short: "DDx CLI",
-			}
-			rootCmd.AddCommand(initCmd)
+			rootCmd := getInitTestRootCommand()
 
 			output, err := executeCommand(rootCmd, tt.args...)
 
@@ -170,11 +171,7 @@ func TestInitCommand_Template(t *testing.T) {
 	require.NoError(t, os.WriteFile(templateFile, []byte("# {{project_name}}"), 0644))
 
 	// Execute init with template
-	rootCmd := &cobra.Command{
-		Use:   "ddx",
-		Short: "DDx CLI",
-	}
-	rootCmd.AddCommand(initCmd)
+	rootCmd := getInitTestRootCommand()
 
 	output, err := executeCommand(rootCmd, "init", "--template", "test-template")
 
@@ -190,11 +187,7 @@ func TestInitCommand_Template(t *testing.T) {
 
 // TestInitCommand_Help tests the help output
 func TestInitCommand_Help(t *testing.T) {
-	rootCmd := &cobra.Command{
-		Use:   "ddx",
-		Short: "DDx CLI",
-	}
-	rootCmd.AddCommand(initCmd)
+	rootCmd := getInitTestRootCommand()
 
 	output, err := executeCommand(rootCmd, "init", "--help")
 

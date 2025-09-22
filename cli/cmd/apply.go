@@ -14,45 +14,24 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	applyPath   string
-	applyDryRun bool
-	applyVars   []string
-)
-
-var applyCmd = &cobra.Command{
-	Use:   "apply <resource>",
-	Short: "Apply a specific template, pattern, or configuration",
-	Long: `Apply a DDx resource to your project.
-
-Resources can be:
-• Templates (complete project setups)
-• Patterns (code examples and best practices)  
-• Configurations (tool configs like ESLint, Prettier)
-• Prompts (AI prompts and instructions)
-• Scripts (automation and setup scripts)
-
-Examples:
-  ddx apply nextjs              # Apply Next.js template
-  ddx apply error-handling      # Apply error handling patterns
-  ddx apply prompts/claude      # Apply Claude AI prompts
-  ddx apply scripts/hooks       # Install git hooks`,
-	Args: cobra.ExactArgs(1),
-	RunE: runApply,
-}
-
-func init() {
-	rootCmd.AddCommand(applyCmd)
-
-	applyCmd.Flags().StringVarP(&applyPath, "path", "p", ".", "Target path for application")
-	applyCmd.Flags().BoolVar(&applyDryRun, "dry-run", false, "Show what would be applied without making changes")
-	applyCmd.Flags().StringSliceVar(&applyVars, "var", nil, "Set template variables (key=value)")
-}
+// Command registration is now handled by command_factory.go
+// This file only contains the runApply function implementation
 
 func runApply(cmd *cobra.Command, args []string) error {
+	// Get flag values locally
+	applyPath, _ := cmd.Flags().GetString("path")
+	applyDryRun, _ := cmd.Flags().GetBool("dry-run")
+	applyVars, _ := cmd.Flags().GetStringSlice("var")
+
 	resourceName := args[0]
 
-	cmd.Printf("🎯 Applying resource: %s\n\n", resourceName)
+	// Sanitize resource name for display to prevent command injection in output
+	displayName := resourceName
+	if strings.ContainsAny(displayName, ";|&$`") {
+		displayName = "[sanitized]"
+	}
+
+	cmd.Printf("🎯 Applying resource: %s\n\n", displayName)
 
 	// Check if we can load configuration (either local or have DDx home)
 	// This allows the command to work if either DDx is installed globally or locally initialized
@@ -76,7 +55,7 @@ func runApply(cmd *cobra.Command, args []string) error {
 
 	if resourceInfo == nil {
 		s.Stop()
-		cmd.PrintErrf("❌ Resource '%s' not found\n", resourceName)
+		cmd.PrintErrf("❌ Resource '%s' not found\n", displayName)
 
 		// Show available resources
 		cmd.PrintErr("\n💡 Available resources:")
@@ -84,7 +63,7 @@ func runApply(cmd *cobra.Command, args []string) error {
 			return err
 		}
 		// Exit code 6: Resource not found
-		return &ExitError{Code: 6, Message: fmt.Sprintf("resource '%s' not found", resourceName)}
+		return &ExitError{Code: 6, Message: fmt.Sprintf("resource '%s' not found", displayName)}
 	}
 
 	s.Suffix = fmt.Sprintf(" Found %s: %s", resourceInfo.Type, resourceInfo.Name)
@@ -98,7 +77,7 @@ func runApply(cmd *cobra.Command, args []string) error {
 	// Apply the resource
 	s.Suffix = fmt.Sprintf(" Applying %s...", resourceInfo.Name)
 
-	if err := applyResource(resourceInfo, applyPath, cfg); err != nil {
+	if err := applyResource(resourceInfo, applyPath, cfg, applyVars); err != nil {
 		s.Stop()
 		return fmt.Errorf("failed to apply resource: %w", err)
 	}
@@ -128,7 +107,7 @@ type ResourceInfo struct {
 // findResource locates a resource by name
 func findResource(resourceName string) (*ResourceInfo, error) {
 	// Get library path using the centralized resolution
-	libPath, err := config.GetLibraryPath(libraryPath)
+	libPath, err := config.GetLibraryPath(getLibraryPath())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get library path: %w", err)
 	}
@@ -232,7 +211,7 @@ func getResourceDescription(resourcePath string) string {
 }
 
 // applyResource applies a resource to the target path
-func applyResource(resource *ResourceInfo, targetPath string, cfg *config.Config) error {
+func applyResource(resource *ResourceInfo, targetPath string, cfg *config.Config, vars []string) error {
 	stat, err := os.Stat(resource.Path)
 	if err != nil {
 		return err
@@ -240,15 +219,15 @@ func applyResource(resource *ResourceInfo, targetPath string, cfg *config.Config
 
 	if stat.IsDir() {
 		// Apply directory resource
-		return applyDirectory(resource.Path, targetPath, cfg)
+		return applyDirectory(resource.Path, targetPath, cfg, vars)
 	} else {
 		// Apply single file resource
-		return applySingleFile(resource.Path, targetPath, cfg)
+		return applySingleFile(resource.Path, targetPath, cfg, vars)
 	}
 }
 
 // applyDirectory applies a directory resource
-func applyDirectory(sourcePath, targetPath string, cfg *config.Config) error {
+func applyDirectory(sourcePath, targetPath string, cfg *config.Config, vars []string) error {
 	return filepath.Walk(sourcePath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -272,23 +251,23 @@ func applyDirectory(sourcePath, targetPath string, cfg *config.Config) error {
 		}
 
 		// Process file with variable substitution
-		return processFile(path, targetFile, cfg)
+		return processFile(path, targetFile, cfg, vars)
 	})
 }
 
 // applySingleFile applies a single file resource
-func applySingleFile(sourcePath, targetPath string, cfg *config.Config) error {
+func applySingleFile(sourcePath, targetPath string, cfg *config.Config, vars []string) error {
 	// If target is a directory, use the source filename
 	if stat, err := os.Stat(targetPath); err == nil && stat.IsDir() {
 		filename := filepath.Base(sourcePath)
 		targetPath = filepath.Join(targetPath, filename)
 	}
 
-	return processFile(sourcePath, targetPath, cfg)
+	return processFile(sourcePath, targetPath, cfg, vars)
 }
 
 // processFile processes a file with variable substitution
-func processFile(sourcePath, targetPath string, cfg *config.Config) error {
+func processFile(sourcePath, targetPath string, cfg *config.Config, vars []string) error {
 	// Read source content
 	content, err := os.ReadFile(sourcePath)
 	if err != nil {
@@ -296,7 +275,7 @@ func processFile(sourcePath, targetPath string, cfg *config.Config) error {
 	}
 
 	// Parse runtime variables from --var flags
-	runtimeVars := parseRuntimeVariables(applyVars)
+	runtimeVars := parseRuntimeVariables(vars)
 
 	// Create a copy of the config with runtime variables merged
 	mergedConfig := cfg.WithRuntimeVariables(runtimeVars)
@@ -380,7 +359,7 @@ func showDryRun(resource *ResourceInfo, targetPath string, cfg *config.Config, c
 // showAvailableResources shows available resources organized by type
 func showAvailableResources() error {
 	// Get library path using the centralized resolution
-	libPath, err := config.GetLibraryPath(libraryPath)
+	libPath, err := config.GetLibraryPath(getLibraryPath())
 	if err != nil {
 		return fmt.Errorf("failed to get library path: %w", err)
 	}

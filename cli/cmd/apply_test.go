@@ -10,6 +10,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// Helper function to create a fresh root command for tests
+func getApplyTestRootCommand() *cobra.Command {
+	factory := NewCommandFactory()
+	return factory.NewRootCommand()
+}
+
 // TestApplyCommand tests the apply command
 func TestApplyCommand(t *testing.T) {
 	tests := []struct {
@@ -150,11 +156,6 @@ variables:
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Reset global flag variables to ensure test isolation
-			applyPath = "."
-			applyDryRun = false
-			applyVars = nil
-
 			originalDir, _ := os.Getwd()
 			defer os.Chdir(originalDir)
 
@@ -163,11 +164,7 @@ variables:
 				_, workDir = tt.setup(t)
 			}
 
-			rootCmd := &cobra.Command{
-				Use:   "ddx",
-				Short: "DDx CLI",
-			}
-			rootCmd.AddCommand(applyCmd)
+			rootCmd := getApplyTestRootCommand()
 
 			output, err := executeCommand(rootCmd, tt.args...)
 
@@ -185,11 +182,7 @@ variables:
 
 // TestApplyCommand_Help tests the help output
 func TestApplyCommand_Help(t *testing.T) {
-	rootCmd := &cobra.Command{
-		Use:   "ddx",
-		Short: "DDx CLI",
-	}
-	rootCmd.AddCommand(applyCmd)
+	rootCmd := getApplyTestRootCommand()
 
 	output, err := executeCommand(rootCmd, "apply", "--help")
 

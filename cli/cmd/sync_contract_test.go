@@ -8,9 +8,50 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// getFreshSyncCommands creates fresh commands for sync tests to avoid state pollution
+func getFreshSyncCommands() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "ddx",
+		Short: "Document-Driven Development eXperience - AI development toolkit",
+	}
+
+	// Create fresh update command
+	freshUpdateCmd := &cobra.Command{
+		Use:   "update [resource]",
+		Short: "Update DDx toolkit from master repository",
+		RunE:  runUpdate,
+		Args:  cobra.MaximumNArgs(1),
+	}
+	freshUpdateCmd.Flags().Bool("check", false, "Check for updates without applying")
+	freshUpdateCmd.Flags().Bool("force", false, "Force update even if there are local changes")
+	freshUpdateCmd.Flags().Bool("reset", false, "Reset to master state, discarding local changes")
+	freshUpdateCmd.Flags().Bool("sync", false, "Synchronize with upstream repository")
+	freshUpdateCmd.Flags().String("strategy", "", "Conflict resolution strategy (ours/theirs)")
+	freshUpdateCmd.Flags().Bool("backup", false, "Create backup before updating")
+	freshUpdateCmd.Flags().Bool("interactive", false, "Interactive conflict resolution")
+
+	// Create fresh contribute command
+	freshContributeCmd := &cobra.Command{
+		Use:   "contribute <path>",
+		Short: "Contribute improvements back to master repository",
+		RunE:  runContribute,
+		Args:  cobra.ExactArgs(1),
+	}
+	freshContributeCmd.Flags().StringP("message", "m", "", "Contribution message")
+	freshContributeCmd.Flags().String("branch", "", "Feature branch name")
+	freshContributeCmd.Flags().Bool("dry-run", false, "Show what would be contributed without actually doing it")
+	freshContributeCmd.Flags().Bool("create-pr", false, "Create a pull request after pushing")
+
+	cmd.AddCommand(freshUpdateCmd)
+	cmd.AddCommand(freshContributeCmd)
+
+	return cmd
+}
 
 // TestUpdateCommand_Contract tests the contract for ddx update command
 func TestUpdateCommand_Contract(t *testing.T) {
@@ -22,14 +63,12 @@ func TestUpdateCommand_Contract(t *testing.T) {
 		createTestConfig(t)
 
 		// Reset flags
-		updateForce = false
-		updateCheck = false
-		updateReset = false
-		updateSync = false
-		updateStrategy = ""
+		// Create a fresh command for test isolation
+		// (flags are now local to the command)
+		// (command flags are reset by creating fresh commands)
 
 		// When: Running update successfully
-		cmd := rootCmd
+		cmd := getFreshSyncCommands()
 		buf := new(bytes.Buffer)
 		cmd.SetOut(buf)
 		cmd.SetErr(buf)
@@ -50,14 +89,12 @@ func TestUpdateCommand_Contract(t *testing.T) {
 		t.Setenv("DDX_TEST_MODE", "1")
 
 		// Reset flags
-		updateForce = false
-		updateCheck = false
-		updateReset = false
-		updateSync = false
-		updateStrategy = ""
+		// Create a fresh command for test isolation
+		// (flags are now local to the command)
+		// (command flags are reset by creating fresh commands)
 
 		// When: Running update without config
-		cmd := rootCmd
+		cmd := getFreshSyncCommands()
 		buf := new(bytes.Buffer)
 		cmd.SetOut(buf)
 		cmd.SetErr(buf)
@@ -78,11 +115,9 @@ func TestUpdateCommand_Contract(t *testing.T) {
 		t.Setenv("DDX_TEST_MODE", "1")
 
 		// Reset flags
-		updateForce = false
-		updateCheck = false
-		updateReset = false
-		updateSync = false
-		updateStrategy = ""
+		// Create a fresh command for test isolation
+		// (flags are now local to the command)
+		// (command flags are reset by creating fresh commands)
 
 		createTestConfig(t)
 
@@ -96,7 +131,7 @@ repository:
 		os.WriteFile(".ddx.yml", []byte(config), 0644)
 
 		// When: Running update with network error
-		cmd := rootCmd
+		cmd := getFreshSyncCommands()
 		buf := new(bytes.Buffer)
 		cmd.SetOut(buf)
 		cmd.SetErr(buf)
@@ -119,14 +154,12 @@ repository:
 		os.MkdirAll(".ddx", 0755) // Create .ddx directory so isInitialized() passes
 
 		// Reset flags
-		updateForce = false
-		updateCheck = false
-		updateReset = false
-		updateSync = false
-		updateStrategy = ""
+		// Create a fresh command for test isolation
+		// (flags are now local to the command)
+		// (command flags are reset by creating fresh commands)
 
 		// When: Running with --check flag
-		cmd := rootCmd
+		cmd := getFreshSyncCommands()
 		buf := new(bytes.Buffer)
 		cmd.SetOut(buf)
 		cmd.SetErr(buf)
@@ -166,13 +199,11 @@ repository:
 
 		// When: Running with --force flag
 		// Reset flags to avoid state from previous tests
-		updateForce = false
-		updateCheck = false
-		updateReset = false
-		updateSync = false
-		updateStrategy = ""
+		// Create a fresh command for test isolation
+		// (flags are now local to the command)
+		// (command flags are reset by creating fresh commands)
 
-		cmd := rootCmd
+		cmd := getFreshSyncCommands()
 		buf := new(bytes.Buffer)
 		cmd.SetOut(buf)
 		cmd.SetErr(buf)
@@ -198,14 +229,12 @@ repository:
 		os.MkdirAll(".ddx", 0755) // Create .ddx directory so isInitialized() passes
 
 		// Reset flags
-		updateForce = false
-		updateCheck = false
-		updateReset = false
-		updateSync = false
-		updateStrategy = ""
+		// Create a fresh command for test isolation
+		// (flags are now local to the command)
+		// (command flags are reset by creating fresh commands)
 
 		// When: Running update
-		cmd := rootCmd
+		cmd := getFreshSyncCommands()
 		buf := new(bytes.Buffer)
 		cmd.SetOut(buf)
 		cmd.SetErr(buf)
@@ -238,10 +267,7 @@ func TestContributeCommand_Contract(t *testing.T) {
 		os.Chdir(tempDir)
 		t.Setenv("DDX_TEST_MODE", "1")
 
-		// Reset flags
-		contributeMessage = ""
-		contributeBranch = ""
-		contributeDryRun = false
+		// Flags are now local to commands - no reset needed
 
 		// Initialize git repo
 		execCommand("git", "init")
@@ -259,7 +285,7 @@ func TestContributeCommand_Contract(t *testing.T) {
 		execCommand("git", "commit", "-m", "Initial commit")
 
 		// When: Contributing successfully
-		cmd := rootCmd
+		cmd := getFreshSyncCommands()
 		buf := new(bytes.Buffer)
 		cmd.SetOut(buf)
 		cmd.SetErr(buf)
@@ -279,10 +305,7 @@ func TestContributeCommand_Contract(t *testing.T) {
 		os.Chdir(tempDir)
 		t.Setenv("DDX_TEST_MODE", "1")
 
-		// Reset flags
-		contributeMessage = ""
-		contributeBranch = ""
-		contributeDryRun = false
+		// Flags are now local to commands - no reset needed
 
 		// Initialize git repo
 		execCommand("git", "init")
@@ -296,7 +319,7 @@ func TestContributeCommand_Contract(t *testing.T) {
 		execCommand("git", "commit", "-m", "Initial commit")
 
 		// When: Contributing non-existent asset
-		cmd := rootCmd
+		cmd := getFreshSyncCommands()
 		buf := new(bytes.Buffer)
 		cmd.SetOut(buf)
 		cmd.SetErr(buf)
@@ -316,10 +339,7 @@ func TestContributeCommand_Contract(t *testing.T) {
 		os.Chdir(tempDir)
 		t.Setenv("DDX_TEST_MODE", "1")
 
-		// Reset flags
-		contributeMessage = ""
-		contributeBranch = ""
-		contributeDryRun = false
+		// Flags are now local to commands - no reset needed
 
 		// Initialize git repo
 		execCommand("git", "init")
@@ -335,7 +355,7 @@ func TestContributeCommand_Contract(t *testing.T) {
 		execCommand("git", "commit", "-m", "Initial commit")
 
 		// When: Running with --dry-run
-		cmd := rootCmd
+		cmd := getFreshSyncCommands()
 		buf := new(bytes.Buffer)
 		cmd.SetOut(buf)
 		cmd.SetErr(buf)
@@ -359,10 +379,7 @@ func TestContributeCommand_Contract(t *testing.T) {
 		os.Chdir(tempDir)
 		t.Setenv("DDX_TEST_MODE", "1")
 
-		// Reset flags
-		contributeMessage = ""
-		contributeBranch = ""
-		contributeDryRun = false
+		// Flags are now local to commands - no reset needed
 
 		// Initialize git repo
 		execCommand("git", "init")
@@ -378,7 +395,7 @@ func TestContributeCommand_Contract(t *testing.T) {
 		execCommand("git", "commit", "-m", "Initial commit")
 
 		// When: Contributing without message
-		cmd := rootCmd
+		cmd := getFreshSyncCommands()
 		buf := new(bytes.Buffer)
 		cmd.SetOut(buf)
 		cmd.SetErr(buf)
@@ -402,10 +419,7 @@ func TestContributeCommand_Contract(t *testing.T) {
 		os.Chdir(tempDir)
 		t.Setenv("DDX_TEST_MODE", "1")
 
-		// Reset flags
-		contributeMessage = ""
-		contributeBranch = ""
-		contributeDryRun = false
+		// Flags are now local to commands - no reset needed
 
 		// Initialize git repo
 		execCommand("git", "init")
@@ -423,7 +437,7 @@ func TestContributeCommand_Contract(t *testing.T) {
 		// Missing metadata.yml
 
 		// When: Contributing invalid asset
-		cmd := rootCmd
+		cmd := getFreshSyncCommands()
 		buf := new(bytes.Buffer)
 		cmd.SetOut(buf)
 		cmd.SetErr(buf)
@@ -448,11 +462,9 @@ func TestUpdateCommand_ConflictHandling(t *testing.T) {
 		t.Setenv("DDX_TEST_MODE", "1")
 
 		// Reset flags
-		updateForce = false
-		updateCheck = false
-		updateReset = false
-		updateSync = false
-		updateStrategy = ""
+		// Create a fresh command for test isolation
+		// (flags are now local to the command)
+		// (command flags are reset by creating fresh commands)
 
 		createTestConfig(t)
 
@@ -463,7 +475,7 @@ func TestUpdateCommand_ConflictHandling(t *testing.T) {
 		os.WriteFile(".ddx/CONFLICT.txt", []byte(conflictMarker), 0644)
 
 		// When: Updating with conflicts
-		cmd := rootCmd
+		cmd := getFreshSyncCommands()
 		buf := new(bytes.Buffer)
 		cmd.SetOut(buf)
 		cmd.SetErr(buf)
@@ -483,17 +495,15 @@ func TestUpdateCommand_ConflictHandling(t *testing.T) {
 		t.Setenv("DDX_TEST_MODE", "1")
 
 		// Reset flags
-		updateForce = false
-		updateCheck = false
-		updateReset = false
-		updateSync = false
-		updateStrategy = ""
+		// Create a fresh command for test isolation
+		// (flags are now local to the command)
+		// (command flags are reset by creating fresh commands)
 
 		createTestConfig(t)
 		os.MkdirAll(".ddx", 0755) // Create .ddx directory so isInitialized() passes
 
 		// When: Using --strategy=theirs
-		cmd := rootCmd
+		cmd := getFreshSyncCommands()
 		buf := new(bytes.Buffer)
 		cmd.SetOut(buf)
 		cmd.SetErr(buf)
@@ -513,17 +523,15 @@ func TestUpdateCommand_ConflictHandling(t *testing.T) {
 		t.Setenv("DDX_TEST_MODE", "1")
 
 		// Reset flags
-		updateForce = false
-		updateCheck = false
-		updateReset = false
-		updateSync = false
-		updateStrategy = ""
+		// Create a fresh command for test isolation
+		// (flags are now local to the command)
+		// (command flags are reset by creating fresh commands)
 
 		createTestConfig(t)
 		os.MkdirAll(".ddx", 0755) // Create .ddx directory so isInitialized() passes
 
 		// When: Using --strategy=ours
-		cmd := rootCmd
+		cmd := getFreshSyncCommands()
 		buf := new(bytes.Buffer)
 		cmd.SetOut(buf)
 		cmd.SetErr(buf)
@@ -556,7 +564,7 @@ func TestSyncCommand_GitSubtree(t *testing.T) {
 		execCommand("git", "commit", "-m", "Initial commit")
 
 		// When: Pulling via subtree
-		cmd := rootCmd
+		cmd := getFreshSyncCommands()
 		buf := new(bytes.Buffer)
 		cmd.SetOut(buf)
 		cmd.SetErr(buf)
@@ -587,7 +595,7 @@ func TestSyncCommand_GitSubtree(t *testing.T) {
 		os.WriteFile(".ddx/new/file.txt", []byte("content"), 0644)
 
 		// When: Pushing via subtree
-		cmd := rootCmd
+		cmd := getFreshSyncCommands()
 		buf := new(bytes.Buffer)
 		cmd.SetOut(buf)
 		cmd.SetErr(buf)

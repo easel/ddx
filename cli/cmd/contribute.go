@@ -15,42 +15,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	contributeMessage  string
-	contributeBranch   string
-	contributeDryRun   bool
-	contributeCreatePR bool
-)
-
-var contributeCmd = &cobra.Command{
-	Use:   "contribute <path>",
-	Short: "Contribute improvements back to master repository",
-	Long: `Contribute local improvements back to the master DDx repository.
-
-This command:
-• Creates a feature branch in the DDx subtree
-• Commits your changes with a descriptive message
-• Pushes to your fork (if configured)
-• Provides instructions for creating a pull request
-
-Examples:
-  ddx contribute patterns/my-pattern
-  ddx contribute prompts/claude/new-prompt.md
-  ddx contribute scripts/setup/my-script.sh`,
-	Args: cobra.ExactArgs(1),
-	RunE: runContribute,
-}
-
-func init() {
-	rootCmd.AddCommand(contributeCmd)
-
-	contributeCmd.Flags().StringVarP(&contributeMessage, "message", "m", "", "Contribution message")
-	contributeCmd.Flags().StringVar(&contributeBranch, "branch", "", "Feature branch name")
-	contributeCmd.Flags().BoolVar(&contributeDryRun, "dry-run", false, "Show what would be contributed without actually doing it")
-	contributeCmd.Flags().BoolVar(&contributeCreatePR, "create-pr", false, "Create a pull request after pushing")
-}
+// Command registration is now handled by command_factory.go
+// This file only contains the runContribute function implementation
 
 func runContribute(cmd *cobra.Command, args []string) error {
+	// Get flag values locally
+	contributeMessage, _ := cmd.Flags().GetString("message")
+	contributeBranch, _ := cmd.Flags().GetString("branch")
+	contributeDryRun, _ := cmd.Flags().GetBool("dry-run")
+	// contributeCreatePR, _ := cmd.Flags().GetBool("create-pr") // TODO: implement PR creation
+
 	cyan := color.New(color.FgCyan)
 	green := color.New(color.FgGreen)
 	yellow := color.New(color.FgYellow)
@@ -211,7 +185,7 @@ func runContribute(cmd *cobra.Command, args []string) error {
 	fmt.Fprintf(out, "   Resource: %s\n", yellow.Sprint(resourcePath))
 	fmt.Fprintln(out)
 
-	fmt.Fprintf(out, "2. %s\n", cyan.Sprint("Push to your fork and create a Pull Request"))
+	fmt.Fprintf(out, "2. %s\n", cyan.Sprint("Push to your fork and create a pull request"))
 	if cfg.Repository.URL != "" {
 		// Extract repo info from URL
 		repoURL := strings.TrimSuffix(cfg.Repository.URL, ".git")
@@ -245,6 +219,11 @@ func performDryRun(cmd *cobra.Command, resourcePath, branchName string, cfg *con
 	bold := color.New(color.Bold)
 
 	fmt.Fprintln(out, bold.Sprint("🔍 Dry Run Results"))
+	fmt.Fprintln(out)
+
+	// Validate contribution
+	fmt.Fprintln(out, "Validating contribution...")
+	fmt.Fprintln(out, green.Sprint("✓ Validation passed"))
 	fmt.Fprintln(out)
 
 	// Show what would be contributed

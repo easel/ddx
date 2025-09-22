@@ -5,9 +5,16 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// getPromptsTestRootCommand creates a root command for testing
+func getPromptsTestRootCommand() *cobra.Command {
+	factory := NewCommandFactory()
+	return factory.NewRootCommand()
+}
 
 func TestPromptsCommand(t *testing.T) {
 	tests := []struct {
@@ -267,9 +274,20 @@ library_path: ./library`
 			// This test defines the expected behavior for prompts commands
 			// The actual implementation will be done after tests are written
 
-			// For now, we skip the test execution as we're in TDD mode
-			// Tests will fail initially, then we implement to make them pass
-			t.Skip("Implementation pending - TDD approach")
+			// Execute the command
+			rootCmd := getPromptsTestRootCommand()
+			output, err := executeCommand(rootCmd, tt.args...)
+
+			// Validate results
+			if tt.expectError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+
+			if tt.validate != nil {
+				tt.validate(t, output, err)
+			}
 		})
 	}
 }
@@ -277,5 +295,11 @@ library_path: ./library`
 func TestPromptsCommand_Help(t *testing.T) {
 	// This test specifies that prompts command should have help text
 	// with list and show subcommands
-	t.Skip("Implementation pending - TDD approach")
+	rootCmd := getPromptsTestRootCommand()
+	output, err := executeCommand(rootCmd, "prompts", "--help")
+
+	assert.NoError(t, err)
+	assert.Contains(t, output, "Manage AI prompts")
+	assert.Contains(t, output, "list")
+	assert.Contains(t, output, "show")
 }

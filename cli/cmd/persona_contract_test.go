@@ -10,80 +10,23 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// Helper function to create a fresh root command for tests
+func getPersonaContractTestRootCommand() *cobra.Command {
+	factory := NewCommandFactory()
+	return factory.NewRootCommand()
+}
+
 // createFreshPersonaCmd creates a fresh persona command tree to avoid state pollution
 func createFreshPersonaCmd() *cobra.Command {
-	// Create fresh persona command
-	freshPersonaCmd := &cobra.Command{
-		Use:   "persona",
-		Short: "Manage AI personas for consistent role-based interactions",
-		Long:  personaCmd.Long,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return cmd.Help()
-		},
+	// Get fresh root command with all subcommands
+	rootCmd := getPersonaContractTestRootCommand()
+	// Find and return the persona command
+	for _, cmd := range rootCmd.Commands() {
+		if cmd.Use == "persona" {
+			return cmd
+		}
 	}
-
-	// Create fresh list subcommand
-	freshListCmd := &cobra.Command{
-		Use:   "list [flags]",
-		Short: "List available personas",
-		Long:  personaListCmd.Long,
-		RunE:  personaListCmd.RunE,
-	}
-	freshListCmd.Flags().String("role", "", "Filter personas by role")
-	freshListCmd.Flags().StringSlice("tag", []string{}, "Filter personas by tags")
-
-	// Create fresh show subcommand
-	freshShowCmd := &cobra.Command{
-		Use:   "show <persona-name>",
-		Short: "Show detailed information about a persona",
-		Long:  personaShowCmd.Long,
-		Args:  cobra.ExactArgs(1),
-		RunE:  personaShowCmd.RunE,
-	}
-
-	// Create fresh bind subcommand
-	freshBindCmd := &cobra.Command{
-		Use:   "bind <role> <persona-name>",
-		Short: "Bind a persona to a role",
-		Long:  personaBindCmd.Long,
-		Args:  cobra.ExactArgs(2),
-		RunE:  personaBindCmd.RunE,
-	}
-
-	// Create fresh load subcommand
-	freshLoadCmd := &cobra.Command{
-		Use:   "load [persona-name] [flags]",
-		Short: "Load personas into CLAUDE.md",
-		Long:  personaLoadCmd.Long,
-		RunE:  personaLoadCmd.RunE,
-	}
-	freshLoadCmd.Flags().String("role", "", "Load persona for specific role")
-
-	// Create fresh bindings subcommand
-	freshBindingsCmd := &cobra.Command{
-		Use:   "bindings",
-		Short: "Show current persona bindings",
-		Long:  personaBindingsCmd.Long,
-		RunE:  personaBindingsCmd.RunE,
-	}
-
-	// Create fresh status subcommand
-	freshStatusCmd := &cobra.Command{
-		Use:   "status",
-		Short: "Show currently loaded personas",
-		Long:  personaStatusCmd.Long,
-		RunE:  personaStatusCmd.RunE,
-	}
-
-	// Add subcommands
-	freshPersonaCmd.AddCommand(freshListCmd)
-	freshPersonaCmd.AddCommand(freshShowCmd)
-	freshPersonaCmd.AddCommand(freshBindCmd)
-	freshPersonaCmd.AddCommand(freshLoadCmd)
-	freshPersonaCmd.AddCommand(freshBindingsCmd)
-	freshPersonaCmd.AddCommand(freshStatusCmd)
-
-	return freshPersonaCmd
+	return nil
 }
 
 // Contract validation tests verify that persona CLI commands conform to their API contracts
@@ -280,20 +223,7 @@ tags: [test, bdd]
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Reset global library path
-			libraryPath = ""
-
-			// Reset flags on the global personaListCmd to avoid interference between tests
-			if personaListCmd.Flags().Lookup("role") != nil {
-				personaListCmd.Flags().Set("role", "")
-			}
-			// For StringSlice flags, we need to reset them differently
-			// because they accumulate values
-			if tagFlag := personaListCmd.Flags().Lookup("tag"); tagFlag != nil {
-				// Reset the StringSlice flag by setting its value directly
-				tagFlag.Value.Set("")
-				tagFlag.Changed = false
-			}
+			// Commands are isolated via factory, no need to reset
 
 			if tt.setup != nil {
 				tt.setup(t)
@@ -411,7 +341,7 @@ You are an experienced code reviewer who enforces high standards.
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			libraryPath = ""
+			// Commands are isolated via factory
 			if tt.setup != nil {
 				tt.setup(t)
 			}
@@ -558,12 +488,10 @@ tags: [strict]
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Reset global library path
-			libraryPath = ""
+			// Commands are isolated via factory
 
 			// Reset flags on the global personaLoadCmd to avoid interference between tests
-			if personaLoadCmd.Flags().Lookup("role") != nil {
-				personaLoadCmd.Flags().Set("role", "")
-			}
+			// No need to reset flags
 
 			originalDir, _ := os.Getwd()
 			defer os.Chdir(originalDir)
@@ -785,12 +713,10 @@ You are a strict code reviewer.`
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Reset global library path
-			libraryPath = ""
+			// Commands are isolated via factory
 
 			// Reset flags on the global personaLoadCmd to avoid interference between tests
-			if personaLoadCmd.Flags().Lookup("role") != nil {
-				personaLoadCmd.Flags().Set("role", "")
-			}
+			// No need to reset flags
 
 			originalDir, _ := os.Getwd()
 			defer os.Chdir(originalDir)

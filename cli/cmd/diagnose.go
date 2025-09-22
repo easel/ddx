@@ -15,10 +15,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	diagnoseReport bool
-	diagnoseFix    bool
-)
+// Command registration is now handled by command_factory.go
+// Global variables have been removed - use local variables in runDiagnose
 
 type DiagnosticResult struct {
 	DDx         DDxStatus     `json:"ddx"`
@@ -60,28 +58,13 @@ type AIStatus struct {
 	Documentation []string `json:"documentation"`
 }
 
-var diagnoseCmd = &cobra.Command{
-	Use:   "diagnose",
-	Short: "Analyze current project setup and suggest improvements",
-	Long: `Analyze the current project setup and provide recommendations.
-
-This command checks:
-• DDx installation and configuration
-• Git repository setup
-• Project structure and conventions  
-• AI integration and documentation
-• Overall development environment health`,
-	RunE: runDiagnose,
-}
-
-func init() {
-	rootCmd.AddCommand(diagnoseCmd)
-
-	diagnoseCmd.Flags().BoolVarP(&diagnoseReport, "report", "r", false, "Generate detailed report")
-	diagnoseCmd.Flags().BoolVarP(&diagnoseFix, "fix", "f", false, "Automatically fix common issues")
-}
+// This file only contains the runDiagnose function implementation
 
 func runDiagnose(cmd *cobra.Command, args []string) error {
+	// Get flag values locally
+	diagnoseReport, _ := cmd.Flags().GetBool("report")
+	diagnoseFix, _ := cmd.Flags().GetBool("fix")
+
 	cyan := color.New(color.FgCyan)
 	green := color.New(color.FgGreen)
 
@@ -142,7 +125,7 @@ func runDiagnose(cmd *cobra.Command, args []string) error {
 
 func checkDDxSetup(result *DiagnosticResult) {
 	// Check if library path exists
-	libPath, err := config.GetLibraryPath(libraryPath)
+	libPath, err := config.GetLibraryPath(getLibraryPath())
 	result.DDx.Installed = err == nil && libPath != "" && dirExists(libPath)
 	result.DDx.Initialized = isInitialized()
 

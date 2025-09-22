@@ -15,6 +15,12 @@ import (
 // Contract validation tests verify that CLI commands conform to their API contracts
 // as defined in docs/02-design/contracts/CLI-001-core-commands.md
 
+// Helper function to create a fresh root command for tests
+func getContractTestRootCommand() *cobra.Command {
+	factory := NewCommandFactory()
+	return factory.NewRootCommand()
+}
+
 // TestInitCommand_Contract validates init command against CLI-001 contract
 func TestInitCommand_Contract(t *testing.T) {
 	tests := []struct {
@@ -84,9 +90,8 @@ func TestInitCommand_Contract(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Reset global flag variables to ensure test isolation
-			initTemplate = ""
-			initForce = false
+			// Create a fresh command for test isolation
+			// (flags are now local to the command)
 
 			originalDir, _ := os.Getwd()
 			defer os.Chdir(originalDir)
@@ -95,21 +100,8 @@ func TestInitCommand_Contract(t *testing.T) {
 				tt.setup(t)
 			}
 
-			// Create a fresh init command to avoid state pollution
-			freshInitCmd := &cobra.Command{
-				Use:   "init",
-				Short: "Initialize DDx in current project",
-				Long:  initCmd.Long,
-				RunE:  runInit,
-			}
-			freshInitCmd.Flags().StringVarP(&initTemplate, "template", "t", "", "Use specific template")
-			freshInitCmd.Flags().BoolVarP(&initForce, "force", "f", false, "Force initialization even if DDx already exists")
-
-			rootCmd := &cobra.Command{
-				Use:   "ddx",
-				Short: "DDx CLI",
-			}
-			rootCmd.AddCommand(freshInitCmd)
+			// Create a fresh root command to avoid state pollution
+			rootCmd := getContractTestRootCommand()
 
 			output, err := executeContractCommand(rootCmd, tt.args...)
 
@@ -207,10 +199,8 @@ library_path: ./library`)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Reset global flag variables to ensure test isolation
-			listType = ""
-			listSearch = ""
-			listVerbose = false
+			// Create a fresh command for test isolation
+			// (flags are now local to the command)
 
 			if tt.setup != nil {
 				tt.setup(t)
@@ -220,12 +210,11 @@ library_path: ./library`)
 			freshListCmd := &cobra.Command{
 				Use:   "list",
 				Short: "List available resources",
-				Long:  listCmd.Long,
 				RunE:  runList,
 			}
-			freshListCmd.Flags().StringVarP(&listType, "type", "t", "", "Filter by type (templates|patterns|configs|prompts|scripts)")
-			freshListCmd.Flags().StringVarP(&listSearch, "search", "s", "", "Search for specific items")
-			freshListCmd.Flags().BoolVar(&listVerbose, "verbose", false, "Show verbose output with additional details")
+			freshListCmd.Flags().StringP("type", "t", "", "Filter by type (templates|patterns|configs|prompts|scripts)")
+			freshListCmd.Flags().StringP("search", "s", "", "Search for specific items")
+			freshListCmd.Flags().Bool("verbose", false, "Show verbose output with additional details")
 
 			rootCmd := &cobra.Command{
 				Use:   "ddx",
@@ -354,15 +343,7 @@ library_path: ./library`)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Reset global flag variables to ensure test isolation
-			applyPath = "."
-			applyDryRun = false
-			applyVars = nil
-
-			// Also reset flags on the command
-			applyCmd.Flags().Set("path", ".")
-			applyCmd.Flags().Set("dry-run", "false")
-			applyCmd.Flags().Set("var", "")
+			// Commands are already registered and isolated in factory
 
 			originalDir, _ := os.Getwd()
 			defer os.Chdir(originalDir)
@@ -372,29 +353,9 @@ library_path: ./library`)
 				_, workDir = tt.setup(t)
 			}
 
-			// Reset apply command flags to ensure test isolation
-			applyPath = "."
-			applyDryRun = false
-			applyVars = nil
-			libraryPath = ""
+			// Create a fresh root command to avoid state pollution
 
-			// Create a fresh apply command to avoid state pollution
-			freshApplyCmd := &cobra.Command{
-				Use:   "apply <resource>",
-				Short: "Apply a DDx resource to your project",
-				Long:  applyCmd.Long,
-				Args:  cobra.ExactArgs(1),
-				RunE:  runApply,
-			}
-			freshApplyCmd.Flags().StringVarP(&applyPath, "path", "p", ".", "Target path for application")
-			freshApplyCmd.Flags().BoolVar(&applyDryRun, "dry-run", false, "Show what would be applied without making changes")
-			freshApplyCmd.Flags().StringSliceVar(&applyVars, "var", nil, "Set template variables (key=value)")
-
-			rootCmd := &cobra.Command{
-				Use:   "ddx",
-				Short: "DDx CLI",
-			}
-			rootCmd.AddCommand(freshApplyCmd)
+			rootCmd := getContractTestRootCommand()
 
 			output, err := executeContractCommand(rootCmd, tt.args...)
 
@@ -467,27 +428,6 @@ variables:
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Reset global flag variables to ensure test isolation
-			configGlobal = false
-			configLocal = false
-			configInit = false
-			configShow = false
-			libraryPath = ""
-
-			// Also reset flags on the command if they exist
-			if configCmd.Flags().Lookup("global") != nil {
-				configCmd.Flags().Set("global", "false")
-			}
-			if configCmd.Flags().Lookup("local") != nil {
-				configCmd.Flags().Set("local", "false")
-			}
-			if configCmd.Flags().Lookup("init") != nil {
-				configCmd.Flags().Set("init", "false")
-			}
-			if configCmd.Flags().Lookup("show") != nil {
-				configCmd.Flags().Set("show", "false")
-			}
-
 			originalDir, _ := os.Getwd()
 			defer os.Chdir(originalDir)
 
@@ -495,23 +435,7 @@ variables:
 				tt.setup(t)
 			}
 
-			// Create a fresh config command to avoid state pollution
-			freshConfigCmd := &cobra.Command{
-				Use:   "config [get|set|validate] [key] [value]",
-				Short: "Manage DDx configuration",
-				Long:  configCmd.Long,
-				RunE:  runConfig,
-			}
-			freshConfigCmd.Flags().BoolVarP(&configGlobal, "global", "g", false, "Edit global configuration")
-			freshConfigCmd.Flags().BoolVarP(&configLocal, "local", "l", false, "Edit local project configuration")
-			freshConfigCmd.Flags().BoolVar(&configInit, "init", false, "Initialize configuration wizard")
-			freshConfigCmd.Flags().BoolVar(&configShow, "show", false, "Show current configuration")
-
-			rootCmd := &cobra.Command{
-				Use:   "ddx",
-				Short: "DDx CLI",
-			}
-			rootCmd.AddCommand(freshConfigCmd)
+			rootCmd := getContractTestRootCommand()
 
 			output, err := executeContractCommand(rootCmd, tt.args...)
 			assert.NoError(t, err)

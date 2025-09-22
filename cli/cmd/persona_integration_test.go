@@ -14,6 +14,12 @@ import (
 // Integration tests validate end-to-end persona workflows
 // These tests verify cross-component interactions and complete user workflows
 
+// Helper function to create a fresh root command for tests
+func getPersonaIntegrationTestRootCommand() *cobra.Command {
+	factory := NewCommandFactory()
+	return factory.NewRootCommand()
+}
+
 // TestPersonaIntegration_FullWorkflow tests complete persona management workflow
 func TestPersonaIntegration_FullWorkflow(t *testing.T) {
 	// This is a long-running test that covers the full persona workflow
@@ -171,8 +177,7 @@ You think in terms of system boundaries, data flow, and long-term evolution.
 			name: "step1_list_available_personas",
 			operation: func(t *testing.T) error {
 				// TODO: Implement persona list command
-				rootCmd := &cobra.Command{Use: "ddx", Short: "DDx CLI"}
-				rootCmd.AddCommand(personaCmd)
+				rootCmd := getPersonaIntegrationTestRootCommand()
 				_, err := executeCommand(rootCmd, "persona", "list")
 				return err
 			},
@@ -187,8 +192,7 @@ You think in terms of system boundaries, data flow, and long-term evolution.
 			name: "step2_show_specific_persona",
 			operation: func(t *testing.T) error {
 				// TODO: Implement persona show command
-				rootCmd := &cobra.Command{Use: "ddx", Short: "DDx CLI"}
-				rootCmd.AddCommand(personaCmd)
+				rootCmd := getPersonaIntegrationTestRootCommand()
 				_, err := executeCommand(rootCmd, "persona", "show", "strict-code-reviewer")
 				return err
 			},
@@ -204,8 +208,7 @@ You think in terms of system boundaries, data flow, and long-term evolution.
 			name: "step3_bind_personas_to_roles",
 			operation: func(t *testing.T) error {
 				// TODO: Implement persona bind command
-				rootCmd := &cobra.Command{Use: "ddx", Short: "DDx CLI"}
-				rootCmd.AddCommand(personaCmd)
+				rootCmd := getPersonaIntegrationTestRootCommand()
 
 				// Bind multiple personas
 				bindings := map[string]string{
@@ -260,8 +263,7 @@ You think in terms of system boundaries, data flow, and long-term evolution.
 			name: "step4_show_current_bindings",
 			operation: func(t *testing.T) error {
 				// TODO: Implement persona bindings command
-				rootCmd := &cobra.Command{Use: "ddx", Short: "DDx CLI"}
-				rootCmd.AddCommand(personaCmd)
+				rootCmd := getPersonaIntegrationTestRootCommand()
 				_, err := executeCommand(rootCmd, "persona", "bindings")
 				return err
 			},
@@ -274,8 +276,7 @@ You think in terms of system boundaries, data flow, and long-term evolution.
 			name: "step5_load_all_bound_personas",
 			operation: func(t *testing.T) error {
 				// TODO: Implement persona load command
-				rootCmd := &cobra.Command{Use: "ddx", Short: "DDx CLI"}
-				rootCmd.AddCommand(personaCmd)
+				rootCmd := getPersonaIntegrationTestRootCommand()
 				_, err := executeCommand(rootCmd, "persona", "load")
 				return err
 			},
@@ -323,8 +324,7 @@ You think in terms of system boundaries, data flow, and long-term evolution.
 			name: "step6_check_persona_status",
 			operation: func(t *testing.T) error {
 				// TODO: Implement persona status command
-				rootCmd := &cobra.Command{Use: "ddx", Short: "DDx CLI"}
-				rootCmd.AddCommand(personaCmd)
+				rootCmd := getPersonaIntegrationTestRootCommand()
 				_, err := executeCommand(rootCmd, "persona", "status")
 				return err
 			},
@@ -337,8 +337,7 @@ You think in terms of system boundaries, data flow, and long-term evolution.
 			name: "step7_load_specific_persona",
 			operation: func(t *testing.T) error {
 				// TODO: Implement specific persona loading
-				rootCmd := &cobra.Command{Use: "ddx", Short: "DDx CLI"}
-				rootCmd.AddCommand(personaCmd)
+				rootCmd := getPersonaIntegrationTestRootCommand()
 				_, err := executeCommand(rootCmd, "persona", "load", "balanced-code-reviewer")
 				return err
 			},
@@ -351,8 +350,7 @@ You think in terms of system boundaries, data flow, and long-term evolution.
 			name: "step8_update_binding",
 			operation: func(t *testing.T) error {
 				// TODO: Update existing binding
-				rootCmd := &cobra.Command{Use: "ddx", Short: "DDx CLI"}
-				rootCmd.AddCommand(personaCmd)
+				rootCmd := getPersonaIntegrationTestRootCommand()
 				_, err := executeCommand(rootCmd, "persona", "bind", "test-engineer", "test-engineer-bdd")
 				return err
 			},
@@ -365,8 +363,7 @@ You think in terms of system boundaries, data flow, and long-term evolution.
 			name: "step9_reload_with_updated_binding",
 			operation: func(t *testing.T) error {
 				// TODO: Reload personas to pick up new binding
-				rootCmd := &cobra.Command{Use: "ddx", Short: "DDx CLI"}
-				rootCmd.AddCommand(personaCmd)
+				rootCmd := getPersonaIntegrationTestRootCommand()
 				_, err := executeCommand(rootCmd, "persona", "load")
 				return err
 			},
@@ -379,8 +376,7 @@ You think in terms of system boundaries, data flow, and long-term evolution.
 			name: "step10_remove_personas",
 			operation: func(t *testing.T) error {
 				// TODO: Implement persona unload command
-				rootCmd := &cobra.Command{Use: "ddx", Short: "DDx CLI"}
-				rootCmd.AddCommand(personaCmd)
+				rootCmd := getPersonaIntegrationTestRootCommand()
 				_, err := executeCommand(rootCmd, "persona", "unload")
 				return err
 			},
@@ -439,7 +435,8 @@ You think in terms of system boundaries, data flow, and long-term evolution.
 
 // TestPersonaIntegration_WorkflowOverrides tests workflow-specific persona overrides
 func TestPersonaIntegration_WorkflowOverrides(t *testing.T) {
-	t.Skip("Workflow overrides feature not yet implemented")
+	// This test verifies basic persona loading functionality
+	// Full workflow override feature may be implemented later
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
 	}
@@ -528,8 +525,7 @@ tags: [security]
 			workflow: "", // No specific workflow
 			operation: func(t *testing.T, workflow string) error {
 				// TODO: Load personas for default workflow
-				rootCmd := &cobra.Command{Use: "ddx", Short: "DDx CLI"}
-				rootCmd.AddCommand(personaCmd)
+				rootCmd := getPersonaIntegrationTestRootCommand()
 				_, err := executeCommand(rootCmd, "persona", "load")
 				return err
 			},
@@ -544,8 +540,7 @@ tags: [security]
 			workflow: "performance-workflow",
 			operation: func(t *testing.T, workflow string) error {
 				// TODO: Load personas for specific workflow
-				rootCmd := &cobra.Command{Use: "ddx", Short: "DDx CLI"}
-				rootCmd.AddCommand(personaCmd)
+				rootCmd := getPersonaIntegrationTestRootCommand()
 				_, err := executeCommand(rootCmd, "persona", "load", "--workflow", workflow)
 				return err
 			},
@@ -560,8 +555,7 @@ tags: [security]
 			workflow: "security-workflow",
 			operation: func(t *testing.T, workflow string) error {
 				// TODO: Load personas for security workflow
-				rootCmd := &cobra.Command{Use: "ddx", Short: "DDx CLI"}
-				rootCmd.AddCommand(personaCmd)
+				rootCmd := getPersonaIntegrationTestRootCommand()
 				_, err := executeCommand(rootCmd, "persona", "load", "--workflow", workflow)
 				return err
 			},
@@ -628,8 +622,7 @@ func TestPersonaIntegration_ErrorHandling(t *testing.T) {
 				require.NoError(t, os.WriteFile(".ddx.yml", []byte(config), 0644))
 			},
 			operation: func(t *testing.T) error {
-				rootCmd := &cobra.Command{Use: "ddx", Short: "DDx CLI"}
-				rootCmd.AddCommand(personaCmd)
+				rootCmd := getPersonaIntegrationTestRootCommand()
 				_, err := executeCommand(rootCmd, "persona", "bind", "code-reviewer", "nonexistent-persona")
 				return err
 			},
@@ -641,8 +634,7 @@ func TestPersonaIntegration_ErrorHandling(t *testing.T) {
 				// No .ddx.yml file - this should be an error
 			},
 			operation: func(t *testing.T) error {
-				rootCmd := &cobra.Command{Use: "ddx", Short: "DDx CLI"}
-				rootCmd.AddCommand(personaCmd)
+				rootCmd := getPersonaIntegrationTestRootCommand()
 				_, err := executeCommand(rootCmd, "persona", "load")
 				return err
 			},
@@ -674,8 +666,7 @@ persona_bindings:
 				require.NoError(t, os.WriteFile(".ddx.yml", []byte(config), 0644))
 			},
 			operation: func(t *testing.T) error {
-				rootCmd := &cobra.Command{Use: "ddx", Short: "DDx CLI"}
-				rootCmd.AddCommand(personaCmd)
+				rootCmd := getPersonaIntegrationTestRootCommand()
 				_, err := executeCommand(rootCmd, "persona", "load")
 				return err
 			},
@@ -692,8 +683,7 @@ persona_bindings:
 				require.NoError(t, os.MkdirAll(personasDir, 0755))
 			},
 			operation: func(t *testing.T) error {
-				rootCmd := &cobra.Command{Use: "ddx", Short: "DDx CLI"}
-				rootCmd.AddCommand(personaCmd)
+				rootCmd := getPersonaIntegrationTestRootCommand()
 				_, err := executeCommand(rootCmd, "persona", "show", "nonexistent-persona")
 				return err
 			},
@@ -721,7 +711,9 @@ persona_bindings:
 
 			// Validate error occurred and contains expected message
 			assert.Error(t, err, "Should have error: %s", tt.name)
-			assert.Contains(t, err.Error(), tt.expectedError, "Error message should match: %s", tt.name)
+			if err != nil {
+				assert.Contains(t, err.Error(), tt.expectedError, "Error message should match: %s", tt.name)
+			}
 
 			// For now, just validate test structure
 			assert.NotEmpty(t, tt.expectedError, "Expected error message should be defined")
@@ -731,7 +723,7 @@ persona_bindings:
 
 // TestPersonaIntegration_ConcurrentAccess tests concurrent persona operations
 func TestPersonaIntegration_ConcurrentAccess(t *testing.T) {
-	t.Skip("Concurrent access handling not yet implemented")
+	// Basic concurrent access test - simplified version
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
 	}
@@ -825,12 +817,8 @@ tags: [test]
 	for i := 0; i < numGoroutines; i++ {
 		err := <-results
 
-		// TODO: Enable when persona commands are implemented
-		// For now, expect errors since commands don't exist
-		assert.Error(t, err, "Command not implemented yet for concurrent operation %d", i)
-
-		// TODO: Enable when commands are implemented
-		// assert.NoError(t, err, "Concurrent operation %d should succeed", i)
+		// Commands are now implemented, expect them to succeed
+		assert.NoError(t, err, "Concurrent operation %d should succeed", i)
 	}
 
 	// Verify final state is consistent

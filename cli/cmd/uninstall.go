@@ -11,56 +11,26 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	uninstallForce bool
-	uninstallPurge bool
-)
+// Global variables have been removed - use local variables in runUninstall
 
-var uninstallCmd = &cobra.Command{
-	Use:   "uninstall",
-	Short: "Uninstall DDx from your system",
-	Long: `Uninstall DDx from your system.
+// Command registration is now handled by command_factory.go
+// This file only contains the run function implementation
 
-This command will:
-• Remove the DDx binary from your system
-• Optionally remove configuration files (with --purge)
-• Clean up PATH modifications
-
-Example:
-  ddx uninstall
-  ddx uninstall --force
-  ddx uninstall --purge`,
-	RunE: runUninstall,
-}
-
-func init() {
-	rootCmd.AddCommand(uninstallCmd)
-
-	uninstallCmd.Flags().BoolVarP(&uninstallForce, "force", "f", false, "Skip confirmation prompt")
-	uninstallCmd.Flags().BoolVar(&uninstallPurge, "purge", false, "Remove all DDx data and configuration")
-}
-
+// runUninstall implements the uninstall command logic
 func runUninstall(cmd *cobra.Command, args []string) error {
-	red := color.New(color.FgRed)
+	// Get flag values locally
+	uninstallForce, _ := cmd.Flags().GetBool("force")
+	uninstallPurge, _ := cmd.Flags().GetBool("purge")
+	keepConfig, _ := cmd.Flags().GetBool("keep-config")
+	keepProjects, _ := cmd.Flags().GetBool("keep-projects")
+
+	red := color.New(color.FgRed, color.Bold)
 	yellow := color.New(color.FgYellow)
 	green := color.New(color.FgGreen)
-	cyan := color.New(color.FgCyan)
 
-	cyan.Println("🗑️  DDx Uninstaller")
-	fmt.Println()
-
-	// Show what will be removed
-	yellow.Println("This will remove:")
-	fmt.Println("• DDx binary from your system")
-	if uninstallPurge {
-		fmt.Println("• Configuration files (~/.ddx.yml)")
-		fmt.Println("• Local DDx data")
-	}
-	fmt.Println()
-
-	// Confirm unless forced or in test mode
-	if !uninstallForce && os.Getenv("DDX_TEST_MODE") != "1" {
-		var confirm bool
+	// Confirm uninstallation
+	if !uninstallForce {
+		confirm := false
 		prompt := &survey.Confirm{
 			Message: "Are you sure you want to uninstall DDx?",
 			Default: false,
@@ -69,72 +39,107 @@ func runUninstall(cmd *cobra.Command, args []string) error {
 			return err
 		}
 		if !confirm {
-			yellow.Println("Uninstall cancelled")
+			yellow.Fprintln(cmd.OutOrStdout(), "Uninstallation cancelled")
 			return nil
 		}
 	}
 
-	// Get executable path
-	execPath, err := os.Executable()
+	red.Fprintln(cmd.OutOrStdout(), "🗑️  Uninstalling DDx...")
+	fmt.Fprintln(cmd.OutOrStdout())
+
+	// Remove binary
+	binaryPath, err := os.Executable()
 	if err != nil {
-		return fmt.Errorf("failed to get executable path: %w", err)
+		return fmt.Errorf("failed to determine binary path: %w", err)
 	}
 
-	// Check common installation locations
-	installPaths := []string{
-		filepath.Join(os.Getenv("HOME"), ".local", "bin", "ddx"),
-		"/usr/local/bin/ddx",
-		"/usr/bin/ddx",
+	fmt.Fprintf(cmd.OutOrStdout(), "Removing binary: %s\n", binaryPath)
+	if err := os.Remove(binaryPath); err != nil && !os.IsNotExist(err) {
+		yellow.Fprintf(cmd.OutOrStdout(), "⚠️  Failed to remove binary: %v\n", err)
 	}
 
-	if runtime.GOOS == "windows" {
-		installPaths = append(installPaths, filepath.Join(os.Getenv("PROGRAMFILES"), "ddx", "ddx.exe"))
-	}
+	// Remove configuration files
+	if !keepConfig || uninstallPurge {
+		home, err := os.UserHomeDir()
+		if err == nil {
+			configPath := filepath.Join(home, ".ddx.yml")
+			if _, err := os.Stat(configPath); err == nil {
+				fmt.Fprintf(cmd.OutOrStdout(), "Removing config: %s\n", configPath)
+				os.Remove(configPath)
+			}
 
-	var removed bool
-	for _, path := range installPaths {
-		if _, err := os.Stat(path); err == nil {
-			fmt.Printf("Removing %s...\n", path)
-			if err := os.Remove(path); err != nil {
-				red.Printf("Failed to remove %s: %v\n", path, err)
-			} else {
-				green.Printf("✓ Removed %s\n", path)
-				removed = true
+			ddxDir := filepath.Join(home, ".ddx")
+			if _, err := os.Stat(ddxDir); err == nil {
+				fmt.Fprintf(cmd.OutOrStdout(), "Removing directory: %s\n", ddxDir)
+				os.RemoveAll(ddxDir)
 			}
 		}
 	}
 
-	// Also try to remove the actual executable if different
-	if !removed {
-		fmt.Printf("Removing %s...\n", execPath)
-		if err := os.Remove(execPath); err != nil {
-			red.Printf("Failed to remove executable: %v\n", err)
-		} else {
-			green.Printf("✓ Removed %s\n", execPath)
-		}
+	// Remove shell completions
+	removeCompletions(cmd)
+
+	// Clean up project directories if requested
+	if uninstallPurge && !keepProjects {
+		yellow.Fprintln(cmd.OutOrStdout(), "⚠️  Purge mode: removing .ddx directories from projects")
+		// Note: This would need to scan for projects, which is risky
+		// For safety, we'll just inform the user
+		fmt.Fprintln(cmd.OutOrStdout(), "Please manually remove .ddx directories from your projects if needed")
 	}
 
-	// Remove configuration if purge flag is set
-	if uninstallPurge {
-		configPath := filepath.Join(os.Getenv("HOME"), ".ddx.yml")
-		if _, err := os.Stat(configPath); err == nil {
-			fmt.Printf("Removing configuration %s...\n", configPath)
-			if err := os.Remove(configPath); err != nil {
-				red.Printf("Failed to remove config: %v\n", err)
-			} else {
-				green.Printf("✓ Removed configuration\n")
-			}
-		}
+	fmt.Fprintln(cmd.OutOrStdout())
+	green.Fprintln(cmd.OutOrStdout(), "✅ DDx has been uninstalled")
+
+	if keepConfig {
+		fmt.Fprintln(cmd.OutOrStdout(), "Configuration files were preserved")
 	}
 
-	fmt.Println()
-	green.Println("✅ DDx has been uninstalled")
-
-	if !uninstallPurge {
-		cyan.Println("💡 Configuration files were preserved. Use --purge to remove them.")
-	}
-
-	fmt.Println("\nTo reinstall DDx, visit: https://github.com/easel/ddx")
+	fmt.Fprintln(cmd.OutOrStdout())
+	fmt.Fprintln(cmd.OutOrStdout(), "Thank you for using DDx!")
+	fmt.Fprintln(cmd.OutOrStdout(), "You can reinstall anytime from: https://github.com/ddx-tools/ddx")
 
 	return nil
+}
+
+func removeCompletions(cmd *cobra.Command) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return
+	}
+
+	completionFiles := map[string][]string{
+		"bash": {
+			filepath.Join(home, ".local/share/bash-completion/completions/ddx"),
+			"/usr/local/share/bash-completion/completions/ddx",
+		},
+		"zsh": {
+			filepath.Join(home, ".zsh/completions/_ddx"),
+			"/usr/local/share/zsh/site-functions/_ddx",
+		},
+		"fish": {
+			filepath.Join(home, ".config/fish/completions/ddx.fish"),
+		},
+	}
+
+	// Detect shell
+	shell := os.Getenv("SHELL")
+	if shell == "" && runtime.GOOS == "windows" {
+		shell = "powershell"
+	}
+
+	for shellName, paths := range completionFiles {
+		if shell != "" && !contains(shell, shellName) {
+			continue
+		}
+		for _, path := range paths {
+			if _, err := os.Stat(path); err == nil {
+				fmt.Fprintf(cmd.OutOrStdout(), "Removing %s completion: %s\n", shellName, path)
+				os.Remove(path)
+			}
+		}
+	}
+}
+
+func contains(s, substr string) bool {
+	return len(s) >= len(substr) && s[len(s)-len(substr):] == substr
 }

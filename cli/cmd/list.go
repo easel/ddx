@@ -13,32 +13,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	listType    string
-	listSearch  string
-	listVerbose bool
-)
-
-var listCmd = &cobra.Command{
-	Use:   "list",
-	Short: "List available templates, patterns, and configurations",
-	Long: `List all available resources in the DDx toolkit.
-
-You can filter by type or search for specific items.`,
-	RunE: runList,
-}
-
-func init() {
-	rootCmd.AddCommand(listCmd)
-
-	listCmd.Flags().StringVarP(&listType, "type", "t", "", "Filter by type (templates|patterns|configs|prompts|scripts)")
-	listCmd.Flags().StringVarP(&listSearch, "search", "s", "", "Search for specific items")
-	listCmd.Flags().BoolVar(&listVerbose, "verbose", false, "Show verbose output with additional details")
-}
+// Command registration is now handled by command_factory.go
+// This file only contains the runList function implementation
 
 func runList(cmd *cobra.Command, args []string) error {
+	// Get flag values locally
+	listType, _ := cmd.Flags().GetString("type")
+	listSearch, _ := cmd.Flags().GetString("search")
+	// listVerbose, _ := cmd.Flags().GetBool("verbose") // TODO: implement verbose output
+
 	// Get library path using the centralized library resolution
-	libPath, err := config.GetLibraryPath(libraryPath)
+	libPath, err := config.GetLibraryPath(getLibraryPath())
 	if err != nil {
 		return fmt.Errorf("failed to get library path: %w", err)
 	}

@@ -13,6 +13,12 @@ import (
 
 // Security tests validate that the CLI handles security concerns properly
 
+// Helper function to create a fresh root command for tests
+func getSecurityTestRootCommand() *cobra.Command {
+	factory := NewCommandFactory()
+	return factory.NewRootCommand()
+}
+
 // TestSecurity_PathTraversal tests protection against path traversal attacks
 func TestSecurity_PathTraversal(t *testing.T) {
 	tests := []struct {
@@ -66,9 +72,9 @@ func TestSecurity_PathTraversal(t *testing.T) {
 			// Add appropriate command
 			switch tt.command {
 			case "apply":
-				rootCmd.AddCommand(applyCmd)
+				// Commands already registered
 			case "config":
-				rootCmd.AddCommand(configCmd)
+				// Commands already registered
 			}
 
 			_, err := executeCommand(rootCmd, tt.args...)
@@ -112,11 +118,8 @@ variables:
 			},
 			validate: func(t *testing.T, workDir string) {
 				// Check that sensitive data is not logged or exposed
-				rootCmd := &cobra.Command{
-					Use:   "ddx",
-					Short: "DDx CLI",
-				}
-				rootCmd.AddCommand(configCmd)
+				rootCmd := getSecurityTestRootCommand()
+				// Commands already registered
 
 				output, _ := executeCommand(rootCmd, "config")
 
@@ -188,11 +191,8 @@ func TestSecurity_FilePermissions(t *testing.T) {
 				workDir := t.TempDir()
 				require.NoError(t, os.Chdir(workDir))
 
-				rootCmd := &cobra.Command{
-					Use:   "ddx",
-					Short: "DDx CLI",
-				}
-				rootCmd.AddCommand(initCmd)
+				rootCmd := getSecurityTestRootCommand()
+				// Commands already registered
 
 				// Try to initialize (may fail if DDx not installed)
 				executeCommand(rootCmd, "init")
@@ -273,7 +273,7 @@ func TestSecurity_CommandInjection(t *testing.T) {
 				Use:   "ddx",
 				Short: "DDx CLI",
 			}
-			rootCmd.AddCommand(applyCmd)
+			// Commands already registered
 
 			output, err := executeCommand(rootCmd, tt.args...)
 

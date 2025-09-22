@@ -154,11 +154,8 @@ repository:
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Reset global flag variables to ensure test isolation
-			configGlobal = false
-			configLocal = false
-			configInit = false
-			configShow = false
+			// Create a fresh command for test isolation
+			// (flags are now local to the command)
 
 			originalDir, _ := os.Getwd()
 			defer os.Chdir(originalDir)
@@ -172,7 +169,19 @@ repository:
 				Use:   "ddx",
 				Short: "DDx CLI",
 			}
-			rootCmd.AddCommand(configCmd)
+
+			// Create fresh config command to avoid state pollution
+			freshConfigCmd := &cobra.Command{
+				Use:   "config [get|set|validate] [key] [value]",
+				Short: "Manage DDx configuration",
+				RunE:  runConfig,
+			}
+			freshConfigCmd.Flags().BoolP("global", "g", false, "Edit global configuration")
+			freshConfigCmd.Flags().BoolP("local", "l", false, "Edit local project configuration")
+			freshConfigCmd.Flags().Bool("unset", false, "Unset a configuration key")
+			freshConfigCmd.Flags().Bool("list", false, "List all configuration values")
+
+			rootCmd.AddCommand(freshConfigCmd)
 
 			output, err := executeCommand(rootCmd, tt.args...)
 
@@ -189,11 +198,8 @@ repository:
 
 // TestConfigCommand_Global tests global config operations
 func TestConfigCommand_Global(t *testing.T) {
-	// Reset global flag variables to ensure test isolation
-	configGlobal = false
-	configLocal = false
-	configInit = false
-	configShow = false
+	// Create a fresh command for test isolation
+	// (flags are now local to the command)
 
 	// Setup temp home
 	homeDir := t.TempDir()
@@ -214,7 +220,20 @@ defaults:
 		Use:   "ddx",
 		Short: "DDx CLI",
 	}
-	rootCmd.AddCommand(configCmd)
+
+	// Create fresh config command
+	freshConfigCmd := &cobra.Command{
+		Use:   "config [get|set|validate] [key] [value]",
+		Short: "Manage DDx configuration",
+		RunE:  runConfig,
+	}
+	freshConfigCmd.Flags().BoolP("global", "g", false, "Edit global configuration")
+	freshConfigCmd.Flags().BoolP("local", "l", false, "Edit local project configuration")
+	freshConfigCmd.Flags().Bool("unset", false, "Unset a configuration key")
+	freshConfigCmd.Flags().Bool("list", false, "List all configuration values")
+	freshConfigCmd.Flags().Bool("show", false, "Show current configuration")
+
+	rootCmd.AddCommand(freshConfigCmd)
 
 	// Test reading global config
 	output, err := executeCommand(rootCmd, "config", "--global")
@@ -230,7 +249,20 @@ func TestConfigCommand_Help(t *testing.T) {
 		Use:   "ddx",
 		Short: "DDx CLI",
 	}
-	rootCmd.AddCommand(configCmd)
+
+	// Create fresh config command
+	freshConfigCmd := &cobra.Command{
+		Use:   "config [get|set|validate] [key] [value]",
+		Short: "Manage DDx configuration",
+		RunE:  runConfig,
+	}
+	freshConfigCmd.Flags().BoolP("global", "g", false, "Edit global configuration")
+	freshConfigCmd.Flags().BoolP("local", "l", false, "Edit local project configuration")
+	freshConfigCmd.Flags().Bool("unset", false, "Unset a configuration key")
+	freshConfigCmd.Flags().Bool("list", false, "List all configuration values")
+	freshConfigCmd.Flags().Bool("show", false, "Show current configuration")
+
+	rootCmd.AddCommand(freshConfigCmd)
 
 	output, err := executeCommand(rootCmd, "config", "--help")
 

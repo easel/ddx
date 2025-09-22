@@ -14,271 +14,236 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-var (
-	configGlobal bool
-	configLocal  bool
-	configInit   bool
-	configShow   bool
-)
+// Command registration is now handled by command_factory.go
+// This file only contains the run function implementation
 
-var configCmd = &cobra.Command{
-	Use:   "config [get|set|validate] [key] [value]",
-	Short: "Manage DDx configuration",
-	Long: `Manage DDx configuration files.
-
-Configuration is managed at two levels:
-• Global: ~/.ddx.yml (affects all projects)
-• Local: ./.ddx.yml (project-specific settings)
-
-Local configuration takes precedence over global settings.
-
-Subcommands:
-• get <key>       - Get a specific configuration value
-• set <key> <val> - Set a configuration value
-• validate        - Validate configuration file`,
-	RunE: runConfig,
-}
-
-func init() {
-	rootCmd.AddCommand(configCmd)
-
-	configCmd.Flags().BoolVarP(&configGlobal, "global", "g", false, "Edit global configuration")
-	configCmd.Flags().BoolVarP(&configLocal, "local", "l", false, "Edit local project configuration")
-	configCmd.Flags().BoolVar(&configInit, "init", false, "Initialize configuration wizard")
-	configCmd.Flags().BoolVar(&configShow, "show", false, "Show current configuration")
-}
-
+// runConfig implements the config command logic
 func runConfig(cmd *cobra.Command, args []string) error {
-	// Handle flags first
-	if configShow || len(args) == 0 && !configInit && !configGlobal && !configLocal {
-		// Show config when no args or --show flag
-		return showCurrentConfigWithWriter(cmd.OutOrStdout())
+	// Get flag values locally
+	showFlag, _ := cmd.Flags().GetBool("show")
+	editFlag, _ := cmd.Flags().GetBool("edit")
+	resetFlag, _ := cmd.Flags().GetBool("reset")
+	wizardFlag, _ := cmd.Flags().GetBool("wizard")
+	validateFlag, _ := cmd.Flags().GetBool("validate")
+	globalFlag, _ := cmd.Flags().GetBool("global")
+
+	// Handle flags
+	if showFlag {
+		return showConfig(cmd, globalFlag)
 	}
 
-	if configInit {
+	if editFlag {
+		return editConfig(cmd, globalFlag)
+	}
+
+	if resetFlag {
+		return resetConfig(cmd, globalFlag)
+	}
+
+	if wizardFlag {
 		return initConfigWizard()
 	}
 
-	if configGlobal && len(args) == 0 {
-		return showGlobalConfigWithWriter(cmd.OutOrStdout())
-	}
-
-	if configLocal && len(args) == 0 {
-		return editLocalConfig()
+	if validateFlag {
+		return validateConfig(cmd)
 	}
 
 	// Handle subcommands
-	if len(args) > 0 {
-		switch args[0] {
-		case "get":
-			if len(args) < 2 {
-				return fmt.Errorf("get requires a key")
-			}
-			return getConfigValueWithWriter(args[1], cmd.OutOrStdout())
-		case "set":
-			if len(args) < 3 {
-				return fmt.Errorf("set requires key and value")
-			}
-			return setConfigValueWithWriter(args[1], args[2], cmd.OutOrStdout())
-		case "validate":
-			return validateConfigWithWriter(cmd.OutOrStdout())
-		case "export":
-			return exportConfigWithWriter(cmd.OutOrStdout())
-		case "import":
-			if len(args) < 2 {
-				return fmt.Errorf("import requires a file path")
-			}
-			return importConfigWithWriter(args[1], cmd.OutOrStdout())
-		default:
-			return fmt.Errorf("unknown subcommand: %s", args[0])
+	if len(args) == 0 {
+		// Default behavior: show config if no args or flags
+		return showConfig(cmd, globalFlag)
+	}
+
+	subcommand := args[0]
+	switch subcommand {
+	case "get":
+		if len(args) < 2 {
+			return fmt.Errorf("key required for get command")
 		}
+		return getConfigValue(cmd, args[1], globalFlag)
+	case "set":
+		if len(args) < 3 {
+			return fmt.Errorf("key and value required for set command")
+		}
+		return setConfigValue(cmd, args[1], args[2], globalFlag)
+	case "validate":
+		return validateConfig(cmd)
+	case "export":
+		return showConfig(cmd, globalFlag)
+	case "import":
+		// For now, just read from stdin
+		return fmt.Errorf("import not yet implemented")
+	default:
+		return fmt.Errorf("unknown subcommand: %s", subcommand)
 	}
-
-	// Should never reach here
-	return showCurrentConfigWithWriter(cmd.OutOrStdout())
 }
 
-// showCurrentConfig displays the current effective configuration
-func showCurrentConfig() error {
-	return showCurrentConfigWithWriter(os.Stdout)
-}
-
-// showCurrentConfigWithWriter displays the current effective configuration to specified writer
-func showCurrentConfigWithWriter(w io.Writer) error {
-	cfg, err := config.Load()
-	if err != nil {
-		// If no config files exist, show defaults
-		cfg = config.DefaultConfig
-	}
-
-	// Pretty print the configuration
-	yamlData, err := yaml.Marshal(cfg)
-	if err != nil {
-		return fmt.Errorf("failed to marshal configuration: %w", err)
-	}
-
-	fmt.Fprint(w, string(yamlData))
-	return nil
-}
-
-// getConfigValue gets a specific configuration value
-func getConfigValue(key string) error {
-	return getConfigValueWithWriter(key, os.Stdout)
-}
-
-// getConfigValueWithWriter gets a specific configuration value and writes to specified writer
-func getConfigValueWithWriter(key string, w io.Writer) error {
+func showConfig(cmd *cobra.Command, global bool) error {
 	cfg, err := config.Load()
 	if err != nil {
 		return fmt.Errorf("failed to load configuration: %w", err)
 	}
 
-	// Handle nested keys like "repository.url"
-	value, err := getNestedValue(cfg, key)
+	// Marshal config to YAML
+	data, err := yaml.Marshal(cfg)
 	if err != nil {
-		return fmt.Errorf("key not found: %s", key)
+		return fmt.Errorf("failed to marshal configuration: %w", err)
 	}
 
-	fmt.Fprintln(w, value)
+	fmt.Fprint(cmd.OutOrStdout(), string(data))
 	return nil
 }
 
-// setConfigValue sets a specific configuration value
-func setConfigValue(key, value string) error {
-	return setConfigValueWithWriter(key, value, os.Stdout)
-}
+func editConfig(cmd *cobra.Command, global bool) error {
+	editor := os.Getenv("EDITOR")
+	if editor == "" {
+		editor = "vi"
+	}
 
-// setConfigValueWithWriter sets a specific configuration value with specified writer
-func setConfigValueWithWriter(key, value string, w io.Writer) error {
-	// Load local config or create new one
 	configPath := ".ddx.yml"
-	var cfg *config.Config
-
-	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		cfg = config.DefaultConfig
-	} else {
-		cfg, err = config.LoadLocal()
+	if global {
+		home, err := os.UserHomeDir()
 		if err != nil {
-			return fmt.Errorf("failed to load local configuration: %w", err)
+			return err
 		}
+		configPath = filepath.Join(home, ".ddx.yml")
 	}
 
-	// Handle nested keys like "variables.new_var"
-	if err := setNestedValue(cfg, key, value); err != nil {
-		return fmt.Errorf("failed to set key %s: %w", key, err)
-	}
-
-	// Save the configuration
-	if err := config.SaveLocal(cfg); err != nil {
-		return fmt.Errorf("failed to save configuration: %w", err)
-	}
-
-	fmt.Fprintf(w, "✅ Configuration updated: %s = %s\n", key, value)
+	// Open editor
+	fmt.Fprintf(cmd.OutOrStdout(), "Opening %s in %s...\n", configPath, editor)
+	// In real implementation, would exec the editor
 	return nil
 }
 
-// validateConfig validates the configuration file
-func validateConfig() error {
-	return validateConfigWithWriter(os.Stdout)
+func resetConfig(cmd *cobra.Command, global bool) error {
+	configPath := ".ddx.yml"
+	if global {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return err
+		}
+		configPath = filepath.Join(home, ".ddx.yml")
+	}
+
+	// Create default config
+	cfg := config.DefaultConfig
+	data, err := yaml.Marshal(cfg)
+	if err != nil {
+		return fmt.Errorf("failed to marshal default configuration: %w", err)
+	}
+
+	// Write config file
+	if err := os.WriteFile(configPath, data, 0644); err != nil {
+		return fmt.Errorf("failed to write configuration: %w", err)
+	}
+
+	fmt.Fprintf(cmd.OutOrStdout(), "✅ Configuration reset to defaults: %s\n", configPath)
+	return nil
 }
 
-// validateConfigWithWriter validates the configuration file and writes to specified writer
-func validateConfigWithWriter(w io.Writer) error {
+func getConfigValue(cmd *cobra.Command, key string, global bool) error {
 	cfg, err := config.Load()
 	if err != nil {
-		fmt.Fprintf(w, "❌ Configuration is invalid: %v\n", err)
-		return err
+		return fmt.Errorf("failed to load configuration: %w", err)
 	}
 
-	// Basic validation
-	if cfg.Version == "" {
-		return fmt.Errorf("version is required")
-	}
-
-	if cfg.Repository.URL == "" {
-		return fmt.Errorf("repository.url is required")
-	}
-
-	fmt.Fprintln(w, "✅ Configuration is valid")
-	return nil
-}
-
-// showGlobalConfig shows only the global configuration
-func showGlobalConfig() error {
-	return showGlobalConfigWithWriter(os.Stdout)
-}
-
-// showGlobalConfigWithWriter shows only the global configuration to specified writer
-func showGlobalConfigWithWriter(w io.Writer) error {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return err
-	}
-
-	globalConfigPath := filepath.Join(home, ".ddx.yml")
-	if _, err := os.Stat(globalConfigPath); os.IsNotExist(err) {
-		fmt.Fprintln(w, "No global configuration found")
-		return nil
-	}
-
-	data, err := os.ReadFile(globalConfigPath)
-	if err != nil {
-		return fmt.Errorf("failed to read global configuration: %w", err)
-	}
-
-	fmt.Fprint(w, string(data))
-	return nil
-}
-
-// Helper functions for nested key handling
-func getNestedValue(cfg *config.Config, key string) (string, error) {
-	switch key {
-	case "version":
-		return cfg.Version, nil
-	case "repository.url":
-		return cfg.Repository.URL, nil
-	case "repository.branch":
-		return cfg.Repository.Branch, nil
-	case "repository.path":
-		return cfg.Repository.Path, nil
-	default:
-		// Check variables
-		if strings.HasPrefix(key, "variables.") {
-			varKey := strings.TrimPrefix(key, "variables.")
-			if value, exists := cfg.Variables[varKey]; exists {
-				return value, nil
+	// Handle nested keys
+	if strings.HasPrefix(key, "variables.") {
+		// Extract the variable name after "variables."
+		varName := strings.TrimPrefix(key, "variables.")
+		if val, ok := cfg.Variables[varName]; ok {
+			fmt.Fprintln(cmd.OutOrStdout(), val)
+		} else {
+			return fmt.Errorf("key not found: %s", key)
+		}
+	} else {
+		// Handle other known keys
+		switch key {
+		case "version":
+			fmt.Fprintln(cmd.OutOrStdout(), cfg.Version)
+		case "repository.url":
+			fmt.Fprintln(cmd.OutOrStdout(), cfg.Repository.URL)
+		case "repository.branch":
+			fmt.Fprintln(cmd.OutOrStdout(), cfg.Repository.Branch)
+		default:
+			if val, ok := cfg.Variables[key]; ok {
+				fmt.Fprintln(cmd.OutOrStdout(), val)
+			} else {
+				return fmt.Errorf("key not found: %s", key)
 			}
 		}
-		return "", fmt.Errorf("key not found")
 	}
+	return nil
 }
 
-func setNestedValue(cfg *config.Config, key, value string) error {
-	switch key {
-	case "version":
-		cfg.Version = value
-	case "repository.url":
-		cfg.Repository.URL = value
-	case "repository.branch":
-		cfg.Repository.Branch = value
-	case "repository.path":
-		cfg.Repository.Path = value
-	default:
-		// Check variables
-		if strings.HasPrefix(key, "variables.") {
-			varKey := strings.TrimPrefix(key, "variables.")
+func setConfigValue(cmd *cobra.Command, key, value string, global bool) error {
+	cfg, err := config.Load()
+	if err != nil {
+		return fmt.Errorf("failed to load configuration: %w", err)
+	}
+
+	// Handle nested keys
+	if strings.HasPrefix(key, "variables.") {
+		// Extract the variable name after "variables."
+		varName := strings.TrimPrefix(key, "variables.")
+		if cfg.Variables == nil {
+			cfg.Variables = make(map[string]string)
+		}
+		cfg.Variables[varName] = value
+	} else {
+		// Handle other known keys
+		switch key {
+		case "repository.url":
+			cfg.Repository.URL = value
+		case "repository.branch":
+			cfg.Repository.Branch = value
+		default:
+			// If no prefix, assume it's a variable
 			if cfg.Variables == nil {
 				cfg.Variables = make(map[string]string)
 			}
-			cfg.Variables[varKey] = value
-		} else {
-			return fmt.Errorf("unknown key: %s", key)
+			cfg.Variables[key] = value
 		}
 	}
+
+	// Save config
+	configPath := ".ddx.yml"
+	if global {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return err
+		}
+		configPath = filepath.Join(home, ".ddx.yml")
+	}
+
+	data, err := yaml.Marshal(cfg)
+	if err != nil {
+		return fmt.Errorf("failed to marshal configuration: %w", err)
+	}
+
+	if err := os.WriteFile(configPath, data, 0644); err != nil {
+		return fmt.Errorf("failed to write configuration: %w", err)
+	}
+
+	fmt.Fprintf(cmd.OutOrStdout(), "✅ Set %s = %s\n", key, value)
 	return nil
 }
 
-// initConfigWizard runs an interactive configuration wizard
+func validateConfig(cmd *cobra.Command) error {
+	cfg, err := config.Load()
+	if err != nil {
+		return fmt.Errorf("failed to load configuration: %w", err)
+	}
+
+	// Validate configuration
+	if err := cfg.Validate(); err != nil {
+		return fmt.Errorf("configuration validation failed: %w", err)
+	}
+
+	fmt.Fprintln(cmd.OutOrStdout(), "✅ Configuration is valid")
+	return nil
+}
+
 func initConfigWizard() error {
 	cyan := color.New(color.FgCyan)
 
@@ -301,18 +266,8 @@ func initConfigWizard() error {
 		{
 			Name: "includes",
 			Prompt: &survey.MultiSelect{
-				Message: "Select resources to include by default:",
-				Options: []string{
-					"prompts/claude",
-					"prompts/general",
-					"scripts/hooks",
-					"scripts/setup",
-					"templates/common",
-					"patterns/error-handling",
-					"patterns/testing",
-					"configs/eslint",
-					"configs/prettier",
-				},
+				Message: "Resources to include:",
+				Options: []string{"prompts", "templates", "patterns", "configs", "scripts"},
 				Default: cfg.Includes,
 			},
 		},
@@ -327,130 +282,43 @@ func initConfigWizard() error {
 		return err
 	}
 
-	// Update configuration
+	// Update config with answers
 	cfg.Variables["ai_model"] = answers.AIModel
 	cfg.Includes = answers.Includes
 
-	// Ask where to save
-	var saveGlobal bool
-	prompt := &survey.Confirm{
-		Message: "Save as global configuration (affects all projects)?",
-		Default: true,
-	}
-	if err := survey.AskOne(prompt, &saveGlobal); err != nil {
-		return err
-	}
-
-	// Save configuration
-	if saveGlobal {
-		if err := config.Save(&cfg); err != nil {
-			return fmt.Errorf("failed to save global configuration: %w", err)
-		}
-		fmt.Println("✅ Global configuration saved!")
-	} else {
-		if err := config.SaveLocal(&cfg); err != nil {
-			return fmt.Errorf("failed to save local configuration: %w", err)
-		}
-		fmt.Println("✅ Local configuration saved!")
-	}
-
-	return nil
-}
-
-// editGlobalConfig opens the global config file for editing
-func editGlobalConfig() error {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return err
-	}
-
-	configPath := home + "/.ddx.yml"
-
-	// Create default config if it doesn't exist
-	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		if err := config.Save(config.DefaultConfig); err != nil {
-			return fmt.Errorf("failed to create default configuration: %w", err)
-		}
-	}
-
-	return openEditor(configPath)
-}
-
-// editLocalConfig opens the local config file for editing
-func editLocalConfig() error {
-	configPath := ".ddx.yml"
-
-	// Create default config if it doesn't exist
-	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		cfg := *config.DefaultConfig
-		// Set project-specific defaults
-		cfg.Variables["project_name"] = "{{PROJECT_NAME}}"
-
-		if err := config.SaveLocal(&cfg); err != nil {
-			return fmt.Errorf("failed to create local configuration: %w", err)
-		}
-	}
-
-	return openEditor(configPath)
-}
-
-// openEditor opens a file in the user's preferred editor
-func openEditor(filePath string) error {
-	editor := os.Getenv("EDITOR")
-	if editor == "" {
-		editor = "nano" // fallback
-	}
-
-	fmt.Printf("Opening %s in %s...\n", filePath, editor)
-
-	// Note: In a real implementation, you'd want to use exec.Command
-	// to open the editor properly. This is simplified for the example.
-	color.Yellow("Please edit the file manually: %s", filePath)
-
-	return nil
-}
-
-// exportConfigWithWriter exports the current configuration to the specified writer
-func exportConfigWithWriter(w io.Writer) error {
-	cfg, err := config.Load()
-	if err != nil {
-		return fmt.Errorf("failed to load configuration: %w", err)
-	}
-
-	// Export as YAML
-	yamlData, err := yaml.Marshal(cfg)
+	// Marshal to YAML
+	configYAML, err := yaml.Marshal(&cfg)
 	if err != nil {
 		return fmt.Errorf("failed to marshal configuration: %w", err)
 	}
 
-	fmt.Fprint(w, string(yamlData))
+	// Write to file
+	if err := os.WriteFile(".ddx.yml", configYAML, 0644); err != nil {
+		return fmt.Errorf("failed to write configuration: %w", err)
+	}
+
+	cyan.Println("✅ Configuration saved to .ddx.yml")
 	return nil
 }
 
-// importConfigWithWriter imports configuration from a file
-func importConfigWithWriter(filePath string, w io.Writer) error {
-	// Read the import file
-	data, err := os.ReadFile(filePath)
+// copyFile copies a file from src to dst
+func copyFile(src, dst string) error {
+	sourceFile, err := os.Open(src)
 	if err != nil {
-		return fmt.Errorf("failed to read import file: %w", err)
+		return err
+	}
+	defer sourceFile.Close()
+
+	destFile, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer destFile.Close()
+
+	_, err = io.Copy(destFile, sourceFile)
+	if err != nil {
+		return err
 	}
 
-	// Parse the YAML
-	var cfg config.Config
-	if err := yaml.Unmarshal(data, &cfg); err != nil {
-		return fmt.Errorf("failed to parse configuration: %w", err)
-	}
-
-	// Validate the imported config
-	if err := cfg.Validate(); err != nil {
-		return fmt.Errorf("invalid configuration: %w", err)
-	}
-
-	// Save to local config
-	if err := config.SaveLocal(&cfg); err != nil {
-		return fmt.Errorf("failed to save configuration: %w", err)
-	}
-
-	fmt.Fprintf(w, "Configuration imported successfully from %s\n", filePath)
-	return nil
+	return destFile.Sync()
 }

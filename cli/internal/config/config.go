@@ -19,12 +19,13 @@ import (
 
 // Config represents the DDx configuration
 type Config struct {
-	Version     string            `yaml:"version"`
-	LibraryPath string            `yaml:"library_path,omitempty"`
-	Repository  Repository        `yaml:"repository"`
-	Includes    []string          `yaml:"includes"`
-	Overrides   map[string]string `yaml:"overrides,omitempty"`
-	Variables   map[string]string `yaml:"variables"`
+	Version         string            `yaml:"version"`
+	LibraryPath     string            `yaml:"library_path,omitempty"`
+	Repository      Repository        `yaml:"repository"`
+	Includes        []string          `yaml:"includes"`
+	Overrides       map[string]string `yaml:"overrides,omitempty"`
+	Variables       map[string]string `yaml:"variables"`
+	PersonaBindings map[string]string `yaml:"persona_bindings,omitempty"`
 }
 
 // Repository configuration
@@ -85,6 +86,8 @@ var DefaultConfig = &Config{
 	Overrides: make(map[string]string),
 	Variables: map[string]string{
 		"ai_model": "claude-3-opus",
+		"author":   "", // Will be populated from git config or environment
+		"email":    "", // Will be populated from git config or environment
 	},
 }
 
@@ -439,11 +442,12 @@ func (c *Config) Validate() error {
 // Merge combines this config with another, with the other taking precedence
 func (c *Config) Merge(other *Config) *Config {
 	result := &Config{
-		Version:     c.Version,
-		LibraryPath: c.LibraryPath,
-		Includes:    make([]string, len(c.Includes)),
-		Overrides:   make(map[string]string),
-		Variables:   make(map[string]string),
+		Version:         c.Version,
+		LibraryPath:     c.LibraryPath,
+		Includes:        make([]string, len(c.Includes)),
+		Overrides:       make(map[string]string),
+		Variables:       make(map[string]string),
+		PersonaBindings: make(map[string]string),
 	}
 
 	// Copy includes
@@ -490,6 +494,14 @@ func (c *Config) Merge(other *Config) *Config {
 	}
 	for k, v := range other.Overrides {
 		result.Overrides[k] = v // Override
+	}
+
+	// Copy and merge persona bindings
+	for k, v := range c.PersonaBindings {
+		result.PersonaBindings[k] = v
+	}
+	for k, v := range other.PersonaBindings {
+		result.PersonaBindings[k] = v // Override
 	}
 
 	return result

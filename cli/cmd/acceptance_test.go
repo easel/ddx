@@ -15,6 +15,12 @@ import (
 // Acceptance tests validate user stories and business requirements
 // These tests follow the Given/When/Then pattern from user stories
 
+// Helper function to create a fresh root command for tests
+func getTestRootCommand() *cobra.Command {
+	factory := NewCommandFactory()
+	return factory.NewRootCommand()
+}
+
 // TestAcceptance_US001_InitializeProject tests US-001: Initialize DDX in Project
 func TestAcceptance_US001_InitializeProject(t *testing.T) {
 	tests := []struct {
@@ -35,11 +41,7 @@ func TestAcceptance_US001_InitializeProject(t *testing.T) {
 			},
 			when: func(t *testing.T, dir string) error {
 				// When: I run `ddx init`
-				rootCmd := &cobra.Command{
-					Use:   "ddx",
-					Short: "DDx CLI",
-				}
-				rootCmd.AddCommand(initCmd)
+				rootCmd := getTestRootCommand()
 				_, err := executeCommand(rootCmd, "init")
 				return err
 			},
@@ -78,11 +80,7 @@ func TestAcceptance_US001_InitializeProject(t *testing.T) {
 			},
 			when: func(t *testing.T, dir string) error {
 				// When: I run `ddx init --template test-template`
-				rootCmd := &cobra.Command{
-					Use:   "ddx",
-					Short: "DDx CLI",
-				}
-				rootCmd.AddCommand(initCmd)
+				rootCmd := getTestRootCommand()
 				_, err := executeCommand(rootCmd, "init", "--template", "test-template")
 				return err
 			},
@@ -114,11 +112,7 @@ repository:
 			},
 			when: func(t *testing.T, dir string) error {
 				// When: I run `ddx init` again
-				rootCmd := &cobra.Command{
-					Use:   "ddx",
-					Short: "DDx CLI",
-				}
-				rootCmd.AddCommand(initCmd)
+				rootCmd := getTestRootCommand()
 				_, err := executeCommand(rootCmd, "init")
 				return err
 			},
@@ -179,11 +173,7 @@ func TestAcceptance_US002_ListAvailableAssets(t *testing.T) {
 			},
 			when: func(t *testing.T) (string, error) {
 				// When: I run `ddx list`
-				rootCmd := &cobra.Command{
-					Use:   "ddx",
-					Short: "DDx CLI",
-				}
-				rootCmd.AddCommand(listCmd)
+				rootCmd := getTestRootCommand()
 				return executeCommand(rootCmd, "list")
 			},
 			then: func(t *testing.T, output string, err error) {
@@ -212,11 +202,7 @@ func TestAcceptance_US002_ListAvailableAssets(t *testing.T) {
 			},
 			when: func(t *testing.T) (string, error) {
 				// When: I run `ddx list templates`
-				rootCmd := &cobra.Command{
-					Use:   "ddx",
-					Short: "DDx CLI",
-				}
-				rootCmd.AddCommand(listCmd)
+				rootCmd := getTestRootCommand()
 				return executeCommand(rootCmd, "list", "templates")
 			},
 			then: func(t *testing.T, output string, err error) {
@@ -284,11 +270,7 @@ variables:
 			},
 			when: func(t *testing.T, workDir string) error {
 				// When: I run `ddx apply templates/basic`
-				rootCmd := &cobra.Command{
-					Use:   "ddx",
-					Short: "DDx CLI",
-				}
-				rootCmd.AddCommand(applyCmd)
+				rootCmd := getTestRootCommand()
 				_, err := executeCommand(rootCmd, "apply", "templates/basic")
 				return err
 			},
@@ -332,11 +314,7 @@ variables:
 			},
 			when: func(t *testing.T, workDir string) error {
 				// When: I run `ddx apply --dry-run templates/preview`
-				rootCmd := &cobra.Command{
-					Use:   "ddx",
-					Short: "DDx CLI",
-				}
-				rootCmd.AddCommand(applyCmd)
+				rootCmd := getTestRootCommand()
 				_, err := executeCommand(rootCmd, "apply", "--dry-run", "templates/preview")
 				return err
 			},
@@ -385,11 +363,7 @@ variables:
 		))
 
 		// When: I run `ddx config`
-		rootCmd := &cobra.Command{
-			Use:   "ddx",
-			Short: "DDx CLI",
-		}
-		rootCmd.AddCommand(configCmd)
+		rootCmd := getTestRootCommand()
 		output, err := executeCommand(rootCmd, "config")
 
 		// Then: I see my current configuration clearly displayed
@@ -411,11 +385,7 @@ variables:
 		require.NoError(t, os.WriteFile(configPath, []byte(config), 0644))
 
 		// When: I run `ddx config set variables.new_value "updated"`
-		rootCmd := &cobra.Command{
-			Use:   "ddx",
-			Short: "DDx CLI",
-		}
-		rootCmd.AddCommand(configCmd)
+		rootCmd := getTestRootCommand()
 		_, err := executeCommand(rootCmd, "config", "set", "variables.new_value", "updated")
 
 		// Then: the configuration is updated with the new value
@@ -460,15 +430,7 @@ func TestAcceptance_WorkflowIntegration(t *testing.T) {
 library_path: ./library`)
 		require.NoError(t, os.WriteFile(".ddx.yml", config, 0644))
 
-		rootCmd := &cobra.Command{
-			Use:   "ddx",
-			Short: "DDx CLI",
-		}
-		rootCmd.AddCommand(initCmd)
-		rootCmd.AddCommand(listCmd)
-		rootCmd.AddCommand(applyCmd)
-		rootCmd.AddCommand(configCmd)
-
+		rootCmd := getTestRootCommand()
 		_, initErr := executeCommand(rootCmd, "init")
 		// Note: May fail if DDX repo not available
 		_ = initErr
@@ -534,13 +496,7 @@ func TestAcceptance_ErrorScenarios(t *testing.T) {
 
 				tt.setup()
 
-				rootCmd := &cobra.Command{
-					Use:   "ddx",
-					Short: "DDx CLI",
-				}
-				rootCmd.AddCommand(initCmd)
-				rootCmd.AddCommand(applyCmd)
-
+				rootCmd := getTestRootCommand()
 				output, err := executeCommand(rootCmd, tt.command...)
 
 				// Verify clear error message

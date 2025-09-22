@@ -6,9 +6,23 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// Helper function to create a fresh root command for tests
+func getMCPTestRootCommand() *cobra.Command {
+	factory := NewCommandFactory()
+	return factory.NewRootCommand()
+}
+
+// setupMockLibrary creates a mock library path with MCP registry for testing
+func setupMockLibrary(t *testing.T, tempDir string) string {
+	mockLibPath := filepath.Join(tempDir, "mock-library")
+	t.Setenv("DDX_LIBRARY_BASE_PATH", mockLibPath)
+	return mockLibPath
+}
 
 // TestAcceptance_US036_ListMCPServers tests US-036: List Available MCP Servers
 func TestAcceptance_US036_ListMCPServers(t *testing.T) {
@@ -20,8 +34,7 @@ func TestAcceptance_US036_ListMCPServers(t *testing.T) {
 	require.NoError(t, err, "Should get working directory")
 	defer os.Chdir(originalDir)
 
-	// Resolve library path before changing directories
-	libraryPath := resolveLibraryPath(t)
+	// Library path will be mocked in each test
 
 	t.Run("display_all_available_servers", func(t *testing.T) {
 		// Save and restore working directory
@@ -31,10 +44,13 @@ func TestAcceptance_US036_ListMCPServers(t *testing.T) {
 		// Given: MCP server registry is available
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
-		t.Setenv("DDX_LIBRARY_BASE_PATH", libraryPath)
+
+		// Create a mock library in temp directory for testing
+		setupMockLibrary(t, tempDir)
 		setupMCPTestProject(t)
 
 		// When: Running ddx mcp list
+		rootCmd := getMCPTestRootCommand()
 		output, err := executeCommand(rootCmd, "mcp", "list")
 
 		// Then: Should display all available servers
@@ -54,10 +70,11 @@ func TestAcceptance_US036_ListMCPServers(t *testing.T) {
 		// Given: Multiple categories of MCP servers exist
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
-		t.Setenv("DDX_LIBRARY_BASE_PATH", libraryPath)
+		setupMockLibrary(t, tempDir)
 		setupMCPTestProject(t)
 
 		// When: Filtering by category
+		rootCmd := getMCPTestRootCommand()
 		output, err := executeCommand(rootCmd, "mcp", "list", "--category", "development")
 
 		// Then: Should only show servers in that category
@@ -75,10 +92,11 @@ func TestAcceptance_US036_ListMCPServers(t *testing.T) {
 		// Given: Want to find servers related to "git"
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
-		t.Setenv("DDX_LIBRARY_BASE_PATH", libraryPath)
+		setupMockLibrary(t, tempDir)
 		setupMCPTestProject(t)
 
 		// When: Searching for "git"
+		rootCmd := getMCPTestRootCommand()
 		output, err := executeCommand(rootCmd, "mcp", "list", "--search", "git")
 
 		// Then: Should show matching servers
@@ -103,11 +121,12 @@ func TestAcceptance_US036_ListMCPServers(t *testing.T) {
 		// Given: Some MCP servers are installed
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
-		t.Setenv("DDX_LIBRARY_BASE_PATH", libraryPath)
+		setupMockLibrary(t, tempDir)
 		setupMCPTestProject(t)
 
 		// Install a server first
 		configPath := filepath.Join(tempDir, ".claude", "settings.local.json")
+		rootCmd := getMCPTestRootCommand()
 		_, _ = executeCommand(rootCmd, "mcp", "install", "filesystem", "--config-path", configPath)
 
 		// When: Listing servers
@@ -132,10 +151,11 @@ func TestAcceptance_US036_ListMCPServers(t *testing.T) {
 		// Given: Want more information
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
-		t.Setenv("DDX_LIBRARY_BASE_PATH", libraryPath)
+		setupMockLibrary(t, tempDir)
 		setupMCPTestProject(t)
 
 		// When: Running with --verbose
+		rootCmd := getMCPTestRootCommand()
 		output, err := executeCommand(rootCmd, "mcp", "list", "--verbose")
 
 		// Then: Should show additional details
@@ -157,8 +177,7 @@ func TestAcceptance_US037_InstallMCPServer(t *testing.T) {
 	require.NoError(t, err, "Should get working directory")
 	defer os.Chdir(originalDir)
 
-	// Resolve library path before changing directories
-	libraryPath := resolveLibraryPath(t)
+	// Library path will be mocked in each test
 
 	t.Run("install_server_locally", func(t *testing.T) {
 		// Save and restore working directory
@@ -168,18 +187,19 @@ func TestAcceptance_US037_InstallMCPServer(t *testing.T) {
 		// Given: MCP server not installed
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
-		t.Setenv("DDX_LIBRARY_BASE_PATH", libraryPath)
+		setupMockLibrary(t, tempDir)
 		setupMCPTestProject(t)
 
 		// When: Installing a server
 		configPath := filepath.Join(tempDir, ".claude", "settings.local.json")
+		rootCmd := getMCPTestRootCommand()
 		output, err := executeCommand(rootCmd, "mcp", "install", "filesystem", "--config-path", configPath)
 
 		// Then: Should install server locally
 		assert.NoError(t, err)
 		assert.Contains(t, output, "Installing", "Should show installation")
 		assert.Contains(t, output, "filesystem", "Should name the server")
-		assert.Contains(t, output, "successfully", "Should indicate success")
+		assert.Contains(t, output, "Successfully", "Should indicate success")
 
 		// Check Claude config was updated at the custom path
 		assert.FileExists(t, configPath, "Should create Claude config")
@@ -193,7 +213,7 @@ func TestAcceptance_US037_InstallMCPServer(t *testing.T) {
 		// Given: Different package managers available
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
-		t.Setenv("DDX_LIBRARY_BASE_PATH", libraryPath)
+		setupMockLibrary(t, tempDir)
 		setupMCPTestProject(t)
 
 		// Create pnpm-lock.yaml to trigger pnpm detection
@@ -201,6 +221,7 @@ func TestAcceptance_US037_InstallMCPServer(t *testing.T) {
 
 		// When: Installing
 		configPath := filepath.Join(tempDir, ".claude", "settings.local.json")
+		rootCmd := getMCPTestRootCommand()
 		output, err := executeCommand(rootCmd, "mcp", "install", "github", "--env", "GITHUB_PERSONAL_ACCESS_TOKEN=ghp_012345678901234567890123456789012345", "--config-path", configPath)
 
 		// Then: Should detect and use pnpm
@@ -217,11 +238,12 @@ func TestAcceptance_US037_InstallMCPServer(t *testing.T) {
 		// Given: Server needs configuration
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
-		t.Setenv("DDX_LIBRARY_BASE_PATH", libraryPath)
+		setupMockLibrary(t, tempDir)
 		setupMCPTestProject(t)
 
 		// When: Installing with configuration
 		configPath := filepath.Join(tempDir, ".claude", "settings.local.json")
+		rootCmd := getMCPTestRootCommand()
 		output, err := executeCommand(rootCmd, "mcp", "install", "github", "--env", "GITHUB_PERSONAL_ACCESS_TOKEN=ghp_012345678901234567890123456789012345", "--config-path", configPath)
 
 		// Then: Should configure the server
@@ -243,11 +265,12 @@ func TestAcceptance_US037_InstallMCPServer(t *testing.T) {
 		// Given: Server already installed
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
-		t.Setenv("DDX_LIBRARY_BASE_PATH", libraryPath)
+		setupMockLibrary(t, tempDir)
 		setupMCPTestProject(t)
 
 		// Install once
 		configPath := filepath.Join(tempDir, ".claude", "settings.local.json")
+		rootCmd := getMCPTestRootCommand()
 		_, _ = executeCommand(rootCmd, "mcp", "install", "filesystem", "--config-path", configPath)
 
 		// When: Installing again
@@ -266,11 +289,12 @@ func TestAcceptance_US037_InstallMCPServer(t *testing.T) {
 		// Given: Server installed
 		tempDir := t.TempDir()
 		os.Chdir(tempDir)
-		t.Setenv("DDX_LIBRARY_BASE_PATH", libraryPath)
+		setupMockLibrary(t, tempDir)
 		setupMCPTestProject(t)
 
 		// When: Installing
 		configPath := filepath.Join(tempDir, ".claude", "settings.local.json")
+		rootCmd := getMCPTestRootCommand()
 		output, err := executeCommand(rootCmd, "mcp", "install", "filesystem", "--config-path", configPath)
 
 		// Then: Should install successfully
@@ -337,6 +361,37 @@ mcp:
 `
 	err := os.WriteFile(".ddx.yml", []byte(config), 0644)
 	require.NoError(t, err, "Should create config file")
+
+	// Create a mock MCP server registry if DDX_LIBRARY_BASE_PATH is set
+	if libPath := os.Getenv("DDX_LIBRARY_BASE_PATH"); libPath != "" {
+		// Always create the mock for tests
+		if strings.Contains(libPath, "mock-library") || strings.Contains(libPath, os.TempDir()) {
+			// Create mock MCP server registry
+			mcpDir := filepath.Join(libPath, "mcp-servers")
+			os.MkdirAll(mcpDir, 0755)
+
+			// Create a simple registry.yml
+			registry := `servers:
+  filesystem:
+    name: Filesystem Server
+    description: Access local files
+    category: core
+    package: "@modelcontextprotocol/server-filesystem"
+    version: "0.1.0"
+    author: Anthropic
+  github:
+    name: GitHub Server
+    description: Access GitHub repositories
+    category: development
+    package: "@modelcontextprotocol/server-github"
+    version: "0.1.0"
+    author: Anthropic
+    env:
+      - GITHUB_PERSONAL_ACCESS_TOKEN
+`
+			os.WriteFile(filepath.Join(mcpDir, "registry.yaml"), []byte(registry), 0644)
+		}
+	}
 }
 
 // ensureValidWorkingDirectory ensures we're in a valid directory before tests

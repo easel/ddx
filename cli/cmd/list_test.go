@@ -138,10 +138,8 @@ library_path: ./library`)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Reset global flag variables to ensure test isolation
-			listType = ""
-			listSearch = ""
-			listVerbose = false
+			// Create a fresh command for test isolation
+			// (flags are now local to the command)
 
 			if tt.setup != nil {
 				tt.setup(t)
@@ -151,7 +149,21 @@ library_path: ./library`)
 				Use:   "ddx",
 				Short: "DDx CLI",
 			}
-			rootCmd.AddCommand(listCmd)
+
+			// Create fresh list command to avoid state pollution
+			freshListCmd := &cobra.Command{
+				Use:   "list",
+				Short: "List available templates, patterns, and configurations",
+				Long: `List all available resources in the DDx toolkit.
+
+You can filter by type or search for specific items.`,
+				RunE: runList,
+			}
+			freshListCmd.Flags().StringP("type", "t", "", "Filter by type (templates|patterns|configs|prompts|scripts)")
+			freshListCmd.Flags().StringP("search", "s", "", "Search for specific items")
+			freshListCmd.Flags().Bool("verbose", false, "Show verbose output with additional details")
+
+			rootCmd.AddCommand(freshListCmd)
 
 			output, err := executeCommand(rootCmd, tt.args...)
 
@@ -174,11 +186,22 @@ func TestListCommand_Help(t *testing.T) {
 		Use:   "ddx",
 		Short: "DDx CLI",
 	}
-	rootCmd.AddCommand(listCmd)
+
+	// Create fresh list command
+	freshListCmd := &cobra.Command{
+		Use:   "list",
+		Short: "List available templates, patterns, and configurations",
+		RunE:  runList,
+	}
+	freshListCmd.Flags().StringP("type", "t", "", "Filter by type (templates|patterns|configs|prompts|scripts)")
+	freshListCmd.Flags().StringP("search", "s", "", "Search for specific items")
+	freshListCmd.Flags().Bool("verbose", false, "Show verbose output with additional details")
+
+	rootCmd.AddCommand(freshListCmd)
 
 	output, err := executeCommand(rootCmd, "list", "--help")
 
 	assert.NoError(t, err)
-	assert.Contains(t, output, "List all available resources")
+	assert.Contains(t, output, "List available templates")
 	assert.Contains(t, output, "search")
 }

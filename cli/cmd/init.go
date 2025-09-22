@@ -11,34 +11,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	initTemplate string
-	initForce    bool
-	initNoGit    bool
-)
+// Command registration is now handled by command_factory.go
+// This file only contains the runInit function implementation
 
-var initCmd = &cobra.Command{
-	Use:   "init",
-	Short: "Initialize DDx in current project",
-	Long: `Initialize DDx in the current project directory.
-
-This will:
-• Create a local .ddx directory
-• Copy selected resources from the master toolkit
-• Create a local configuration file
-• Optionally apply a project template`,
-	RunE: runInit,
-}
-
-func init() {
-	rootCmd.AddCommand(initCmd)
-
-	initCmd.Flags().StringVarP(&initTemplate, "template", "t", "", "Use specific template")
-	initCmd.Flags().BoolVarP(&initForce, "force", "f", false, "Force initialization even if DDx already exists")
-	initCmd.Flags().BoolVar(&initNoGit, "no-git", false, "Skip git subtree setup")
-}
-
+// runInit implements the init command logic
 func runInit(cmd *cobra.Command, args []string) error {
+	// Get flag values locally
+	initTemplate, _ := cmd.Flags().GetString("template")
+	initForce, _ := cmd.Flags().GetBool("force")
+	initNoGit, _ := cmd.Flags().GetBool("no-git")
+
 	fmt.Fprint(cmd.OutOrStdout(), "🚀 Initializing DDx in current project...\n")
 	fmt.Fprintln(cmd.OutOrStdout())
 
@@ -51,7 +33,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 	}
 
 	// Check if library path exists
-	libPath, err := config.GetLibraryPath(libraryPath)
+	libPath, err := config.GetLibraryPath(getLibraryPath())
 	libraryExists := true
 	if err != nil || libPath == "" {
 		libraryExists = false
@@ -221,26 +203,4 @@ func copyDir(src, dst string) error {
 	})
 }
 
-// copyFile copies a single file
-func copyFile(src, dst string) error {
-	srcFile, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-	defer srcFile.Close()
-
-	// Create destination directory if it doesn't exist
-	if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
-		return err
-	}
-
-	dstFile, err := os.Create(dst)
-	if err != nil {
-		return err
-	}
-	defer dstFile.Close()
-
-	// Copy content
-	_, err = dstFile.ReadFrom(srcFile)
-	return err
-}
+// copyFile is defined in config.go to avoid duplication
