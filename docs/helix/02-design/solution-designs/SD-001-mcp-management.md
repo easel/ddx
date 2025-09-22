@@ -11,7 +11,7 @@
 
 ## Executive Summary
 
-This solution design describes the technical architecture for MCP (Model Context Protocol) server management within the DDx toolkit. The solution provides a registry-based approach for discovering, installing, configuring, and managing MCP servers for Claude Code and Claude Desktop.
+This solution design describes the technical architecture for MCP (Model Context Protocol) server management within the DDx toolkit. The solution provides a registry-based approach for discovering, installing, configuring, and managing MCP servers for Claude Code using the Claude CLI interface.
 
 ## Requirements Mapping
 
@@ -20,8 +20,8 @@ This solution design describes the technical architecture for MCP (Model Context
 | Requirement | Technical Capability | Implementation |
 |------------|---------------------|----------------|
 | FR-001: List servers | Registry management system | YAML-based registry with caching |
-| FR-002: Install server | Configuration generator | JSON builder with schema validation |
-| FR-003: Manage config | Config file manipulation | Atomic file operations with backup |
+| FR-002: Install server | Claude CLI wrapper | Command builder with argument validation |
+| FR-003: Manage config | Claude CLI integration | `claude mcp` command execution |
 | FR-004: Security | Credential management | Masking, validation, secure storage |
 
 ### Non-Functional Requirements → Design Decisions
@@ -31,7 +31,7 @@ This solution design describes the technical architecture for MCP (Model Context
 | Performance <100ms | Local registry caching | Avoid network calls for listing |
 | Security | Credential masking layer | Prevent accidental exposure |
 | Cross-platform | Platform abstraction layer | Handle OS-specific paths |
-| Reliability | Atomic operations with rollback | Prevent partial updates |
+| Reliability | Claude CLI atomic operations | Use native CLI rollback capabilities |
 
 ## Solution Architecture
 
@@ -40,42 +40,41 @@ This solution design describes the technical architecture for MCP (Model Context
 ```mermaid
 graph TB
     subgraph "CLI Layer"
-        CLI[ddx mcp commands]
+        DDX[ddx mcp commands]
     end
-    
+
     subgraph "Core Components"
         REG[Registry Manager]
         INST[Installer]
-        CFG[Config Manager]
+        WRAP[Claude CLI Wrapper]
         VAL[Validator]
     end
-    
+
     subgraph "Data Layer"
         YAML[(Registry YAML)]
         CACHE[(Local Cache)]
-        JSON[(Claude Config)]
     end
-    
+
     subgraph "External"
-        CLAUDE[Claude Code/Desktop]
+        CLAUDECLI[Claude CLI]
         NPM[NPM Registry]
     end
     
-    CLI --> REG
-    CLI --> INST
-    CLI --> CFG
-    
+    DDX --> REG
+    DDX --> INST
+    DDX --> WRAP
+
     REG --> YAML
     REG --> CACHE
-    
+
     INST --> REG
-    INST --> CFG
+    INST --> WRAP
     INST --> VAL
-    
-    CFG --> JSON
-    CFG --> VAL
-    
-    JSON --> CLAUDE
+
+    WRAP --> CLAUDECLI
+    WRAP --> VAL
+
+    CLAUDECLI --> NPM
     INST -.-> NPM
 ```
 
@@ -93,11 +92,11 @@ graph TB
 - Dependency resolution
 - Progress tracking and reporting
 
-#### 3. Configuration Manager (`internal/mcp/config.go`)
-- Claude configuration detection
-- JSON file manipulation
-- Backup and restore operations
-- Configuration merging logic
+#### 3. Claude CLI Wrapper (`internal/mcp/claude.go`)
+- Claude CLI command execution
+- Command argument construction
+- Output parsing and validation
+- Error handling and retry logic
 
 #### 4. Validator (`internal/mcp/validator.go`)
 - Input sanitization
@@ -245,11 +244,11 @@ graph TB
 
 | CLI Command | Service Method | Implementation |
 |-------------|----------------|----------------|
-| `ddx mcp list` | `Registry.List(filters)` | Load registry, apply filters, format output |
-| `ddx mcp install` | `Installer.Install(name, opts)` | Complete installation flow |
-| `ddx mcp configure` | `ConfigManager.UpdateServer(name, config)` | Update existing configuration |
-| `ddx mcp remove` | `ConfigManager.RemoveServer(name, opts)` | Remove with backup |
-| `ddx mcp status` | `StatusChecker.Check(name)` | Verify installation status |
+| `ddx mcp list` | `Registry.List(filters)` | Load registry, check installation via `claude mcp list` |
+| `ddx mcp install` | `Installer.Install(name, opts)` | Execute `claude mcp add` or `claude mcp add-json` |
+| `ddx mcp configure` | `CLIWrapper.Update(name, config)` | Update via Claude CLI |
+| `ddx mcp remove` | `CLIWrapper.Remove(name)` | Execute `claude mcp remove` |
+| `ddx mcp status` | `CLIWrapper.List()` | Parse `claude mcp list` output |
 | `ddx mcp update` | `Registry.Update(opts)` | Refresh registry data |
 
 Each command handler MUST call its corresponding service method - no placeholder implementations allowed.
@@ -273,16 +272,14 @@ sequenceDiagram
     CLI->>Installer: Install(server)
     Installer->>User: Prompt for env vars
     User-->>Installer: Provide credentials
-    
-    Installer->>ConfigMgr: DetectClaude()
-    ConfigMgr-->>Installer: ClaudeType, Path
-    
-    Installer->>ConfigMgr: BackupConfig()
-    ConfigMgr-->>Installer: Backup created
-    
-    Installer->>ConfigMgr: UpdateConfig(server)
-    ConfigMgr->>Claude: Write JSON
-    ConfigMgr-->>Installer: Success
+
+    Installer->>CLIWrapper: CheckClaude()
+    CLIWrapper-->>Installer: CLI Available
+
+    Installer->>CLIWrapper: ExecuteAdd(server, args)
+    CLIWrapper->>Claude: claude mcp add-json
+    Claude-->>CLIWrapper: Success
+    CLIWrapper-->>Installer: Success
     
     Installer-->>User: Installation complete
 ```

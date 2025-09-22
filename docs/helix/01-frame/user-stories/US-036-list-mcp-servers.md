@@ -38,9 +38,10 @@
 **And** the search term should be highlighted in output  
 
 ### AC4: Show Installation Status
-**Given** I have some MCP servers already installed  
-**When** I run `ddx mcp list`  
-**Then** installed servers should show ✅ indicator  
+**Given** I have some MCP servers already installed
+**When** I run `ddx mcp list`
+**Then** the system should check `claude mcp list` for installed servers
+**And** installed servers should show ✅ indicator
 **And** not-installed servers should show ⬜ indicator  
 
 ### AC5: Detailed View
@@ -80,7 +81,8 @@
 - Registry YAML parser
 - Terminal output formatter
 - Cache management system
-- Claude configuration detector
+- Claude CLI command execution
+- Output parsing for `claude mcp list`
 
 ## Test Scenarios
 
@@ -95,7 +97,7 @@
 2. Invalid category - show available categories
 3. Network offline - use cached data
 4. Corrupted cache - regenerate from registry
-5. No Claude installation - still show list
+5. No Claude CLI - show list without installation status
 
 ### Error Cases
 1. Invalid registry format - error with fix instructions

@@ -13,7 +13,7 @@ import (
 // Installer manages MCP server installation
 type Installer struct {
 	registry  *Registry
-	config    *ConfigManager
+	claude    *ClaudeWrapper
 	validator *Validator
 	out       io.Writer
 }
@@ -26,6 +26,7 @@ func NewInstaller() *Installer {
 // NewInstallerWithWriter creates a new installer with a custom output writer
 func NewInstallerWithWriter(w io.Writer) *Installer {
 	return &Installer{
+		claude:    NewClaudeWrapper(),
 		validator: NewValidator(),
 		out:       w,
 	}
@@ -68,43 +69,15 @@ func (i *Installer) Install(serverName string, opts InstallOptions) error {
 		return fmt.Errorf("configuring environment: %w", err)
 	}
 
-	// Detect Claude installation
-	claudePath := opts.ConfigPath
-	if claudePath == "" {
-		detected, err := DetectClaude()
-		if err != nil {
-			return fmt.Errorf("detecting Claude: %w", err)
-		}
-		if len(detected) == 0 {
-			return ErrClaudeNotFound
-		}
-		fmt.Fprintf(i.out, "📍 Detected: %s at %s\n", detected[0].Type, detected[0].ConfigPath)
-		claudePath = detected[0].ConfigPath
-	} else {
-		fmt.Fprintf(i.out, "📍 Using custom config path: %s\n", claudePath)
+	// Check Claude CLI availability
+	if err := i.claude.IsAvailable(); err != nil {
+		return fmt.Errorf("Claude CLI not available: %w", err)
 	}
-
-	// Create config manager
-	if i.config == nil {
-		i.config = NewConfigManager(claudePath)
-	}
-
-	// Load existing config
-	if err := i.config.Load(); err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("loading config: %w", err)
-	}
+	fmt.Fprintf(i.out, "📍 Detected Claude CLI available\n")
 
 	// Check if already installed
-	if i.config.HasServer(serverName) && !opts.DryRun {
-		return fmt.Errorf("%w: %s. To upgrade, first uninstall with 'ddx mcp uninstall %s'", ErrAlreadyInstalled, serverName, serverName)
-	}
-
-	// Create backup if requested
-	if !opts.NoBackup && !opts.DryRun {
-		if err := i.config.Backup(); err != nil {
-			return fmt.Errorf("creating backup: %w", err)
-		}
-		fmt.Fprintf(i.out, "💾 Backup created: %s.backup\n", claudePath)
+	if status, err := i.claude.GetServerStatus(serverName); err == nil && status.Installed && !opts.DryRun {
+		return fmt.Errorf("%w: %s", ErrAlreadyInstalled, serverName)
 	}
 
 	if opts.DryRun {
@@ -114,45 +87,21 @@ func (i *Installer) Install(serverName string, opts InstallOptions) error {
 		if len(opts.Environment) > 0 {
 			fmt.Fprintf(i.out, "   - Environment variables: %d configured\n", len(opts.Environment))
 		}
+		fmt.Fprintf(i.out, "   - Claude CLI: claude mcp add %s\n", serverName)
 		return nil
 	}
 
-	// Create server configuration
-	fmt.Fprintf(i.out, "📦 Configuring server...\n")
-	serverConfig := ServerConfig{
-		Command: server.Command.Executable,
-		Args:    server.Command.Args,
-		Env:     opts.Environment,
-	}
-
-	// Add server to config
-	if err := i.config.AddServer(serverName, serverConfig); err != nil {
-		return fmt.Errorf("adding server: %w", err)
-	}
-
-	// Save config
-	if err := i.config.Save(); err != nil {
-		return fmt.Errorf("saving config: %w", err)
-	}
-
-	// Create package.json if it's a Node.js-based server and doesn't exist
-	if strings.HasPrefix(server.Command.Executable, "npx") || strings.HasPrefix(server.Command.Executable, "node") {
-		// Detect package manager
-		packageManager := i.detectPackageManager()
-		fmt.Fprintf(i.out, "📦 Using package manager: %s\n", packageManager)
-
-		if err := i.ensurePackageJSON(); err != nil {
-			fmt.Fprintf(i.out, "⚠️  Warning: Could not create package.json: %v\n", err)
-		} else {
-			fmt.Fprintf(i.out, "📄 Created package.json for MCP server dependencies\n")
-		}
+	// Install server via Claude CLI
+	fmt.Fprintf(i.out, "📦 Installing server via Claude CLI...\n")
+	if err := i.claude.AddServer(serverName, server.Command.Executable, server.Command.Args, opts.Environment); err != nil {
+		return fmt.Errorf("installing server: %w", err)
 	}
 
 	// Success message with next steps
 	fmt.Fprintf(i.out, "✅ %s MCP server installed successfully!\n\n", serverName)
 	fmt.Fprintf(i.out, "🚀 Next steps:\n")
-	fmt.Fprintf(i.out, "  1. Restart Claude Code\n")
-	fmt.Fprintf(i.out, "  2. Look for %s in MCP section\n", serverName)
+	fmt.Fprintf(i.out, "  1. Restart Claude Code to load the server\n")
+	fmt.Fprintf(i.out, "  2. Look for %s in Claude Code's MCP section\n", serverName)
 	if serverName == "github" {
 		fmt.Fprintf(i.out, "  3. Test with: \"Show my recent commits\"\n")
 	} else if serverName == "filesystem" {
@@ -277,151 +226,6 @@ func (i *Installer) validateEnvironment(server *Server, env map[string]string) e
 	return nil
 }
 
-// ConfigManager manages Claude configuration files
-type ConfigManager struct {
-	path       string
-	config     *ClaudeConfig
-	backupPath string
-	raw        map[string]interface{} // Preserve unknown fields
-}
-
-// NewConfigManager creates a new config manager
-func NewConfigManager(path string) *ConfigManager {
-	return &ConfigManager{
-		path: path,
-		config: &ClaudeConfig{
-			MCPServers: make(map[string]ServerConfig),
-		},
-	}
-}
-
-// Load loads the configuration file
-func (cm *ConfigManager) Load() error {
-	data, err := os.ReadFile(cm.path)
-	if err != nil {
-		return err
-	}
-
-	// First unmarshal to raw map to preserve unknown fields
-	if err := json.Unmarshal(data, &cm.raw); err != nil {
-		return fmt.Errorf("parsing JSON: %w", err)
-	}
-
-	// Then unmarshal to our struct
-	if err := json.Unmarshal(data, &cm.config); err != nil {
-		return fmt.Errorf("parsing config: %w", err)
-	}
-
-	return nil
-}
-
-// Save saves the configuration file
-func (cm *ConfigManager) Save() error {
-	// Ensure directory exists
-	dir := filepath.Dir(cm.path)
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		return fmt.Errorf("creating directory: %w", err)
-	}
-
-	// Merge our config back into raw map
-	if cm.raw == nil {
-		cm.raw = make(map[string]interface{})
-	}
-	cm.raw["mcpServers"] = cm.config.MCPServers
-
-	// Marshal with indentation
-	data, err := json.MarshalIndent(cm.raw, "", "  ")
-	if err != nil {
-		return fmt.Errorf("marshaling config: %w", err)
-	}
-
-	// Write with secure permissions
-	if err := os.WriteFile(cm.path, data, 0600); err != nil {
-		return fmt.Errorf("writing config: %w", err)
-	}
-
-	return nil
-}
-
-// Backup creates a backup of the current config
-func (cm *ConfigManager) Backup() error {
-	if _, err := os.Stat(cm.path); os.IsNotExist(err) {
-		return nil // Nothing to backup
-	}
-
-	cm.backupPath = cm.path + ".backup"
-	data, err := os.ReadFile(cm.path)
-	if err != nil {
-		return err
-	}
-
-	return os.WriteFile(cm.backupPath, data, 0600)
-}
-
-// Restore restores from backup
-func (cm *ConfigManager) Restore() error {
-	if cm.backupPath == "" {
-		return fmt.Errorf("no backup available")
-	}
-
-	data, err := os.ReadFile(cm.backupPath)
-	if err != nil {
-		return err
-	}
-
-	return os.WriteFile(cm.path, data, 0600)
-}
-
-// HasServer checks if a server is already installed
-func (cm *ConfigManager) HasServer(name string) bool {
-	_, exists := cm.config.MCPServers[name]
-	return exists
-}
-
-// AddServer adds a server configuration
-func (cm *ConfigManager) AddServer(name string, config ServerConfig) error {
-	if cm.config.MCPServers == nil {
-		cm.config.MCPServers = make(map[string]ServerConfig)
-	}
-	cm.config.MCPServers[name] = config
-	return nil
-}
-
-// RemoveServer removes a server configuration
-// RemoveServer removes a server configuration
-func (cm *ConfigManager) RemoveServer(serverName string, opts RemoveOptions, w io.Writer) error {
-	if err := cm.Load(); err != nil {
-		return fmt.Errorf("loading config: %w", err)
-	}
-
-	// Check if server exists
-	if _, exists := cm.config.MCPServers[serverName]; !exists {
-		return fmt.Errorf("server %s is not installed", serverName)
-	}
-
-	if !opts.SkipConfirmation {
-		fmt.Fprintf(w, "⚠️  Are you sure you want to remove %s? [y/N]: ", serverName)
-		// For now, assume yes
-	}
-
-	fmt.Fprintf(w, "🗑️  Removing %s MCP server...\n", serverName)
-	delete(cm.config.MCPServers, serverName)
-	fmt.Fprintln(w, "✅ Server removed successfully")
-
-	return nil
-}
-
-// GetServer gets a server configuration
-func (cm *ConfigManager) GetServer(name string) (ServerConfig, bool) {
-	config, exists := cm.config.MCPServers[name]
-	return config, exists
-}
-
-// ListServers returns all configured servers
-func (cm *ConfigManager) ListServers() map[string]ServerConfig {
-	return cm.config.MCPServers
-}
-
 // Validator provides input validation
 type Validator struct {
 	patterns map[string]*regexp.Regexp
@@ -520,35 +324,10 @@ func MaskSensitive(value string, sensitive bool) string {
 	return "***"
 }
 
-// UpdateServer updates configuration for an existing server
-func (cm *ConfigManager) UpdateServer(serverName string, opts ConfigureOptions, w io.Writer) error {
-	if err := cm.Load(); err != nil {
-		return fmt.Errorf("loading config: %w", err)
-	}
-
-	// Check if server exists
-	if _, exists := cm.config.MCPServers[serverName]; !exists {
-		return fmt.Errorf("server %s is not installed", serverName)
-	}
-
-	if opts.Reset {
-		// Reset to defaults - for now just show message
-		fmt.Fprintf(w, "🔄 Resetting %s to default configuration...\n", serverName)
-		return nil
-	}
-
-	// Update environment variables
-	if len(opts.Environment) > 0 || len(opts.AddEnvironment) > 0 || len(opts.RemoveEnvironment) > 0 {
-		fmt.Fprintf(w, "🔧 Updating %s configuration...\n", serverName)
-		fmt.Fprintln(w, "✅ Configuration updated successfully")
-	}
-
-	return nil
-}
-
 // StatusChecker manages server status checking
 type StatusChecker struct {
-	out io.Writer
+	out    io.Writer
+	claude *ClaudeWrapper
 }
 
 // NewStatusChecker creates a new status checker
@@ -559,7 +338,8 @@ func NewStatusChecker() *StatusChecker {
 // NewStatusCheckerWithWriter creates a new status checker with a custom output writer
 func NewStatusCheckerWithWriter(w io.Writer) *StatusChecker {
 	return &StatusChecker{
-		out: w,
+		out:    w,
+		claude: NewClaudeWrapper(),
 	}
 }
 
@@ -575,40 +355,33 @@ func (sc *StatusChecker) Check(opts StatusOptions) error {
 func (sc *StatusChecker) checkServer(serverName string, opts StatusOptions) error {
 	fmt.Fprintf(sc.out, "📊 Status for %s MCP server:\n", serverName)
 
-	// Try to detect Claude installations and check each one
-	detected, err := DetectClaude()
-	if err != nil {
-		return fmt.Errorf("detecting Claude: %w", err)
-	}
-
-	if len(detected) == 0 {
-		fmt.Fprintln(sc.out, "⚠️  No Claude installation found")
+	// Check if Claude CLI is available
+	if err := sc.claude.IsAvailable(); err != nil {
+		fmt.Fprintf(sc.out, "⚠️  Claude CLI not available: %v\n", err)
 		return nil
 	}
 
-	found := false
-	for _, installation := range detected {
-		config := NewConfigManager(installation.ConfigPath)
-		if err := config.Load(); err != nil {
-			if os.IsNotExist(err) {
-				continue // Config file doesn't exist, skip
-			}
-			fmt.Fprintf(sc.out, "⚠️  Error reading %s config: %v\n", installation.Type, err)
-			continue
-		}
-
-		if serverConfig, exists := config.GetServer(serverName); exists {
-			found = true
-			fmt.Fprintf(sc.out, "✅ %s - Installed in %s\n", serverName, installation.Type)
-			fmt.Fprintf(sc.out, "   Config: %s\n", installation.ConfigPath)
-			fmt.Fprintf(sc.out, "   Command: %s %s\n", serverConfig.Command, strings.Join(serverConfig.Args, " "))
-			if len(serverConfig.Env) > 0 {
-				fmt.Fprintf(sc.out, "   Environment variables: %d configured\n", len(serverConfig.Env))
-			}
-		}
+	// Get server status from Claude CLI
+	status, err := sc.claude.GetServerStatus(serverName)
+	if err != nil {
+		fmt.Fprintf(sc.out, "⚠️  Error checking server status: %v\n", err)
+		return nil
 	}
 
-	if !found {
+	if status.Installed {
+		fmt.Fprintf(sc.out, "✅ %s - Installed\n", serverName)
+		if status.Running {
+			fmt.Fprintf(sc.out, "   Status: Running ✓\n")
+		} else {
+			fmt.Fprintf(sc.out, "   Status: Installed but not connected\n")
+		}
+		if status.Version != "unknown" {
+			fmt.Fprintf(sc.out, "   Version: %s\n", status.Version)
+		}
+		if len(status.Errors) > 0 {
+			fmt.Fprintf(sc.out, "   Errors: %s\n", strings.Join(status.Errors, ", "))
+		}
+	} else {
 		fmt.Fprintln(sc.out, "⚠️  Server not installed")
 	}
 
@@ -620,47 +393,33 @@ func (sc *StatusChecker) checkAllServers(opts StatusOptions) error {
 	fmt.Fprintln(sc.out, "📊 MCP Server Status")
 	fmt.Fprintln(sc.out)
 
-	// Try to detect Claude installations
-	detected, err := DetectClaude()
-	if err != nil {
-		return fmt.Errorf("detecting Claude: %w", err)
-	}
-
-	if len(detected) == 0 {
-		fmt.Fprintln(sc.out, "⚠️  No Claude installation found")
+	// Check if Claude CLI is available
+	if err := sc.claude.IsAvailable(); err != nil {
+		fmt.Fprintf(sc.out, "⚠️  Claude CLI not available: %v\n", err)
 		return nil
 	}
 
-	totalServers := 0
-	for _, installation := range detected {
-		config := NewConfigManager(installation.ConfigPath)
-		if err := config.Load(); err != nil {
-			if os.IsNotExist(err) {
-				continue // Config file doesn't exist, skip
-			}
-			fmt.Fprintf(sc.out, "⚠️  Error reading %s config: %v\n", installation.Type, err)
-			continue
-		}
-
-		servers := config.ListServers()
-		if len(servers) == 0 {
-			continue
-		}
-
-		fmt.Fprintf(sc.out, "%s (%s):\n", installation.Type, installation.ConfigPath)
-		for name, serverConfig := range servers {
-			totalServers++
-			fmt.Fprintf(sc.out, "  ✅ %-15s - %s %s\n", name, serverConfig.Command, strings.Join(serverConfig.Args, " "))
-			if opts.Verbose && len(serverConfig.Env) > 0 {
-				fmt.Fprintf(sc.out, "      Environment: %d variables configured\n", len(serverConfig.Env))
-			}
-		}
-		fmt.Fprintln(sc.out)
+	// List installed servers from Claude CLI
+	servers, err := sc.claude.ListServers()
+	if err != nil {
+		fmt.Fprintf(sc.out, "⚠️  Error listing servers: %v\n", err)
+		return nil
 	}
 
-	if totalServers == 0 {
+	if len(servers) == 0 {
 		fmt.Fprintln(sc.out, "⚠️  No servers installed")
+		return nil
 	}
+
+	fmt.Fprintln(sc.out, "Installed servers:")
+	for name, connected := range servers {
+		status := "Installed"
+		if connected {
+			status = "Running ✓"
+		}
+		fmt.Fprintf(sc.out, "  ✅ %-15s - %s\n", name, status)
+	}
+	fmt.Fprintln(sc.out)
 
 	return nil
 }

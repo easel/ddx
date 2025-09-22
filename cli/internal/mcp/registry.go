@@ -48,8 +48,8 @@ func LoadRegistry(path string) (*Registry, error) {
 
 	registry.buildCache()
 
-	// Initialize config manager for checking installed servers
-	registry.config = NewConfigManager("")
+	// Initialize Claude CLI wrapper
+	registry.claude = NewClaudeWrapper()
 
 	return &registry, nil
 }
@@ -376,13 +376,12 @@ func (r *Registry) formatTable(w io.Writer, servers []*ServerReference, opts Lis
 		categories[server.Category] = append(categories[server.Category], server)
 	}
 
-	// Check installed servers if we have a config manager
+	// Check installed servers via Claude CLI
 	installedServers := make(map[string]bool)
-	if r.config != nil {
-		// Load configuration
-		if err := r.config.Load(); err == nil {
-			// Get list of installed servers
-			for name := range r.config.ListServers() {
+	if r.claude != nil {
+		// Get list of installed servers from Claude CLI
+		if servers, err := r.claude.ListServers(); err == nil {
+			for name := range servers {
 				installedServers[name] = true
 			}
 		}

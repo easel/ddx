@@ -2,11 +2,8 @@ package cmd
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 	"strings"
 
-	"github.com/easel/ddx/internal/config"
 	"github.com/easel/ddx/internal/mcp"
 	"github.com/spf13/cobra"
 )
@@ -57,188 +54,59 @@ func runMCP(cmd *cobra.Command, args []string) error {
 }
 
 func runMCPListWithOptions(cmd *cobra.Command, category, search string, verbose bool) error {
-	// Get library path
-	libPath, err := config.GetLibraryPath(getLibraryPath())
+	// Load registry using default path resolution
+	registry, err := mcp.LoadRegistry("")
 	if err != nil {
-		return fmt.Errorf("failed to get library path: %w", err)
+		return fmt.Errorf("failed to load registry: %w", err)
 	}
 
-	// Try both registry.yml and registry.yaml for compatibility
-	registryPaths := []string{
-		filepath.Join(libPath, "mcp-servers", "registry.yml"),
-		filepath.Join(libPath, "mcp-servers", "registry.yaml"),
-	}
+	// Check installed servers via Claude CLI
+	claude := mcp.NewClaudeWrapper()
 
-	var registryPath string
-	for _, path := range registryPaths {
-		if _, err := os.Stat(path); err == nil {
-			registryPath = path
-			break
+	if claude.IsAvailable() == nil {
+		if _, err := claude.ListServers(); err == nil {
+			// TODO: Pass installed servers status to registry
 		}
 	}
 
-	// Check if registry exists
-	if registryPath == "" {
-		fmt.Fprintln(cmd.OutOrStdout(), "No MCP server registry found")
-		return nil
+	// Use registry to list servers with installed status
+	opts := mcp.ListOptions{
+		Category:  category,
+		Search:    search,
+		Verbose:   verbose,
+		Available: true,
 	}
 
-	fmt.Fprintln(cmd.OutOrStdout(), "Available MCP Servers:")
-	fmt.Fprintln(cmd.OutOrStdout())
-
-	// Check if filesystem server is installed by looking for Claude config
-	filesystemInstalled := false
-	if configPath, _ := cmd.Flags().GetString("config-path"); configPath != "" {
-		if _, err := os.Stat(configPath); err == nil {
-			// Read config to check if filesystem is installed
-			data, _ := os.ReadFile(configPath)
-			if strings.Contains(string(data), "filesystem") {
-				filesystemInstalled = true
-			}
-		}
-	}
-
-	// List servers
-	servers := []struct {
-		name     string
-		category string
-		status   string
-		desc     string
-		pkg      string
-		version  string
-		author   string
-		envVars  []string
-	}{
-		{"filesystem", "core", "⬜", "Access local files", "@modelcontextprotocol/server-filesystem", "0.1.0", "Anthropic", nil},
-		{"github", "Development", "⬜", "Access GitHub repositories", "@modelcontextprotocol/server-github", "0.1.0", "Anthropic", []string{"GITHUB_PERSONAL_ACCESS_TOKEN"}},
-	}
-
-	// Update filesystem status if installed
-	if filesystemInstalled {
-		servers[0].status = "✅"
-	}
-
-	for _, server := range servers {
-		// Apply search filter
-		if search != "" {
-			lowerSearch := strings.ToLower(search)
-			if !strings.Contains(strings.ToLower(server.name), lowerSearch) &&
-				!strings.Contains(strings.ToLower(server.desc), lowerSearch) {
-				continue
-			}
-		}
-
-		// Apply category filter
-		if category != "" && !strings.EqualFold(server.category, category) {
-			continue
-		}
-
-		if verbose {
-			// Detailed view
-			fmt.Fprintf(cmd.OutOrStdout(), "%s %s\n", server.status, server.name)
-			fmt.Fprintf(cmd.OutOrStdout(), "  Category: %s\n", server.category)
-			fmt.Fprintf(cmd.OutOrStdout(), "  Description: %s\n", server.desc)
-			fmt.Fprintf(cmd.OutOrStdout(), "  Package: %s\n", server.pkg)
-			fmt.Fprintf(cmd.OutOrStdout(), "  Version: %s\n", server.version)
-			fmt.Fprintf(cmd.OutOrStdout(), "  Author: %s\n", server.author)
-			if len(server.envVars) > 0 {
-				fmt.Fprintf(cmd.OutOrStdout(), "  Environment: %s\n", strings.Join(server.envVars, ", "))
-			}
-			fmt.Fprintln(cmd.OutOrStdout())
-		} else {
-			// Simple view
-			fmt.Fprintf(cmd.OutOrStdout(), "%s %-15s %-15s %s\n",
-				server.status, server.name, server.category, server.desc)
-		}
-	}
-
-	fmt.Fprintln(cmd.OutOrStdout())
-	fmt.Fprintln(cmd.OutOrStdout(), "✅ = Installed  ⬜ = Available")
-
-	return nil
+	return registry.ListWithWriter(cmd.OutOrStdout(), opts)
 }
 
 func runMCPInstallWithOptions(cmd *cobra.Command, serverName string) error {
 	// Get additional options
-	configPath, _ := cmd.Flags().GetString("config-path")
 	envVars, _ := cmd.Flags().GetStringSlice("env")
+	dryRun, _ := cmd.Flags().GetBool("dry-run")
+	yes, _ := cmd.Flags().GetBool("yes")
 
-	// Check if server already installed
-	if configPath != "" {
-		if data, err := os.ReadFile(configPath); err == nil {
-			if strings.Contains(string(data), serverName) {
-				fmt.Fprintf(cmd.OutOrStdout(), "Server %s is already installed\n", serverName)
-				fmt.Fprintln(cmd.OutOrStdout(), "Use --upgrade flag to upgrade")
-				return nil
-			}
+	// Parse environment variables
+	environment := make(map[string]string)
+	for _, envVar := range envVars {
+		parts := strings.SplitN(envVar, "=", 2)
+		if len(parts) == 2 {
+			environment[parts[0]] = parts[1]
 		}
 	}
-	fmt.Fprintf(cmd.OutOrStdout(), "Installing MCP server: %s\n", serverName)
 
-	// Detect package manager
-	pkgManager := "npm"
-	if _, err := os.Stat("pnpm-lock.yaml"); err == nil {
-		pkgManager = "pnpm"
-		fmt.Fprintf(cmd.OutOrStdout(), "Using package manager: %s\n", pkgManager)
-	} else if _, err := os.Stat("yarn.lock"); err == nil {
-		pkgManager = "yarn"
-		fmt.Fprintf(cmd.OutOrStdout(), "Using package manager: %s\n", pkgManager)
+	// Create installer
+	installer := mcp.NewInstallerWithWriter(cmd.OutOrStdout())
+
+	// Install options
+	opts := mcp.InstallOptions{
+		Environment: environment,
+		DryRun:      dryRun,
+		Yes:         yes,
 	}
 
-	fmt.Fprintln(cmd.OutOrStdout(), "Downloading server package...")
-
-	// Configure if environment variables provided
-	if len(envVars) > 0 {
-		fmt.Fprintln(cmd.OutOrStdout(), "Configuring server...")
-	}
-
-	// Update Claude config if path provided
-	if configPath != "" {
-		// Ensure directory exists
-		configDir := filepath.Dir(configPath)
-		os.MkdirAll(configDir, 0755)
-
-		// Create config with environment variables if provided
-		var claudeConfig string
-		if len(envVars) > 0 {
-			// Build env section
-			envSection := ""
-			for _, env := range envVars {
-				parts := strings.SplitN(env, "=", 2)
-				if len(parts) == 2 {
-					if envSection != "" {
-						envSection += ",\n        "
-					}
-					envSection += fmt.Sprintf(`"%s": "%s"`, parts[0], parts[1])
-				}
-			}
-			claudeConfig = fmt.Sprintf(`{
-  "mcpServers": {
-    "%s": {
-      "command": "npx",
-      "args": ["@modelcontextprotocol/server-%s"],
-      "env": {
-        %s
-      }
-    }
-  }
-}`, serverName, serverName, envSection)
-		} else {
-			claudeConfig = fmt.Sprintf(`{
-  "mcpServers": {
-    "%s": {
-      "command": "npx",
-      "args": ["@modelcontextprotocol/server-%s"]
-    }
-  }
-}`, serverName, serverName)
-		}
-
-		os.WriteFile(configPath, []byte(claudeConfig), 0644)
-	}
-
-	fmt.Fprintf(cmd.OutOrStdout(), "✅ Successfully installed %s MCP server\n", serverName)
-	return nil
+	// Install the server
+	return installer.Install(serverName, opts)
 }
 
 func runMCPStatus(cmd *cobra.Command) error {

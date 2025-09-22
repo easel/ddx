@@ -17,37 +17,37 @@
 ## Acceptance Criteria
 
 ### AC1: Basic Installation
-**Given** an MCP server exists in the registry  
-**When** I run `ddx mcp install github`  
+**Given** an MCP server exists in the registry
+**When** I run `ddx mcp install github`
 **Then** the system should:
-- Download server definition
+- Load server definition from registry
 - Prompt for required environment variables
-- Generate Claude configuration
-- Add to appropriate config file
+- Build Claude CLI command with proper arguments
+- Execute `claude mcp add` or `claude mcp add-json`
 - Confirm successful installation
 
 ### AC2: Environment Variable Handling
-**Given** the GitHub server requires a personal access token  
-**When** I'm prompted for the token  
-**Then** the input should be masked (shown as ****)  
-**And** the value should be validated before saving  
-**And** stored securely in the configuration  
+**Given** the GitHub server requires a personal access token
+**When** I'm prompted for the token
+**Then** the input should be masked (shown as ****)
+**And** the value should be validated before saving
+**And** passed securely to Claude CLI with `-e` flag  
 
-### AC3: Auto-Detection of Claude Type
-**Given** I have Claude Code installed  
-**When** I install an MCP server  
-**Then** the system should automatically detect Claude Code  
-**And** write to `~/.claude/settings.local.json`  
-**And** use the correct configuration format  
+### AC3: Claude CLI Detection
+**Given** I have Claude Code installed with CLI
+**When** I install an MCP server
+**Then** the system should automatically detect `claude` command availability
+**And** use appropriate Claude CLI commands for installation
+**And** handle CLI errors gracefully  
 
-### AC4: Configuration Backup
-**Given** an existing Claude configuration file  
-**When** I install a new MCP server  
+### AC4: Server Conflict Detection
+**Given** an MCP server is already installed
+**When** I attempt to install the same server
 **Then** the system should:
-- Create a backup of the current config
-- Merge new server configuration
-- Preserve existing settings
-- Provide rollback option if needed
+- Check existing installation via `claude mcp list`
+- Warn about duplicate installation
+- Offer to update or skip installation
+- Provide removal option via `claude mcp remove`
 
 ### AC5: Validation and Error Handling
 **Given** I provide invalid environment values  
@@ -78,29 +78,22 @@
 
 ### Implementation Flow
 1. Load server definition from registry
-2. Detect Claude installation type and path
-3. Collect required environment variables
-4. Validate all inputs
-5. Backup existing configuration
-6. Generate server configuration JSON
-7. Merge with existing config
-8. Write updated configuration
-9. Verify installation
-10. Provide next steps to user
+2. Verify `claude` CLI command availability
+3. Check for existing server installation
+4. Collect required environment variables
+5. Validate all inputs
+6. Build Claude CLI command with arguments
+7. Execute `claude mcp add` or `claude mcp add-json`
+8. Verify installation via `claude mcp list`
+9. Provide next steps to user
 
-### Configuration Structure
-```json
-{
-  "mcpServers": {
-    "github": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-github"],
-      "env": {
-        "GITHUB_PERSONAL_ACCESS_TOKEN": "<masked>"
-      }
-    }
-  }
-}
+### Claude CLI Commands
+```bash
+# Simple server without environment variables
+claude mcp add github 'npx' -- '-y' '@modelcontextprotocol/server-github'
+
+# Server with environment variables
+claude mcp add-json github '{"type":"stdio","command":"npx","args":["-y","@modelcontextprotocol/server-github"],"env":{"GITHUB_PERSONAL_ACCESS_TOKEN":"ghp_xxx"}}'
 ```
 
 ## Test Scenarios
@@ -112,18 +105,18 @@
 4. Non-interactive install with all parameters
 
 ### Edge Cases
-1. No Claude installation found - show instructions
-2. Multiple Claude installations - prompt for choice
-3. Corrupted config file - offer repair options
-4. Server already installed - prompt for update
-5. Network timeout - retry with exponential backoff
+1. No Claude CLI found - show installation instructions
+2. Claude CLI outdated - warn about MCP support
+3. Server already installed - detected via `claude mcp list`
+4. Server name conflicts - suggest removal first
+5. Network timeout during installation - Claude CLI handles retries
 
 ### Error Cases
 1. Invalid server name - suggest similar names
 2. Missing required variables - list requirements
 3. Invalid credentials - specific error messages
-4. Permission denied - fix instructions
-5. Disk full - check space before install
+4. Claude CLI execution failed - show CLI output
+5. Command not found - Claude CLI installation guide
 
 ## UX Considerations
 
@@ -138,11 +131,11 @@ $ ddx mcp install github
 🔐 Enter your GitHub Personal Access Token: ****
 ✅ Token format validated
 
-📍 Detected Claude Code at: ~/.claude/
-💾 Creating backup: ~/.claude/settings.local.json.backup
+📍 Detected Claude CLI available
+🔧 Executing: claude mcp add-json github {...}
 
 📦 Installing server components...
-✅ Configuration written successfully
+✅ Server added to Claude Code successfully
 
 🎉 GitHub MCP server installed!
 

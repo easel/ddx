@@ -12,22 +12,22 @@
 
 ## Problem Statement
 
-Developers using Claude Code and Claude Desktop struggle with discovering, downloading, and configuring MCP (Model Context Protocol) servers. The current process requires:
+Developers using Claude Code struggle with discovering, downloading, and configuring MCP (Model Context Protocol) servers. The current process requires:
 - Manual discovery of available MCP servers across various repositories
-- Complex manual configuration of JSON files with proper paths and environment variables
+- Complex use of Claude CLI commands with proper package names and arguments
 - No standardized way to share MCP configurations across teams
-- Risk of exposing sensitive credentials in configuration files
-- Platform-specific configuration paths that are difficult to remember
+- Difficulty remembering correct package names and arguments for each server
+- Manual environment variable configuration
 
-**Impact**: Developers spend 30-60 minutes configuring each MCP server, with high error rates and security risks from misconfigured credentials.
+**Impact**: Developers spend 30-60 minutes configuring each MCP server, with high error rates and inconsistent configurations across team members.
 
 ## Objectives
 
 1. **Simplify Discovery**: Provide a centralized registry of available MCP servers with descriptions and categories
-2. **Automate Configuration**: Generate correct Claude Code/Desktop configurations automatically
+2. **Automate Installation**: Wrap Claude CLI commands with simplified DDx interface
 3. **Secure Credentials**: Mask and validate sensitive environment variables
 4. **Enable Sharing**: Allow teams to share MCP configurations through DDx templates
-5. **Cross-Platform Support**: Work seamlessly across macOS, Linux, and Windows
+5. **Cross-Platform Support**: Work seamlessly across macOS, Linux, and Windows where Claude Code is available
 
 ## Functional Requirements
 
@@ -43,20 +43,20 @@ Developers using Claude Code and Claude Desktop struggle with discovering, downl
 - Install and configure an MCP server with a single command
 - Prompt for required environment variables interactively
 - Validate environment variable values before configuration
-- Auto-detect Claude Code vs Claude Desktop installation
-- Generate appropriate JSON configuration
+- Use Claude CLI commands (`claude mcp add` and `claude mcp add-json`)
+- Build proper command arguments from server registry definitions
 
 #### FR-003: Manage Server Configuration
-- View current configuration for installed servers
+- View current configuration for installed servers via `claude mcp list`
 - Update environment variables for existing servers
-- Remove server configurations safely with backup
-- Check server connection status
+- Remove server configurations using `claude mcp remove`
+- Check server connection status via Claude CLI
 
 #### FR-004: Security Features
 - Mask sensitive environment variables in displayed output
 - Validate server definitions for security issues
-- Prevent path traversal in configuration paths
-- Secure storage recommendations for credentials
+- Prevent shell injection in CLI command construction
+- Secure credential handling through Claude CLI
 
 #### FR-005: CLI Implementation Integration
 - Connect CLI command interface to internal implementation logic
@@ -105,16 +105,16 @@ Developers using Claude Code and Claude Desktop struggle with discovering, downl
 - **NFR-011**: Progress indicators for long-running operations
 
 ### Compatibility
-- **NFR-012**: Support Claude Code settings format
-- **NFR-013**: Support Claude Desktop configuration format
+- **NFR-012**: Support Claude CLI command interface
+- **NFR-013**: Work with all Claude Code versions that support MCP
 - **NFR-014**: Work on macOS 12+, Ubuntu 20.04+, Windows 10+
-- **NFR-015**: Backwards compatibility with existing configurations
+- **NFR-015**: Backwards compatibility with existing DDx MCP server definitions
 
 ### Reliability
-- **NFR-016**: Backup existing configurations before modification
-- **NFR-017**: Atomic configuration updates (all or nothing)
-- **NFR-018**: Graceful handling of missing Claude installations
-- **NFR-019**: Rollback capability for failed installations
+- **NFR-016**: Claude CLI handles configuration backups automatically
+- **NFR-017**: Use Claude CLI atomic operations for server management
+- **NFR-018**: Graceful handling of missing Claude CLI
+- **NFR-019**: Use `claude mcp remove` for rollback capability
 
 ## User Scenarios
 
@@ -130,7 +130,7 @@ $ ddx mcp install github
 🔧 Installing GitHub MCP Server...
 GitHub Personal Access Token (will be masked): ***
 ✅ MCP server 'github' installed successfully
-📍 Configuration written to: ~/.claude/settings.local.json
+📍 Added to Claude Code via: claude mcp add
 ```
 
 ### Scenario 2: Team Configuration
@@ -162,20 +162,20 @@ New connection string (or press Enter to keep):
 
 ### Technical Dependencies
 - Go YAML parser for server definitions
-- JSON manipulation for Claude configurations
-- File system operations for config management
+- Command execution for Claude CLI
 - Environment variable handling
+- Registry file system access
 
 ### External Dependencies
 - MCP server packages (npm-based)
-- Claude Code/Desktop installations
-- Git for version control integration
+- Claude Code installation with CLI
+- `claude` command availability in PATH
 
 ## Assumptions
 
 1. Users have npm/npx installed for MCP server execution
-2. Claude Code or Desktop is already installed
-3. Users have appropriate permissions to modify config files
+2. Claude Code is already installed with CLI support
+3. `claude` command is available in user's PATH
 4. MCP servers follow standard npm package conventions
 
 ## Out of Scope
@@ -220,7 +220,7 @@ New connection string (or press Enter to keep):
 - [ ] Can list all available MCP servers with categories
 - [ ] Can install an MCP server with single command
 - [ ] Credentials are masked in all output
-- [ ] Configuration is correctly written to Claude settings
+- [ ] Configuration is correctly applied via Claude CLI
 - [ ] Can update existing server configuration
 - [ ] Can remove server configuration with backup
 - [ ] CLI commands execute actual functionality (not placeholder messages)

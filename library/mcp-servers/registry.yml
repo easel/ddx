@@ -45,6 +45,31 @@ servers:
     category: automation
     description: Browser automation and web scraping using Puppeteer
 
+  - name: notion
+    file: servers/notion.yml
+    category: productivity
+    description: Notion workspace integration for pages and databases
+
+  - name: slack
+    file: servers/slack.yml
+    category: productivity
+    description: Slack integration for channels, messages, and workflows
+
+  - name: google-workspace
+    file: servers/google-workspace.yml
+    category: productivity
+    description: Comprehensive Google Workspace integration (Drive, Docs, Sheets, Gmail, Calendar)
+
+  - name: google-drive
+    file: servers/google-drive.yml
+    category: productivity
+    description: Google Drive integration for file management
+
+  - name: office-365
+    file: servers/office-365.yml
+    category: productivity
+    description: Microsoft 365 integration via Graph API
+
 categories:
   development:
     description: Development and version control tools

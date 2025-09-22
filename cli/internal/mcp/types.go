@@ -86,8 +86,8 @@ type Registry struct {
 	cache    map[string]*Server
 	cacheTTL time.Time
 
-	// Config manager for checking installed servers
-	config *ConfigManager
+	// Claude CLI wrapper for checking installed servers
+	claude *ClaudeWrapper
 }
 
 // ServerReference is a lightweight reference in the registry
@@ -122,40 +122,29 @@ type ClaudeInstallation struct {
 	Detected   time.Time  `json:"detected"`
 }
 
-// ClaudeConfig represents the Claude configuration file
-type ClaudeConfig struct {
-	MCPServers map[string]ServerConfig `json:"mcpServers"`
-	// Preserve other fields when reading/writing
-	Other map[string]interface{} `json:"-"`
-}
-
-// ServerConfig is the installed server configuration in Claude
-type ServerConfig struct {
-	Command string            `json:"command"`
-	Args    []string          `json:"args"`
-	Env     map[string]string `json:"env"`
+// ClaudeCommand represents a Claude CLI command to execute
+type ClaudeCommand struct {
+	Name string            // Server name
+	Args []string          // Command arguments
+	Env  map[string]string // Environment variables
 }
 
 // InstallOptions contains options for server installation
 type InstallOptions struct {
-	ConfigPath  string            // Custom config file path
 	Environment map[string]string // Environment variables
-	NoBackup    bool              // Skip backup creation
 	DryRun      bool              // Show what would be done
 	Yes         bool              // Skip confirmations
-	ClaudeType  ClaudeType        // Target Claude type
+	ConfigPath  string            // Path to Claude config file
+	NoBackup    bool              // Skip backup creation
 }
 
 // ServerStatus represents the status of an installed server
 type ServerStatus struct {
-	Name        string            `json:"name"`
-	Installed   bool              `json:"installed"`
-	Configured  bool              `json:"configured"`
-	Version     string            `json:"version"`
-	ClaudeType  ClaudeType        `json:"claude_type"`
-	ConfigPath  string            `json:"config_path"`
-	Environment map[string]string `json:"environment"`
-	Errors      []string          `json:"errors"`
+	Name      string   `json:"name"`
+	Installed bool     `json:"installed"`
+	Running   bool     `json:"running"`
+	Version   string   `json:"version"`
+	Errors    []string `json:"errors"`
 }
 
 // ListOptions contains options for listing servers
@@ -179,8 +168,8 @@ type ConfigureOptions struct {
 // RemoveOptions contains options for server removal
 type RemoveOptions struct {
 	SkipConfirmation bool // Skip confirmation prompts
-	NoBackup         bool // Skip backup creation
 	Purge            bool // Remove all related data
+	NoBackup         bool // Skip backup creation
 }
 
 // StatusOptions contains options for status checking
@@ -197,3 +186,4 @@ type UpdateOptions struct {
 	Server string // Update specific server
 	Check  bool   // Check for updates only
 }
+

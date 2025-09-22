@@ -293,6 +293,8 @@ Examples:
 	cmd.Flags().Bool("verbose", false, "Show detailed information")
 	cmd.Flags().StringSlice("env", []string{}, "Environment variables for server")
 	cmd.Flags().String("config-path", "", "Path to Claude config file")
+	cmd.Flags().Bool("dry-run", false, "Show what would be done without making changes")
+	cmd.Flags().Bool("yes", false, "Skip confirmation prompts")
 
 	return cmd
 }

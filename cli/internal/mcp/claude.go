@@ -3,218 +3,166 @@ package mcp
 import (
 	"encoding/json"
 	"fmt"
-	"os"
-	"path/filepath"
-	"runtime"
+	"os/exec"
 	"strings"
 	"time"
 )
 
-// StandardLocations defines where to look for Claude configurations
-var StandardLocations = []struct {
-	Type       ClaudeType
-	ConfigPath string
-	Platform   string
-	Priority   int
-}{
-	// Claude Code
-	{ClaudeCode, "~/.claude/settings.local.json", "darwin", 1},
-	{ClaudeCode, "~/.claude/settings.local.json", "linux", 1},
-	{ClaudeCode, "%USERPROFILE%\\.claude\\settings.local.json", "windows", 1},
-
-	// Claude Desktop
-	{ClaudeDesktop, "~/Library/Application Support/Claude/claude_desktop_config.json", "darwin", 2},
-	{ClaudeDesktop, "~/.config/Claude/claude_desktop_config.json", "linux", 2},
-	{ClaudeDesktop, "%APPDATA%\\Claude\\claude_desktop_config.json", "windows", 2},
+// ClaudeWrapper wraps the Claude CLI for MCP server management
+type ClaudeWrapper struct {
+	executable string
 }
 
-// DetectClaude detects all Claude installations
-func DetectClaude() ([]ClaudeInstallation, error) {
-	var installations []ClaudeInstallation
+// NewClaudeWrapper creates a new Claude CLI wrapper
+func NewClaudeWrapper() *ClaudeWrapper {
+	return &ClaudeWrapper{
+		executable: "claude",
+	}
+}
 
-	// Check environment variables first
-	if path := os.Getenv("CLAUDE_CODE_CONFIG"); path != "" {
-		if installation := detectFromPath(path, ClaudeCode); installation != nil {
-			installations = append(installations, *installation)
-		}
+// IsAvailable checks if Claude CLI is available
+func (c *ClaudeWrapper) IsAvailable() error {
+	_, err := exec.LookPath(c.executable)
+	if err != nil {
+		return fmt.Errorf("claude CLI not found in PATH: %w", err)
+	}
+	return nil
+}
+
+// ListServers lists installed MCP servers via claude mcp list
+func (c *ClaudeWrapper) ListServers() (map[string]bool, error) {
+	if err := c.IsAvailable(); err != nil {
+		return nil, err
 	}
 
-	if path := os.Getenv("CLAUDE_DESKTOP_CONFIG"); path != "" {
-		if installation := detectFromPath(path, ClaudeDesktop); installation != nil {
-			installations = append(installations, *installation)
-		}
+	cmd := exec.Command(c.executable, "mcp", "list")
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, fmt.Errorf("failed to list MCP servers: %w", err)
 	}
 
-	// Check standard locations
-	for _, loc := range StandardLocations {
-		if runtime.GOOS != loc.Platform {
+	servers := make(map[string]bool)
+
+	// Parse output to extract server names
+	// Format: "servername: /path/to/server args - ✓ Connected"
+	lines := strings.Split(string(output), "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "Checking") {
 			continue
 		}
 
-		path := expandPath(loc.ConfigPath)
-		if installation := detectFromPath(path, loc.Type); installation != nil {
-			// Check if we already have this installation
-			duplicate := false
-			for _, existing := range installations {
-				if existing.ConfigPath == installation.ConfigPath {
-					duplicate = true
-					break
-				}
-			}
-			if !duplicate {
-				installations = append(installations, *installation)
-			}
+		// Extract server name before ":"
+		if idx := strings.Index(line, ":"); idx > 0 {
+			serverName := strings.TrimSpace(line[:idx])
+			// Check if it's connected (has ✓)
+			connected := strings.Contains(line, "✓")
+			servers[serverName] = connected
 		}
+	}
+
+	return servers, nil
+}
+
+// AddServer adds an MCP server via claude mcp add
+func (c *ClaudeWrapper) AddServer(name string, command string, args []string, env map[string]string) error {
+	if err := c.IsAvailable(); err != nil {
+		return err
+	}
+
+	if len(env) > 0 {
+		// Use claude mcp add-json for servers with environment variables
+		return c.addServerWithJSON(name, command, args, env)
+	}
+
+	// Use claude mcp add for simple servers
+	cmdArgs := []string{"mcp", "add", name, command, "--"}
+	cmdArgs = append(cmdArgs, args...)
+
+	cmd := exec.Command(c.executable, cmdArgs...)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to add MCP server %s: %w\nOutput: %s", name, err, string(output))
+	}
+
+	return nil
+}
+
+// addServerWithJSON adds an MCP server using JSON configuration
+func (c *ClaudeWrapper) addServerWithJSON(name string, command string, args []string, env map[string]string) error {
+	// Build JSON configuration
+	config := map[string]interface{}{
+		"type":    "stdio",
+		"command": command,
+		"args":    args,
+		"env":     env,
+	}
+
+	jsonData, err := json.Marshal(config)
+	if err != nil {
+		return fmt.Errorf("failed to marshal server config: %w", err)
+	}
+
+	cmd := exec.Command(c.executable, "mcp", "add-json", name, string(jsonData))
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to add MCP server %s with JSON: %w\nOutput: %s", name, err, string(output))
+	}
+
+	return nil
+}
+
+// RemoveServer removes an MCP server via claude mcp remove
+func (c *ClaudeWrapper) RemoveServer(name string) error {
+	if err := c.IsAvailable(); err != nil {
+		return err
+	}
+
+	cmd := exec.Command(c.executable, "mcp", "remove", name)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to remove MCP server %s: %w\nOutput: %s", name, err, string(output))
+	}
+
+	return nil
+}
+
+// GetServerStatus gets the status of a specific server
+func (c *ClaudeWrapper) GetServerStatus(name string) (*ServerStatus, error) {
+	servers, err := c.ListServers()
+	if err != nil {
+		return nil, err
+	}
+
+	connected, installed := servers[name]
+	return &ServerStatus{
+		Name:      name,
+		Installed: installed,
+		Running:   connected,
+		Version:   "unknown",
+		Errors:    []string{},
+	}, nil
+}
+
+// CheckClaude checks if Claude CLI is available and working
+func CheckClaude() error {
+	wrapper := NewClaudeWrapper()
+	return wrapper.IsAvailable()
+}
+
+// DetectClaude detects available Claude installations
+func DetectClaude() ([]ClaudeInstallation, error) {
+	installations := []ClaudeInstallation{}
+
+	// Try to detect Claude Code installation
+	if err := CheckClaude(); err == nil {
+		installations = append(installations, ClaudeInstallation{
+			Type:       ClaudeCode,
+			ConfigPath: "~/.claude/config.json", // placeholder
+			Version:    "unknown",
+			Detected:   time.Now(),
+		})
 	}
 
 	return installations, nil
-}
-
-// DetectClaudeCode detects Claude Code installation
-func DetectClaudeCode() (*ClaudeInstallation, error) {
-	// Check environment variable
-	if path := os.Getenv("CLAUDE_CODE_CONFIG"); path != "" {
-		return detectFromPath(path, ClaudeCode), nil
-	}
-
-	// Check standard locations
-	for _, loc := range StandardLocations {
-		if loc.Type != ClaudeCode || runtime.GOOS != loc.Platform {
-			continue
-		}
-
-		path := expandPath(loc.ConfigPath)
-		if installation := detectFromPath(path, ClaudeCode); installation != nil {
-			return installation, nil
-		}
-	}
-
-	return nil, ErrClaudeNotFound
-}
-
-// DetectClaudeDesktop detects Claude Desktop installation
-func DetectClaudeDesktop() (*ClaudeInstallation, error) {
-	// Check environment variable
-	if path := os.Getenv("CLAUDE_DESKTOP_CONFIG"); path != "" {
-		return detectFromPath(path, ClaudeDesktop), nil
-	}
-
-	// Check standard locations
-	for _, loc := range StandardLocations {
-		if loc.Type != ClaudeDesktop || runtime.GOOS != loc.Platform {
-			continue
-		}
-
-		path := expandPath(loc.ConfigPath)
-		if installation := detectFromPath(path, ClaudeDesktop); installation != nil {
-			return installation, nil
-		}
-	}
-
-	return nil, ErrClaudeNotFound
-}
-
-// detectFromPath checks if a Claude installation exists at the given path
-func detectFromPath(path string, claudeType ClaudeType) *ClaudeInstallation {
-	// Check if file exists or parent directory exists
-	if _, err := os.Stat(path); err != nil {
-		// Check if parent directory exists (file might not exist yet)
-		parentDir := filepath.Dir(path)
-		if _, err := os.Stat(parentDir); err != nil {
-			return nil
-		}
-	}
-
-	installation := &ClaudeInstallation{
-		Type:       claudeType,
-		ConfigPath: path,
-		Detected:   time.Now(),
-	}
-
-	// Try to detect version from config
-	if version := detectVersion(path); version != "" {
-		installation.Version = version
-	}
-
-	return installation
-}
-
-// detectVersion attempts to detect Claude version from config
-func detectVersion(configPath string) string {
-	data, err := os.ReadFile(configPath)
-	if err != nil {
-		return "unknown"
-	}
-
-	var config map[string]interface{}
-	if err := json.Unmarshal(data, &config); err != nil {
-		return "unknown"
-	}
-
-	// Check for version field
-	if version, ok := config["version"].(string); ok {
-		return version
-	}
-
-	// Check for mcpServers to determine if it's a newer version
-	if _, ok := config["mcpServers"]; ok {
-		if strings.Contains(configPath, "desktop") {
-			return "1.0+"
-		}
-		return "0.2+"
-	}
-
-	return "unknown"
-}
-
-// expandPath expands ~ and environment variables in a path
-func expandPath(path string) string {
-	if strings.HasPrefix(path, "~") {
-		home, err := os.UserHomeDir()
-		if err == nil {
-			path = filepath.Join(home, path[2:])
-		}
-	}
-
-	return os.ExpandEnv(path)
-}
-
-// GetConfigPath returns the default config path for a Claude type
-func GetConfigPath(claudeType ClaudeType) string {
-	for _, loc := range StandardLocations {
-		if loc.Type == claudeType && runtime.GOOS == loc.Platform {
-			return expandPath(loc.ConfigPath)
-		}
-	}
-	return ""
-}
-
-// SelectInstallation prompts the user to select from multiple installations
-func SelectInstallation(installations []ClaudeInstallation) (*ClaudeInstallation, error) {
-	if len(installations) == 0 {
-		return nil, ErrClaudeNotFound
-	}
-
-	if len(installations) == 1 {
-		return &installations[0], nil
-	}
-
-	// In non-interactive mode, prefer Claude Code over Desktop
-	for _, installation := range installations {
-		if installation.Type == ClaudeCode {
-			return &installation, nil
-		}
-	}
-
-	return &installations[0], nil
-}
-
-// FormatInstallation formats an installation for display
-func FormatInstallation(installation ClaudeInstallation) string {
-	typeStr := "Claude Code"
-	if installation.Type == ClaudeDesktop {
-		typeStr = "Claude Desktop"
-	}
-
-	return fmt.Sprintf("%s at %s (version: %s)", typeStr, installation.ConfigPath, installation.Version)
 }
