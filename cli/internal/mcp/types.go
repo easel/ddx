@@ -134,8 +134,6 @@ type InstallOptions struct {
 	Environment map[string]string // Environment variables
 	DryRun      bool              // Show what would be done
 	Yes         bool              // Skip confirmations
-	ConfigPath  string            // Path to Claude config file
-	NoBackup    bool              // Skip backup creation
 }
 
 // ServerStatus represents the status of an installed server
@@ -169,7 +167,6 @@ type ConfigureOptions struct {
 type RemoveOptions struct {
 	SkipConfirmation bool // Skip confirmation prompts
 	Purge            bool // Remove all related data
-	NoBackup         bool // Skip backup creation
 }
 
 // StatusOptions contains options for status checking
@@ -186,4 +183,3 @@ type UpdateOptions struct {
 	Server string // Update specific server
 	Check  bool   // Check for updates only
 }
-

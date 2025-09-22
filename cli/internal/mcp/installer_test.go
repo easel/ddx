@@ -1,121 +1,14 @@
 package mcp_test
 
 import (
-	"encoding/json"
-	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/easel/ddx/internal/mcp"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
-func TestInstaller(t *testing.T) {
-	// Setup test registry
-	registryPath, cleanup := setupTestRegistry(t)
-	defer cleanup()
-
-	// Set DDX_LIBRARY_BASE_PATH for tests to use the temp directory
-	libDir := filepath.Dir(filepath.Dir(registryPath))
-	t.Setenv("DDX_LIBRARY_BASE_PATH", libDir)
-
-	t.Run("install new server", func(t *testing.T) {
-		tmpDir := t.TempDir()
-		configPath := filepath.Join(tmpDir, "claude.json")
-
-		installer := mcp.NewInstaller()
-		opts := mcp.InstallOptions{
-			ConfigPath: configPath,
-			Environment: map[string]string{
-				"GITHUB_PERSONAL_ACCESS_TOKEN": "ghp_test123456789",
-			},
-			NoBackup: true,
-		}
-
-		err := installer.Install("github", opts)
-		require.NoError(t, err)
-
-		// Verify config was written
-		data, err := os.ReadFile(configPath)
-		require.NoError(t, err)
-
-		var config map[string]interface{}
-		err = json.Unmarshal(data, &config)
-		require.NoError(t, err)
-
-		servers, ok := config["mcpServers"].(map[string]interface{})
-		require.True(t, ok)
-		require.Contains(t, servers, "github")
-	})
-
-	t.Run("server already installed", func(t *testing.T) {
-		tmpDir := t.TempDir()
-		configPath := filepath.Join(tmpDir, "claude.json")
-
-		// Create existing config
-		existingConfig := map[string]interface{}{
-			"mcpServers": map[string]interface{}{
-				"github": map[string]interface{}{
-					"command": "npx",
-				},
-			},
-		}
-		data, _ := json.Marshal(existingConfig)
-		os.WriteFile(configPath, data, 0600)
-
-		installer := mcp.NewInstaller()
-		opts := mcp.InstallOptions{
-			ConfigPath: configPath,
-			Environment: map[string]string{
-				"GITHUB_PERSONAL_ACCESS_TOKEN": "test",
-			},
-			NoBackup: true,
-		}
-
-		err := installer.Install("github", opts)
-		assert.Error(t, err)
-		assert.ErrorIs(t, err, mcp.ErrAlreadyInstalled)
-	})
-
-	t.Run("missing required environment", func(t *testing.T) {
-		tmpDir := t.TempDir()
-		configPath := filepath.Join(tmpDir, "claude.json")
-
-		installer := mcp.NewInstaller()
-		opts := mcp.InstallOptions{
-			ConfigPath:  configPath,
-			Environment: map[string]string{}, // Missing required token
-			NoBackup:    true,
-		}
-
-		err := installer.Install("github", opts)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "interactive prompting not yet implemented")
-	})
-
-	t.Run("dry run", func(t *testing.T) {
-		tmpDir := t.TempDir()
-		configPath := filepath.Join(tmpDir, "claude.json")
-
-		installer := mcp.NewInstaller()
-		opts := mcp.InstallOptions{
-			ConfigPath: configPath,
-			Environment: map[string]string{
-				"GITHUB_PERSONAL_ACCESS_TOKEN": "test",
-			},
-			DryRun: true,
-		}
-
-		err := installer.Install("github", opts)
-		require.NoError(t, err)
-
-		// Config should not be written
-		_, err = os.Stat(configPath)
-		assert.True(t, os.IsNotExist(err))
-	})
-}
-
+// TestInstaller tests have been removed as they tested the old config file approach
+// The installer now uses Claude CLI integration which is tested through acceptance tests
 
 func TestValidator(t *testing.T) {
 	v := mcp.NewValidator()

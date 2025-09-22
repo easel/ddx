@@ -18,7 +18,6 @@ var (
 	ErrInvalidConfig    = errors.New("invalid configuration")
 	ErrConfigCorrupted  = errors.New("configuration file corrupted")
 	ErrPermissionDenied = errors.New("permission denied")
-	ErrBackupFailed     = errors.New("backup creation failed")
 
 	// Environment errors
 	ErrMissingRequired  = errors.New("missing required environment variable")

@@ -120,7 +120,7 @@ func runMCPStatus(cmd *cobra.Command) error {
 }
 
 // extractInstallOptions creates InstallOptions from CLI flags
-func extractInstallOptions(cmd *cobra.Command, envVars []string, yes bool, configPath string) mcp.InstallOptions {
+func extractInstallOptions(cmd *cobra.Command, envVars []string, yes bool) mcp.InstallOptions {
 	// Parse environment variables from KEY=VALUE format
 	environment := make(map[string]string)
 	for _, envVar := range envVars {
@@ -130,14 +130,12 @@ func extractInstallOptions(cmd *cobra.Command, envVars []string, yes bool, confi
 		}
 	}
 
-	noBackup, _ := cmd.Flags().GetBool("no-backup")
 	dryRun, _ := cmd.Flags().GetBool("dry-run")
 
 	return mcp.InstallOptions{
 		Environment: environment,
-		ConfigPath:  configPath,
-		NoBackup:    noBackup,
 		DryRun:      dryRun,
+		Yes:         yes,
 	}
 }
 
@@ -183,12 +181,10 @@ func extractConfigureOptions(env, addEnv, removeEnv []string, reset bool) mcp.Co
 // extractRemoveOptions creates RemoveOptions from CLI flags
 func extractRemoveOptions(cmd *cobra.Command) mcp.RemoveOptions {
 	yes, _ := cmd.Flags().GetBool("yes")
-	noBackup, _ := cmd.Flags().GetBool("no-backup")
 	purge, _ := cmd.Flags().GetBool("purge")
 
 	return mcp.RemoveOptions{
 		SkipConfirmation: yes,
-		NoBackup:         noBackup,
 		Purge:            purge,
 	}
 }
