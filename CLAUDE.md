@@ -148,6 +148,42 @@ The CLI follows a noun-verb command structure for clarity and consistency:
 
 The CLI follows the medical metaphor throughout, treating projects as patients that need diagnosis and treatment through appropriate templates and patterns.
 
+### Workflow Execution Commands
+
+The DDx CLI includes powerful workflow execution commands that allow AI-assisted work on user stories:
+
+**CRITICAL**: When asked to work on a user story or continue HELIX work, use these commands:
+
+```bash
+# Execute work on a specific user story
+ddx workflow helix execute build-story US-001
+
+# Continue work on the current story
+ddx workflow helix execute continue
+
+# Check workflow and story status
+ddx workflow helix execute status
+
+# Work on the next priority story
+ddx workflow helix execute next
+
+# List available workflow commands
+ddx workflow helix commands
+```
+
+These commands load AI prompts from `library/workflows/helix/commands/` that:
+- Understand HELIX phase rules and enforce them
+- Read user stories and requirements
+- Execute phase-appropriate work
+- Maintain workflow state
+- Follow all architectural principles
+
+**When to use**:
+- User says "work on US-001" → Use `ddx workflow helix execute build-story US-001`
+- User says "continue" → Use `ddx workflow helix execute continue`
+- User asks about progress → Use `ddx workflow helix execute status`
+- User says "do the next thing" → Use `ddx workflow helix execute next`
+
 ### Persona System
 
 DDX includes a persona system that provides consistent AI personalities for different roles:
@@ -283,11 +319,14 @@ When responding, adopt the appropriate persona based on the task.
 Implementing features to make all tests pass following TDD Green phase.
 
 ### Next Actions:
-1. **Implement update command with --check, --force, --sync, --strategy flags**
-2. **Configure git subtree for .ddx directory synchronization**
-3. **Implement MCP registry loading and server installation**
-4. **Add conflict detection and resolution logic**
-5. **Make all 78 test scenarios pass**
+1. **Continue implementation with**: `ddx workflow helix execute build-story US-042`
+2. **Or check status with**: `ddx workflow helix execute status`
+3. **Or continue current work**: `ddx workflow helix execute continue`
+4. **Implement update command with --check, --force, --sync, --strategy flags**
+5. **Configure git subtree for .ddx directory synchronization**
+6. **Implement MCP registry loading and server installation**
+7. **Add conflict detection and resolution logic**
+8. **Make all 78 test scenarios pass**
 
 ### Phase Enforcer Active:
 The Build Phase Enforcer is currently active. Implement ONLY what's needed to make tests pass. No gold-plating.
@@ -383,11 +422,46 @@ You must first:
 Please focus on defining WHAT you're building, not HOW.
 ```
 
+### Workflow Execution Tools
+
+**USE THESE COMMANDS**: Instead of manually reading files and determining actions:
+
+```bash
+# Don't do this:
+cat docs/helix/01-frame/user-stories/US-001.md  # Manual reading
+# Then figure out what phase we're in...
+# Then decide what to do...
+
+# Do this instead:
+ddx workflow helix execute build-story US-001
+# The command handles everything automatically
+```
+
 ### Workflow Commands
 
 When asked about workflow status or to perform workflow actions:
-- Check current phase and progress
+- Use `ddx workflow helix execute status` to check current phase and progress
+- Use `ddx workflow helix execute build-story US-XXX` to work on specific stories
+- Use `ddx workflow helix execute continue` to resume current work
+- Use `ddx workflow helix execute next` to work on next priority story
 - Validate gate criteria
 - Guide phase-appropriate actions
 - Prevent phase violations
 - Ensure documentation best practices
+
+## Approved Workflow Commands
+
+The following DDx workflow commands can be executed automatically when working on user stories:
+
+**HELIX Workflow Commands:**
+- `ddx workflow helix execute build-story <story-id>` - Work on a specific user story
+- `ddx workflow helix execute continue` - Continue current work
+- `ddx workflow helix execute status` - Check workflow status
+- `ddx workflow helix execute next` - Work on next priority story
+- `ddx workflow helix commands` - List available commands
+
+**General Workflow Commands:**
+- `ddx workflow <workflow> execute <command> [args]` - Execute any workflow command
+- `ddx workflow <workflow> commands` - List workflow commands
+
+These commands are essential for HELIX workflow execution and should be used proactively when working on user stories or continuing development work.
