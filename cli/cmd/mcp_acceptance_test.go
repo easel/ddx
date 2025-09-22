@@ -371,25 +371,19 @@ mcp:
 			os.MkdirAll(mcpDir, 0755)
 
 			// Create a simple registry.yml
-			registry := `servers:
-  filesystem:
-    name: Filesystem Server
-    description: Access local files
+			registry := `version: 1.0.0
+updated: 2025-01-15T00:00:00Z
+servers:
+  - name: filesystem
+    file: servers/filesystem.yml
     category: core
-    package: "@modelcontextprotocol/server-filesystem"
-    version: "0.1.0"
-    author: Anthropic
-  github:
-    name: GitHub Server
-    description: Access GitHub repositories
+    description: Access local files
+  - name: github
+    file: servers/github.yml
     category: development
-    package: "@modelcontextprotocol/server-github"
-    version: "0.1.0"
-    author: Anthropic
-    env:
-      - GITHUB_PERSONAL_ACCESS_TOKEN
+    description: Access GitHub repositories
 `
-			os.WriteFile(filepath.Join(mcpDir, "registry.yaml"), []byte(registry), 0644)
+			os.WriteFile(filepath.Join(mcpDir, "registry.yml"), []byte(registry), 0644)
 		}
 	}
 }
