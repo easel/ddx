@@ -211,7 +211,7 @@ graph LR
 
 - 📚 **[Quick Start Guide](QUICKSTART.md)**: Get running in 5 minutes
 - 🎨 **[Visual Diagrams](diagrams/)**: Workflow and artifact visualizations
-- 📋 **[Reference Card](REFERENCE.md)**: Quick lookup for commands and concepts
+- 📋 **[Reference Card](REFERENCE.md)**: Quick lookup for actions and concepts
 - 🔄 **[Phase Guides](phases/)**: Deep dive into each phase
 - 🛠️ **[Templates](phases/*/artifacts/)**: Ready-to-use artifact templates
 
