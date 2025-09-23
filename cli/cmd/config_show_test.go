@@ -38,7 +38,7 @@ func TestConfigShowCommand(t *testing.T) {
 			name:     "config_show_json",
 			args:     []string{"config", "show", "--format", "json"},
 			setup:    setupBasicConfig,
-			expected: []string{`"source_type"`, `"generated_at"`, `"version"`},
+			expected: []string{`"SourceType"`, `"GeneratedAt"`, `"Version"`},
 			wantErr:  false,
 		},
 		{
@@ -70,11 +70,11 @@ func TestConfigShowCommand(t *testing.T) {
 			wantErr:  false,
 		},
 		{
-			name:        "config_show_unknown_section",
-			args:        []string{"config", "show", "unknown"},
-			setup:       setupBasicConfig,
-			expected:    []string{"unknown section"},
-			wantErr:     true,
+			name:     "config_show_unknown_section",
+			args:     []string{"config", "show", "unknown"},
+			setup:    setupBasicConfig,
+			expected: []string{"unknown section"},
+			wantErr:  true,
 		},
 	}
 

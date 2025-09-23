@@ -222,11 +222,17 @@ func TestAcceptance_US002_ListAvailableAssets(t *testing.T) {
 				testLibDir := t.TempDir()
 				t.Setenv("DDX_LIBRARY_BASE_PATH", testLibDir)
 
+				// Create templates with files
 				templatesDir := filepath.Join(testLibDir, "templates")
-				require.NoError(t, os.MkdirAll(filepath.Join(templatesDir, "nextjs"), 0755))
+				nextjsDir := filepath.Join(templatesDir, "nextjs")
+				require.NoError(t, os.MkdirAll(nextjsDir, 0755))
+				require.NoError(t, os.WriteFile(filepath.Join(nextjsDir, "README.md"), []byte("# NextJS Template"), 0644))
 
+				// Create patterns with files
 				patternsDir := filepath.Join(testLibDir, "patterns")
-				require.NoError(t, os.MkdirAll(filepath.Join(patternsDir, "auth"), 0755))
+				authDir := filepath.Join(patternsDir, "auth")
+				require.NoError(t, os.MkdirAll(authDir, 0755))
+				require.NoError(t, os.WriteFile(filepath.Join(authDir, "auth.md"), []byte("# Auth Pattern"), 0644))
 
 				return testLibDir
 			},
@@ -260,8 +266,13 @@ func TestAcceptance_US002_ListAvailableAssets(t *testing.T) {
 				t.Setenv("DDX_LIBRARY_BASE_PATH", testLibDir)
 
 				templatesDir := filepath.Join(testLibDir, "templates")
-				require.NoError(t, os.MkdirAll(filepath.Join(templatesDir, "react-app"), 0755))
-				require.NoError(t, os.MkdirAll(filepath.Join(templatesDir, "python-cli"), 0755))
+				reactDir := filepath.Join(templatesDir, "react-app")
+				require.NoError(t, os.MkdirAll(reactDir, 0755))
+				require.NoError(t, os.WriteFile(filepath.Join(reactDir, "package.json"), []byte("{}"), 0644))
+
+				pythonDir := filepath.Join(templatesDir, "python-cli")
+				require.NoError(t, os.MkdirAll(pythonDir, 0755))
+				require.NoError(t, os.WriteFile(filepath.Join(pythonDir, "main.py"), []byte("# Python CLI"), 0644))
 
 				return testLibDir
 			},
@@ -288,12 +299,19 @@ func TestAcceptance_US002_ListAvailableAssets(t *testing.T) {
 
 				// Create multiple templates
 				templatesDir := filepath.Join(testLibDir, "templates")
-				require.NoError(t, os.MkdirAll(filepath.Join(templatesDir, "nextjs"), 0755))
-				require.NoError(t, os.MkdirAll(filepath.Join(templatesDir, "react"), 0755))
+				nextjsDir := filepath.Join(templatesDir, "nextjs")
+				require.NoError(t, os.MkdirAll(nextjsDir, 0755))
+				require.NoError(t, os.WriteFile(filepath.Join(nextjsDir, "package.json"), []byte("{}"), 0644))
+
+				reactDir := filepath.Join(templatesDir, "react")
+				require.NoError(t, os.MkdirAll(reactDir, 0755))
+				require.NoError(t, os.WriteFile(filepath.Join(reactDir, "index.js"), []byte("// React app"), 0644))
 
 				// Create multiple patterns
 				patternsDir := filepath.Join(testLibDir, "patterns")
-				require.NoError(t, os.MkdirAll(filepath.Join(patternsDir, "auth"), 0755))
+				authDir := filepath.Join(patternsDir, "auth")
+				require.NoError(t, os.MkdirAll(authDir, 0755))
+				require.NoError(t, os.WriteFile(filepath.Join(authDir, "auth.ts"), []byte("// Auth pattern"), 0644))
 
 				return testLibDir
 			},
@@ -547,6 +565,10 @@ func TestAcceptance_WorkflowIntegration(t *testing.T) {
 		templatesDir := filepath.Join(libraryDir, "templates")
 		require.NoError(t, os.MkdirAll(filepath.Join(templatesDir, "nextjs"), 0755))
 		require.NoError(t, os.MkdirAll(filepath.Join(templatesDir, "python"), 0755))
+
+		// Create template files so they can be discovered
+		require.NoError(t, os.WriteFile(filepath.Join(templatesDir, "nextjs", "README.md"), []byte("# NextJS Template"), 0644))
+		require.NoError(t, os.WriteFile(filepath.Join(templatesDir, "python", "README.md"), []byte("# Python Template"), 0644))
 
 		// Create config pointing to library
 		config := []byte(`version: "2.0"

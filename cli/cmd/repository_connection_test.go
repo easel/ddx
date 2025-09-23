@@ -82,13 +82,13 @@ func TestAcceptance_US021_ConfigureRepositoryConnection(t *testing.T) {
 
 		rootCmd := getConfigTestRootCommand()
 
-		// Set SSH key authentication
-		_, err := executeCommand(rootCmd, "config", "set", "repository.auth.method", "ssh-key")
-		require.NoError(t, err, "Should be able to set auth method")
+		// Set SSH key path first, then authentication method
+		_, err := executeCommand(rootCmd, "config", "set", "repository.auth.key_path", "~/.ssh/ddx_deploy_key")
+		require.NoError(t, err, "Should be able to set SSH key path")
 
 		keyCmd := getConfigTestRootCommand()
-		_, err = executeCommand(keyCmd, "config", "set", "repository.auth.key_path", "~/.ssh/ddx_deploy_key")
-		require.NoError(t, err, "Should be able to set SSH key path")
+		_, err = executeCommand(keyCmd, "config", "set", "repository.auth.method", "ssh-key")
+		require.NoError(t, err, "Should be able to set auth method")
 
 		// Verify authentication config
 		getCmd := getConfigTestRootCommand()

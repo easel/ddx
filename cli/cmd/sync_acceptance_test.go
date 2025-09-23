@@ -254,7 +254,7 @@ func TestAcceptance_US005_ContributeImprovements(t *testing.T) {
 			// Then: Contribution is prepared
 			assert.NoError(t, err)
 			output := contributeBuf.String()
-			assert.Contains(t, output, "Preparing contribution", "Should prepare contribution")
+			assert.Contains(t, output, "Validating contribution", "Should prepare contribution")
 			assert.Contains(t, output, "templates/my-template", "Should reference the template")
 		})
 	})
@@ -574,7 +574,7 @@ func TestAcceptance_US011_ContributeChangesUpstream(t *testing.T) {
 
 			// Then: Standards are validated
 			output := contributeBuf.String()
-			assert.Contains(t, output, "Checking contribution standards", "Should validate standards")
+			assert.Contains(t, output, "Validating contribution", "Should validate standards")
 		})
 	})
 

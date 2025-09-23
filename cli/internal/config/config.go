@@ -19,38 +19,38 @@ import (
 
 // Config represents the DDx configuration
 type Config struct {
-	Version         string                     `yaml:"version"`
-	LibraryPath     string                     `yaml:"library_path,omitempty"`
-	Repository      Repository                 `yaml:"repository"`
-	Repositories    map[string]Repository      `yaml:"repositories,omitempty"`
-	Includes        []string                   `yaml:"includes"`
-	Resources       *ResourceSelection         `yaml:"resources,omitempty"`
-	Overrides       map[string]string          `yaml:"overrides,omitempty"`
-	Variables       map[string]string          `yaml:"variables"`
-	PersonaBindings map[string]string          `yaml:"persona_bindings,omitempty"`
+	Version         string                `yaml:"version"`
+	LibraryPath     string                `yaml:"library_path,omitempty"`
+	Repository      Repository            `yaml:"repository"`
+	Repositories    map[string]Repository `yaml:"repositories,omitempty"`
+	Includes        []string              `yaml:"includes"`
+	Resources       *ResourceSelection    `yaml:"resources,omitempty"`
+	Overrides       map[string]string     `yaml:"overrides,omitempty"`
+	Variables       map[string]string     `yaml:"variables"`
+	PersonaBindings map[string]string     `yaml:"persona_bindings,omitempty"`
 }
 
 // Repository configuration
 type Repository struct {
-	URL      string            `yaml:"url"`
-	Branch   string            `yaml:"branch"`
-	Path     string            `yaml:"path"`
-	Remote   string            `yaml:"remote,omitempty"`
-	Protocol string            `yaml:"protocol,omitempty"`
-	Priority int               `yaml:"priority,omitempty"`
-	Auth     *AuthConfig       `yaml:"auth,omitempty"`
-	Proxy    *ProxyConfig      `yaml:"proxy,omitempty"`
-	Sync     *SyncConfig       `yaml:"sync,omitempty"`
+	URL      string       `yaml:"url"`
+	Branch   string       `yaml:"branch"`
+	Path     string       `yaml:"path"`
+	Remote   string       `yaml:"remote,omitempty"`
+	Protocol string       `yaml:"protocol,omitempty"`
+	Priority int          `yaml:"priority,omitempty"`
+	Auth     *AuthConfig  `yaml:"auth,omitempty"`
+	Proxy    *ProxyConfig `yaml:"proxy,omitempty"`
+	Sync     *SyncConfig  `yaml:"sync,omitempty"`
 }
 
 // AuthConfig represents authentication configuration
 type AuthConfig struct {
-	Method      string `yaml:"method,omitempty"`
-	KeyPath     string `yaml:"key_path,omitempty"`
-	Token       string `yaml:"token,omitempty"`
-	Username    string `yaml:"username,omitempty"`
-	Password    string `yaml:"password,omitempty"`
-	TokenFile   string `yaml:"token_file,omitempty"`
+	Method    string `yaml:"method,omitempty"`
+	KeyPath   string `yaml:"key_path,omitempty"`
+	Token     string `yaml:"token,omitempty"`
+	Username  string `yaml:"username,omitempty"`
+	Password  string `yaml:"password,omitempty"`
+	TokenFile string `yaml:"token_file,omitempty"`
 }
 
 // ProxyConfig represents proxy configuration
@@ -577,7 +577,7 @@ func (c *Config) processEnvironmentVariables(content string) string {
 			}
 
 			// Replace the entire ${...} expression
-			wholeExpr := result[start:braceEnd+1]
+			wholeExpr := result[start : braceEnd+1]
 			result = strings.ReplaceAll(result, wholeExpr, replacement)
 
 			// Continue from where we left off, accounting for the replacement
@@ -818,6 +818,34 @@ func (c *Config) Merge(other *Config) *Config {
 	}
 	if other.Repository.Path != "" {
 		result.Repository.Path = other.Repository.Path
+	}
+	if other.Repository.Remote != "" {
+		result.Repository.Remote = other.Repository.Remote
+	}
+	if other.Repository.Protocol != "" {
+		result.Repository.Protocol = other.Repository.Protocol
+	}
+	if other.Repository.Priority != 0 {
+		result.Repository.Priority = other.Repository.Priority
+	}
+	if other.Repository.Auth != nil {
+		result.Repository.Auth = other.Repository.Auth
+	}
+	if other.Repository.Proxy != nil {
+		result.Repository.Proxy = other.Repository.Proxy
+	}
+	if other.Repository.Sync != nil {
+		result.Repository.Sync = other.Repository.Sync
+	}
+
+	// Copy repositories map
+	result.Repositories = make(map[string]Repository)
+	for k, v := range c.Repositories {
+		result.Repositories[k] = v
+	}
+	// Override with other's repositories
+	for k, v := range other.Repositories {
+		result.Repositories[k] = v
 	}
 
 	// Merge includes (append without duplicates)
@@ -1070,6 +1098,22 @@ func isValidURL(rawURL string) bool {
 	if rawURL == "" {
 		return false
 	}
+
+	// Check for SSH Git URL format (e.g., git@github.com:user/repo.git)
+	if strings.Contains(rawURL, "@") && strings.Contains(rawURL, ":") {
+		parts := strings.Split(rawURL, "@")
+		if len(parts) == 2 {
+			hostAndPath := parts[1]
+			if strings.Contains(hostAndPath, ":") {
+				hostParts := strings.Split(hostAndPath, ":")
+				if len(hostParts) >= 2 && hostParts[0] != "" && hostParts[1] != "" {
+					return true // Valid SSH Git URL
+				}
+			}
+		}
+	}
+
+	// Check for standard URL format (e.g., https://github.com/user/repo)
 	u, err := url.Parse(rawURL)
 	if err != nil {
 		return false

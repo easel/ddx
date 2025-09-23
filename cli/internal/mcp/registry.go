@@ -1,6 +1,7 @@
 package mcp
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -381,13 +382,22 @@ func (r *Registry) formatTable(w io.Writer, servers []*ServerReference, opts Lis
 		categories[server.Category] = append(categories[server.Category], server)
 	}
 
-	// Check installed servers via Claude CLI
+	// Check installed servers via Claude CLI and config files
 	installedServers := make(map[string]bool)
 	if r.claude != nil {
 		// Get list of installed servers from Claude CLI
 		if servers, err := r.claude.ListServers(); err == nil {
 			for name := range servers {
 				installedServers[name] = true
+			}
+		}
+	}
+
+	// Also check config file if provided
+	if opts.ConfigPath != "" {
+		for _, server := range servers {
+			if r.isServerInConfigFile(server.Name, opts.ConfigPath) {
+				installedServers[server.Name] = true
 			}
 		}
 	}
@@ -431,4 +441,32 @@ func (r *Registry) formatJSON(w io.Writer, servers []*ServerReference, opts List
 func (r *Registry) formatYAML(w io.Writer, servers []*ServerReference, opts ListOptions) error {
 	// TODO: Implement YAML output
 	return r.formatTable(w, servers, opts)
+}
+
+// isServerInConfigFile checks if a server is already configured in the config file
+func (r *Registry) isServerInConfigFile(serverName, configPath string) bool {
+	// Check if config file exists
+	if _, err := os.Stat(configPath); err != nil {
+		return false // File doesn't exist, so server isn't installed
+	}
+
+	// Read existing config
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		return false // Can't read file, assume not installed
+	}
+
+	// Parse JSON config
+	var config map[string]interface{}
+	if err := json.Unmarshal(data, &config); err != nil {
+		return false // Invalid JSON, assume not installed
+	}
+
+	// Check if mcpServers section exists and contains our server
+	if mcpServers, ok := config["mcpServers"].(map[string]interface{}); ok {
+		_, exists := mcpServers[serverName]
+		return exists
+	}
+
+	return false
 }

@@ -11,7 +11,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"runtime"
 
 	"golang.org/x/crypto/pbkdf2"
 )
@@ -30,17 +29,9 @@ func NewKeychainStore(serviceName string) *KeychainStore {
 
 // IsAvailable checks if keychain is available on the current platform
 func (s *KeychainStore) IsAvailable() bool {
-	switch runtime.GOOS {
-	case "darwin":
-		return true // macOS Keychain
-	case "windows":
-		return true // Windows Credential Manager
-	case "linux":
-		// Check for libsecret/gnome-keyring
-		return s.hasLinuxKeychain()
-	default:
-		return false
-	}
+	// Temporarily disable keychain until platform-specific implementations are complete
+	// This will make file storage the primary storage method
+	return false
 }
 
 // Get retrieves a credential from the keychain
@@ -160,23 +151,35 @@ func (s *KeychainStore) hasLinuxKeychain() bool {
 }
 
 func (s *KeychainStore) getFromKeychain(key string) ([]byte, error) {
-	// Platform-specific implementation
-	return nil, fmt.Errorf("keychain access not implemented for this platform")
+	// Keychain access not fully implemented yet - fail gracefully
+	return nil, &AuthError{
+		Type:    ErrorTypeNotFound,
+		Message: "Keychain integration not available",
+		Code:    "KEYCHAIN_NOT_AVAILABLE",
+	}
 }
 
 func (s *KeychainStore) setInKeychain(key string, data []byte) error {
-	// Platform-specific implementation
-	return fmt.Errorf("keychain access not implemented for this platform")
+	// Keychain access not fully implemented yet - fail gracefully
+	return &AuthError{
+		Type:    ErrorTypeStorageError,
+		Message: "Keychain integration not available",
+		Code:    "KEYCHAIN_NOT_AVAILABLE",
+	}
 }
 
 func (s *KeychainStore) deleteFromKeychain(key string) error {
-	// Platform-specific implementation
-	return fmt.Errorf("keychain access not implemented for this platform")
+	// Keychain access not fully implemented yet - fail gracefully
+	return &AuthError{
+		Type:    ErrorTypeStorageError,
+		Message: "Keychain integration not available",
+		Code:    "KEYCHAIN_NOT_AVAILABLE",
+	}
 }
 
 func (s *KeychainStore) listKeychainKeys() ([]string, error) {
-	// Platform-specific implementation
-	return nil, fmt.Errorf("keychain access not implemented for this platform")
+	// Keychain access not fully implemented yet - fail gracefully
+	return []string{}, nil
 }
 
 // FileStore implements encrypted file-based credential storage

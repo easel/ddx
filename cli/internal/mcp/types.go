@@ -148,12 +148,13 @@ type ServerStatus struct {
 
 // ListOptions contains options for listing servers
 type ListOptions struct {
-	Category  string // Filter by category
-	Search    string // Search term
-	Installed bool   // Show only installed
-	Available bool   // Show only available
-	Verbose   bool   // Detailed output
-	Format    string // Output format (table/json/yaml)
+	Category   string // Filter by category
+	Search     string // Search term
+	Installed  bool   // Show only installed
+	Available  bool   // Show only available
+	Verbose    bool   // Detailed output
+	Format     string // Output format (table/json/yaml)
+	ConfigPath string // Path to Claude config file to check
 }
 
 // ConfigureOptions contains options for server configuration

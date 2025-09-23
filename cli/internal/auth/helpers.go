@@ -258,29 +258,63 @@ func (a *DefaultSSHAgent) IsAvailable() bool {
 	// Check for SSH_AUTH_SOCK environment variable
 	authSock := os.Getenv("SSH_AUTH_SOCK")
 	if authSock == "" {
+		// No SSH agent running
 		return false
 	}
 
 	// Test connection to SSH agent
 	cmd := exec.Command("ssh-add", "-l")
-	err := cmd.Run()
-	return err == nil
+	output, err := cmd.CombinedOutput()
+
+	// ssh-add -l returns:
+	// - 0: keys found
+	// - 1: no keys but agent is running
+	// - 2: cannot connect to agent
+	if err != nil {
+		if cmd.ProcessState.ExitCode() == 1 {
+			// Agent is running but no keys - still available
+			return true
+		}
+		// Cannot connect to agent
+		return false
+	}
+
+	// Check for "The agent has no identities" message
+	if strings.Contains(string(output), "no identities") {
+		return true // Agent is running, just no keys
+	}
+
+	return true // Agent is running and has keys
 }
 
 // ListKeys returns available SSH keys
 func (a *DefaultSSHAgent) ListKeys(ctx context.Context) ([]SSHKey, error) {
 	cmd := exec.CommandContext(ctx, "ssh-add", "-l")
-	output, err := cmd.Output()
+	output, err := cmd.CombinedOutput()
+
+	outputStr := string(output)
+
+	// Handle the case where no keys are loaded
+	if err != nil && cmd.ProcessState.ExitCode() == 1 {
+		// Agent is running but no keys loaded
+		return []SSHKey{}, nil
+	}
+
 	if err != nil {
 		return nil, &AuthError{
 			Type:    ErrorTypeNotFound,
-			Message: "No SSH keys found in SSH agent",
-			Code:    "SSH_AGENT_NO_KEYS",
-			Hint:    "Add SSH keys with 'ssh-add ~/.ssh/id_rsa'",
+			Message: "Cannot connect to SSH agent",
+			Code:    "SSH_AGENT_CONNECTION_ERROR",
+			Hint:    "Ensure SSH agent is running with 'ssh-agent'",
 		}
 	}
 
-	return a.parseSSHKeys(string(output))
+	// Check for "no identities" message
+	if strings.Contains(outputStr, "no identities") || strings.Contains(outputStr, "The agent has no identities") {
+		return []SSHKey{}, nil
+	}
+
+	return a.parseSSHKeys(outputStr)
 }
 
 // Sign signs data with the specified key

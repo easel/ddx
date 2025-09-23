@@ -66,12 +66,16 @@ func runMCPListWithOptions(cmd *cobra.Command, category, search string, verbose 
 	// Set Claude wrapper on registry for installation status checking
 	registry.SetClaudeWrapper(claude)
 
+	// Get config path if provided
+	configPath, _ := cmd.Flags().GetString("config-path")
+
 	// Use registry to list servers with installed status
 	opts := mcp.ListOptions{
-		Category:  category,
-		Search:    search,
-		Verbose:   verbose,
-		Available: true,
+		Category:   category,
+		Search:     search,
+		Verbose:    verbose,
+		Available:  true,
+		ConfigPath: configPath,
 	}
 
 	return registry.ListWithWriter(cmd.OutOrStdout(), opts)

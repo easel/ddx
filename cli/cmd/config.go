@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -88,6 +89,8 @@ func runConfig(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("profile subcommand requires additional arguments")
 		}
 		return handleProfileSubcommand(cmd, args[1:])
+	case "repository":
+		return fmt.Errorf("repository branch management is not yet implemented. Use 'config set repository.branch <name>' instead")
 	default:
 		return fmt.Errorf("unknown subcommand: %s", subcommand)
 	}
@@ -171,6 +174,38 @@ func getConfigValue(cmd *cobra.Command, key string, global bool) error {
 		} else {
 			return fmt.Errorf("key not found: %s", key)
 		}
+	} else if strings.HasPrefix(key, "repositories.") {
+		// Handle repositories.name.field pattern
+		parts := strings.Split(key, ".")
+		if len(parts) >= 3 {
+			repoName := parts[1]
+			field := strings.Join(parts[2:], ".")
+
+			if cfg.Repositories == nil || cfg.Repositories[repoName].URL == "" {
+				fmt.Fprintln(cmd.OutOrStdout(), "")
+				return nil
+			}
+
+			repo := cfg.Repositories[repoName]
+			switch field {
+			case "url":
+				fmt.Fprintln(cmd.OutOrStdout(), repo.URL)
+			case "branch":
+				fmt.Fprintln(cmd.OutOrStdout(), repo.Branch)
+			case "path":
+				fmt.Fprintln(cmd.OutOrStdout(), repo.Path)
+			case "remote":
+				fmt.Fprintln(cmd.OutOrStdout(), repo.Remote)
+			case "protocol":
+				fmt.Fprintln(cmd.OutOrStdout(), repo.Protocol)
+			case "priority":
+				fmt.Fprintln(cmd.OutOrStdout(), repo.Priority)
+			default:
+				return fmt.Errorf("key not found: %s", key)
+			}
+		} else {
+			return fmt.Errorf("key not found: %s", key)
+		}
 	} else {
 		// Handle other known keys
 		switch key {
@@ -180,6 +215,66 @@ func getConfigValue(cmd *cobra.Command, key string, global bool) error {
 			fmt.Fprintln(cmd.OutOrStdout(), cfg.Repository.URL)
 		case "repository.branch":
 			fmt.Fprintln(cmd.OutOrStdout(), cfg.Repository.Branch)
+		case "repository.path":
+			fmt.Fprintln(cmd.OutOrStdout(), cfg.Repository.Path)
+		case "repository.remote":
+			fmt.Fprintln(cmd.OutOrStdout(), cfg.Repository.Remote)
+		case "repository.protocol":
+			fmt.Fprintln(cmd.OutOrStdout(), cfg.Repository.Protocol)
+		case "repository.sync.frequency":
+			if cfg.Repository.Sync != nil {
+				fmt.Fprintln(cmd.OutOrStdout(), cfg.Repository.Sync.Frequency)
+			} else {
+				fmt.Fprintln(cmd.OutOrStdout(), "")
+			}
+		case "repository.sync.auto_update":
+			if cfg.Repository.Sync != nil {
+				fmt.Fprintln(cmd.OutOrStdout(), cfg.Repository.Sync.AutoUpdate)
+			} else {
+				fmt.Fprintln(cmd.OutOrStdout(), false)
+			}
+		case "repository.sync.timeout":
+			if cfg.Repository.Sync != nil {
+				fmt.Fprintln(cmd.OutOrStdout(), cfg.Repository.Sync.Timeout)
+			} else {
+				fmt.Fprintln(cmd.OutOrStdout(), 0)
+			}
+		case "repository.sync.retry_count":
+			if cfg.Repository.Sync != nil {
+				fmt.Fprintln(cmd.OutOrStdout(), cfg.Repository.Sync.RetryCount)
+			} else {
+				fmt.Fprintln(cmd.OutOrStdout(), 0)
+			}
+		case "repository.auth.method":
+			if cfg.Repository.Auth != nil {
+				fmt.Fprintln(cmd.OutOrStdout(), cfg.Repository.Auth.Method)
+			} else {
+				fmt.Fprintln(cmd.OutOrStdout(), "")
+			}
+		case "repository.auth.key_path":
+			if cfg.Repository.Auth != nil {
+				fmt.Fprintln(cmd.OutOrStdout(), cfg.Repository.Auth.KeyPath)
+			} else {
+				fmt.Fprintln(cmd.OutOrStdout(), "")
+			}
+		case "repository.auth.token":
+			if cfg.Repository.Auth != nil {
+				fmt.Fprintln(cmd.OutOrStdout(), cfg.Repository.Auth.Token)
+			} else {
+				fmt.Fprintln(cmd.OutOrStdout(), "")
+			}
+		case "repository.proxy.url":
+			if cfg.Repository.Proxy != nil {
+				fmt.Fprintln(cmd.OutOrStdout(), cfg.Repository.Proxy.URL)
+			} else {
+				fmt.Fprintln(cmd.OutOrStdout(), "")
+			}
+		case "repository.proxy.auth":
+			if cfg.Repository.Proxy != nil {
+				fmt.Fprintln(cmd.OutOrStdout(), cfg.Repository.Proxy.Auth)
+			} else {
+				fmt.Fprintln(cmd.OutOrStdout(), "")
+			}
 		default:
 			if val, ok := cfg.Variables[key]; ok {
 				fmt.Fprintln(cmd.OutOrStdout(), val)
@@ -205,6 +300,41 @@ func setConfigValue(cmd *cobra.Command, key, value string, global bool) error {
 			cfg.Variables = make(map[string]string)
 		}
 		cfg.Variables[varName] = value
+	} else if strings.HasPrefix(key, "repositories.") {
+		// Handle repositories.name.field pattern
+		parts := strings.Split(key, ".")
+		if len(parts) >= 3 {
+			repoName := parts[1]
+			field := strings.Join(parts[2:], ".")
+
+			if cfg.Repositories == nil {
+				cfg.Repositories = make(map[string]config.Repository)
+			}
+
+			repo, exists := cfg.Repositories[repoName]
+			if !exists {
+				repo = config.Repository{}
+			}
+
+			switch field {
+			case "url":
+				repo.URL = value
+			case "branch":
+				repo.Branch = value
+			case "path":
+				repo.Path = value
+			case "remote":
+				repo.Remote = value
+			case "protocol":
+				repo.Protocol = value
+			case "priority":
+				if priority, err := strconv.Atoi(value); err == nil {
+					repo.Priority = priority
+				}
+			}
+
+			cfg.Repositories[repoName] = repo
+		}
 	} else {
 		// Handle other known keys
 		switch key {
@@ -212,6 +342,61 @@ func setConfigValue(cmd *cobra.Command, key, value string, global bool) error {
 			cfg.Repository.URL = value
 		case "repository.branch":
 			cfg.Repository.Branch = value
+		case "repository.path":
+			cfg.Repository.Path = value
+		case "repository.remote":
+			cfg.Repository.Remote = value
+		case "repository.protocol":
+			cfg.Repository.Protocol = value
+		case "repository.sync.frequency":
+			if cfg.Repository.Sync == nil {
+				cfg.Repository.Sync = &config.SyncConfig{}
+			}
+			cfg.Repository.Sync.Frequency = value
+		case "repository.sync.auto_update":
+			if cfg.Repository.Sync == nil {
+				cfg.Repository.Sync = &config.SyncConfig{}
+			}
+			cfg.Repository.Sync.AutoUpdate = value == "true"
+		case "repository.sync.timeout":
+			if cfg.Repository.Sync == nil {
+				cfg.Repository.Sync = &config.SyncConfig{}
+			}
+			if timeout, err := strconv.Atoi(value); err == nil {
+				cfg.Repository.Sync.Timeout = timeout
+			}
+		case "repository.sync.retry_count":
+			if cfg.Repository.Sync == nil {
+				cfg.Repository.Sync = &config.SyncConfig{}
+			}
+			if retryCount, err := strconv.Atoi(value); err == nil {
+				cfg.Repository.Sync.RetryCount = retryCount
+			}
+		case "repository.auth.method":
+			if cfg.Repository.Auth == nil {
+				cfg.Repository.Auth = &config.AuthConfig{}
+			}
+			cfg.Repository.Auth.Method = value
+		case "repository.auth.key_path":
+			if cfg.Repository.Auth == nil {
+				cfg.Repository.Auth = &config.AuthConfig{}
+			}
+			cfg.Repository.Auth.KeyPath = value
+		case "repository.auth.token":
+			if cfg.Repository.Auth == nil {
+				cfg.Repository.Auth = &config.AuthConfig{}
+			}
+			cfg.Repository.Auth.Token = value
+		case "repository.proxy.url":
+			if cfg.Repository.Proxy == nil {
+				cfg.Repository.Proxy = &config.ProxyConfig{}
+			}
+			cfg.Repository.Proxy.URL = value
+		case "repository.proxy.auth":
+			if cfg.Repository.Proxy == nil {
+				cfg.Repository.Proxy = &config.ProxyConfig{}
+			}
+			cfg.Repository.Proxy.Auth = value
 		default:
 			// If no prefix, assume it's a variable
 			if cfg.Variables == nil {
@@ -818,12 +1003,12 @@ func deleteProfile(cmd *cobra.Command, profileName string) error {
 
 // ConfigValueWithSource represents a configuration value with its source attribution
 type ConfigValueWithSource struct {
-	Value       interface{} `yaml:"value"`
-	Source      string      `yaml:"source"`
-	SourceType  string      `yaml:"source_type"`
-	IsOverride  bool        `yaml:"is_override,omitempty"`
-	IsDefault   bool        `yaml:"is_default,omitempty"`
-	IsComputed  bool        `yaml:"is_computed,omitempty"`
+	Value      interface{} `yaml:"value"`
+	Source     string      `yaml:"source"`
+	SourceType string      `yaml:"source_type"`
+	IsOverride bool        `yaml:"is_override,omitempty"`
+	IsDefault  bool        `yaml:"is_default,omitempty"`
+	IsComputed bool        `yaml:"is_computed,omitempty"`
 }
 
 // EffectiveConfig represents the complete configuration with source attribution
@@ -932,10 +1117,24 @@ func buildEffectiveConfigWithSources() (*EffectiveConfig, error) {
 
 	// Track variables sources
 	allVarKeys := make(map[string]bool)
-	for k := range defaultCfg.Variables { allVarKeys[k] = true }
-	if globalCfg != nil { for k := range globalCfg.Variables { allVarKeys[k] = true } }
-	if localCfg != nil { for k := range localCfg.Variables { allVarKeys[k] = true } }
-	if envCfg != nil { for k := range envCfg.Variables { allVarKeys[k] = true } }
+	for k := range defaultCfg.Variables {
+		allVarKeys[k] = true
+	}
+	if globalCfg != nil {
+		for k := range globalCfg.Variables {
+			allVarKeys[k] = true
+		}
+	}
+	if localCfg != nil {
+		for k := range localCfg.Variables {
+			allVarKeys[k] = true
+		}
+	}
+	if envCfg != nil {
+		for k := range envCfg.Variables {
+			allVarKeys[k] = true
+		}
+	}
 
 	for varKey := range allVarKeys {
 		defaultVal := defaultCfg.Variables[varKey]
@@ -945,15 +1144,23 @@ func buildEffectiveConfigWithSources() (*EffectiveConfig, error) {
 
 	// Track includes sources (this is more complex as it's a slice)
 	allIncludes := make(map[string]string)
-	for _, inc := range defaultCfg.Includes { allIncludes[inc] = "default" }
+	for _, inc := range defaultCfg.Includes {
+		allIncludes[inc] = "default"
+	}
 	if globalCfg != nil {
-		for _, inc := range globalCfg.Includes { allIncludes[inc] = "global" }
+		for _, inc := range globalCfg.Includes {
+			allIncludes[inc] = "global"
+		}
 	}
 	if localCfg != nil {
-		for _, inc := range localCfg.Includes { allIncludes[inc] = "local" }
+		for _, inc := range localCfg.Includes {
+			allIncludes[inc] = "local"
+		}
 	}
 	if envCfg != nil {
-		for _, inc := range envCfg.Includes { allIncludes[inc] = "environment" }
+		for _, inc := range envCfg.Includes {
+			allIncludes[inc] = "environment"
+		}
 	}
 
 	for include, source := range allIncludes {
@@ -1094,12 +1301,12 @@ func getGlobalConfigFile() string {
 // outputConfigAsYAML outputs the effective config in YAML format with color coding
 func outputConfigAsYAML(cmd *cobra.Command, effective *EffectiveConfig, verbose bool) error {
 	// Create color functions
-	green := color.New(color.FgGreen).SprintFunc()      // Base config
-	yellow := color.New(color.FgYellow).SprintFunc()    // Overrides
-	blue := color.New(color.FgBlue).SprintFunc()        // Environment variables
-	cyan := color.New(color.FgCyan).SprintFunc()        // Defaults
-	magenta := color.New(color.FgMagenta).SprintFunc()  // Command-line flags
-	red := color.New(color.FgRed).SprintFunc()          // Computed values
+	green := color.New(color.FgGreen).SprintFunc()     // Base config
+	yellow := color.New(color.FgYellow).SprintFunc()   // Overrides
+	blue := color.New(color.FgBlue).SprintFunc()       // Environment variables
+	cyan := color.New(color.FgCyan).SprintFunc()       // Defaults
+	magenta := color.New(color.FgMagenta).SprintFunc() // Command-line flags
+	red := color.New(color.FgRed).SprintFunc()         // Computed values
 
 	out := cmd.OutOrStdout()
 
@@ -1201,19 +1408,19 @@ func outputConfigAsYAML(cmd *cobra.Command, effective *EffectiveConfig, verbose 
 func getColorForSourceType(sourceType string) func(a ...interface{}) string {
 	switch sourceType {
 	case "global", "local":
-		return color.New(color.FgGreen).SprintFunc()      // Base config
+		return color.New(color.FgGreen).SprintFunc() // Base config
 	case "environment":
-		return color.New(color.FgYellow).SprintFunc()     // Profile overrides
+		return color.New(color.FgYellow).SprintFunc() // Profile overrides
 	case "environment_variable":
-		return color.New(color.FgBlue).SprintFunc()       // Environment variables
+		return color.New(color.FgBlue).SprintFunc() // Environment variables
 	case "default":
-		return color.New(color.FgCyan).SprintFunc()       // Defaults
+		return color.New(color.FgCyan).SprintFunc() // Defaults
 	case "command_line":
-		return color.New(color.FgMagenta).SprintFunc()    // Command-line flags
+		return color.New(color.FgMagenta).SprintFunc() // Command-line flags
 	case "computed":
-		return color.New(color.FgRed).SprintFunc()        // Computed values
+		return color.New(color.FgRed).SprintFunc() // Computed values
 	default:
-		return color.New(color.FgWhite).SprintFunc()      // Unknown
+		return color.New(color.FgWhite).SprintFunc() // Unknown
 	}
 }
 
