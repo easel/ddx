@@ -13,10 +13,10 @@ import (
 
 // DiagnosticIssue represents a detected problem and its remediation
 type DiagnosticIssue struct {
-	Type         string
-	Description  string
-	Remediation  []string
-	SystemInfo   map[string]string
+	Type        string
+	Description string
+	Remediation []string
+	SystemInfo  map[string]string
 }
 
 // runDoctor implements the doctor command logic
@@ -127,19 +127,19 @@ func runDoctor(cmd *cobra.Command, args []string) error {
 		// Add permission issue details for critical failures or verbose mode
 		if problemState == "permission_issue" || verbose || !checkPermissions() {
 			issues = append(issues, DiagnosticIssue{
-			Type:        "file_permissions",
-			Description: "Cannot create files in current directory",
-			Remediation: []string{
-				"Check directory permissions",
-				"Try installing to different location",
-				"Verify user has write access",
-			},
-			SystemInfo: map[string]string{
-				"user":         os.Getenv("USER"),
-				"working_dir":  getWorkingDirectory(),
-				"permissions":  getDirectoryPermissions(),
-			},
-		})
+				Type:        "file_permissions",
+				Description: "Cannot create files in current directory",
+				Remediation: []string{
+					"Check directory permissions",
+					"Try installing to different location",
+					"Verify user has write access",
+				},
+				SystemInfo: map[string]string{
+					"user":        os.Getenv("USER"),
+					"working_dir": getWorkingDirectory(),
+					"permissions": getDirectoryPermissions(),
+				},
+			})
 		}
 	}
 
@@ -164,9 +164,9 @@ func runDoctor(cmd *cobra.Command, args []string) error {
 					"Re-clone or update DDX library repository",
 				},
 				SystemInfo: map[string]string{
-					"library_path":     getLibraryPathInfo(),
-					"config_file":      getConfigFileInfo(),
-					"env_override":     os.Getenv("DDX_LIBRARY_BASE_PATH"),
+					"library_path": getLibraryPathInfo(),
+					"config_file":  getConfigFileInfo(),
+					"env_override": os.Getenv("DDX_LIBRARY_BASE_PATH"),
 				},
 			})
 		}

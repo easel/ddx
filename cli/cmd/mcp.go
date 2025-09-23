@@ -82,6 +82,7 @@ func runMCPInstallWithOptions(cmd *cobra.Command, serverName string) error {
 	envVars, _ := cmd.Flags().GetStringSlice("env")
 	dryRun, _ := cmd.Flags().GetBool("dry-run")
 	yes, _ := cmd.Flags().GetBool("yes")
+	configPath, _ := cmd.Flags().GetString("config-path")
 
 	// Parse environment variables
 	environment := make(map[string]string)
@@ -100,6 +101,7 @@ func runMCPInstallWithOptions(cmd *cobra.Command, serverName string) error {
 		Environment: environment,
 		DryRun:      dryRun,
 		Yes:         yes,
+		ConfigPath:  configPath,
 	}
 
 	// Install the server

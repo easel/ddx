@@ -134,6 +134,7 @@ type InstallOptions struct {
 	Environment map[string]string // Environment variables
 	DryRun      bool              // Show what would be done
 	Yes         bool              // Skip confirmations
+	ConfigPath  string            // Path to Claude config file
 }
 
 // ServerStatus represents the status of an installed server

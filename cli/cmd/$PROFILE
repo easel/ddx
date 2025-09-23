@@ -1,0 +1,9 @@
+
+# DDx CLI PATH
+$env:PATH = "/tmp/TestAcceptance_US029_AutomaticPathConfigurationpowershell_path_configuration4010740735/001/home/.local/bin;" + $env:PATH
+
+# DDx CLI PATH
+$env:PATH = "~/.local/bin;" + $env:PATH
+
+# DDx CLI PATH
+$env:PATH = "%USERPROFILE%\bin;" + $env:PATH

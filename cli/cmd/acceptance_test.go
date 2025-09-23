@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bytes"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -211,6 +212,127 @@ func TestAcceptance_US002_ListAvailableAssets(t *testing.T) {
 				assert.NoError(t, err)
 				assert.Contains(t, output, "Templates", "Should show templates")
 				// Patterns should not be shown when filtering
+			},
+		},
+		{
+			name:     "json_output",
+			scenario: "Output resources as JSON",
+			given: func(t *testing.T) string {
+				// Given: DDx has resources available
+				testLibDir := t.TempDir()
+				t.Setenv("DDX_LIBRARY_BASE_PATH", testLibDir)
+
+				templatesDir := filepath.Join(testLibDir, "templates")
+				require.NoError(t, os.MkdirAll(filepath.Join(templatesDir, "nextjs"), 0755))
+
+				patternsDir := filepath.Join(testLibDir, "patterns")
+				require.NoError(t, os.MkdirAll(filepath.Join(patternsDir, "auth"), 0755))
+
+				return testLibDir
+			},
+			when: func(t *testing.T) (string, error) {
+				// When: I run `ddx list --json`
+				rootCmd := getTestRootCommand()
+				return executeCommand(rootCmd, "list", "--json")
+			},
+			then: func(t *testing.T, output string, err error) {
+				// Then: output is valid JSON with resource data
+				assert.NoError(t, err)
+
+				// Verify it's valid JSON
+				var response struct {
+					Resources []map[string]interface{} `json:"resources"`
+					Summary   map[string]int           `json:"summary"`
+				}
+				assert.NoError(t, json.Unmarshal([]byte(output), &response))
+
+				// Should have resources and summary
+				assert.NotEmpty(t, response.Resources)
+				assert.NotEmpty(t, response.Summary)
+			},
+		},
+		{
+			name:     "filter_by_name",
+			scenario: "Filter resources by name",
+			given: func(t *testing.T) string {
+				// Given: DDx has resources with different names
+				testLibDir := t.TempDir()
+				t.Setenv("DDX_LIBRARY_BASE_PATH", testLibDir)
+
+				templatesDir := filepath.Join(testLibDir, "templates")
+				require.NoError(t, os.MkdirAll(filepath.Join(templatesDir, "react-app"), 0755))
+				require.NoError(t, os.MkdirAll(filepath.Join(templatesDir, "python-cli"), 0755))
+
+				return testLibDir
+			},
+			when: func(t *testing.T) (string, error) {
+				// When: I run `ddx list --filter react`
+				rootCmd := getTestRootCommand()
+				return executeCommand(rootCmd, "list", "--filter", "react")
+			},
+			then: func(t *testing.T, output string, err error) {
+				// Then: only resources with 'react' in the name are shown
+				assert.NoError(t, err)
+				assert.Contains(t, output, "react-app", "Should show react-app")
+				assert.NotContains(t, output, "python-cli", "Should not show python-cli")
+				assert.Contains(t, output, "Filtered by: 'react'", "Should show filter applied")
+			},
+		},
+		{
+			name:     "category_counts",
+			scenario: "Show category counts in summary",
+			given: func(t *testing.T) string {
+				// Given: DDx has multiple categories with resources
+				testLibDir := t.TempDir()
+				t.Setenv("DDX_LIBRARY_BASE_PATH", testLibDir)
+
+				// Create multiple templates
+				templatesDir := filepath.Join(testLibDir, "templates")
+				require.NoError(t, os.MkdirAll(filepath.Join(templatesDir, "nextjs"), 0755))
+				require.NoError(t, os.MkdirAll(filepath.Join(templatesDir, "react"), 0755))
+
+				// Create multiple patterns
+				patternsDir := filepath.Join(testLibDir, "patterns")
+				require.NoError(t, os.MkdirAll(filepath.Join(patternsDir, "auth"), 0755))
+
+				return testLibDir
+			},
+			when: func(t *testing.T) (string, error) {
+				// When: I run `ddx list`
+				rootCmd := getTestRootCommand()
+				return executeCommand(rootCmd, "list")
+			},
+			then: func(t *testing.T, output string, err error) {
+				// Then: I see category counts in summary
+				assert.NoError(t, err)
+				assert.Contains(t, output, "Summary:", "Should show summary section")
+				assert.Contains(t, output, "Templates: 2 items", "Should show template count")
+				assert.Contains(t, output, "Patterns: 1 items", "Should show pattern count")
+			},
+		},
+		{
+			name:     "empty_filter_results",
+			scenario: "Handle empty filter results gracefully",
+			given: func(t *testing.T) string {
+				// Given: DDx has resources but none match filter
+				testLibDir := t.TempDir()
+				t.Setenv("DDX_LIBRARY_BASE_PATH", testLibDir)
+
+				templatesDir := filepath.Join(testLibDir, "templates")
+				require.NoError(t, os.MkdirAll(filepath.Join(templatesDir, "nextjs"), 0755))
+
+				return testLibDir
+			},
+			when: func(t *testing.T) (string, error) {
+				// When: I run `ddx list --filter nonexistent`
+				rootCmd := getTestRootCommand()
+				return executeCommand(rootCmd, "list", "--filter", "nonexistent")
+			},
+			then: func(t *testing.T, output string, err error) {
+				// Then: I see a clear message about no matches
+				assert.NoError(t, err)
+				assert.Contains(t, output, "No DDx resources found", "Should show no resources message")
+				assert.Contains(t, output, "No resources match filter: 'nonexistent'", "Should show filter message")
 			},
 		},
 	}

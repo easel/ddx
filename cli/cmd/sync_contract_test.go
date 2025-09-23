@@ -34,6 +34,7 @@ func getFreshSyncCommands() *cobra.Command {
 	freshUpdateCmd.Flags().String("strategy", "", "Conflict resolution strategy (ours/theirs)")
 	freshUpdateCmd.Flags().Bool("backup", false, "Create backup before updating")
 	freshUpdateCmd.Flags().Bool("interactive", false, "Interactive conflict resolution")
+	freshUpdateCmd.Flags().Bool("dry-run", false, "Preview changes without applying them")
 
 	// Create fresh contribute command
 	freshContributeCmd := &cobra.Command{
@@ -256,6 +257,36 @@ repository:
 			}
 		}
 		assert.True(t, hasStatusLine, "Should have status indicators")
+	})
+
+	t.Run("contract_dry_run_flag", func(t *testing.T) {
+		// Given: Valid project with DDx initialization
+		tempDir := t.TempDir()
+		os.Chdir(tempDir)
+		t.Setenv("DDX_TEST_MODE", "1")
+		createTestConfig(t)
+		os.MkdirAll(".ddx", 0755) // Create .ddx directory so isInitialized() passes
+
+		// When: Running with --dry-run flag
+		cmd := getFreshSyncCommands()
+		buf := new(bytes.Buffer)
+		cmd.SetOut(buf)
+		cmd.SetErr(buf)
+		cmd.SetArgs([]string{"update", "--dry-run"})
+
+		err := cmd.Execute()
+
+		// Then: Should preview without making changes
+		output := buf.String()
+		assert.NoError(t, err, "Dry-run should succeed")
+		assert.Contains(t, output, "DRY-RUN MODE", "Should indicate dry-run mode")
+		assert.Contains(t, output, "preview", "Should mention preview")
+		assert.Contains(t, output, "would", "Should use conditional language")
+		assert.Contains(t, output, "No actual changes", "Should clarify no changes made")
+
+		// No backup should be created in dry-run mode
+		_, err = os.Stat(".ddx.backup")
+		assert.True(t, os.IsNotExist(err), "Should not create backup in dry-run")
 	})
 }
 

@@ -57,6 +57,8 @@ Examples:
 
 	cmd.Flags().BoolP("detailed", "d", false, "Show detailed information")
 	cmd.Flags().StringP("filter", "f", "", "Filter resources by name")
+	cmd.Flags().Bool("json", false, "Output results as JSON")
+	cmd.Flags().Bool("tree", false, "Display resources in tree format")
 
 	return cmd
 }
@@ -116,9 +118,13 @@ You can optionally specify a specific resource to update:
 	cmd.Flags().Bool("force", false, "Force update even if there are local changes")
 	cmd.Flags().Bool("reset", false, "Reset to master state, discarding local changes")
 	cmd.Flags().Bool("sync", false, "Synchronize with upstream repository")
-	cmd.Flags().String("strategy", "", "Conflict resolution strategy (ours/theirs)")
+	cmd.Flags().String("strategy", "", "Conflict resolution strategy (ours/theirs/mine)")
 	cmd.Flags().Bool("backup", false, "Create backup before updating")
 	cmd.Flags().Bool("interactive", false, "Interactive conflict resolution")
+	cmd.Flags().Bool("abort", false, "Abort update and restore previous state")
+	cmd.Flags().Bool("mine", false, "Use local changes in conflict resolution")
+	cmd.Flags().Bool("theirs", false, "Use upstream changes in conflict resolution")
+	cmd.Flags().Bool("dry-run", false, "Preview changes without applying them")
 
 	return cmd
 }
@@ -209,6 +215,18 @@ Examples:
 	cmd.Flags().Bool("reset", false, "Reset to default configuration")
 	cmd.Flags().Bool("wizard", false, "Run configuration wizard")
 	cmd.Flags().Bool("validate", false, "Validate configuration")
+	cmd.Flags().Bool("preview", false, "Preview resource selection")
+	cmd.Flags().Bool("global", false, "Use global configuration")
+
+	// Enhanced validation flags for US-022
+	cmd.Flags().String("file", "", "Validate specific configuration file")
+	cmd.Flags().Bool("verbose", false, "Detailed validation output")
+	cmd.Flags().Bool("offline", false, "Skip network checks during validation")
+
+	// Enhanced config show flags for US-024
+	cmd.Flags().String("format", "yaml", "Output format (yaml, json, table)")
+	cmd.Flags().Bool("only-overrides", false, "Show only overridden values")
+	cmd.Flags().String("filter", "", "Filter by key pattern")
 
 	return cmd
 }
@@ -347,4 +365,66 @@ func (f *CommandFactory) newPromptsShowCommand() *cobra.Command {
 			return runPromptsShow(cmd, args)
 		},
 	}
+}
+
+// newStatusCommand creates a fresh status command
+func (f *CommandFactory) newStatusCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "status",
+		Short: "Show version and status information",
+		Long: `Show comprehensive version and status information for your DDX project.
+
+This command displays:
+- Current DDX version and commit hash
+- Last update timestamp
+- Local modifications to DDX resources
+- Available upstream updates
+- Change history and differences
+
+Examples:
+  ddx status                          # Show basic status
+  ddx status --verbose                # Show detailed information
+  ddx status --check-upstream         # Check for updates
+  ddx status --changes                # List changed files
+  ddx status --diff                   # Show differences
+  ddx status --export manifest.yml    # Export version manifest`,
+		RunE: runStatus,
+	}
+
+	cmd.Flags().Bool("check-upstream", false, "Check for upstream updates")
+	cmd.Flags().Bool("changes", false, "Show list of changed files")
+	cmd.Flags().Bool("diff", false, "Show differences between versions")
+	cmd.Flags().String("export", "", "Export version manifest to file")
+
+	return cmd
+}
+
+// newLogCommand creates a fresh log command
+func (f *CommandFactory) newLogCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "log",
+		Short: "Show DDX asset history",
+		Long: `Show commit history for DDX assets and resources.
+
+This command displays the git log for your DDX resources, helping you
+track changes, updates, and the evolution of your project setup.
+
+Examples:
+  ddx log                    # Show recent commit history
+  ddx log -n 10              # Show last 10 commits
+  ddx log --oneline          # Show compact format
+  ddx log --since="1 week ago" # Show commits from last week`,
+		RunE: runLog,
+	}
+
+	cmd.Flags().IntP("number", "n", 20, "Number of commits to show")
+	cmd.Flags().Int("limit", 20, "Limit number of commits to show (same as --number)")
+	cmd.Flags().Bool("oneline", false, "Show compact one-line format")
+	cmd.Flags().Bool("diff", false, "Show changes in each commit")
+	cmd.Flags().String("export", "", "Export history to file (format: .md, .json, .csv, .html)")
+	cmd.Flags().String("since", "", "Show commits since date (e.g., '1 week ago')")
+	cmd.Flags().String("author", "", "Filter by author")
+	cmd.Flags().String("grep", "", "Filter by commit message")
+
+	return cmd
 }

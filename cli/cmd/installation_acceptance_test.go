@@ -127,7 +127,7 @@ func (env *TestEnvironment) ExecuteInstallCommand(command string) InstallationRe
 
 	// For testing, we simulate the installation by copying our built binary
 	// Find the project root by looking for the build directory
-	projectRoot := "/host-home/erik/Projects/ddx/cli"  // Absolute path to the project
+	projectRoot := "/host-home/erik/Projects/ddx/cli" // Absolute path to the project
 	builtBinary := filepath.Join(projectRoot, "build", "ddx")
 	if env.Platform == "windows" {
 		builtBinary += ".exe"

@@ -19,20 +19,73 @@ import (
 
 // Config represents the DDx configuration
 type Config struct {
-	Version         string            `yaml:"version"`
-	LibraryPath     string            `yaml:"library_path,omitempty"`
-	Repository      Repository        `yaml:"repository"`
-	Includes        []string          `yaml:"includes"`
-	Overrides       map[string]string `yaml:"overrides,omitempty"`
-	Variables       map[string]string `yaml:"variables"`
-	PersonaBindings map[string]string `yaml:"persona_bindings,omitempty"`
+	Version         string                     `yaml:"version"`
+	LibraryPath     string                     `yaml:"library_path,omitempty"`
+	Repository      Repository                 `yaml:"repository"`
+	Repositories    map[string]Repository      `yaml:"repositories,omitempty"`
+	Includes        []string                   `yaml:"includes"`
+	Resources       *ResourceSelection         `yaml:"resources,omitempty"`
+	Overrides       map[string]string          `yaml:"overrides,omitempty"`
+	Variables       map[string]string          `yaml:"variables"`
+	PersonaBindings map[string]string          `yaml:"persona_bindings,omitempty"`
 }
 
 // Repository configuration
 type Repository struct {
-	URL    string `yaml:"url"`
-	Branch string `yaml:"branch"`
-	Path   string `yaml:"path"`
+	URL      string            `yaml:"url"`
+	Branch   string            `yaml:"branch"`
+	Path     string            `yaml:"path"`
+	Remote   string            `yaml:"remote,omitempty"`
+	Protocol string            `yaml:"protocol,omitempty"`
+	Priority int               `yaml:"priority,omitempty"`
+	Auth     *AuthConfig       `yaml:"auth,omitempty"`
+	Proxy    *ProxyConfig      `yaml:"proxy,omitempty"`
+	Sync     *SyncConfig       `yaml:"sync,omitempty"`
+}
+
+// AuthConfig represents authentication configuration
+type AuthConfig struct {
+	Method      string `yaml:"method,omitempty"`
+	KeyPath     string `yaml:"key_path,omitempty"`
+	Token       string `yaml:"token,omitempty"`
+	Username    string `yaml:"username,omitempty"`
+	Password    string `yaml:"password,omitempty"`
+	TokenFile   string `yaml:"token_file,omitempty"`
+}
+
+// ProxyConfig represents proxy configuration
+type ProxyConfig struct {
+	URL      string `yaml:"url,omitempty"`
+	Auth     string `yaml:"auth,omitempty"`
+	Username string `yaml:"username,omitempty"`
+	Password string `yaml:"password,omitempty"`
+	NoProxy  string `yaml:"no_proxy,omitempty"`
+}
+
+// SyncConfig represents synchronization configuration
+type SyncConfig struct {
+	Frequency   string `yaml:"frequency,omitempty"`
+	AutoUpdate  bool   `yaml:"auto_update,omitempty"`
+	Timeout     int    `yaml:"timeout,omitempty"`
+	RetryCount  int    `yaml:"retry_count,omitempty"`
+	CheckSum    bool   `yaml:"checksum,omitempty"`
+	ForceUpdate bool   `yaml:"force_update,omitempty"`
+}
+
+// ResourceSelection defines resource filtering configuration
+type ResourceSelection struct {
+	Prompts   *ResourceFilter `yaml:"prompts,omitempty"`
+	Templates *ResourceFilter `yaml:"templates,omitempty"`
+	Patterns  *ResourceFilter `yaml:"patterns,omitempty"`
+	Configs   *ResourceFilter `yaml:"configs,omitempty"`
+	Scripts   *ResourceFilter `yaml:"scripts,omitempty"`
+	Workflows *ResourceFilter `yaml:"workflows,omitempty"`
+}
+
+// ResourceFilter defines include/exclude patterns for a resource type
+type ResourceFilter struct {
+	Include []string `yaml:"include,omitempty"`
+	Exclude []string `yaml:"exclude,omitempty"`
 }
 
 // ConfigError represents configuration-related errors
@@ -91,7 +144,7 @@ var DefaultConfig = &Config{
 	},
 }
 
-// Load configuration from global and local files
+// Load configuration from global, local, and environment-specific files
 func Load() (*Config, error) {
 	// Start with default config
 	config := *DefaultConfig
@@ -108,12 +161,22 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("failed to load local config: %w", localErr)
 	}
 
+	// Load environment-specific config if DDX_ENV is set
+	envConfig, envErr := LoadEnvironmentConfig()
+	if envErr != nil && !os.IsNotExist(envErr) {
+		return nil, fmt.Errorf("failed to load environment config: %w", envErr)
+	}
+
 	// Merge configurations with proper inheritance
+	// Order: defaults < global < local < environment
 	if globalConfig != nil {
 		config = *DefaultConfig.Merge(globalConfig)
 	}
 	if localConfig != nil {
 		config = *config.Merge(localConfig)
+	}
+	if envConfig != nil {
+		config = *config.Merge(envConfig)
 	}
 
 	// Set current directory as project name if not set
@@ -182,6 +245,61 @@ func LoadLocal() (*Config, error) {
 	cacheConfig(localConfigPath, config, &localConfigCache)
 
 	return config, nil
+}
+
+// LoadEnvironmentConfig loads environment-specific configuration based on DDX_ENV
+func LoadEnvironmentConfig() (*Config, error) {
+	envName := os.Getenv("DDX_ENV")
+	if envName == "" {
+		// No environment specified, return not found
+		return nil, os.ErrNotExist
+	}
+
+	// Build environment config file path: .ddx.{env}.yml
+	envConfigPath := fmt.Sprintf(".ddx.%s.yml", envName)
+	if _, err := os.Stat(envConfigPath); os.IsNotExist(err) {
+		// Environment config file doesn't exist, return not found
+		return nil, os.ErrNotExist
+	}
+
+	// Check cache first - use environment name in cache key
+	cacheKey := fmt.Sprintf("env:%s:%s", envName, envConfigPath)
+	if cached := getCachedConfig(cacheKey, &localConfigCache); cached != nil {
+		return cached, nil
+	}
+
+	config := &Config{}
+	if err := loadConfigFile(envConfigPath, config); err != nil {
+		return nil, err
+	}
+
+	// Cache the result
+	cacheConfig(cacheKey, config, &localConfigCache)
+
+	return config, nil
+}
+
+// LoadFromFile loads configuration from a specific file path
+func LoadFromFile(configPath string) (*Config, error) {
+	// Check if file exists
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("configuration file not found: %s", configPath)
+	}
+
+	// Start with default config to ensure all required fields have defaults
+	config := *DefaultConfig
+
+	// Load the specified file
+	if err := loadConfigFile(configPath, &config); err != nil {
+		return nil, fmt.Errorf("failed to load configuration from %s: %w", configPath, err)
+	}
+
+	// Security: validate config before returning
+	if err := validateConfigSecurity(&config); err != nil {
+		return nil, fmt.Errorf("configuration security validation failed: %w", err)
+	}
+
+	return &config, nil
 }
 
 // Save configuration to global file
@@ -312,7 +430,7 @@ func (c *Config) ReplaceVariables(content string) string {
 	maxReplacements := 1000 // Prevent infinite loops
 	replacementCount := 0
 
-	// Replace {{variable}} patterns
+	// Replace {{variable}} patterns from config variables
 	for key, value := range c.Variables {
 		// Sanitize value but still replace it (we only mask in saved configs)
 		sanitizedValue := sanitizeVariableValue(value)
@@ -332,11 +450,31 @@ func (c *Config) ReplaceVariables(content string) string {
 		}
 		result = newResult
 
+		// Replace ${KEY} patterns (case-insensitive for config variables)
+		upperKey := strings.ToUpper(key)
+		oldPattern = "${" + upperKey + "}"
+		newResult = replaceAll(result, oldPattern, sanitizedValue)
+		if newResult != result {
+			replacementCount++
+		}
+		result = newResult
+
+		// Replace ${key} patterns (original case for config variables)
+		oldPattern = "${" + key + "}"
+		newResult = replaceAll(result, oldPattern, sanitizedValue)
+		if newResult != result {
+			replacementCount++
+		}
+		result = newResult
+
 		// Prevent excessive replacements
 		if replacementCount > maxReplacements {
 			break
 		}
 	}
+
+	// Process ${VAR} and ${VAR:-default} patterns for environment variables
+	result = c.processEnvironmentVariables(result)
 
 	return result
 }
@@ -365,6 +503,90 @@ func replaceAll(s, old, new string) string {
 			break
 		}
 	}
+	return result
+}
+
+// processEnvironmentVariables processes ${VAR} and ${VAR:-default} patterns
+func (c *Config) processEnvironmentVariables(content string) string {
+	result := content
+	i := 0
+
+	for i < len(result) {
+		// Look for ${
+		if i < len(result)-1 && result[i] == '$' && result[i+1] == '{' {
+			start := i
+			i += 2 // Skip ${
+
+			// Find the closing }
+			braceEnd := -1
+			for j := i; j < len(result); j++ {
+				if result[j] == '}' {
+					braceEnd = j
+					break
+				}
+			}
+
+			if braceEnd == -1 {
+				// No closing brace found, skip this ${ and continue
+				i++
+				continue
+			}
+
+			// Extract the variable expression
+			varExpr := result[i:braceEnd]
+
+			// Check if it has a default value (contains :-)
+			var varName, defaultValue string
+			if strings.Contains(varExpr, ":-") {
+				parts := strings.SplitN(varExpr, ":-", 2)
+				varName = parts[0]
+				defaultValue = parts[1]
+			} else {
+				varName = varExpr
+				defaultValue = ""
+			}
+
+			// Get the value to substitute
+			var replacement string
+
+			// First check if it's a config variable (case-insensitive)
+			if c.Variables != nil {
+				// Check exact case first
+				if value, exists := c.Variables[varName]; exists {
+					replacement = sanitizeVariableValue(value)
+				} else {
+					// Check case-insensitive
+					lowerVarName := strings.ToLower(varName)
+					for key, value := range c.Variables {
+						if strings.ToLower(key) == lowerVarName {
+							replacement = sanitizeVariableValue(value)
+							break
+						}
+					}
+				}
+			}
+
+			// If not found in config variables, check environment
+			if replacement == "" {
+				if envValue := os.Getenv(varName); envValue != "" {
+					replacement = sanitizeVariableValue(envValue)
+				} else {
+					// Use default value if provided
+					replacement = defaultValue
+				}
+			}
+
+			// Replace the entire ${...} expression
+			wholeExpr := result[start:braceEnd+1]
+			result = strings.ReplaceAll(result, wholeExpr, replacement)
+
+			// Continue from where we left off, accounting for the replacement
+			i = start + len(replacement)
+		} else {
+			i++
+		}
+	}
+
 	return result
 }
 
@@ -420,14 +642,139 @@ func (c *Config) Validate() error {
 		})
 	}
 
-	// Validate variable names
-	for key := range c.Variables {
+	// Validate repository protocol
+	if c.Repository.Protocol != "" && c.Repository.Protocol != "ssh" && c.Repository.Protocol != "https" {
+		errors = append(errors, &ConfigError{
+			Field:      "repository.protocol",
+			Value:      c.Repository.Protocol,
+			Message:    "invalid protocol",
+			Suggestion: "use 'ssh' or 'https'",
+		})
+	}
+
+	// Validate authentication configuration
+	if c.Repository.Auth != nil {
+		if c.Repository.Auth.Method != "" {
+			validAuthMethods := []string{"ssh-key", "token", "password", "oauth"}
+			if !contains(validAuthMethods, c.Repository.Auth.Method) {
+				errors = append(errors, &ConfigError{
+					Field:      "repository.auth.method",
+					Value:      c.Repository.Auth.Method,
+					Message:    "invalid authentication method",
+					Suggestion: fmt.Sprintf("use one of: %s", strings.Join(validAuthMethods, ", ")),
+				})
+			}
+		}
+
+		// Validate SSH key path if method is ssh-key
+		if c.Repository.Auth.Method == "ssh-key" && c.Repository.Auth.KeyPath == "" {
+			errors = append(errors, &ConfigError{
+				Field:      "repository.auth.key_path",
+				Message:    "SSH key path is required when using ssh-key authentication",
+				Suggestion: "add 'key_path: \"~/.ssh/id_rsa\"' or another valid key path",
+			})
+		}
+
+		// Validate token if method is token
+		if c.Repository.Auth.Method == "token" && c.Repository.Auth.Token == "" && c.Repository.Auth.TokenFile == "" {
+			errors = append(errors, &ConfigError{
+				Field:      "repository.auth.token",
+				Message:    "token or token_file is required when using token authentication",
+				Suggestion: "add 'token: \"your-token\"' or 'token_file: \"/path/to/token\"'",
+			})
+		}
+	}
+
+	// Validate proxy configuration
+	if c.Repository.Proxy != nil && c.Repository.Proxy.URL != "" {
+		if !isValidURL(c.Repository.Proxy.URL) {
+			errors = append(errors, &ConfigError{
+				Field:      "repository.proxy.url",
+				Value:      c.Repository.Proxy.URL,
+				Message:    "invalid proxy URL format",
+				Suggestion: "use a valid URL like 'http://proxy.company.com:8080'",
+			})
+		}
+	}
+
+	// Validate sync configuration
+	if c.Repository.Sync != nil {
+		if c.Repository.Sync.Frequency != "" {
+			validFrequencies := []string{"never", "manual", "hourly", "daily", "weekly"}
+			if !contains(validFrequencies, c.Repository.Sync.Frequency) {
+				errors = append(errors, &ConfigError{
+					Field:      "repository.sync.frequency",
+					Value:      c.Repository.Sync.Frequency,
+					Message:    "invalid sync frequency",
+					Suggestion: fmt.Sprintf("use one of: %s", strings.Join(validFrequencies, ", ")),
+				})
+			}
+		}
+
+		if c.Repository.Sync.Timeout < 0 || c.Repository.Sync.Timeout > 3600 {
+			errors = append(errors, &ConfigError{
+				Field:      "repository.sync.timeout",
+				Value:      fmt.Sprintf("%d", c.Repository.Sync.Timeout),
+				Message:    "invalid sync timeout",
+				Suggestion: "use a value between 0 and 3600 seconds",
+			})
+		}
+
+		if c.Repository.Sync.RetryCount < 0 || c.Repository.Sync.RetryCount > 10 {
+			errors = append(errors, &ConfigError{
+				Field:      "repository.sync.retry_count",
+				Value:      fmt.Sprintf("%d", c.Repository.Sync.RetryCount),
+				Message:    "invalid retry count",
+				Suggestion: "use a value between 0 and 10",
+			})
+		}
+	}
+
+	// Validate multiple repositories if configured
+	for name, repo := range c.Repositories {
+		if repo.URL == "" {
+			errors = append(errors, &ConfigError{
+				Field:      fmt.Sprintf("repositories.%s.url", name),
+				Message:    "repository URL is required",
+				Suggestion: "add a valid Git repository URL",
+			})
+		} else if !isValidURL(repo.URL) {
+			errors = append(errors, &ConfigError{
+				Field:      fmt.Sprintf("repositories.%s.url", name),
+				Value:      repo.URL,
+				Message:    "invalid URL format",
+				Suggestion: "use a valid URL like 'https://github.com/user/repo'",
+			})
+		}
+
+		if repo.Priority < 0 || repo.Priority > 100 {
+			errors = append(errors, &ConfigError{
+				Field:      fmt.Sprintf("repositories.%s.priority", name),
+				Value:      fmt.Sprintf("%d", repo.Priority),
+				Message:    "invalid priority",
+				Suggestion: "use a value between 0 and 100",
+			})
+		}
+	}
+
+	// Validate variable names and values
+	for key, value := range c.Variables {
 		if !isValidVariableName(key) {
 			errors = append(errors, &ConfigError{
 				Field:      fmt.Sprintf("variables.%s", key),
 				Value:      key,
 				Message:    "invalid variable name",
 				Suggestion: "use only letters, numbers, and underscores",
+			})
+		}
+
+		// Validate variable value length
+		if len(value) > maxVariableLength {
+			errors = append(errors, &ConfigError{
+				Field:      fmt.Sprintf("variables.%s", key),
+				Value:      fmt.Sprintf("%d characters", len(value)),
+				Message:    "variable value too long",
+				Suggestion: fmt.Sprintf("limit variable values to %d characters", maxVariableLength),
 			})
 		}
 	}
@@ -503,6 +850,9 @@ func (c *Config) Merge(other *Config) *Config {
 	for k, v := range other.PersonaBindings {
 		result.PersonaBindings[k] = v // Override
 	}
+
+	// Merge resources configuration
+	result.Resources = mergeResourceSelections(c.Resources, other.Resources)
 
 	return result
 }
@@ -975,4 +1325,100 @@ func hashFileInfo(info os.FileInfo) string {
 	data := fmt.Sprintf("%s-%d-%s", info.Name(), info.Size(), info.ModTime().String())
 	hash := sha256.Sum256([]byte(data))
 	return hex.EncodeToString(hash[:])
+}
+
+// mergeResourceSelections merges two ResourceSelection configurations
+func mergeResourceSelections(base, override *ResourceSelection) *ResourceSelection {
+	if base == nil && override == nil {
+		return nil
+	}
+	if base == nil {
+		return copyResourceSelection(override)
+	}
+	if override == nil {
+		return copyResourceSelection(base)
+	}
+
+	result := &ResourceSelection{
+		Prompts:   mergeResourceFilter(base.Prompts, override.Prompts),
+		Templates: mergeResourceFilter(base.Templates, override.Templates),
+		Patterns:  mergeResourceFilter(base.Patterns, override.Patterns),
+		Configs:   mergeResourceFilter(base.Configs, override.Configs),
+		Scripts:   mergeResourceFilter(base.Scripts, override.Scripts),
+		Workflows: mergeResourceFilter(base.Workflows, override.Workflows),
+	}
+
+	return result
+}
+
+// mergeResourceFilter merges two ResourceFilter configurations
+func mergeResourceFilter(base, override *ResourceFilter) *ResourceFilter {
+	if base == nil && override == nil {
+		return nil
+	}
+	if base == nil {
+		return copyResourceFilter(override)
+	}
+	if override == nil {
+		return copyResourceFilter(base)
+	}
+
+	result := &ResourceFilter{}
+
+	// Merge includes (override completely replaces base if present)
+	if len(override.Include) > 0 {
+		result.Include = make([]string, len(override.Include))
+		copy(result.Include, override.Include)
+	} else {
+		result.Include = make([]string, len(base.Include))
+		copy(result.Include, base.Include)
+	}
+
+	// Merge excludes (override completely replaces base if present)
+	if len(override.Exclude) > 0 {
+		result.Exclude = make([]string, len(override.Exclude))
+		copy(result.Exclude, override.Exclude)
+	} else {
+		result.Exclude = make([]string, len(base.Exclude))
+		copy(result.Exclude, base.Exclude)
+	}
+
+	return result
+}
+
+// copyResourceSelection creates a deep copy of ResourceSelection
+func copyResourceSelection(rs *ResourceSelection) *ResourceSelection {
+	if rs == nil {
+		return nil
+	}
+
+	return &ResourceSelection{
+		Prompts:   copyResourceFilter(rs.Prompts),
+		Templates: copyResourceFilter(rs.Templates),
+		Patterns:  copyResourceFilter(rs.Patterns),
+		Configs:   copyResourceFilter(rs.Configs),
+		Scripts:   copyResourceFilter(rs.Scripts),
+		Workflows: copyResourceFilter(rs.Workflows),
+	}
+}
+
+// copyResourceFilter creates a deep copy of ResourceFilter
+func copyResourceFilter(rf *ResourceFilter) *ResourceFilter {
+	if rf == nil {
+		return nil
+	}
+
+	result := &ResourceFilter{}
+
+	if rf.Include != nil {
+		result.Include = make([]string, len(rf.Include))
+		copy(result.Include, rf.Include)
+	}
+
+	if rf.Exclude != nil {
+		result.Exclude = make([]string, len(rf.Exclude))
+		copy(result.Exclude, rf.Exclude)
+	}
+
+	return result
 }

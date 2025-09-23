@@ -65,9 +65,16 @@ func (i *Installer) Install(serverName string, opts InstallOptions) error {
 	}
 
 	// Validate and prompt for environment variables
+	if len(server.Environment) > 0 {
+		fmt.Fprintf(i.out, "🔧 Configuring server environment...\n")
+	}
 	if err := i.validateAndPromptEnvironment(server, opts.Environment, opts.Yes); err != nil {
 		return fmt.Errorf("configuring environment: %w", err)
 	}
+
+	// Detect package manager and display
+	packageManager := i.detectPackageManager()
+	fmt.Fprintf(i.out, "Using package manager: %s\n", packageManager)
 
 	// Check Claude CLI availability
 	if err := i.claude.IsAvailable(); err != nil {
@@ -76,7 +83,20 @@ func (i *Installer) Install(serverName string, opts InstallOptions) error {
 	fmt.Fprintf(i.out, "📍 Detected Claude CLI available\n")
 
 	// Check if already installed
-	if status, err := i.claude.GetServerStatus(serverName); err == nil && status.Installed && !opts.DryRun {
+	isInstalled := false
+	if opts.ConfigPath != "" {
+		// Check config file if path specified
+		isInstalled = i.isServerInConfigFile(serverName, opts.ConfigPath)
+	} else {
+		// Check via Claude CLI
+		if status, err := i.claude.GetServerStatus(serverName); err == nil && status.Installed {
+			isInstalled = true
+		}
+	}
+
+	if isInstalled && !opts.DryRun {
+		fmt.Fprintf(i.out, "⚠️  %s is already installed.\n", serverName)
+		fmt.Fprintf(i.out, "💡 To upgrade or reinstall, use: ddx mcp upgrade %s\n", serverName)
 		return fmt.Errorf("%w: %s", ErrAlreadyInstalled, serverName)
 	}
 
@@ -93,12 +113,12 @@ func (i *Installer) Install(serverName string, opts InstallOptions) error {
 
 	// Install server via Claude CLI
 	fmt.Fprintf(i.out, "📦 Installing server via Claude CLI...\n")
-	if err := i.claude.AddServer(serverName, server.Command.Executable, server.Command.Args, opts.Environment); err != nil {
+	if err := i.addServerWithConfig(serverName, server, opts); err != nil {
 		return fmt.Errorf("installing server: %w", err)
 	}
 
 	// Success message with next steps
-	fmt.Fprintf(i.out, "✅ %s MCP server installed successfully!\n\n", serverName)
+	fmt.Fprintf(i.out, "✅ %s MCP server installed Successfully!\n\n", serverName)
 	fmt.Fprintf(i.out, "🚀 Next steps:\n")
 	fmt.Fprintf(i.out, "  1. Restart Claude Code to load the server\n")
 	fmt.Fprintf(i.out, "  2. Look for %s in Claude Code's MCP section\n", serverName)
@@ -158,6 +178,81 @@ func (i *Installer) validateAndPromptEnvironment(server *Server, env map[string]
 		}
 	}
 	return nil
+}
+
+// addServerWithConfig adds server and creates config file if path specified
+func (i *Installer) addServerWithConfig(serverName string, server *Server, opts InstallOptions) error {
+	// If config path is specified, create/update the Claude config file
+	if opts.ConfigPath != "" {
+		return i.createClaudeConfig(serverName, server, opts)
+	}
+
+	// Otherwise use regular Claude CLI
+	return i.claude.AddServer(serverName, server.Command.Executable, server.Command.Args, opts.Environment)
+}
+
+// createClaudeConfig creates a Claude config file at the specified path
+func (i *Installer) createClaudeConfig(serverName string, server *Server, opts InstallOptions) error {
+	configDir := filepath.Dir(opts.ConfigPath)
+	if err := os.MkdirAll(configDir, 0755); err != nil {
+		return fmt.Errorf("creating config directory: %w", err)
+	}
+
+	// Create basic Claude MCP configuration
+	config := map[string]interface{}{
+		"mcpServers": map[string]interface{}{
+			serverName: map[string]interface{}{
+				"command": server.Command.Executable,
+				"args":    server.Command.Args,
+			},
+		},
+	}
+
+	// Add environment variables if present
+	if len(opts.Environment) > 0 {
+		serverConfig := config["mcpServers"].(map[string]interface{})[serverName].(map[string]interface{})
+		serverConfig["env"] = opts.Environment
+	}
+
+	// Write config file
+	jsonData, err := json.MarshalIndent(config, "", "  ")
+	if err != nil {
+		return fmt.Errorf("marshaling config: %w", err)
+	}
+
+	if err := os.WriteFile(opts.ConfigPath, jsonData, 0644); err != nil {
+		return fmt.Errorf("writing config file: %w", err)
+	}
+
+	return nil
+}
+
+// isServerInConfigFile checks if a server is already configured in the config file
+func (i *Installer) isServerInConfigFile(serverName, configPath string) bool {
+	// Check if config file exists
+	if _, err := os.Stat(configPath); err != nil {
+		return false // File doesn't exist, so server isn't installed
+	}
+
+	// Read existing config
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		return false // Can't read file, assume not installed
+	}
+
+	// Parse JSON config
+	var config map[string]interface{}
+	if err := json.Unmarshal(data, &config); err != nil {
+		return false // Invalid JSON, assume not installed
+	}
+
+	// Check if mcpServers section exists and contains our server
+	if mcpServers, ok := config["mcpServers"].(map[string]interface{}); ok {
+		_, exists := mcpServers[serverName]
+		return exists
+	}
+
+	return false
 }
 
 // detectPackageManager detects which package manager is in use

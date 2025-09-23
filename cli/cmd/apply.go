@@ -266,7 +266,7 @@ func applySingleFile(sourcePath, targetPath string, cfg *config.Config, vars []s
 	return processFile(sourcePath, targetPath, cfg, vars)
 }
 
-// processFile processes a file with variable substitution
+// processFile processes a file with variable substitution and conflict handling
 func processFile(sourcePath, targetPath string, cfg *config.Config, vars []string) error {
 	// Read source content
 	content, err := os.ReadFile(sourcePath)
@@ -288,8 +288,51 @@ func processFile(sourcePath, targetPath string, cfg *config.Config, vars []strin
 		return err
 	}
 
-	// Write processed content
-	return os.WriteFile(targetPath, []byte(processedContent), 0644)
+	// Check for file conflicts
+	if _, err := os.Stat(targetPath); err == nil {
+		// File exists - handle conflict
+		if err := handleFileConflict(targetPath, processedContent); err != nil {
+			return err
+		}
+	} else {
+		// File doesn't exist - create it
+		if err := os.WriteFile(targetPath, []byte(processedContent), 0644); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// handleFileConflict handles conflicts when a target file already exists
+func handleFileConflict(targetPath, newContent string) error {
+	// Read existing content
+	existingContent, err := os.ReadFile(targetPath)
+	if err != nil {
+		return fmt.Errorf("failed to read existing file %s: %w", targetPath, err)
+	}
+
+	// If content is identical, no conflict
+	if string(existingContent) == newContent {
+		return nil
+	}
+
+	// For now, create a backup and overwrite
+	// TODO: In the future, this should prompt the user for choices
+	backupPath := targetPath + ".ddx-backup"
+	if err := os.WriteFile(backupPath, existingContent, 0644); err != nil {
+		return fmt.Errorf("failed to create backup %s: %w", backupPath, err)
+	}
+
+	// Overwrite with new content
+	if err := os.WriteFile(targetPath, []byte(newContent), 0644); err != nil {
+		return fmt.Errorf("failed to write new content to %s: %w", targetPath, err)
+	}
+
+	fmt.Printf("⚠️  File conflict resolved: %s\n", targetPath)
+	fmt.Printf("   Created backup: %s\n", backupPath)
+
+	return nil
 }
 
 // parseRuntimeVariables parses --var flags into a map
