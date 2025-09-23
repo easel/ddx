@@ -83,7 +83,7 @@ The CLI uses git subtree for managing the relationship between individual projec
 2. **Feature Addition Pattern**:
    - New capabilities are added as templates, prompts, or scripts in the library
    - The CLI is a delivery mechanism, not a feature repository
-   - Third-party tool integrations go through the library, not CLI commands
+   - Third-party tool integrations go through the library, not CLI actions
 
 3. **Correct Implementation Pattern**:
    ```go
@@ -148,11 +148,11 @@ The CLI follows a noun-verb command structure for clarity and consistency:
 
 The CLI follows the medical metaphor throughout, treating projects as patients that need diagnosis and treatment through appropriate templates and patterns.
 
-### Workflow Execution Commands
+### Workflow Execution Actions
 
-The DDx CLI includes powerful workflow execution commands that allow AI-assisted work on user stories:
+The DDx CLI includes powerful workflow execution actions that allow AI-assisted work on user stories:
 
-**CRITICAL**: When asked to work on a user story or continue HELIX work, use these commands:
+**CRITICAL**: When asked to work on a user story or continue HELIX work, use these actions:
 
 ```bash
 # Execute work on a specific user story
@@ -167,11 +167,11 @@ ddx workflow helix execute status
 # Work on the next priority story
 ddx workflow helix execute next
 
-# List available workflow commands
-ddx workflow helix commands
+# List available workflow actions
+ddx workflow helix actions
 ```
 
-These commands load AI prompts from `library/workflows/helix/commands/` that:
+These actions load AI prompts from `library/workflows/helix/actions/` that:
 - Understand HELIX phase rules and enforce them
 - Read user stories and requirements
 - Execute phase-appropriate work
@@ -434,10 +434,10 @@ cat docs/helix/01-frame/user-stories/US-001.md  # Manual reading
 
 # Do this instead:
 ddx workflow helix execute build-story US-001
-# The command handles everything automatically
+# The action handles everything automatically
 ```
 
-### Workflow Commands
+### Workflow Actions
 
 When asked about workflow status or to perform workflow actions:
 - Use `ddx workflow helix execute status` to check current phase and progress
@@ -449,19 +449,19 @@ When asked about workflow status or to perform workflow actions:
 - Prevent phase violations
 - Ensure documentation best practices
 
-## Approved Workflow Commands
+## Approved Workflow Actions
 
-The following DDx workflow commands can be executed automatically when working on user stories:
+The following DDx workflow actions can be executed automatically when working on user stories:
 
-**HELIX Workflow Commands:**
+**HELIX Workflow Actions:**
 - `ddx workflow helix execute build-story <story-id>` - Work on a specific user story
 - `ddx workflow helix execute continue` - Continue current work
 - `ddx workflow helix execute status` - Check workflow status
 - `ddx workflow helix execute next` - Work on next priority story
-- `ddx workflow helix commands` - List available commands
+- `ddx workflow helix actions` - List available actions
 
-**General Workflow Commands:**
-- `ddx workflow <workflow> execute <command> [args]` - Execute any workflow command
-- `ddx workflow <workflow> commands` - List workflow commands
+**General Workflow Actions:**
+- `ddx workflow <workflow> execute <action> [args]` - Execute any workflow action
+- `ddx workflow <workflow> actions` - List workflow actions
 
-These commands are essential for HELIX workflow execution and should be used proactively when working on user stories or continuing development work.
+These actions are essential for HELIX workflow execution and should be used proactively when working on user stories or continuing development work.

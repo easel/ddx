@@ -158,35 +158,6 @@ Examples:
 	return cmd
 }
 
-// newApplyCommand creates a fresh apply command
-func (f *CommandFactory) newApplyCommand() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "apply <resource>",
-		Short: "Apply a specific template, pattern, or configuration",
-		Long: `Apply a DDx resource to your project.
-
-Resources can be:
-• Templates (complete project setups)
-• Patterns (code examples and best practices)
-• Configurations (tool configs like ESLint, Prettier)
-• Prompts (AI prompts and instructions)
-• Scripts (automation and setup scripts)
-
-Examples:
-  ddx apply nextjs              # Apply Next.js template
-  ddx apply error-handling      # Apply error handling patterns
-  ddx apply prompts/claude      # Apply Claude AI prompts
-  ddx apply scripts/hooks       # Install git hooks`,
-		Args: cobra.ExactArgs(1),
-		RunE: runApply,
-	}
-
-	cmd.Flags().StringP("path", "p", ".", "Target path for application")
-	cmd.Flags().Bool("dry-run", false, "Show what would be applied without making changes")
-	cmd.Flags().StringSlice("var", nil, "Set template variables (key=value)")
-
-	return cmd
-}
 
 // newConfigCommand creates a fresh config command
 func (f *CommandFactory) newConfigCommand() *cobra.Command {

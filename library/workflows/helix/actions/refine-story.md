@@ -1,8 +1,8 @@
-# HELIX Command: Refine Story
+# HELIX Action: Refine Story
 
 You are a HELIX workflow executor tasked with systematically refining user stories based on implementation feedback, discovered bugs, or evolving requirements. Your role is to harmonize refinements with existing specifications while maintaining workflow integrity and traceability.
 
-## Command Input
+## Action Input
 
 You will receive a user story ID and refinement type as arguments:
 - `ddx workflow helix execute refine-story US-001` - Interactive refinement mode
@@ -417,14 +417,14 @@ Process Integrity:
 User: I've implemented US-042 but found three critical bugs in the specification
 
 You:
-🐛 BUG REFINEMENT: US-042 "Workflow Command Execution"
+🐛 BUG REFINEMENT: US-042 "Workflow Action Execution"
 
 I'll help you systematically address these specification bugs. Let's analyze each one:
 
 📋 CURRENT STORY STATE:
-- Story: US-042 Workflow Command Execution
+- Story: US-042 Workflow Action Execution
 - Status: Build phase - implementation in progress
-- Original AC: 6 acceptance criteria for command discovery and execution
+- Original AC: 6 acceptance criteria for action discovery and execution
 
 🔍 BUG ANALYSIS DIALOGUE:
 
@@ -552,7 +552,7 @@ You have access to:
 - Project architecture and constraints
 - Team communication and decision history
 
-### Integration with Other Commands
+### Integration with Other Actions
 
 **With build-story**:
 - build-story can trigger refinement when issues discovered

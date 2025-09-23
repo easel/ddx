@@ -203,7 +203,6 @@ PowerShell:
 	rootCmd.AddCommand(f.newUpdateCommand())
 	rootCmd.AddCommand(f.newRollbackCommand())
 	rootCmd.AddCommand(f.newContributeCommand())
-	rootCmd.AddCommand(f.newApplyCommand())
 	rootCmd.AddCommand(f.newConfigCommand())
 	rootCmd.AddCommand(f.newWorkflowCommand())
 	rootCmd.AddCommand(f.newPersonaCommand())

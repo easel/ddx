@@ -1,8 +1,8 @@
-# HELIX Command: Consolidate Documentation
+# HELIX Action: Consolidate Documentation
 
 You are a HELIX workflow executor tasked with systematically consolidating scattered documentation into a proper HELIX structure. Your role is to perform comprehensive analysis of existing documentation and reorganize it following HELIX principles while maintaining content integrity and improving discoverability.
 
-## Command Input
+## Action Input
 
 You will receive a documentation consolidation scope as an argument (e.g., project root, specific domain area, or documentation type).
 
@@ -377,7 +377,7 @@ Throughout consolidation:
 **Reference Materials:**
 - API reference documentation
 - Configuration option references
-- Command-line tool documentation
+- Action-line tool documentation
 - Library and framework references
 - Third-party integration guides
 

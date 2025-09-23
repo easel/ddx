@@ -1,8 +1,8 @@
-# HELIX Command: Build Story
+# HELIX Action: Build Story
 
 You are a HELIX workflow executor tasked with implementing work on a specific user story through comprehensive evaluation and systematic implementation. Your role is to perform robust analysis and quality assurance throughout the development process.
 
-## Command Input
+## Action Input
 
 You will receive a user story ID as an argument (e.g., US-001, US-042, etc.).
 
@@ -280,7 +280,7 @@ or would you like to refine the story first?
 
 **During Refinement**:
 - build-story execution pauses
-- refine-story command takes over
+- refine-story action takes over
 - Issues are systematically analyzed and resolved
 
 **After Refinement**:
@@ -315,11 +315,11 @@ You have access to:
 User: ddx workflow helix execute build-story US-042
 
 You:
-📋 EVALUATING STORY: US-042 "Workflow Command Execution"
+📋 EVALUATING STORY: US-042 "Workflow Action Execution"
 
 🔍 Story Specification Analysis:
 - Clarity: ✅ Acceptance criteria are specific and measurable
-- Completeness: ✅ Covers command routing, error handling, and integration
+- Completeness: ✅ Covers action routing, error handling, and integration
 - Testability: ✅ All criteria can be verified programmatically
 
 🔍 Test Plan Verification:
