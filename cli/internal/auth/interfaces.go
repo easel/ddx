@@ -10,7 +10,6 @@ import (
 type AuthMethod string
 
 const (
-	AuthMethodSSH   AuthMethod = "ssh"
 	AuthMethodHTTPS AuthMethod = "https"
 	AuthMethodOAuth AuthMethod = "oauth"
 	AuthMethodToken AuthMethod = "token"
@@ -28,17 +27,16 @@ const (
 
 // Credential represents stored authentication credentials
 type Credential struct {
-	ID         string            `json:"id"`
-	Platform   Platform          `json:"platform"`
-	Method     AuthMethod        `json:"method"`
-	Username   string            `json:"username,omitempty"`
-	Token      string            `json:"token,omitempty"`
-	SSHKeyPath string            `json:"ssh_key_path,omitempty"`
-	ExpiresAt  *time.Time        `json:"expires_at,omitempty"`
-	Scopes     []string          `json:"scopes,omitempty"`
-	Metadata   map[string]string `json:"metadata,omitempty"`
-	CreatedAt  time.Time         `json:"created_at"`
-	UpdatedAt  time.Time         `json:"updated_at"`
+	ID        string            `json:"id"`
+	Platform  Platform          `json:"platform"`
+	Method    AuthMethod        `json:"method"`
+	Username  string            `json:"username,omitempty"`
+	Token     string            `json:"token,omitempty"`
+	ExpiresAt *time.Time        `json:"expires_at,omitempty"`
+	Scopes    []string          `json:"scopes,omitempty"`
+	Metadata  map[string]string `json:"metadata,omitempty"`
+	CreatedAt time.Time         `json:"created_at"`
+	UpdatedAt time.Time         `json:"updated_at"`
 }
 
 // AuthRequest represents an authentication request
@@ -154,27 +152,6 @@ type CredentialHelper interface {
 
 	// Erase removes credentials from the helper
 	Erase(ctx context.Context, host string) error
-}
-
-// SSHAgent is the interface for SSH agent integration
-type SSHAgent interface {
-	// IsAvailable checks if SSH agent is running
-	IsAvailable() bool
-
-	// ListKeys returns available SSH keys
-	ListKeys(ctx context.Context) ([]SSHKey, error)
-
-	// Sign signs data with the specified key
-	Sign(ctx context.Context, keyPath string, data []byte) ([]byte, error)
-}
-
-// SSHKey represents an SSH key
-type SSHKey struct {
-	Path        string `json:"path"`
-	Type        string `json:"type"`
-	Fingerprint string `json:"fingerprint"`
-	Comment     string `json:"comment"`
-	IsEncrypted bool   `json:"is_encrypted"`
 }
 
 // ValidationError represents credential validation errors

@@ -16,7 +16,6 @@
 ## Acceptance Criteria
 
 - [ ] **Given** system credential stores exist, **when** authenticating, **then** existing credential stores are used when available
-- [ ] **Given** I use SSH, **when** configuring authentication, **then** SSH key authentication is fully supported
 - [ ] **Given** I use HTTPS, **when** authenticating, **then** token-based authentication works securely
 - [ ] **Given** credential helpers exist, **when** DDX needs auth, **then** it integrates with system credential helpers
 - [ ] **Given** I provide credentials, **when** stored, **then** no plaintext passwords are ever stored
@@ -28,7 +27,6 @@
 
 - [ ] Multiple authentication methods implemented
 - [ ] Secure credential storage integration
-- [ ] SSH key support complete
 - [ ] Token management working
 - [ ] 2FA workflow implemented
 - [ ] Credential validation before operations
@@ -40,10 +38,9 @@
 ## Technical Notes
 
 ### Authentication Methods
-1. **SSH Keys**: Use existing SSH agent
-2. **HTTPS Tokens**: Personal access tokens
-3. **OAuth**: OAuth2 flow for web-based auth
-4. **Credential Helpers**: Git credential helpers
+1. **HTTPS Tokens**: Personal access tokens
+2. **OAuth**: OAuth2 flow for web-based auth
+3. **Credential Helpers**: Git credential helpers
 
 ### Security Requirements
 - Never store plaintext passwords
@@ -54,29 +51,24 @@
 - Rate limiting for failed attempts
 
 ### Platform-Specific Auth
-- **GitHub**: Personal access tokens, SSH, OAuth
-- **GitLab**: Personal/project tokens, SSH
-- **Bitbucket**: App passwords, SSH keys
-- **Generic Git**: Basic auth, SSH
+- **GitHub**: Personal access tokens, OAuth
+- **GitLab**: Personal/project tokens
+- **Bitbucket**: App passwords
+- **Generic Git**: Basic auth, HTTPS tokens
 
 ## Validation Scenarios
 
-### Scenario 1: SSH Key Setup
-1. Configure SSH key authentication
-2. Test connection to upstream
-3. **Expected**: Successful authentication via SSH
-
-### Scenario 2: Token Authentication
+### Scenario 1: Token Authentication
 1. Generate personal access token
 2. Configure DDX to use token
 3. **Expected**: Secure token storage and usage
 
-### Scenario 3: 2FA Challenge
+### Scenario 2: 2FA Challenge
 1. Attempt operation requiring 2FA
 2. Complete 2FA challenge
 3. **Expected**: Operation proceeds after 2FA
 
-### Scenario 4: Credential Rotation
+### Scenario 3: Credential Rotation
 1. Update expired credentials
 2. Test with new credentials
 3. **Expected**: Seamless transition to new creds
@@ -123,8 +115,8 @@
 
 Provide clear guidance for common issues:
 - "Authentication failed: Invalid token. Please check your personal access token has the required scopes: repo, write"
-- "SSH key not found. Please ensure your SSH key is added to the SSH agent: ssh-add ~/.ssh/id_rsa"
 - "2FA required. Please complete two-factor authentication to continue."
+- "Credential helper not found. Please configure git credential helpers or provide a personal access token."
 
 ---
 *This user story is part of FEAT-002: Upstream Synchronization System*

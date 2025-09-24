@@ -13,7 +13,6 @@ type DefaultManager struct {
 	authenticators map[Platform]Authenticator
 	stores         []Store
 	helpers        []CredentialHelper
-	sshAgent       SSHAgent
 	mu             sync.RWMutex
 }
 
@@ -53,13 +52,6 @@ func (m *DefaultManager) RegisterCredentialHelper(helper CredentialHelper) {
 	if helper.IsAvailable() {
 		m.helpers = append(m.helpers, helper)
 	}
-}
-
-// SetSSHAgent sets the SSH agent interface
-func (m *DefaultManager) SetSSHAgent(agent SSHAgent) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.sshAgent = agent
 }
 
 // Authenticate performs authentication for a given request

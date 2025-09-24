@@ -14,7 +14,6 @@ import (
 
 var authManager *auth.DefaultManager
 
-
 // runAuthLogin implements the auth login command logic
 func runAuthLogin(cmd *cobra.Command, args []string) error {
 	ctx := cmd.Context()
@@ -193,7 +192,6 @@ func runAuthToken(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-
 // getAuthManager returns the global authentication manager, initializing it if needed
 func getAuthManager() *auth.DefaultManager {
 	if authManager == nil {
@@ -231,10 +229,6 @@ func initializeAuthManager() *auth.DefaultManager {
 	if ghHelper := auth.NewGitHubCLIHelper(); ghHelper.IsAvailable() {
 		manager.RegisterCredentialHelper(ghHelper)
 	}
-
-	// Register SSH agent
-	sshAgent := auth.NewDefaultSSHAgent()
-	manager.SetSSHAgent(sshAgent)
 
 	return manager
 }

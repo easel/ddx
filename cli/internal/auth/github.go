@@ -31,7 +31,6 @@ func (a *GitHubAuthenticator) Platform() Platform {
 func (a *GitHubAuthenticator) SupportedMethods() []AuthMethod {
 	return []AuthMethod{
 		AuthMethodToken,
-		AuthMethodSSH,
 		AuthMethodOAuth,
 	}
 }
@@ -41,16 +40,11 @@ func (a *GitHubAuthenticator) Authenticate(ctx context.Context, req *AuthRequest
 	switch req.Method {
 	case AuthMethodToken:
 		return a.authenticateWithToken(ctx, req)
-	case AuthMethodSSH:
-		return a.authenticateWithSSH(ctx, req)
 	case AuthMethodOAuth:
 		return a.authenticateWithOAuth(ctx, req)
 	default:
-		// Try token first, then SSH
-		if result, err := a.authenticateWithToken(ctx, req); err == nil {
-			return result, nil
-		}
-		return a.authenticateWithSSH(ctx, req)
+		// Try token authentication as default
+		return a.authenticateWithToken(ctx, req)
 	}
 }
 
@@ -155,27 +149,6 @@ func (a *GitHubAuthenticator) authenticateWithToken(ctx context.Context, req *Au
 			Message: "GitHub personal access token required",
 			Code:    "GITHUB_TOKEN_REQUIRED",
 			Hint:    "Generate token at https://github.com/settings/tokens with scopes: " + strings.Join(req.Scopes, ", "),
-		},
-	}, nil
-}
-
-// authenticateWithSSH performs SSH-based authentication
-func (a *GitHubAuthenticator) authenticateWithSSH(ctx context.Context, req *AuthRequest) (*AuthResult, error) {
-	// SSH authentication is handled by git/SSH agent
-	// We just need to verify SSH key is configured
-	return &AuthResult{
-		Success: true,
-		Method:  AuthMethodSSH,
-		Message: "SSH authentication available",
-		Credential: &Credential{
-			ID:       req.Repository,
-			Platform: PlatformGitHub,
-			Method:   AuthMethodSSH,
-			Metadata: map[string]string{
-				"ssh_host": "github.com",
-			},
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
 		},
 	}, nil
 }
