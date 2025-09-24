@@ -65,7 +65,7 @@ func runList(cmd *cobra.Command, args []string) error {
 	}
 
 	// Define resource types to list
-	resourceTypes := []string{"templates", "patterns", "configs", "prompts", "scripts"}
+	resourceTypes := []string{"workflows", "mcp-servers", "prompts", "personas", "configs", "scripts", "tools", "environments"}
 
 	// Filter by type if specified via argument
 	var filterType string
@@ -227,9 +227,9 @@ func runList(cmd *cobra.Command, args []string) error {
 
 	// Show usage examples
 	cmd.Println("Usage examples:")
-	cmd.Println("  ddx apply nextjs           # Apply Next.js template")
-	cmd.Println("  ddx apply error-handling   # Apply error handling pattern")
-	cmd.Println("  ddx list templates         # Show only templates")
+	cmd.Println("  ddx workflow init helix    # Initialize HELIX workflow")
+	cmd.Println("  ddx mcp install github     # Install GitHub MCP server")
+	cmd.Println("  ddx list workflows         # Show only workflows")
 	cmd.Println("  ddx list --filter react    # Search for react-related items")
 	cmd.Println("  ddx list --json            # Output as JSON")
 
@@ -405,7 +405,7 @@ func displayTreeOutput(cmd *cobra.Command, resources []Resource, filter string) 
 	}
 
 	// Sort types
-	types := []string{"prompts", "templates", "patterns", "configs", "scripts", "workflows"}
+	types := []string{"workflows", "mcp-servers", "prompts", "personas", "configs", "scripts", "tools", "environments"}
 	for _, resourceType := range types {
 		typeResources, exists := resourcesByType[resourceType]
 		if !exists || len(typeResources) == 0 {

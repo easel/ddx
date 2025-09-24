@@ -41,27 +41,35 @@
 
 ### Initialization Steps
 1. Detect project state (new vs existing)
-2. Prompt for upstream repository URL
-3. Establish connection to upstream
-4. Configure synchronization settings
-5. Set up change tracking
-6. Validate entire configuration
-7. Create initial checkpoint
-8. Display success confirmation
+2. Validate git repository exists
+3. Configure upstream repository connection (github.com/easel/ddx)
+4. Set up git-subtree for library synchronization
+5. Execute: `git subtree add --prefix=.ddx/library https://github.com/easel/ddx main --squash`
+6. Configure synchronization settings
+7. Set up change tracking
+8. Validate entire configuration
+9. Create initial checkpoint
+10. Display success confirmation
 
 ### Configuration Options
-- Upstream repository URL
-- Branch to track
+- Upstream repository URL (github.com/easel/ddx)
+- Branch to track (main)
 - Update frequency preference
 - Conflict resolution defaults
 - Backup preferences
 - Authentication method
 
+### Git Subtree Commands
+- Initial library import: `git subtree add --prefix=.ddx/library https://github.com/easel/ddx main --squash`
+- Update library: `git subtree pull --prefix=.ddx/library https://github.com/easel/ddx main --squash`
+- Contribute changes: `git subtree push --prefix=.ddx/library https://github.com/easel/ddx main`
+
 ### Project State Detection
 - Check for existing .ddx directory
-- Verify version control status
+- Verify git repository exists (`git rev-parse --git-dir`)
 - Identify any conflicts
 - Preserve existing customizations
+- Validate git subtree prerequisites
 
 ## Validation Scenarios
 

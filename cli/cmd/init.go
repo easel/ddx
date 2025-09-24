@@ -4,13 +4,13 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/briandowns/spinner"
 	"github.com/easel/ddx/internal/config"
-	"github.com/easel/ddx/internal/templates"
 	"github.com/spf13/cobra"
 )
 
@@ -20,12 +20,19 @@ import (
 // runInit implements the init command logic
 func runInit(cmd *cobra.Command, args []string) error {
 	// Get flag values locally
-	initTemplate, _ := cmd.Flags().GetString("template")
 	initForce, _ := cmd.Flags().GetBool("force")
 	initNoGit, _ := cmd.Flags().GetBool("no-git")
 
 	fmt.Fprint(cmd.OutOrStdout(), "🚀 Initializing DDx in current project...\n")
 	fmt.Fprintln(cmd.OutOrStdout())
+
+	// Validate git repository unless --no-git flag is used
+	if !initNoGit {
+		if err := validateGitRepository(cmd); err != nil {
+			cmd.SilenceUsage = true
+			return NewExitError(1, err.Error())
+		}
+	}
 
 	// Check if config already exists and handle backup
 	configPath := ".ddx.yml"
@@ -120,8 +127,14 @@ func runInit(cmd *cobra.Command, args []string) error {
 		return NewExitError(1, fmt.Sprintf("Failed to create .ddx directory: %v", err))
 	}
 
-	// Copy resources if library exists and not using --no-git
-	if libraryExists && !initNoGit {
+	// Set up git-subtree for library synchronization if not using --no-git and in git repo
+	if !initNoGit && libraryExists {
+		if err := setupGitSubtreeLibrary(localConfig, cmd); err != nil {
+			cmd.SilenceUsage = true
+			return NewExitError(1, fmt.Sprintf("Failed to setup git-subtree library: %v", err))
+		}
+	} else if libraryExists {
+		// Fallback to copying resources if not using git
 		s := spinner.New(spinner.CharSets[14], 100)
 		s.Prefix = "Setting up DDx... "
 		s.Start()
@@ -138,16 +151,6 @@ func runInit(cmd *cobra.Command, args []string) error {
 					cmd.SilenceUsage = true
 					return NewExitError(1, fmt.Sprintf("Failed to copy %s: %v", include, err))
 				}
-			}
-		}
-
-		// Apply template if specified
-		if initTemplate != "" {
-			s.Suffix = fmt.Sprintf(" Applying template: %s...", initTemplate)
-			if err := templates.Apply(initTemplate, ".", localConfig.Variables); err != nil {
-				s.Stop()
-				cmd.SilenceUsage = true
-				return NewExitError(4, fmt.Sprintf("Template '%s' not found. Run 'ddx list templates' to see available templates.", initTemplate))
 			}
 		}
 
@@ -409,6 +412,62 @@ func validateConfiguration(cfg *config.Config) error {
 	if cfg.Variables["project_name"] == "" {
 		return fmt.Errorf("project_name variable is required")
 	}
+
+	return nil
+}
+
+// validateGitRepository checks if the current directory is inside a git repository
+func validateGitRepository(cmd *cobra.Command) error {
+	fmt.Fprint(cmd.OutOrStdout(), "🔍 Validating git repository...\n")
+
+	// Use git rev-parse --git-dir to check if we're in a git repository
+	gitCmd := exec.Command("git", "rev-parse", "--git-dir")
+	gitCmd.Stderr = nil // Suppress error output
+	if err := gitCmd.Run(); err != nil {
+		return fmt.Errorf("Error: ddx init must be run inside a git repository. Please run 'git init' first")
+	}
+
+	fmt.Fprint(cmd.OutOrStdout(), "  ✓ Git repository detected\n")
+	return nil
+}
+
+// setupGitSubtreeLibrary sets up the library using git-subtree
+func setupGitSubtreeLibrary(cfg *config.Config, cmd *cobra.Command) error {
+	fmt.Fprint(cmd.OutOrStdout(), "📚 Setting up library via git-subtree...\n")
+
+	// Check if .ddx/library already exists
+	libraryPath := ".ddx/library"
+	if _, err := os.Stat(libraryPath); err == nil {
+		fmt.Fprintf(cmd.OutOrStdout(), "  ℹ️  Library directory already exists at %s\n", libraryPath)
+		return nil
+	}
+
+	// In test mode, simulate git-subtree setup
+	if os.Getenv("DDX_TEST_MODE") == "1" {
+		if err := os.MkdirAll(libraryPath, 0755); err != nil {
+			return fmt.Errorf("failed to create library directory: %v", err)
+		}
+		fmt.Fprint(cmd.OutOrStdout(), "  ✓ Git-subtree library setup simulated (test mode)\n")
+		return nil
+	}
+
+	// Execute git subtree add command
+	repoURL := cfg.Repository.URL
+	branch := cfg.Repository.Branch
+	if branch == "" {
+		branch = "main"
+	}
+
+	gitCmd := exec.Command("git", "subtree", "add", fmt.Sprintf("--prefix=%s", libraryPath), repoURL, branch, "--squash")
+	gitCmd.Stdout = nil // Suppress verbose git output
+	gitCmd.Stderr = nil
+
+	if err := gitCmd.Run(); err != nil {
+		return fmt.Errorf("git subtree command failed: %v. You may need to run 'git subtree add --prefix=.ddx/library %s %s --squash' manually", err, repoURL, branch)
+	}
+
+	fmt.Fprint(cmd.OutOrStdout(), "  ✓ Library synchronized via git-subtree\n")
+	fmt.Fprintf(cmd.OutOrStdout(), "  ℹ️  To update library: git subtree pull --prefix=.ddx/library %s %s --squash\n", repoURL, branch)
 
 	return nil
 }

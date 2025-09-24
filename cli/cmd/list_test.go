@@ -32,18 +32,20 @@ func TestListCommand(t *testing.T) {
 				// Create library structure
 				libraryDir := filepath.Join(testDir, "library")
 
-				// Create template directories
-				templatesDir := filepath.Join(libraryDir, "templates")
-				require.NoError(t, os.MkdirAll(filepath.Join(templatesDir, "nextjs"), 0755))
-				require.NoError(t, os.MkdirAll(filepath.Join(templatesDir, "python"), 0755))
+				// Create workflow directories
+				workflowsDir := filepath.Join(libraryDir, "workflows")
+				require.NoError(t, os.MkdirAll(filepath.Join(workflowsDir, "helix"), 0755))
+				require.NoError(t, os.WriteFile(filepath.Join(workflowsDir, "helix", "workflow.yml"), []byte("name: helix"), 0644))
 
-				// Create pattern directories
-				patternsDir := filepath.Join(libraryDir, "patterns")
-				require.NoError(t, os.MkdirAll(filepath.Join(patternsDir, "auth"), 0755))
+				// Create mcp-servers directories
+				mcpDir := filepath.Join(libraryDir, "mcp-servers")
+				require.NoError(t, os.MkdirAll(filepath.Join(mcpDir, "github"), 0755))
+				require.NoError(t, os.WriteFile(filepath.Join(mcpDir, "github", "server.json"), []byte("{}"), 0644))
 
 				// Create prompts directories
 				promptsDir := filepath.Join(libraryDir, "prompts")
 				require.NoError(t, os.MkdirAll(filepath.Join(promptsDir, "claude"), 0755))
+				require.NoError(t, os.WriteFile(filepath.Join(promptsDir, "claude", "prompt.md"), []byte("# Prompt"), 0644))
 
 				// Create .ddx.yml config pointing to library
 				config := []byte(`version: "2.0"
@@ -56,14 +58,14 @@ repository:
 				return testDir
 			},
 			validate: func(t *testing.T, output string, err error) {
-				assert.Contains(t, output, "Templates")
+				assert.Contains(t, output, "Workflows")
 				// Note: Actual output format depends on implementation
 			},
 			expectError: false,
 		},
 		{
 			name: "list specific resource type",
-			args: []string{"list", "templates"},
+			args: []string{"list", "workflows"},
 			setup: func(t *testing.T) string {
 				testDir := t.TempDir()
 				origWd, _ := os.Getwd()
@@ -71,9 +73,11 @@ repository:
 				t.Cleanup(func() { os.Chdir(origWd) })
 
 				libraryDir := filepath.Join(testDir, "library")
-				templatesDir := filepath.Join(libraryDir, "templates")
-				require.NoError(t, os.MkdirAll(filepath.Join(templatesDir, "react"), 0755))
-				require.NoError(t, os.MkdirAll(filepath.Join(templatesDir, "vue"), 0755))
+				workflowsDir := filepath.Join(libraryDir, "workflows")
+				require.NoError(t, os.MkdirAll(filepath.Join(workflowsDir, "helix"), 0755))
+				require.NoError(t, os.WriteFile(filepath.Join(workflowsDir, "helix", "workflow.yml"), []byte("name: helix"), 0644))
+				require.NoError(t, os.MkdirAll(filepath.Join(workflowsDir, "kanban"), 0755))
+				require.NoError(t, os.WriteFile(filepath.Join(workflowsDir, "kanban", "workflow.yml"), []byte("name: kanban"), 0644))
 
 				// Create .ddx.yml config
 				config := []byte(`version: "2.0"
@@ -83,7 +87,7 @@ library_path: ./library`)
 				return testDir
 			},
 			validate: func(t *testing.T, output string, err error) {
-				assert.Contains(t, output, "Templates")
+				assert.Contains(t, output, "Workflows")
 			},
 			expectError: false,
 		},
@@ -105,8 +109,8 @@ library_path: ./library`)
 			expectError: false,
 		},
 		{
-			name: "list with verbose flag",
-			args: []string{"list", "--verbose"},
+			name: "list with json flag",
+			args: []string{"list", "--json"},
 			setup: func(t *testing.T) string {
 				testDir := t.TempDir()
 				origWd, _ := os.Getwd()
@@ -114,12 +118,16 @@ library_path: ./library`)
 				t.Cleanup(func() { os.Chdir(origWd) })
 
 				libraryDir := filepath.Join(testDir, "library")
-				templatesDir := filepath.Join(libraryDir, "templates", "test")
-				require.NoError(t, os.MkdirAll(templatesDir, 0755))
+				workflowsDir := filepath.Join(libraryDir, "workflows", "test")
+				require.NoError(t, os.MkdirAll(workflowsDir, 0755))
 
-				// Add a README to the template
-				readme := filepath.Join(templatesDir, "README.md")
-				require.NoError(t, os.WriteFile(readme, []byte("# Test Template"), 0644))
+				// Add a README to the workflow
+				readme := filepath.Join(workflowsDir, "README.md")
+				require.NoError(t, os.WriteFile(readme, []byte("# Test Workflow"), 0644))
+
+				// Add actual workflow file
+				workflow := filepath.Join(workflowsDir, "workflow.yml")
+				require.NoError(t, os.WriteFile(workflow, []byte("name: test"), 0644))
 
 				// Create config
 				config := []byte(`version: "2.0"
@@ -129,8 +137,8 @@ library_path: ./library`)
 				return testDir
 			},
 			validate: func(t *testing.T, output string, err error) {
-				// Verbose output should include more details
-				assert.NotEmpty(t, output)
+				// JSON output should include proper structure
+				assert.Contains(t, output, "resources")
 			},
 			expectError: false,
 		},
@@ -153,15 +161,15 @@ library_path: ./library`)
 			// Create fresh list command to avoid state pollution
 			freshListCmd := &cobra.Command{
 				Use:   "list",
-				Short: "List available templates, patterns, and configurations",
+				Short: "List available DDx resources",
 				Long: `List all available resources in the DDx toolkit.
 
 You can filter by type or search for specific items.`,
 				RunE: runList,
 			}
-			freshListCmd.Flags().StringP("type", "t", "", "Filter by type (templates|patterns|configs|prompts|scripts)")
-			freshListCmd.Flags().StringP("search", "s", "", "Search for specific items")
-			freshListCmd.Flags().Bool("verbose", false, "Show verbose output with additional details")
+			freshListCmd.Flags().StringP("filter", "f", "", "Filter resources by name")
+			freshListCmd.Flags().Bool("json", false, "Output results as JSON")
+			freshListCmd.Flags().Bool("tree", false, "Display resources in tree format")
 
 			rootCmd.AddCommand(freshListCmd)
 
@@ -190,18 +198,18 @@ func TestListCommand_Help(t *testing.T) {
 	// Create fresh list command
 	freshListCmd := &cobra.Command{
 		Use:   "list",
-		Short: "List available templates, patterns, and configurations",
+		Short: "List available DDx resources",
 		RunE:  runList,
 	}
-	freshListCmd.Flags().StringP("type", "t", "", "Filter by type (templates|patterns|configs|prompts|scripts)")
-	freshListCmd.Flags().StringP("search", "s", "", "Search for specific items")
-	freshListCmd.Flags().Bool("verbose", false, "Show verbose output with additional details")
+	freshListCmd.Flags().StringP("filter", "f", "", "Filter resources by name")
+	freshListCmd.Flags().Bool("json", false, "Output results as JSON")
+	freshListCmd.Flags().Bool("tree", false, "Display resources in tree format")
 
 	rootCmd.AddCommand(freshListCmd)
 
 	output, err := executeCommand(rootCmd, "list", "--help")
 
 	assert.NoError(t, err)
-	assert.Contains(t, output, "List available templates")
-	assert.Contains(t, output, "search")
+	assert.Contains(t, output, "List available")
+	assert.Contains(t, output, "filter")
 }

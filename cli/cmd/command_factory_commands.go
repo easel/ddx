@@ -158,7 +158,6 @@ Examples:
 	return cmd
 }
 
-
 // newConfigCommand creates a fresh config command
 func (f *CommandFactory) newConfigCommand() *cobra.Command {
 	cmd := &cobra.Command{

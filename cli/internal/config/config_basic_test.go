@@ -15,14 +15,12 @@ func TestDefaultConfig_Basic(t *testing.T) {
 	t.Parallel()
 	config := DefaultConfig
 
-	assert.Equal(t, "1.0", config.Version)
+	assert.Equal(t, "2.0", config.Version)
 	assert.Equal(t, "https://github.com/easel/ddx", config.Repository.URL)
 	assert.Equal(t, "main", config.Repository.Branch)
 	assert.Equal(t, ".ddx/", config.Repository.Path)
-	assert.Contains(t, config.Includes, "prompts/claude")
-	assert.Contains(t, config.Includes, "scripts/hooks")
-	assert.Contains(t, config.Includes, "templates/common")
-	assert.Equal(t, "claude-3-opus", config.Variables["ai_model"])
+	assert.Empty(t, config.Includes)
+	assert.Empty(t, config.Variables)
 }
 
 // TestLoadConfig_DefaultOnly tests loading when no config files exist

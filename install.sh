@@ -52,19 +52,14 @@ check_prerequisites() {
     success "Prerequisites check passed"
 }
 
-# Clone DDx repository
-clone_repository() {
-    log "Installing DDx to ${DDX_HOME}..."
-    
-    if [ -d "${DDX_HOME}" ]; then
-        warn "DDx already exists at ${DDX_HOME}. Updating..."
-        cd "${DDX_HOME}"
-        git pull origin "${DDX_BRANCH}"
-    else
-        git clone -b "${DDX_BRANCH}" "${DDX_REPO}" "${DDX_HOME}"
-    fi
-    
-    success "Repository cloned successfully"
+# Setup DDx directory structure
+setup_ddx_directory() {
+    log "Setting up DDx directory structure at ${DDX_HOME}..."
+
+    # Create DDx home directory if it doesn't exist
+    mkdir -p "${DDX_HOME}"
+
+    success "Directory structure created"
 }
 
 # Install CLI tool
@@ -93,18 +88,30 @@ install_cli() {
     # Download appropriate archive
     ARCHIVE_NAME="ddx-${OS}-${ARCH}.${ARCHIVE_EXT}"
     DOWNLOAD_URL="${DDX_REPO}/releases/latest/download/${ARCHIVE_NAME}"
-    
-    log "Downloading ${ARCHIVE_NAME}..."
-    
+
+    log "Downloading ${ARCHIVE_NAME} from GitHub releases..."
+
     # Create temp directory for download
     TEMP_DIR=$(mktemp -d)
     trap "rm -rf ${TEMP_DIR}" EXIT
-    
+
+    # Download with error checking
     if command -v curl &> /dev/null; then
-        curl -fsSL "${DOWNLOAD_URL}" -o "${TEMP_DIR}/${ARCHIVE_NAME}"
+        if ! curl -fsSL "${DOWNLOAD_URL}" -o "${TEMP_DIR}/${ARCHIVE_NAME}"; then
+            error "Failed to download ${ARCHIVE_NAME}. Please check your internet connection and try again."
+        fi
     else
-        wget -q "${DOWNLOAD_URL}" -O "${TEMP_DIR}/${ARCHIVE_NAME}"
+        if ! wget -q "${DOWNLOAD_URL}" -O "${TEMP_DIR}/${ARCHIVE_NAME}"; then
+            error "Failed to download ${ARCHIVE_NAME}. Please check your internet connection and try again."
+        fi
     fi
+
+    # Verify download succeeded and file is not empty
+    if [ ! -f "${TEMP_DIR}/${ARCHIVE_NAME}" ] || [ ! -s "${TEMP_DIR}/${ARCHIVE_NAME}" ]; then
+        error "Downloaded file is missing or empty. The release may not exist for ${OS}-${ARCH}."
+    fi
+
+    log "Download completed successfully"
     
     # Extract binary from archive
     log "Extracting binary..."
@@ -116,14 +123,13 @@ install_cli() {
         tar -xzf "${ARCHIVE_NAME}"
     fi
     
-    # Move binary to DDx home
-    mv "${BINARY_NAME}" "${DDX_HOME}/ddx"
-    chmod +x "${DDX_HOME}/ddx"
-    
-    # Create symlink in user's local bin or add to PATH
+    # Install binary directly to local bin
     LOCAL_BIN="${HOME}/.local/bin"
     mkdir -p "${LOCAL_BIN}"
-    ln -sf "${DDX_HOME}/ddx" "${LOCAL_BIN}/ddx"
+
+    # Move binary directly to local bin instead of DDx home
+    mv "${BINARY_NAME}" "${LOCAL_BIN}/ddx"
+    chmod +x "${LOCAL_BIN}/ddx"
     
     success "CLI tool installed"
 }
@@ -198,15 +204,22 @@ update_path() {
     fi
 }
 
-# Initial configuration
-initial_config() {
-    log "Running initial configuration..."
-    
-    # Create default config if it doesn't exist
-    if [ ! -f "${HOME}/.ddx.yml" ]; then
-        cp "${DDX_HOME}/.ddx.yml" "${HOME}/.ddx.yml"
-        success "Created default configuration at ~/.ddx.yml"
+# Verify installation
+verify_installation() {
+    log "Verifying installation..."
+
+    # Check if binary exists and is executable
+    LOCAL_BIN="${HOME}/.local/bin/ddx"
+    if [ ! -f "${LOCAL_BIN}" ] || [ ! -x "${LOCAL_BIN}" ]; then
+        error "Installation failed: DDx binary not found or not executable at ${LOCAL_BIN}"
     fi
+
+    # Test binary execution
+    if ! "${LOCAL_BIN}" version &> /dev/null; then
+        warn "DDx binary installed but 'ddx version' command failed. This may be normal if PATH is not yet configured."
+    fi
+
+    success "Installation verification completed"
 }
 
 # Show getting started information
@@ -221,12 +234,10 @@ show_getting_started() {
     echo "   ddx diagnose         Analyze current project setup"
     echo ""
     echo "📖 Documentation:"
-    echo "   ${DDX_HOME}/docs/    Local documentation"
-    echo "   ${DDX_REPO}          Online repository"
+    echo "   ${DDX_REPO}          Online repository and documentation"
     echo ""
-    echo "🔧 Configuration:"
-    echo "   ~/.ddx.yml           Global configuration file"
-    echo "   ${DDX_HOME}          DDx installation directory"
+    echo "🔧 Binary Location:"
+    echo "   ${HOME}/.local/bin/ddx    DDx executable"
     echo ""
     echo "⚡ Quick Start:"
     echo "   cd your-project"
@@ -246,11 +257,11 @@ main() {
     echo ""
     
     check_prerequisites
-    clone_repository
+    setup_ddx_directory
     install_cli
     setup_completions
     update_path
-    initial_config
+    verify_installation
     show_getting_started
 }
 

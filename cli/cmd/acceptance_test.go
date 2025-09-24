@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -100,6 +101,11 @@ func TestAcceptance_US001_InitializeProject(t *testing.T) {
 				workDir := t.TempDir()
 				require.NoError(t, os.Chdir(workDir))
 
+				// Initialize git repository first
+				require.NoError(t, exec.Command("git", "init").Run())
+				require.NoError(t, exec.Command("git", "config", "user.email", "test@example.com").Run())
+				require.NoError(t, exec.Command("git", "config", "user.name", "Test User").Run())
+
 				// Create existing config
 				config := `version: "1.0"
 repository:
@@ -164,12 +170,13 @@ func TestAcceptance_US002_ListAvailableAssets(t *testing.T) {
 				ddxHome := filepath.Join(homeDir, ".ddx")
 
 				// Create various resources
-				templatesDir := filepath.Join(ddxHome, "templates")
-				require.NoError(t, os.MkdirAll(filepath.Join(templatesDir, "nextjs"), 0755))
-				require.NoError(t, os.MkdirAll(filepath.Join(templatesDir, "python"), 0755))
+				workflowsDir := filepath.Join(ddxHome, "workflows")
+				require.NoError(t, os.MkdirAll(filepath.Join(workflowsDir, "helix"), 0755))
+				require.NoError(t, os.WriteFile(filepath.Join(workflowsDir, "helix", "workflow.yml"), []byte("name: helix"), 0644))
 
-				patternsDir := filepath.Join(ddxHome, "patterns")
-				require.NoError(t, os.MkdirAll(filepath.Join(patternsDir, "auth"), 0755))
+				promptsDir := filepath.Join(ddxHome, "prompts")
+				require.NoError(t, os.MkdirAll(filepath.Join(promptsDir, "claude"), 0755))
+				require.NoError(t, os.WriteFile(filepath.Join(promptsDir, "claude", "prompt.md"), []byte("# Prompt"), 0644))
 
 				return homeDir
 			},
@@ -181,37 +188,39 @@ func TestAcceptance_US002_ListAvailableAssets(t *testing.T) {
 			then: func(t *testing.T, output string, err error) {
 				// Then: I see categorized resources with helpful descriptions
 				assert.NoError(t, err)
-				assert.Contains(t, output, "Templates", "Should show templates category")
-				assert.Contains(t, output, "Patterns", "Should show patterns category")
+				assert.Contains(t, output, "Workflows", "Should show workflows category")
+				assert.Contains(t, output, "Prompts", "Should show prompts category")
 			},
 		},
 		{
 			name:     "filter_by_type",
 			scenario: "Filter resources by type",
 			given: func(t *testing.T) string {
-				// Given: I want to see only templates
+				// Given: I want to see only workflows
 				homeDir := t.TempDir()
 				t.Setenv("HOME", homeDir)
 				ddxHome := filepath.Join(homeDir, ".ddx")
 
-				templatesDir := filepath.Join(ddxHome, "templates")
-				require.NoError(t, os.MkdirAll(filepath.Join(templatesDir, "react"), 0755))
+				workflowsDir := filepath.Join(ddxHome, "workflows")
+				require.NoError(t, os.MkdirAll(filepath.Join(workflowsDir, "helix"), 0755))
+				require.NoError(t, os.WriteFile(filepath.Join(workflowsDir, "helix", "workflow.yml"), []byte("name: helix"), 0644))
 
-				patternsDir := filepath.Join(ddxHome, "patterns")
-				require.NoError(t, os.MkdirAll(filepath.Join(patternsDir, "logging"), 0755))
+				promptsDir := filepath.Join(ddxHome, "prompts")
+				require.NoError(t, os.MkdirAll(filepath.Join(promptsDir, "claude"), 0755))
+				require.NoError(t, os.WriteFile(filepath.Join(promptsDir, "claude", "prompt.md"), []byte("# Prompt"), 0644))
 
 				return homeDir
 			},
 			when: func(t *testing.T) (string, error) {
-				// When: I run `ddx list templates`
+				// When: I run `ddx list workflows`
 				rootCmd := getTestRootCommand()
-				return executeCommand(rootCmd, "list", "templates")
+				return executeCommand(rootCmd, "list", "workflows")
 			},
 			then: func(t *testing.T, output string, err error) {
-				// Then: only templates are shown
+				// Then: only workflows are shown
 				assert.NoError(t, err)
-				assert.Contains(t, output, "Templates", "Should show templates")
-				// Patterns should not be shown when filtering
+				assert.Contains(t, output, "Workflows", "Should show workflows")
+				// Prompts should not be shown when filtering
 			},
 		},
 		{
@@ -222,17 +231,17 @@ func TestAcceptance_US002_ListAvailableAssets(t *testing.T) {
 				testLibDir := t.TempDir()
 				t.Setenv("DDX_LIBRARY_BASE_PATH", testLibDir)
 
-				// Create templates with files
-				templatesDir := filepath.Join(testLibDir, "templates")
-				nextjsDir := filepath.Join(templatesDir, "nextjs")
-				require.NoError(t, os.MkdirAll(nextjsDir, 0755))
-				require.NoError(t, os.WriteFile(filepath.Join(nextjsDir, "README.md"), []byte("# NextJS Template"), 0644))
+				// Create workflows with files
+				workflowsDir := filepath.Join(testLibDir, "workflows")
+				helixDir := filepath.Join(workflowsDir, "helix")
+				require.NoError(t, os.MkdirAll(helixDir, 0755))
+				require.NoError(t, os.WriteFile(filepath.Join(helixDir, "workflow.yml"), []byte("name: helix"), 0644))
 
-				// Create patterns with files
-				patternsDir := filepath.Join(testLibDir, "patterns")
-				authDir := filepath.Join(patternsDir, "auth")
-				require.NoError(t, os.MkdirAll(authDir, 0755))
-				require.NoError(t, os.WriteFile(filepath.Join(authDir, "auth.md"), []byte("# Auth Pattern"), 0644))
+				// Create prompts with files
+				promptsDir := filepath.Join(testLibDir, "prompts")
+				claudeDir := filepath.Join(promptsDir, "claude")
+				require.NoError(t, os.MkdirAll(claudeDir, 0755))
+				require.NoError(t, os.WriteFile(filepath.Join(claudeDir, "prompt.md"), []byte("# Claude Prompt"), 0644))
 
 				return testLibDir
 			},
@@ -265,14 +274,14 @@ func TestAcceptance_US002_ListAvailableAssets(t *testing.T) {
 				testLibDir := t.TempDir()
 				t.Setenv("DDX_LIBRARY_BASE_PATH", testLibDir)
 
-				templatesDir := filepath.Join(testLibDir, "templates")
-				reactDir := filepath.Join(templatesDir, "react-app")
+				workflowsDir := filepath.Join(testLibDir, "workflows")
+				reactDir := filepath.Join(workflowsDir, "react-workflow")
 				require.NoError(t, os.MkdirAll(reactDir, 0755))
-				require.NoError(t, os.WriteFile(filepath.Join(reactDir, "package.json"), []byte("{}"), 0644))
+				require.NoError(t, os.WriteFile(filepath.Join(reactDir, "workflow.yml"), []byte("name: react-workflow"), 0644))
 
-				pythonDir := filepath.Join(templatesDir, "python-cli")
+				pythonDir := filepath.Join(workflowsDir, "python-workflow")
 				require.NoError(t, os.MkdirAll(pythonDir, 0755))
-				require.NoError(t, os.WriteFile(filepath.Join(pythonDir, "main.py"), []byte("# Python CLI"), 0644))
+				require.NoError(t, os.WriteFile(filepath.Join(pythonDir, "workflow.yml"), []byte("name: python-workflow"), 0644))
 
 				return testLibDir
 			},
@@ -284,8 +293,8 @@ func TestAcceptance_US002_ListAvailableAssets(t *testing.T) {
 			then: func(t *testing.T, output string, err error) {
 				// Then: only resources with 'react' in the name are shown
 				assert.NoError(t, err)
-				assert.Contains(t, output, "react-app", "Should show react-app")
-				assert.NotContains(t, output, "python-cli", "Should not show python-cli")
+				assert.Contains(t, output, "react-workflow", "Should show react-workflow")
+				assert.NotContains(t, output, "python-workflow", "Should not show python-workflow")
 				assert.Contains(t, output, "Filtered by: 'react'", "Should show filter applied")
 			},
 		},
@@ -297,21 +306,21 @@ func TestAcceptance_US002_ListAvailableAssets(t *testing.T) {
 				testLibDir := t.TempDir()
 				t.Setenv("DDX_LIBRARY_BASE_PATH", testLibDir)
 
-				// Create multiple templates
-				templatesDir := filepath.Join(testLibDir, "templates")
-				nextjsDir := filepath.Join(templatesDir, "nextjs")
-				require.NoError(t, os.MkdirAll(nextjsDir, 0755))
-				require.NoError(t, os.WriteFile(filepath.Join(nextjsDir, "package.json"), []byte("{}"), 0644))
+				// Create multiple workflows
+				workflowsDir := filepath.Join(testLibDir, "workflows")
+				helixDir := filepath.Join(workflowsDir, "helix")
+				require.NoError(t, os.MkdirAll(helixDir, 0755))
+				require.NoError(t, os.WriteFile(filepath.Join(helixDir, "workflow.yml"), []byte("name: helix"), 0644))
 
-				reactDir := filepath.Join(templatesDir, "react")
-				require.NoError(t, os.MkdirAll(reactDir, 0755))
-				require.NoError(t, os.WriteFile(filepath.Join(reactDir, "index.js"), []byte("// React app"), 0644))
+				kanbanDir := filepath.Join(workflowsDir, "kanban")
+				require.NoError(t, os.MkdirAll(kanbanDir, 0755))
+				require.NoError(t, os.WriteFile(filepath.Join(kanbanDir, "workflow.yml"), []byte("name: kanban"), 0644))
 
-				// Create multiple patterns
-				patternsDir := filepath.Join(testLibDir, "patterns")
-				authDir := filepath.Join(patternsDir, "auth")
-				require.NoError(t, os.MkdirAll(authDir, 0755))
-				require.NoError(t, os.WriteFile(filepath.Join(authDir, "auth.ts"), []byte("// Auth pattern"), 0644))
+				// Create prompts
+				promptsDir := filepath.Join(testLibDir, "prompts")
+				claudeDir := filepath.Join(promptsDir, "claude")
+				require.NoError(t, os.MkdirAll(claudeDir, 0755))
+				require.NoError(t, os.WriteFile(filepath.Join(claudeDir, "prompt.md"), []byte("# Claude Prompt"), 0644))
 
 				return testLibDir
 			},
@@ -324,8 +333,8 @@ func TestAcceptance_US002_ListAvailableAssets(t *testing.T) {
 				// Then: I see category counts in summary
 				assert.NoError(t, err)
 				assert.Contains(t, output, "Summary:", "Should show summary section")
-				assert.Contains(t, output, "Templates: 2 items", "Should show template count")
-				assert.Contains(t, output, "Patterns: 1 items", "Should show pattern count")
+				assert.Contains(t, output, "Workflows: 2 items", "Should show workflow count")
+				assert.Contains(t, output, "Prompts: 1 items", "Should show prompt count")
 			},
 		},
 		{
@@ -336,8 +345,9 @@ func TestAcceptance_US002_ListAvailableAssets(t *testing.T) {
 				testLibDir := t.TempDir()
 				t.Setenv("DDX_LIBRARY_BASE_PATH", testLibDir)
 
-				templatesDir := filepath.Join(testLibDir, "templates")
-				require.NoError(t, os.MkdirAll(filepath.Join(templatesDir, "nextjs"), 0755))
+				workflowsDir := filepath.Join(testLibDir, "workflows")
+				require.NoError(t, os.MkdirAll(filepath.Join(workflowsDir, "helix"), 0755))
+				require.NoError(t, os.WriteFile(filepath.Join(workflowsDir, "helix", "workflow.yml"), []byte("name: helix"), 0644))
 
 				return testLibDir
 			},
@@ -365,122 +375,6 @@ func TestAcceptance_US002_ListAvailableAssets(t *testing.T) {
 
 			// Then
 			tt.then(t, output, err)
-		})
-	}
-}
-
-// TestAcceptance_US003_ApplyAssetToProject tests US-003: Apply Asset to Project
-func TestAcceptance_US003_ApplyAssetToProject(t *testing.T) {
-	tests := []struct {
-		name     string
-		scenario string
-		given    func(t *testing.T) (string, string) // Returns homeDir, workDir
-		when     func(t *testing.T, workDir string) error
-		then     func(t *testing.T, workDir string, err error)
-	}{
-		{
-			name:     "apply_template",
-			scenario: "Apply a template to the project",
-			given: func(t *testing.T) (string, string) {
-				// Given: I want to apply a template
-				homeDir := t.TempDir()
-				t.Setenv("HOME", homeDir)
-
-				// Create template
-				templateDir := filepath.Join(homeDir, ".ddx", "templates", "basic")
-				require.NoError(t, os.MkdirAll(templateDir, 0755))
-
-				templateFile := filepath.Join(templateDir, "README.md")
-				require.NoError(t, os.WriteFile(templateFile, []byte("# {{project_name}}"), 0644))
-
-				// Setup work directory
-				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
-
-				// Create config with variables
-				config := `version: "1.0"
-variables:
-  project_name: "TestProject"`
-				require.NoError(t, os.WriteFile(
-					filepath.Join(workDir, ".ddx.yml"),
-					[]byte(config),
-					0644,
-				))
-
-				return homeDir, workDir
-			},
-			when: func(t *testing.T, workDir string) error {
-				// When: I run `ddx apply templates/basic`
-				rootCmd := getTestRootCommand()
-				_, err := executeCommand(rootCmd, "apply", "templates/basic")
-				return err
-			},
-			then: func(t *testing.T, workDir string, err error) {
-				// Then: files are created with variables substituted
-				readmePath := filepath.Join(workDir, "README.md")
-				if _, statErr := os.Stat(readmePath); statErr == nil {
-					content, readErr := os.ReadFile(readmePath)
-					if readErr == nil {
-						assert.Contains(t, string(content), "TestProject",
-							"Variables should be substituted")
-					}
-				}
-			},
-		},
-		{
-			name:     "dry_run_preview",
-			scenario: "Preview changes before applying",
-			given: func(t *testing.T) (string, string) {
-				// Given: I want to preview changes
-				homeDir := t.TempDir()
-				t.Setenv("HOME", homeDir)
-
-				templateDir := filepath.Join(homeDir, ".ddx", "templates", "preview")
-				require.NoError(t, os.MkdirAll(templateDir, 0755))
-
-				templateFile := filepath.Join(templateDir, "config.json")
-				require.NoError(t, os.WriteFile(templateFile, []byte(`{"name": "test"}`), 0644))
-
-				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
-
-				config := `version: "1.0"`
-				require.NoError(t, os.WriteFile(
-					filepath.Join(workDir, ".ddx.yml"),
-					[]byte(config),
-					0644,
-				))
-
-				return homeDir, workDir
-			},
-			when: func(t *testing.T, workDir string) error {
-				// When: I run `ddx apply --dry-run templates/preview`
-				rootCmd := getTestRootCommand()
-				_, err := executeCommand(rootCmd, "apply", "--dry-run", "templates/preview")
-				return err
-			},
-			then: func(t *testing.T, workDir string, err error) {
-				// Then: changes are shown but not applied
-				configPath := filepath.Join(workDir, "config.json")
-				_, statErr := os.Stat(configPath)
-				assert.Error(t, statErr, "File should not be created in dry-run mode")
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			originalDir, _ := os.Getwd()
-			defer os.Chdir(originalDir)
-
-			// Given
-			_, workDir := tt.given(t)
-
-			// When
-			err := tt.when(t, workDir)
-
-			// Then
-			tt.then(t, workDir, err)
 		})
 	}
 }
@@ -560,15 +454,15 @@ func TestAcceptance_WorkflowIntegration(t *testing.T) {
 		workDir := t.TempDir()
 		require.NoError(t, os.Chdir(workDir))
 
-		// Create library structure with templates
+		// Create library structure with workflows
 		libraryDir := filepath.Join(workDir, "library")
-		templatesDir := filepath.Join(libraryDir, "templates")
-		require.NoError(t, os.MkdirAll(filepath.Join(templatesDir, "nextjs"), 0755))
-		require.NoError(t, os.MkdirAll(filepath.Join(templatesDir, "python"), 0755))
+		workflowsDir := filepath.Join(libraryDir, "workflows")
+		require.NoError(t, os.MkdirAll(filepath.Join(workflowsDir, "helix"), 0755))
+		require.NoError(t, os.MkdirAll(filepath.Join(workflowsDir, "kanban"), 0755))
 
-		// Create template files so they can be discovered
-		require.NoError(t, os.WriteFile(filepath.Join(templatesDir, "nextjs", "README.md"), []byte("# NextJS Template"), 0644))
-		require.NoError(t, os.WriteFile(filepath.Join(templatesDir, "python", "README.md"), []byte("# Python Template"), 0644))
+		// Create workflow files so they can be discovered
+		require.NoError(t, os.WriteFile(filepath.Join(workflowsDir, "helix", "workflow.yml"), []byte("name: helix"), 0644))
+		require.NoError(t, os.WriteFile(filepath.Join(workflowsDir, "kanban", "workflow.yml"), []byte("name: kanban"), 0644))
 
 		// Create config pointing to library
 		config := []byte(`version: "2.0"
@@ -583,7 +477,7 @@ library_path: ./library`)
 		// Step 2: List available resources
 		listOutput, listErr := executeCommand(rootCmd, "list")
 		if listErr == nil && listOutput != "" && !strings.Contains(listOutput, "❌ DDx library not found") {
-			assert.Contains(t, listOutput, "Templates", "Should list templates")
+			assert.Contains(t, listOutput, "Workflows", "Should list workflows")
 		} else {
 			t.Log("Skipping template list assertion due to DDx not being initialized or available")
 		}
@@ -609,22 +503,14 @@ func TestAcceptance_ErrorScenarios(t *testing.T) {
 			expectedError string
 		}{
 			{
-				name: "template_not_found",
-				setup: func() string {
-					workDir := t.TempDir()
-					os.Chdir(workDir)
-					config := `version: "1.0"`
-					os.WriteFile(filepath.Join(workDir, ".ddx.yml"), []byte(config), 0644)
-					return workDir
-				},
-				command:       []string{"apply", "templates/nonexistent"},
-				expectedError: "not found",
-			},
-			{
 				name: "already_initialized",
 				setup: func() string {
 					workDir := t.TempDir()
 					os.Chdir(workDir)
+					// Initialize git repository first
+					exec.Command("git", "init").Run()
+					exec.Command("git", "config", "user.email", "test@example.com").Run()
+					exec.Command("git", "config", "user.name", "Test User").Run()
 					config := `version: "1.0"`
 					os.WriteFile(filepath.Join(workDir, ".ddx.yml"), []byte(config), 0644)
 					return workDir

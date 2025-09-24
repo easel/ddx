@@ -1,17 +1,2 @@
-version: 1.0
+version: "2.0"
 library_path: ../library
-repository:
-    url: https://github.com/easel/ddx
-    branch: main
-    path: .ddx/
-    sync:
-        auto_update: true
-includes:
-    - prompts/claude
-    - scripts/hooks
-    - templates/common
-variables:
-    ai_model: claude-3-opus
-    author: Test User
-    email: test@example.com
-    project_name: cli

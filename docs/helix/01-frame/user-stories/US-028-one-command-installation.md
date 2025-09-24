@@ -43,6 +43,18 @@
 **When** I run `ddx version`
 **Then** it displays the installed version number
 
+### AC-006: Binary Download from GitHub Releases
+**Given** the installer runs
+**When** downloading DDX binary from GitHub releases
+**Then** it downloads the correct platform-specific binary (e.g., ddx-linux-amd64.tar.gz, ddx-darwin-arm64.tar.gz)
+**And** it verifies SHA256 checksum matches release assets
+
+### AC-007: Correct Binary Selection
+**Given** platform detection runs
+**When** selecting binary from GitHub releases
+**Then** the correct OS/architecture combination is automatically selected
+**And** the binary is downloaded from https://github.com/easel/ddx/releases/latest/download/{binary-name}
+
 ## Definition of Done
 
 - [ ] Installation works on macOS, Linux, and Windows
@@ -51,6 +63,9 @@
 - [ ] `ddx version` command works after installation
 - [ ] Installation process shows progress indicators
 - [ ] Error messages are clear and actionable
+- [ ] Binary is downloaded from GitHub releases (not repository cloning)
+- [ ] SHA256 checksum verification prevents corrupted downloads
+- [ ] Platform/architecture detection works for all supported combinations
 
 ## Notes
 

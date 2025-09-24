@@ -22,6 +22,8 @@
 - [ ] **Given** DDX is being initialized, **when** the process runs, **then** git subtree connection is established to the master repository
 - [ ] **Given** my project has specific requirements, **when** I run `ddx init`, **then** project compatibility is validated before proceeding
 - [ ] **Given** initialization succeeds or fails, **when** the process completes, **then** clear success or failure feedback is provided with next steps
+- [ ] **Given** I run `ddx init` outside a git repository, **when** validation runs, **then** an error is reported: "Error: ddx init must be run inside a git repository. Please run 'git init' first."
+- [ ] **Given** initialization in a git repository, **when** creating .ddx/library folder, **then** git-subtree is used to pull from github.com/easel/ddx library/ folder and the subtree is configured at .ddx/library path
 
 ## Definition of Done
 
@@ -30,6 +32,8 @@
 - [ ] Configuration file generation working correctly
 - [ ] Git subtree initialization successful
 - [ ] Project validation logic implemented
+- [ ] Git repository validation prevents init outside git repos
+- [ ] Git subtree integration for library synchronization
 - [ ] Unit tests written and passing (>80% coverage)
 - [ ] Integration tests for initialization scenarios
 - [ ] Documentation updated with initialization examples
@@ -43,14 +47,18 @@
 - Need to validate template compatibility before applying
 - Consider providing rollback if initialization fails partway
 - Interactive prompts should have sensible defaults
+- Git repository validation using `git rev-parse --git-dir`
+- Git subtree command: `git subtree add --prefix=.ddx/library https://github.com/easel/ddx main --squash`
 
 ### Error Scenarios
 - Project already initialized with DDX
 - Incompatible project structure
 - Template not found or invalid
 - Git not installed or configured
+- Not inside a git repository (ddx init requires git repo)
 - Insufficient permissions to create directories
 - Network issues when fetching templates
+- Git subtree command failures
 
 ## Validation Scenarios
 

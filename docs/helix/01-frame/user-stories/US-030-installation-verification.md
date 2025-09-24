@@ -43,6 +43,12 @@
 **When** checks complete
 **Then** specific problems and suggested fixes are displayed
 
+### AC-006: Binary Installation Check
+**Given** verification runs
+**When** checking installation
+**Then** binary location ($HOME/.local/bin/ddx) and executable permissions are verified
+**And** PATH configuration is validated to ensure ddx is accessible
+
 ## Definition of Done
 
 - [ ] Automatic verification runs after installation
@@ -51,6 +57,8 @@
 - [ ] Git availability is verified
 - [ ] Clear error messages with actionable suggestions
 - [ ] Verification completes within 5 seconds
+- [ ] Binary installation path and permissions are verified
+- [ ] PATH configuration check ensures ddx command accessibility
 
 ## Notes
 

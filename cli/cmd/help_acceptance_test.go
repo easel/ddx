@@ -31,7 +31,6 @@ func TestAcceptance_US006_GetCommandHelp(t *testing.T) {
 
 		// Should list all major commands with descriptions
 		assert.Contains(t, output, "init", "Should list init command")
-		assert.Contains(t, output, "apply", "Should list apply command")
 		assert.Contains(t, output, "list", "Should list list command")
 		assert.Contains(t, output, "update", "Should list update command")
 		assert.Contains(t, output, "diagnose", "Should list diagnose command")
@@ -47,9 +46,6 @@ func TestAcceptance_US006_GetCommandHelp(t *testing.T) {
 		commandLines := 0
 		for _, line := range lines {
 			if strings.Contains(line, "init") && strings.Contains(line, "Initialize") {
-				commandLines++
-			}
-			if strings.Contains(line, "apply") && strings.Contains(line, "Apply") {
 				commandLines++
 			}
 			if strings.Contains(line, "diagnose") && strings.Contains(line, "Analyze") {
@@ -156,7 +152,7 @@ func TestAcceptance_US006_GetCommandHelp(t *testing.T) {
 	t.Run("required_vs_optional_arguments", func(t *testing.T) {
 		// AC: Given arguments are required, when I view help, then required vs optional arguments are clearly indicated
 		rootCmd := getHelpTestRootCommand()
-		output, err := executeCommand(rootCmd, "help", "apply")
+		output, err := executeCommand(rootCmd, "help", "list")
 
 		require.NoError(t, err, "Help command should work")
 
@@ -168,17 +164,17 @@ func TestAcceptance_US006_GetCommandHelp(t *testing.T) {
 		lines := strings.Split(output, "\n")
 		usageFound := false
 		for _, line := range lines {
-			if strings.Contains(line, "ddx apply") && strings.Contains(line, "resource") {
+			if strings.Contains(line, "ddx list") && strings.Contains(line, "type") {
 				usageFound = true
-				// Should show required resource and optional flags
-				assert.Contains(t, line, "<resource>", "Should use angle brackets for required resource argument")
+				// Should show optional type and optional flags
+				assert.Contains(t, line, "[type]", "Should use brackets for optional type argument")
 				assert.Contains(t, line, "[flags]", "Should use brackets for optional flags")
 				break
 			}
 		}
 
 		// Should have found the usage line
-		assert.True(t, usageFound, "Should find usage line with ddx apply")
+		assert.True(t, usageFound, "Should find usage line with ddx list")
 	})
 
 	t.Run("command_aliases_shown", func(t *testing.T) {

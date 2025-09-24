@@ -125,23 +125,15 @@ var CurrentVersion = "2.0"
 
 // Default configuration
 var DefaultConfig = &Config{
-	Version: "1.0",
+	Version: "2.0",
 	Repository: Repository{
 		URL:    "https://github.com/easel/ddx",
 		Branch: "main",
 		Path:   ".ddx/",
 	},
-	Includes: []string{
-		"prompts/claude",
-		"scripts/hooks",
-		"templates/common",
-	},
+	Includes:  []string{},
 	Overrides: make(map[string]string),
-	Variables: map[string]string{
-		"ai_model": "claude-3-opus",
-		"author":   "", // Will be populated from git config or environment
-		"email":    "", // Will be populated from git config or environment
-	},
+	Variables: make(map[string]string),
 }
 
 // Load configuration from global, local, and environment-specific files
