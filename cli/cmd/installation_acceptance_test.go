@@ -37,19 +37,15 @@ type TestEnvironment struct {
 
 // Helper function to create a fresh root command for tests
 func getInstallationTestRootCommand() *cobra.Command {
-	factory := NewCommandFactory()
+	factory := NewCommandFactory("/tmp")  // Tests don't rely on working directory
 	return factory.NewRootCommand()
 }
 
 // setupTestEnvironment creates a mock environment for installation testing
 func setupTestEnvironment(t *testing.T, platform, arch string) *TestEnvironment {
-	// Get current working directory before any test setup
-	cwd, err := os.Getwd()
-	require.NoError(t, err)
-
 	tempDir := t.TempDir()
 	homeDir := filepath.Join(tempDir, "home")
-	err = os.MkdirAll(homeDir, 0755)
+	err := os.MkdirAll(homeDir, 0755)
 	require.NoError(t, err)
 
 	env := &TestEnvironment{
@@ -68,10 +64,11 @@ func setupTestEnvironment(t *testing.T, platform, arch string) *TestEnvironment 
 	t.Setenv("DDX_TEST_ARCH", arch)
 
 	// Copy the built binary to the expected location for testing
-	// Use absolute path to avoid working directory issues
-	srcBinary := filepath.Join(filepath.Dir(cwd), "build", "ddx")
+	// Use constant path to avoid working directory dependencies
+	testBinaryPath := "/host-home/erik/Projects/ddx/cli/build/ddx"
+	srcBinary := testBinaryPath
 	if platform == "windows" {
-		srcBinary = filepath.Join(filepath.Dir(cwd), "build", "ddx.exe")
+		srcBinary = testBinaryPath + ".exe"
 	}
 
 	var destBinary string

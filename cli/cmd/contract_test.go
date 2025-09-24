@@ -18,7 +18,7 @@ import (
 
 // Helper function to create a fresh root command for tests
 func getContractTestRootCommand() *cobra.Command {
-	factory := NewCommandFactory()
+	factory := NewCommandFactory("/tmp")
 	return factory.NewRootCommand()
 }
 
@@ -223,10 +223,11 @@ library_path: ./library`)
 			}
 
 			// Create a fresh list command to avoid state pollution
+			factory := NewCommandFactory("/tmp")
 			freshListCmd := &cobra.Command{
 				Use:   "list",
 				Short: "List available resources",
-				RunE:  runList,
+				RunE:  factory.runList,
 			}
 			freshListCmd.Flags().StringP("filter", "f", "", "Filter resources by name")
 			freshListCmd.Flags().Bool("json", false, "Output results as JSON")

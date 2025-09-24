@@ -159,13 +159,14 @@ library_path: ./library`)
 			}
 
 			// Create fresh list command to avoid state pollution
+			factory := NewCommandFactory("/tmp")
 			freshListCmd := &cobra.Command{
 				Use:   "list",
 				Short: "List available DDx resources",
 				Long: `List all available resources in the DDx toolkit.
 
 You can filter by type or search for specific items.`,
-				RunE: runList,
+				RunE: factory.runList,
 			}
 			freshListCmd.Flags().StringP("filter", "f", "", "Filter resources by name")
 			freshListCmd.Flags().Bool("json", false, "Output results as JSON")
@@ -196,10 +197,11 @@ func TestListCommand_Help(t *testing.T) {
 	}
 
 	// Create fresh list command
+	factory := NewCommandFactory("/tmp")
 	freshListCmd := &cobra.Command{
 		Use:   "list",
 		Short: "List available DDx resources",
-		RunE:  runList,
+		RunE:  factory.runList,
 	}
 	freshListCmd.Flags().StringP("filter", "f", "", "Filter resources by name")
 	freshListCmd.Flags().Bool("json", false, "Output results as JSON")

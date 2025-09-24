@@ -20,7 +20,7 @@ type DiagnosticIssue struct {
 }
 
 // runDoctor implements the doctor command logic
-func runDoctor(cmd *cobra.Command, args []string) error {
+func (f *CommandFactory) runDoctor(cmd *cobra.Command, args []string) error {
 	verbose, _ := cmd.Flags().GetBool("verbose")
 
 	fmt.Println("🩺 DDx Installation Diagnostics")
@@ -136,8 +136,8 @@ func runDoctor(cmd *cobra.Command, args []string) error {
 				},
 				SystemInfo: map[string]string{
 					"user":        os.Getenv("USER"),
-					"working_dir": getWorkingDirectory(),
-					"permissions": getDirectoryPermissions(),
+					"working_dir": f.WorkingDir,
+					"permissions": getDirectoryPermissions(f.WorkingDir),
 				},
 			})
 		}
@@ -185,7 +185,7 @@ func runDoctor(cmd *cobra.Command, args []string) error {
 
 	// Generate detailed diagnostic report if verbose or issues detected
 	if verbose || len(issues) > 0 {
-		generateDiagnosticReport(issues, verbose)
+		generateDiagnosticReport(issues, verbose, f.WorkingDir)
 	}
 
 	return nil
@@ -261,7 +261,7 @@ func suggestPathFix() {
 }
 
 // generateDiagnosticReport creates a detailed diagnostic report
-func generateDiagnosticReport(issues []DiagnosticIssue, verbose bool) {
+func generateDiagnosticReport(issues []DiagnosticIssue, verbose bool, workingDir string) {
 	if len(issues) == 0 && !verbose {
 		return
 	}
@@ -276,7 +276,7 @@ func generateDiagnosticReport(issues []DiagnosticIssue, verbose bool) {
 		fmt.Printf("  OS: %s\n", runtime.GOOS)
 		fmt.Printf("  Architecture: %s\n", runtime.GOARCH)
 		fmt.Printf("  Go Runtime: %s\n", runtime.Version())
-		fmt.Printf("  Working Directory: %s\n", getWorkingDirectory())
+		fmt.Printf("  Working Directory: %s\n", workingDir)
 		if executable, err := os.Executable(); err == nil {
 			fmt.Printf("  DDX Binary: %s\n", executable)
 		}
@@ -315,18 +315,10 @@ func generateDiagnosticReport(issues []DiagnosticIssue, verbose bool) {
 	}
 }
 
-// getWorkingDirectory returns the current working directory
-func getWorkingDirectory() string {
-	if wd, err := os.Getwd(); err == nil {
-		return wd
-	}
-	return "unknown"
-}
 
-// getDirectoryPermissions returns permission information for the current directory
-func getDirectoryPermissions() string {
-	wd := getWorkingDirectory()
-	if info, err := os.Stat(wd); err == nil {
+// getDirectoryPermissions returns permission information for the given directory
+func getDirectoryPermissions(workingDir string) string {
+	if info, err := os.Stat(workingDir); err == nil {
 		return info.Mode().String()
 	}
 	return "unknown"

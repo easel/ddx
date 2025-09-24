@@ -22,7 +22,7 @@ Examples:
   ddx init -t nextjs        # Initialize with Next.js template
   ddx init --force          # Reinitialize existing project`,
 		Args: cobra.NoArgs,
-		RunE: runInit,
+		RunE: f.runInit,
 	}
 
 	cmd.Flags().StringP("template", "t", "", "Use specific template")
@@ -52,7 +52,7 @@ Examples:
   ddx list templates    # List only templates
   ddx list patterns     # List only patterns`,
 		Args: cobra.MaximumNArgs(1),
-		RunE: runList,
+		RunE: f.runList,
 	}
 
 	cmd.Flags().BoolP("detailed", "d", false, "Show detailed information")
@@ -84,7 +84,7 @@ The diagnosis helps identify:
 • Optimization opportunities
 • Best practice violations`,
 		Args: cobra.NoArgs,
-		RunE: runDiagnose,
+		RunE: f.runDiagnose,
 	}
 
 	cmd.Flags().BoolP("verbose", "v", false, "Show detailed diagnostic output")

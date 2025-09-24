@@ -28,10 +28,10 @@ Document-Driven Development eXperience
 var rootCmd *cobra.Command
 
 // Execute adds all child commands to the root command and sets flags appropriately.
-func Execute() error {
+func Execute(workingDir string) error {
 	// Initialize the global root command for the main executable
 	if rootCmd == nil {
-		factory := NewCommandFactory()
+		factory := NewCommandFactory(workingDir)
 		rootCmd = factory.NewRootCommand()
 	}
 	return rootCmd.Execute()

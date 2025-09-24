@@ -60,7 +60,7 @@ type AIStatus struct {
 
 // This file only contains the runDiagnose function implementation
 
-func runDiagnose(cmd *cobra.Command, args []string) error {
+func (f *CommandFactory) runDiagnose(cmd *cobra.Command, args []string) error {
 	// Get flag values locally
 	diagnoseReport, _ := cmd.Flags().GetBool("report")
 	diagnoseFix, _ := cmd.Flags().GetBool("fix")
@@ -75,12 +75,11 @@ func runDiagnose(cmd *cobra.Command, args []string) error {
 	s.Prefix = "Analyzing project... "
 	s.Start()
 
-	pwd, _ := os.Getwd()
 	result := &DiagnosticResult{
 		Issues:      []string{},
 		Suggestions: []string{},
 		Timestamp:   time.Now(),
-		ProjectPath: pwd,
+		ProjectPath: f.WorkingDir,
 	}
 
 	// Check DDx setup
@@ -117,7 +116,7 @@ func runDiagnose(cmd *cobra.Command, args []string) error {
 	// Auto-fix if requested
 	if diagnoseFix {
 		fmt.Println()
-		return autoFix(result)
+		return autoFix(result, f.WorkingDir)
 	}
 
 	return nil
@@ -366,7 +365,7 @@ func displayResults(result *DiagnosticResult) {
 	}
 }
 
-func autoFix(result *DiagnosticResult) error {
+func autoFix(result *DiagnosticResult, workingDir string) error {
 	cyan := color.New(color.FgCyan)
 	green := color.New(color.FgGreen)
 
@@ -385,7 +384,7 @@ func autoFix(result *DiagnosticResult) error {
 
 	// Auto-fix missing CLAUDE.md
 	if !result.AI.ClaudeFile {
-		if err := createBasicClaudeFile(); err == nil {
+		if err := createBasicClaudeFile(workingDir); err == nil {
 			green.Println("✅ Created CLAUDE.md template")
 			fixed++
 		}
@@ -471,9 +470,8 @@ logs/
 	return os.WriteFile(".gitignore", []byte(content), 0644)
 }
 
-func createBasicClaudeFile() error {
-	pwd, _ := os.Getwd()
-	projectName := filepath.Base(pwd)
+func createBasicClaudeFile(workingDir string) error {
+	projectName := filepath.Base(workingDir)
 
 	content := fmt.Sprintf(`# %s
 

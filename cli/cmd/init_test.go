@@ -15,7 +15,7 @@ import (
 
 // Helper function to create a fresh root command for tests
 func getInitTestRootCommand() *cobra.Command {
-	factory := NewCommandFactory()
+	factory := NewCommandFactory("/tmp")  // Tests don't rely on working directory
 	return factory.NewRootCommand()
 }
 

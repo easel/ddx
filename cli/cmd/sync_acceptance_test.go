@@ -14,7 +14,7 @@ import (
 
 // newRootCommand creates a fresh root command instance for testing using CommandFactory
 func newRootCommand() *cobra.Command {
-	factory := NewCommandFactory()
+	factory := NewCommandFactory("/tmp")
 	return factory.NewRootCommand()
 }
 

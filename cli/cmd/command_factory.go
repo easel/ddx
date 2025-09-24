@@ -17,26 +17,31 @@ type CommandFactory struct {
 	Commit  string
 	Date    string
 
+	// Working directory (injected once at startup)
+	WorkingDir string
+
 	// Custom viper instance for isolation
 	viperInstance *viper.Viper
 }
 
 // NewCommandFactory creates a new command factory with default settings
-func NewCommandFactory() *CommandFactory {
+func NewCommandFactory(workingDir string) *CommandFactory {
 	return &CommandFactory{
 		Version:       Version,
 		Commit:        Commit,
 		Date:          Date,
+		WorkingDir:    workingDir,
 		viperInstance: viper.New(),
 	}
 }
 
 // NewCommandFactoryWithViper creates a factory with a custom viper instance
-func NewCommandFactoryWithViper(v *viper.Viper) *CommandFactory {
+func NewCommandFactoryWithViper(workingDir string, v *viper.Viper) *CommandFactory {
 	return &CommandFactory{
 		Version:       Version,
 		Commit:        Commit,
 		Date:          Date,
+		WorkingDir:    workingDir,
 		viperInstance: v,
 	}
 }
@@ -397,7 +402,7 @@ This command checks:
 Examples:
   ddx doctor                            # Run all diagnostic checks
   ddx doctor --verbose                  # Run with detailed diagnostics`,
-		RunE: runDoctor,
+		RunE: f.runDoctor,
 	}
 
 	cmd.Flags().Bool("verbose", false, "Show detailed diagnostic information and remediation suggestions")

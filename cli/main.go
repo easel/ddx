@@ -17,7 +17,14 @@ func main() {
 	cmd.Commit = commit
 	cmd.Date = date
 
-	if err := cmd.Execute(); err != nil {
+	// Get working directory once at startup
+	workingDir, err := os.Getwd()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error getting working directory: %v\n", err)
+		os.Exit(1)
+	}
+
+	if err := cmd.Execute(workingDir); err != nil {
 		// Check if it's an ExitError with a specific exit code
 		if exitErr, ok := err.(*cmd.ExitError); ok {
 			// Print error message only if it's not empty

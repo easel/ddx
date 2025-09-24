@@ -11,7 +11,7 @@ import (
 
 // Helper function to create a fresh root command for tests
 func getVersionTestRootCommand() *cobra.Command {
-	factory := NewCommandFactory()
+	factory := NewCommandFactory("/tmp")
 	return factory.NewRootCommand()
 }
 

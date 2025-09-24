@@ -37,7 +37,7 @@ type ListResponse struct {
 	Type      string         `json:"type,omitempty"`
 }
 
-func runList(cmd *cobra.Command, args []string) error {
+func (f *CommandFactory) runList(cmd *cobra.Command, args []string) error {
 	// Get flag values
 	filterValue, _ := cmd.Flags().GetString("filter")
 	jsonOutput, _ := cmd.Flags().GetBool("json")

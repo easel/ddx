@@ -12,7 +12,7 @@ import (
 
 // getPromptsTestRootCommand creates a root command for testing
 func getPromptsTestRootCommand() *cobra.Command {
-	factory := NewCommandFactory()
+	factory := NewCommandFactory("/tmp")
 	return factory.NewRootCommand()
 }
 

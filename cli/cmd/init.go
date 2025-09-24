@@ -18,7 +18,7 @@ import (
 // This file only contains the runInit function implementation
 
 // runInit implements the init command logic
-func runInit(cmd *cobra.Command, args []string) error {
+func (f *CommandFactory) runInit(cmd *cobra.Command, args []string) error {
 	// Get flag values locally
 	initForce, _ := cmd.Flags().GetBool("force")
 	initNoGit, _ := cmd.Flags().GetBool("no-git")
@@ -67,8 +67,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 	}
 
 	// Detect project type and gather configuration
-	pwd, _ := os.Getwd()
-	projectName := filepath.Base(pwd)
+	projectName := filepath.Base(f.WorkingDir)
 	projectType := detectProjectType()
 
 	// Interactive prompts for configuration (skip in test mode or if not interactive)
@@ -88,7 +87,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 	}
 
 	// Check if we're in the DDx repository itself
-	if isDDxRepository() {
+	if isDDxRepository(f.WorkingDir) {
 		// For DDx repo, point directly to the library directory
 		localConfig.LibraryPath = "../library"
 		fmt.Fprint(cmd.OutOrStdout(), "📚 Detected DDx repository - configuring library_path to use ../library\n")
@@ -175,16 +174,12 @@ func runInit(cmd *cobra.Command, args []string) error {
 }
 
 // isDDxRepository checks if we're in the DDx repository
-func isDDxRepository() bool {
+func isDDxRepository(workingDir string) bool {
 	// Check for identifying files that indicate this is the DDx repo
 	// Look for cli/main.go and library/ directory
-	pwd, err := os.Getwd()
-	if err != nil {
-		return false
-	}
 
 	// Check if we're in the cli directory of DDx repo
-	if filepath.Base(pwd) == "cli" {
+	if filepath.Base(workingDir) == "cli" {
 		// Check for main.go
 		if _, err := os.Stat("main.go"); err == nil {
 			// Check for ../library directory

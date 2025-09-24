@@ -47,7 +47,7 @@ func NewTestHarness(t *testing.T) *TestHarness {
 	v := viper.New()
 
 	// Create command factory with isolated viper
-	factory := NewCommandFactoryWithViper(v)
+	factory := NewCommandFactoryWithViper(origDir, v)
 
 	// Create test harness
 	h := &TestHarness{
