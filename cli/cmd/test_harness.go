@@ -29,14 +29,13 @@ type TestHarness struct {
 func NewTestHarness(t *testing.T) *TestHarness {
 	t.Helper()
 
-	// Save original working directory, handle case where it might be deleted
+	// Get working directory, handle case where it might be deleted
 	origDir, err := os.Getwd()
 	if err != nil {
 		// Current directory might have been deleted by another test
-		// Create a safe temp directory to work from
+		// Use a safe temp directory path but don't change to it
 		safeTempDir, err := os.MkdirTemp("", "ddx-test-harness-*")
 		require.NoError(t, err, "Failed to create safe temp directory")
-		os.Chdir(safeTempDir)
 		origDir = safeTempDir
 		t.Cleanup(func() {
 			os.RemoveAll(safeTempDir)
@@ -69,21 +68,15 @@ func NewTestHarness(t *testing.T) *TestHarness {
 	return h
 }
 
-// WithTempDir sets up a temporary directory and changes to it
+// WithTempDir sets up a temporary directory and configures CommandFactory to use it
 func (h *TestHarness) WithTempDir() *TestHarness {
 	h.t.Helper()
 
 	// Create temp directory
 	h.tempDir = h.t.TempDir()
 
-	// Change to temp directory
-	err := os.Chdir(h.tempDir)
-	require.NoError(h.t, err, "Failed to change to temp directory")
-
-	// Add cleanup to restore directory
-	h.cleanup = append(h.cleanup, func() {
-		os.Chdir(h.origDir)
-	})
+	// Recreate command factory to use temp directory as working directory
+	h.factory = NewCommandFactoryWithViper(h.tempDir, h.viper)
 
 	return h
 }
@@ -221,10 +214,7 @@ func (h *TestHarness) Cleanup() {
 		h.cleanup[i]()
 	}
 
-	// Restore original directory as final step
-	if h.origDir != "" {
-		os.Chdir(h.origDir)
-	}
+	// Note: No need to restore directory since we don't change it anymore
 }
 
 // WithProjectFile creates a file in the test project

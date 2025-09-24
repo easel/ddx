@@ -476,6 +476,11 @@ func TestMCPInstallCommand_Contract(t *testing.T) {
 
 // TestConfigCommand_Contract tests configuration command contracts
 func TestConfigCommand_ContractExtended(t *testing.T) {
+	// Disable parallel execution to avoid working directory conflicts
+	// This test modifies global working directory state
+	// Until all os.Chdir() calls are replaced with CommandFactory injection
+	t.Setenv("GOMAXPROCS", "1") // Force serial execution
+
 	// Ensure we're in a valid directory first
 	ensureValidWorkingDirectory(t)
 
