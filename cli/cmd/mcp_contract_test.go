@@ -584,20 +584,32 @@ func TestConfigCommand_ContractExtended(t *testing.T) {
 	})
 
 	t.Run("contract_override_precedence", func(t *testing.T) {
-		// Save and restore working directory
-		origDir, _ := os.Getwd()
-		defer os.Chdir(origDir)
-
 		// Given: Multiple config layers
 		tempDir := t.TempDir()
-		os.Chdir(tempDir)
-		createTestConfig(t)
+
+		// Create test config in tempDir
+		configContent := `version: "1.0"
+repository:
+  url: "https://github.com/ddx-tools/ddx"
+  branch: "main"
+  path: ".ddx/"
+variables:
+  project_name: "7thsense"
+  ai_model: "claude-3-opus"
+  author: ""
+  email: ""
+includes:
+  - "prompts/claude"
+  - "scripts/hooks"
+  - "templates/common"`
+		os.WriteFile(filepath.Join(tempDir, ".ddx.yml"), []byte(configContent), 0644)
 
 		// Create local override
-		os.WriteFile(".ddx.local.yml", []byte("variables:\n  override: local"), 0644)
+		os.WriteFile(filepath.Join(tempDir, ".ddx.local.yml"), []byte("variables:\n  override: local"), 0644)
 
-		// When: Showing effective config
-		cmd := getFreshRootCmd()
+		// When: Showing effective config using CommandFactory with injected working directory
+		factory := NewCommandFactory(tempDir)
+		cmd := factory.NewRootCommand()
 		buf := new(bytes.Buffer)
 		cmd.SetOut(buf)
 		cmd.SetErr(buf)
