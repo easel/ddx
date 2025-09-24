@@ -242,8 +242,8 @@ func TestProfileInheritance(t *testing.T) {
 
 	content := string(devProfileContent)
 	assert.Contains(t, content, "project_name: \"test-project\"") // Inherited from base
-	assert.Contains(t, content, "DDX_PROFILE: \"dev\"")          // Profile-specific
-	assert.Contains(t, content, "api_endpoint:")                // Profile-specific
+	assert.Contains(t, content, "DDX_PROFILE: \"dev\"")           // Profile-specific
+	assert.Contains(t, content, "api_endpoint:")                  // Profile-specific
 }
 
 // TestProfileFilenameValidation tests profile name validation
@@ -256,9 +256,9 @@ func TestProfileFilenameValidation(t *testing.T) {
 	}()
 
 	invalidNames := []string{
-		"dev/test",      // Contains path separator
-		"dev\\test",     // Contains path separator
-		"../dev",        // Relative path
+		"dev/test",  // Contains path separator
+		"dev\\test", // Contains path separator
+		"../dev",    // Relative path
 	}
 
 	for _, invalidName := range invalidNames {

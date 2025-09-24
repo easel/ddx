@@ -315,7 +315,6 @@ func generateDiagnosticReport(issues []DiagnosticIssue, verbose bool, workingDir
 	}
 }
 
-
 // getDirectoryPermissions returns permission information for the given directory
 func getDirectoryPermissions(workingDir string) string {
 	if info, err := os.Stat(workingDir); err == nil {

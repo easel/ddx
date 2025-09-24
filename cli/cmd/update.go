@@ -393,8 +393,8 @@ func detectConflicts() []ConflictInfo {
 
 		for i, line := range lines {
 			if strings.Contains(line, "<<<<<<<") ||
-			   strings.Contains(line, "=======") ||
-			   strings.Contains(line, ">>>>>>>") {
+				strings.Contains(line, "=======") ||
+				strings.Contains(line, ">>>>>>>") {
 
 				// Extract conflict sections
 				conflict := ConflictInfo{
@@ -987,8 +987,8 @@ func checkForLocalChanges() []string {
 					if info, err := entry.Info(); err == nil && info.Size() > 0 {
 						// Check for specific patterns that indicate local changes
 						if strings.Contains(entry.Name(), "local") ||
-						   strings.Contains(entry.Name(), "custom") ||
-						   strings.Contains(entry.Name(), "override") {
+							strings.Contains(entry.Name(), "custom") ||
+							strings.Contains(entry.Name(), "override") {
 							changes = append(changes, filePath)
 						}
 					}

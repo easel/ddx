@@ -493,7 +493,7 @@ func validateDocumentation(path string, warnings *[]string) {
 
 // checkFileSizes validates file sizes are reasonable
 func checkFileSizes(path string, warnings *[]string) error {
-	const maxFileSize = 1024 * 1024 // 1MB
+	const maxFileSize = 1024 * 1024       // 1MB
 	const maxTotalSize = 10 * 1024 * 1024 // 10MB
 
 	var totalSize int64
@@ -623,9 +623,9 @@ func checkContributingGuidelines(cfg *config.Config, warnings *[]string) error {
 
 	// Check for common guideline topics
 	guidelines := map[string]bool{
-		"pull request": strings.Contains(content, "pull request") || strings.Contains(content, "pr"),
-		"issue":        strings.Contains(content, "issue"),
-		"testing":      strings.Contains(content, "test"),
+		"pull request":  strings.Contains(content, "pull request") || strings.Contains(content, "pr"),
+		"issue":         strings.Contains(content, "issue"),
+		"testing":       strings.Contains(content, "test"),
 		"documentation": strings.Contains(content, "documentation") || strings.Contains(content, "readme"),
 	}
 

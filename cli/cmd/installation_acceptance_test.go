@@ -37,7 +37,7 @@ type TestEnvironment struct {
 
 // Helper function to create a fresh root command for tests
 func getInstallationTestRootCommand() *cobra.Command {
-	factory := NewCommandFactory("/tmp")  // Tests don't rely on working directory
+	factory := NewCommandFactory("/tmp") // Tests don't rely on working directory
 	return factory.NewRootCommand()
 }
 
