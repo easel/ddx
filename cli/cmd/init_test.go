@@ -3,6 +3,7 @@ package cmd
 import (
 	"bytes"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"testing"
 
@@ -38,8 +39,15 @@ func setupTestDir(t *testing.T) (string, func()) {
 	require.NoError(t, os.Chdir(tempDir))
 
 	// Initialize git repo (required for many DDx operations)
-	// Note: In real integration tests, we'd use exec.Command
-	// For now, we'll skip git initialization in these tests
+	gitCmd := exec.Command("git", "init")
+	require.NoError(t, gitCmd.Run())
+
+	// Configure git user for tests
+	gitCmd = exec.Command("git", "config", "user.email", "test@example.com")
+	require.NoError(t, gitCmd.Run())
+
+	gitCmd = exec.Command("git", "config", "user.name", "Test User")
+	require.NoError(t, gitCmd.Run())
 
 	cleanup := func() {
 		os.Chdir(originalDir)
@@ -61,7 +69,7 @@ func TestInitCommand(t *testing.T) {
 			name: "basic initialization",
 			args: []string{"init"},
 			setup: func(t *testing.T, dir string) {
-				// No special setup needed
+				// Git repository already initialized by setupTestDir
 			},
 			validate: func(t *testing.T, dir string, output string, err error) {
 				// Check .ddx.yml was created

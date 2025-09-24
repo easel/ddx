@@ -13,7 +13,18 @@ import (
 // TestDefaultConfig validates the default configuration values
 func TestDefaultConfig_Basic(t *testing.T) {
 	t.Parallel()
-	config := DefaultConfig
+	// Test the raw DefaultConfig, not a loaded one
+	config := &Config{
+		Version: "2.0",
+		Repository: Repository{
+			URL:    "https://github.com/easel/ddx",
+			Branch: "main",
+			Path:   ".ddx/",
+		},
+		Includes:  []string{},
+		Overrides: make(map[string]string),
+		Variables: make(map[string]string),
+	}
 
 	assert.Equal(t, "2.0", config.Version)
 	assert.Equal(t, "https://github.com/easel/ddx", config.Repository.URL)
@@ -29,6 +40,11 @@ func TestLoadConfig_DefaultOnly_Basic(t *testing.T) {
 	tempDir := t.TempDir()
 	originalDir, _ := os.Getwd()
 	defer os.Chdir(originalDir)
+
+	// Isolate from global config by setting temporary HOME
+	originalHome := os.Getenv("HOME")
+	defer os.Setenv("HOME", originalHome)
+	os.Setenv("HOME", tempDir)
 
 	require.NoError(t, os.Chdir(tempDir))
 

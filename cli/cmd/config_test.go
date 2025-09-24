@@ -210,9 +210,14 @@ func TestConfigCommand_Global(t *testing.T) {
 	require.NoError(t, os.MkdirAll(globalConfigDir, 0755))
 
 	globalConfig := `version: "1.0"
-defaults:
+repository:
+  url: "https://github.com/test/repo"
+  branch: "main"
+  path: ".ddx/"
+variables:
   author: "Test User"
   email: "test@example.com"
+  project_name: "test"
 `
 	require.NoError(t, os.WriteFile(filepath.Join(homeDir, ".ddx.yml"), []byte(globalConfig), 0644))
 

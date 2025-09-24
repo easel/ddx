@@ -498,6 +498,12 @@ func TestAcceptance_US016_ManageAuthentication(t *testing.T) {
 			// Setup: SSH agent with no keys
 			sshAgent := auth.NewDefaultSSHAgent()
 
+			// Check if SSH agent is available in test environment
+			if !sshAgent.IsAvailable() {
+				t.Skip("SSH agent not available in test environment - skipping SSH test")
+				return
+			}
+
 			// When: List SSH keys
 			keys, err := sshAgent.ListKeys(ctx)
 
