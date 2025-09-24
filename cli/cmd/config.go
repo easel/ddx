@@ -33,7 +33,7 @@ func runConfig(cmd *cobra.Command, args []string) error {
 
 	// Handle flags
 	if showFlag {
-		return showConfig(cmd, globalFlag)
+		return showEffectiveConfig(cmd, []string{})
 	}
 
 	if showFilesFlag {
@@ -59,7 +59,7 @@ func runConfig(cmd *cobra.Command, args []string) error {
 	// Handle subcommands
 	if len(args) == 0 {
 		// Default behavior: show config if no args or flags
-		return showConfig(cmd, globalFlag)
+		return showEffectiveConfig(cmd, []string{})
 	}
 
 	subcommand := args[0]
@@ -77,7 +77,7 @@ func runConfig(cmd *cobra.Command, args []string) error {
 	case "validate":
 		return validateConfig(cmd)
 	case "export":
-		return showConfig(cmd, globalFlag)
+		return showEffectiveConfig(cmd, []string{})
 	case "import":
 		// For now, just read from stdin
 		return fmt.Errorf("import not yet implemented")
@@ -94,22 +94,6 @@ func runConfig(cmd *cobra.Command, args []string) error {
 	default:
 		return fmt.Errorf("unknown subcommand: %s", subcommand)
 	}
-}
-
-func showConfig(cmd *cobra.Command, global bool) error {
-	cfg, err := config.Load()
-	if err != nil {
-		return fmt.Errorf("failed to load configuration: %w", err)
-	}
-
-	// Marshal config to YAML
-	data, err := yaml.Marshal(cfg)
-	if err != nil {
-		return fmt.Errorf("failed to marshal configuration: %w", err)
-	}
-
-	fmt.Fprint(cmd.OutOrStdout(), string(data))
-	return nil
 }
 
 func editConfig(cmd *cobra.Command, global bool) error {
