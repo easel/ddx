@@ -16,7 +16,7 @@ This document defines the deployment strategy for DDx, covering distribution met
 **Repository**: `homebrew-ddx` tap
 **Installation**:
 ```bash
-brew tap ddx-tools/ddx
+brew tap easel/ddx
 brew install ddx
 ```
 **Update**: `brew upgrade ddx`
@@ -30,11 +30,11 @@ brew install ddx
 **Installation**:
 ```bash
 # Ubuntu/Debian
-sudo add-apt-repository ppa:ddx-tools/ddx
+sudo add-apt-repository ppa:easel/ddx
 sudo apt update && sudo apt install ddx
 
 # RHEL/Fedora
-sudo dnf copr enable ddx-tools/ddx
+sudo dnf copr enable easel/ddx
 sudo dnf install ddx
 ```
 **Benefits**:
@@ -56,7 +56,7 @@ choco install ddx
 ### 2. Direct Download
 
 #### GitHub Releases
-**URL**: `https://github.com/ddx-tools/ddx/releases`
+**URL**: `https://github.com/easel/ddx/releases`
 **Artifacts**:
 - `ddx-darwin-amd64.tar.gz` (macOS Intel)
 - `ddx-darwin-arm64.tar.gz` (macOS Apple Silicon)
@@ -75,14 +75,14 @@ curl -sSL https://get.ddx.tools | bash
 
 #### Go Install
 ```bash
-go install github.com/ddx-tools/ddx/cli@latest
+go install github.com/easel/ddx/cli@latest
 ```
 **Requirements**: Go 1.21+
 **Benefits**: Latest development version
 
 #### Build from Source
 ```bash
-git clone https://github.com/ddx-tools/ddx
+git clone https://github.com/easel/ddx
 cd ddx/cli
 make install
 ```

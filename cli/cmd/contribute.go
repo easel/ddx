@@ -181,7 +181,7 @@ func runContribute(cmd *cobra.Command, args []string) error {
 		// In test mode, simulate PR creation
 		if os.Getenv("DDX_TEST_MODE") == "1" {
 			fmt.Fprintln(out, "📝 Pull request created successfully!")
-			fmt.Fprintln(out, "   URL: https://github.com/ddx-tools/ddx/pull/123")
+			fmt.Fprintln(out, "   URL: https://github.com/easel/ddx/pull/123")
 			fmt.Fprintf(out, "   Title: %s\n", contributeMessage)
 			fmt.Fprintf(out, "   Branch: %s\n", contributeBranch)
 			fmt.Fprintln(out, "   push to fork completed")

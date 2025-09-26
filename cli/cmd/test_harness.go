@@ -203,7 +203,7 @@ func (h *TestHarness) SetupDDxProject() {
 	// Create .ddx.yml configuration
 	config := `name: test-project
 repository:
-  url: https://github.com/ddx-tools/ddx
+  url: https://github.com/easel/ddx
   branch: main
 `
 	h.WriteFile(".ddx.yml", []byte(config))

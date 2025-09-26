@@ -281,7 +281,7 @@ usage:
     "status": "synced|pending|conflict",
 
     "upstream": {
-      "url": "https://github.com/ddx-tools/ddx",
+      "url": "https://github.com/easel/ddx",
       "branch": "main",
       "commit": "abc123def",
       "last_fetch": "2025-01-15T09:00:00Z"
