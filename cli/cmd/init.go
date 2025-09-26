@@ -119,11 +119,26 @@ func (f *CommandFactory) runInit(cmd *cobra.Command, args []string) error {
 		return NewExitError(1, fmt.Sprintf("Failed to initialize synchronization: %v", err))
 	}
 
-	// Always create .ddx directory (required for isInitialized check)
+	// Always create .ddx directory with required subdirectories (required for isInitialized check)
 	localDDxPath := ".ddx"
 	if err := os.MkdirAll(localDDxPath, 0755); err != nil {
 		cmd.SilenceUsage = true
 		return NewExitError(1, fmt.Sprintf("Failed to create .ddx directory: %v", err))
+	}
+
+	// Create required subdirectories as per README Local-First Architecture
+	requiredDirs := []string{
+		filepath.Join(localDDxPath, "prompts"),
+		filepath.Join(localDDxPath, "templates"),
+		filepath.Join(localDDxPath, "patterns"),
+		filepath.Join(localDDxPath, "configs"),
+	}
+
+	for _, dir := range requiredDirs {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			cmd.SilenceUsage = true
+			return NewExitError(1, fmt.Sprintf("Failed to create directory %s: %v", dir, err))
+		}
 	}
 
 	// Set up git-subtree for library synchronization if not using --no-git and in git repo
