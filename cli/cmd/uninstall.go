@@ -96,7 +96,7 @@ func runUninstall(cmd *cobra.Command, args []string) error {
 
 	fmt.Fprintln(cmd.OutOrStdout())
 	fmt.Fprintln(cmd.OutOrStdout(), "Thank you for using DDx!")
-	fmt.Fprintln(cmd.OutOrStdout(), "You can reinstall anytime from: https://github.com/ddx-tools/ddx")
+	fmt.Fprintln(cmd.OutOrStdout(), "You can reinstall anytime from: https://github.com/easel/ddx")
 
 	return nil
 }

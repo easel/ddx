@@ -611,7 +611,7 @@ func setupTestProject(t *testing.T) {
 	config := `
 name: test-project
 repository:
-  url: https://github.com/ddx-tools/ddx
+  url: https://github.com/easel/ddx
   branch: main
 `
 	err := os.WriteFile(".ddx.yml", []byte(config), 0644)

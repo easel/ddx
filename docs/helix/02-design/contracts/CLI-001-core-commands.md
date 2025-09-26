@@ -18,7 +18,7 @@
 - `template` (optional): Name of template to apply during initialization (e.g., "nextjs", "python-flask")
 
 ### Options
-- `--repo, -r <url>`: Master repository URL (default: https://github.com/ddx-tools/ddx)
+- `--repo, -r <url>`: Master repository URL (default: https://github.com/easel/ddx)
 - `--branch, -b <name>`: Repository branch (default: main)
 - `--path, -p <path>`: Project path (default: current directory)
 - `--force, -f`: Overwrite existing .ddx.yml configuration

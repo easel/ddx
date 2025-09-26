@@ -33,7 +33,7 @@
 
 ### Output Format
 ```
-Checking for updates from https://github.com/ddx-tools/ddx (main)...
+Checking for updates from https://github.com/easel/ddx (main)...
 Found 23 updates:
   Templates: 3 updated, 1 new
   Patterns: 5 updated, 2 new
@@ -195,11 +195,11 @@ Preparing contribution...
   ✓ Pushed to upstream repository
 
 Creating pull request...
-  ✓ PR #234 created: https://github.com/ddx-tools/ddx/pull/234
+  ✓ PR #234 created: https://github.com/easel/ddx/pull/234
 
 Thank you for contributing to DDx!
 Your contribution will be reviewed by maintainers.
-Track status at: https://github.com/ddx-tools/ddx/pull/234
+Track status at: https://github.com/easel/ddx/pull/234
 ```
 
 ### Validation Checks

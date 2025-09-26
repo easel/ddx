@@ -223,7 +223,7 @@ graph TB
 
     subgraph "Version Control"
         subgraph "GitHub/GitLab"
-            MASTER[Master Repo<br/>ddx-tools/ddx]
+            MASTER[Master Repo<br/>easel/ddx]
             FORK[User Fork<br/>Contributions]
             PROJ_REPO[Project Repo<br/>With Subtree]
         end
