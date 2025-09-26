@@ -241,7 +241,7 @@ func TestE2E_ContributionWorkflow(t *testing.T) {
 	// Initialize project
 	config := `version: "1.0"
 repository:
-  url: "https://github.com/ddx-tools/ddx"
+  url: "https://github.com/easel/ddx"
   branch: "main"`
 	require.NoError(t, os.WriteFile(filepath.Join(workspace, ".ddx.yml"), []byte(config), 0644))
 
@@ -301,7 +301,7 @@ func TestE2E_UpdateWorkflow(t *testing.T) {
 	// Create initial config
 	config := `version: "1.0"
 repository:
-  url: "https://github.com/ddx-tools/ddx"
+  url: "https://github.com/easel/ddx"
   branch: "main"
 sync:
   last_update: "2024-01-01T00:00:00Z"

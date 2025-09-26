@@ -234,14 +234,14 @@ Regressions:
 ```
 # Get single value
 $ ddx config get repository.url
-https://github.com/ddx-tools/ddx
+https://github.com/easel/ddx
 
 # List all configuration
 $ ddx config list
 DDx Configuration (.ddx.yml)
 ─────────────────────────────
 repository:
-  url: https://github.com/ddx-tools/ddx
+  url: https://github.com/easel/ddx
   branch: main
 
 includes:
@@ -323,7 +323,7 @@ Opening .ddx.yml in vim...
 $ ddx config list --global
 Global DDx Configuration
 ─────────────────────
-default_repo: https://github.com/ddx-tools/ddx
+default_repo: https://github.com/easel/ddx
 author: Jane Developer
 email: jane@example.com
 
@@ -332,7 +332,7 @@ $ ddx config validate -v
 Validating .ddx.yml...
 ✓ YAML syntax valid
 ✓ Schema validation passed
-✓ Repository https://github.com/ddx-tools/ddx accessible
+✓ Repository https://github.com/easel/ddx accessible
 ✓ Branch 'main' exists
 ✓ All variables defined
 ✓ No circular references
@@ -388,7 +388,7 @@ Template Engine: v2.0.0
 Configuration:
 ─────────────────────────────────────
 Config File: .ddx.yml
-Repository: https://github.com/ddx-tools/ddx
+Repository: https://github.com/easel/ddx
 Branch: main
 Last Update: 2025-01-15 08:00:00
 ```

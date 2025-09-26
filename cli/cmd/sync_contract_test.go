@@ -647,7 +647,7 @@ func createTestConfig(t *testing.T) {
 	config := `
 name: test-project
 repository:
-  url: https://github.com/ddx-tools/ddx
+  url: https://github.com/easel/ddx
   branch: main
   subtree_path: .ddx
 `

@@ -197,7 +197,7 @@ The sync system maintains state in `.ddx.yml`:
 sync:
   last_update: 2025-01-15T10:00:00Z
   upstream:
-    url: https://github.com/ddx-tools/ddx
+    url: https://github.com/easel/ddx
     branch: main
     commit: abc123def
   local:
