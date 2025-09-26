@@ -1323,7 +1323,7 @@ echo $SHELL
 
 #### Method 1: Quick Install (Recommended)
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ddx-tools/ddx/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/easel/ddx/main/install.sh | bash
 ```
 
 This script:
@@ -1335,7 +1335,7 @@ This script:
 #### Method 2: Homebrew
 ```bash
 # Add DDX tap
-brew tap ddx-tools/ddx
+brew tap easel/ddx
 
 # Install DDX
 brew install ddx
@@ -1344,13 +1344,13 @@ brew install ddx
 #### Method 3: Go Install
 ```bash
 # Requires Go 1.21+
-go install github.com/ddx-tools/ddx/cli@latest
+go install github.com/easel/ddx/cli@latest
 ```
 
 #### Method 4: From Source
 ```bash
 # Clone repository
-git clone https://github.com/ddx-tools/ddx
+git clone https://github.com/easel/ddx
 cd ddx/cli
 
 # Build and install
@@ -1563,7 +1563,7 @@ git init
 # Manually create config
 cat > .ddx.yml << 'EOF'
 version: "1.0"
-repository: https://github.com/ddx-tools/ddx-master
+repository: https://github.com/easel/ddx-master
 branch: main
 EOF
 ```
@@ -1581,7 +1581,7 @@ ddx list --verbose
 
 #### DDX Help Resources
 - **Documentation**: Run `ddx help <command>`
-- **GitHub Issues**: [github.com/ddx-tools/ddx/issues](https://github.com/ddx-tools/ddx/issues)
+- **GitHub Issues**: [github.com/easel/ddx/issues](https://github.com/easel/ddx/issues)
 - **Discord Community**: [discord.gg/ddx](https://discord.gg/ddx)
 
 #### Claude Code Help
