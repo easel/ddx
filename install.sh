@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # DDx (Document-Driven Development eXperience) Installation Script
-# Usage: curl -fsSL https://raw.githubusercontent.com/yourusername/ddx/main/install.sh | bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/easel/ddx/main/install.sh | bash
 
 set -e
 

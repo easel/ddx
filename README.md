@@ -31,7 +31,7 @@ DDX (Document-Driven Development eXperience) is a CLI toolkit that revolutionize
 
 **One-line installation:**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ddx-tools/ddx/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/easel/ddx/main/install.sh | bash
 ```
 
 **Initialize in your project:**
@@ -353,7 +353,7 @@ Projects using DDX report:
 
 ### Quick Install (Recommended)
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ddx-tools/ddx/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/easel/ddx/main/install.sh | bash
 ```
 
 ### Package Managers
@@ -362,10 +362,10 @@ curl -fsSL https://raw.githubusercontent.com/ddx-tools/ddx/main/install.sh | bas
 brew install ddx
 
 # Go install
-go install github.com/ddx-tools/ddx/cli@latest
+go install github.com/easel/ddx/cli@latest
 
 # From source
-git clone https://github.com/ddx-tools/ddx
+git clone https://github.com/easel/ddx
 cd ddx/cli
 make install
 ```
@@ -382,7 +382,7 @@ DDX uses a simple YAML configuration file (`.ddx.yml`):
 ```yaml
 # .ddx.yml
 version: "1.0"
-repository: https://github.com/ddx-tools/ddx-master
+repository: https://github.com/easel/ddx
 branch: main
 
 # Resources to include
@@ -423,8 +423,8 @@ This creates a pull request to the master repository where it can benefit the en
 ### Getting Help
 
 - **Documentation**: [docs.ddx.dev](https://docs.ddx.dev)
-- **Issues**: [GitHub Issues](https://github.com/ddx-tools/ddx/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/ddx-tools/ddx/discussions)
+- **Issues**: [GitHub Issues](https://github.com/easel/ddx/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/easel/ddx/discussions)
 - **Discord**: [Join our Discord](https://discord.gg/ddx)
 
 ### Philosophy
@@ -480,7 +480,7 @@ Special thanks to all contributors who share their knowledge and help make devel
 **Ready to revolutionize your development workflow?**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ddx-tools/ddx/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/easel/ddx/main/install.sh | bash
 ```
 
 *Join thousands of developers who never lose their best work again.*
