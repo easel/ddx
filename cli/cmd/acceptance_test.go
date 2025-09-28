@@ -38,7 +38,7 @@ func TestAcceptance_US001_InitializeProject(t *testing.T) {
 			scenario: "Initialize DDX in project without existing configuration",
 			given: func(t *testing.T) string {
 				// Given: I am in a project directory without DDX
-	tempDir := t.TempDir()
+				tempDir := t.TempDir()
 				return tempDir
 			},
 			when: func(t *testing.T, dir string) error {
@@ -71,7 +71,7 @@ func TestAcceptance_US001_InitializeProject(t *testing.T) {
 			scenario: "Initialize DDX with specific template",
 			given: func(t *testing.T) string {
 				// Given: I want to use a specific template
-	tempDir := t.TempDir()
+				tempDir := t.TempDir()
 
 				// Setup mock template
 				homeDir := t.TempDir()
@@ -100,7 +100,7 @@ func TestAcceptance_US001_InitializeProject(t *testing.T) {
 			scenario: "Prevent re-initialization of DDX-enabled project",
 			given: func(t *testing.T) string {
 				// Given: DDX is already initialized
-	tempDir := t.TempDir()
+				tempDir := t.TempDir()
 
 				// Initialize git repository in temp directory
 				gitInit := exec.Command("git", "init")
@@ -393,7 +393,7 @@ func TestAcceptance_US002_ListAvailableAssets(t *testing.T) {
 func TestAcceptance_ConfigurationManagement(t *testing.T) {
 	t.Run("view_configuration", func(t *testing.T) {
 		// Given: DDX is configured in my project
-	tempDir := t.TempDir()
+		tempDir := t.TempDir()
 
 		config := `version: "1.0"
 repository:
@@ -465,7 +465,7 @@ func TestAcceptance_WorkflowIntegration(t *testing.T) {
 		//	// originalDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
 
 		// Step 1: Initialize DDX
-	tempDir := t.TempDir()
+		tempDir := t.TempDir()
 
 		// Create library structure with workflows
 		libraryDir := filepath.Join(tempDir, "library")
@@ -527,7 +527,7 @@ func TestAcceptance_ErrorScenarios(t *testing.T) {
 			{
 				name: "already_initialized",
 				setup: func() string {
-	tempDir := t.TempDir()
+					tempDir := t.TempDir()
 					// Initialize git repository first
 					gitInit := exec.Command("git", "init")
 					gitInit.Dir = tempDir
@@ -596,7 +596,7 @@ func TestAcceptance_US042_WorkflowCommandExecution(t *testing.T) {
 			scenario: "AC-001: Command Discovery",
 			given: func(t *testing.T) string {
 				// Given: I have the HELIX workflow available
-	tempDir := t.TempDir()
+				tempDir := t.TempDir()
 
 				// Create library structure with helix commands
 				commandsDir := filepath.Join(tempDir, "library", "workflows", "helix", "commands")
@@ -644,7 +644,7 @@ Continue work on current story...`
 			scenario: "AC-002: Command Execution",
 			given: func(t *testing.T) string {
 				// Given: I have a workflow with commands available
-	tempDir := t.TempDir()
+				tempDir := t.TempDir()
 
 				commandsDir := filepath.Join(tempDir, "library", "workflows", "helix", "commands")
 				require.NoError(t, os.MkdirAll(commandsDir, 0755))
@@ -686,7 +686,7 @@ You will receive a user story ID as an argument (e.g., US-001, US-042, etc.).`
 			scenario: "AC-003: Error Handling - Invalid Workflow",
 			given: func(t *testing.T) string {
 				// Given: I specify a non-existent workflow
-	tempDir := t.TempDir()
+				tempDir := t.TempDir()
 				return tempDir
 			},
 			when: func(t *testing.T, workDir string) (string, error) {
@@ -711,7 +711,7 @@ You will receive a user story ID as an argument (e.g., US-001, US-042, etc.).`
 			scenario: "AC-004: Error Handling - Invalid Command",
 			given: func(t *testing.T) string {
 				// Given: I specify a non-existent command
-	tempDir := t.TempDir()
+				tempDir := t.TempDir()
 
 				commandsDir := filepath.Join(tempDir, "library", "workflows", "helix", "commands")
 				require.NoError(t, os.MkdirAll(commandsDir, 0755))
@@ -740,7 +740,7 @@ You will receive a user story ID as an argument (e.g., US-001, US-042, etc.).`
 			scenario: "AC-005: Command Arguments",
 			given: func(t *testing.T) string {
 				// Given: A command requires arguments
-	tempDir := t.TempDir()
+				tempDir := t.TempDir()
 
 				commandsDir := filepath.Join(tempDir, "library", "workflows", "helix", "commands")
 				require.NoError(t, os.MkdirAll(commandsDir, 0755))

@@ -3,11 +3,11 @@ package config
 // NewConfig represents the simplified DDx configuration structure
 // This aligns with the schema defined in ADR-005 and SD-003
 type NewConfig struct {
-	Version         string                `yaml:"version" json:"version"`
-	LibraryBasePath string                `yaml:"library_base_path,omitempty" json:"library_base_path,omitempty"`
-	Repository      *NewRepositoryConfig  `yaml:"repository,omitempty" json:"repository,omitempty"`
-	Variables       map[string]string     `yaml:"variables,omitempty" json:"variables,omitempty"`
-	PersonaBindings map[string]string     `yaml:"persona_bindings,omitempty" json:"persona_bindings,omitempty"`
+	Version         string               `yaml:"version" json:"version"`
+	LibraryBasePath string               `yaml:"library_base_path,omitempty" json:"library_base_path,omitempty"`
+	Repository      *NewRepositoryConfig `yaml:"repository,omitempty" json:"repository,omitempty"`
+	Variables       map[string]string    `yaml:"variables,omitempty" json:"variables,omitempty"`
+	PersonaBindings map[string]string    `yaml:"persona_bindings,omitempty" json:"persona_bindings,omitempty"`
 }
 
 // NewRepositoryConfig represents repository settings for the new format

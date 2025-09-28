@@ -24,7 +24,7 @@ func TestConfigCommand(t *testing.T) {
 			name: "show config",
 			args: []string{"config", "export"},
 			setup: func(t *testing.T) string {
-	workDir := t.TempDir()
+				workDir := t.TempDir()
 
 				// Create config file
 				config := `version: "1.0"
@@ -75,7 +75,7 @@ variables:
 			name: "set config value",
 			args: []string{"config", "set", "variables.new_var", "new_value"},
 			setup: func(t *testing.T) string {
-	workDir := t.TempDir()
+				workDir := t.TempDir()
 
 				config := `version: "1.0"
 variables:
@@ -104,7 +104,7 @@ variables:
 			name: "config with no config file",
 			args: []string{"config"},
 			setup: func(t *testing.T) string {
-	workDir := t.TempDir()
+				workDir := t.TempDir()
 				// No config file created
 				return workDir
 			},
@@ -118,7 +118,7 @@ variables:
 			name: "validate config",
 			args: []string{"config", "validate"},
 			setup: func(t *testing.T) string {
-	workDir := t.TempDir()
+				workDir := t.TempDir()
 
 				// Valid config
 				config := `version: "1.0"
@@ -140,7 +140,7 @@ repository:
 			name: "validate invalid config",
 			args: []string{"config", "validate"},
 			setup: func(t *testing.T) string {
-	workDir := t.TempDir()
+				workDir := t.TempDir()
 
 				// Invalid YAML
 				config := `version: "1.0"

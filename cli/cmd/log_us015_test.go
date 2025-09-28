@@ -225,8 +225,8 @@ func TestLogCommand_US015_Features(t *testing.T) {
 				exportFile := filepath.Join(testDir, format)
 
 				// Use CommandFactory with the test working directory
-		factory := NewCommandFactory(testDir)
-		rootCmd := factory.NewRootCommand()
+				factory := NewCommandFactory(testDir)
+				rootCmd := factory.NewRootCommand()
 				_, err := executeStatusCommand(rootCmd, "log", "--export", exportFile)
 
 				// Initially this will fail because --export doesn't exist

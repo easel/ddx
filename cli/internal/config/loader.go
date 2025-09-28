@@ -10,8 +10,8 @@ import (
 
 // ConfigLoader handles loading configuration files with validation
 type ConfigLoader struct {
-	validator   Validator
-	workingDir  string
+	validator  Validator
+	workingDir string
 }
 
 // NewConfigLoader creates a new configuration loader with validation
@@ -82,7 +82,6 @@ func (cl *ConfigLoader) loadNewFormat(path string) (*NewConfig, error) {
 	return &config, nil
 }
 
-
 // SaveConfig saves configuration in the new format
 func (cl *ConfigLoader) SaveConfig(config *NewConfig, path string) error {
 	// Convert relative path to absolute based on working directory
@@ -115,7 +114,6 @@ func (cl *ConfigLoader) SaveConfig(config *NewConfig, path string) error {
 	return nil
 }
 
-
 // DetectConfigFormat determines if .ddx/config.yaml exists in working directory
 func (cl *ConfigLoader) DetectConfigFormat() (string, string, error) {
 	configPath := filepath.Join(cl.workingDir, ".ddx", "config.yaml")
@@ -125,4 +123,3 @@ func (cl *ConfigLoader) DetectConfigFormat() (string, string, error) {
 
 	return "none", "", fmt.Errorf("no configuration file found at %s", configPath)
 }
-

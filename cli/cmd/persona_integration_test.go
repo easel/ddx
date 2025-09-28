@@ -31,7 +31,7 @@ func TestPersonaIntegration_FullWorkflow(t *testing.T) {
 	tempHome := t.TempDir()
 	t.Setenv("HOME", tempHome)
 
-		workDir := t.TempDir()
+	workDir := t.TempDir()
 
 	// Create initial .ddx/config.yaml configuration
 	initialConfig := `version: "1.0"
@@ -432,7 +432,6 @@ You think in terms of system boundaries, data flow, and long-term evolution.
 	}
 }
 
-
 // TestPersonaIntegration_ErrorHandling tests error scenarios in persona workflows
 func TestPersonaIntegration_ErrorHandling(t *testing.T) {
 	if testing.Short() {
@@ -443,7 +442,7 @@ func TestPersonaIntegration_ErrorHandling(t *testing.T) {
 	tempHome := t.TempDir()
 	t.Setenv("HOME", tempHome)
 
-		workDir := t.TempDir()
+	workDir := t.TempDir()
 
 	tests := []struct {
 		name          string
@@ -580,7 +579,7 @@ func TestPersonaIntegration_ConcurrentAccess(t *testing.T) {
 	tempHome := t.TempDir()
 	t.Setenv("HOME", tempHome)
 
-		workDir := t.TempDir()
+	workDir := t.TempDir()
 
 	// Create .ddx/config.yaml
 	config := `version: "1.0"

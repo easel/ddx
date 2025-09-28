@@ -157,7 +157,6 @@ variables: {}
 			factory := NewCommandFactory(dir)
 			rootCmd := factory.NewRootCommand()
 
-
 			output, err := executeCommand(rootCmd, tt.args...)
 
 			if tt.expectError {
@@ -192,7 +191,6 @@ func TestInitCommand_Template(t *testing.T) {
 	// Execute init with template
 	factory := NewCommandFactory(homeDir)
 	rootCmd := factory.NewRootCommand()
-
 
 	output, err := executeCommand(rootCmd, "init", "--template", "test-template", "--no-git")
 
@@ -395,7 +393,6 @@ repository:
 			factory := NewCommandFactory(dir)
 			rootCmd := factory.NewRootCommand()
 
-
 			output, err := executeCommand(rootCmd, tt.args...)
 
 			if tt.expectError {
@@ -536,7 +533,6 @@ repository:
 			// Create new root command for each test with the test directory
 			factory := NewCommandFactory(dir)
 			rootCmd := factory.NewRootCommand()
-
 
 			output, err := executeCommand(rootCmd, tt.args...)
 

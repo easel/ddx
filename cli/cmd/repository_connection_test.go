@@ -14,7 +14,7 @@ func TestAcceptance_US021_ConfigureRepositoryConnection(t *testing.T) {
 	t.Run("repository_url_configuration", func(t *testing.T) {
 		// AC: Given config file, when repository URL specified, then connection uses that URL
 
-	// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection
+		// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection
 
 		rootCmd := getConfigTestRootCommand()
 
@@ -32,7 +32,7 @@ func TestAcceptance_US021_ConfigureRepositoryConnection(t *testing.T) {
 	t.Run("repository_branch_specification", func(t *testing.T) {
 		// AC: Given repository config, when branch specified, then that branch is tracked
 
-	// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection
+		// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection
 
 		rootCmd := getConfigTestRootCommand()
 
@@ -50,7 +50,7 @@ func TestAcceptance_US021_ConfigureRepositoryConnection(t *testing.T) {
 	t.Run("sync_frequency_configuration", func(t *testing.T) {
 		// AC: Given sync settings, when configured, then frequency preferences are honored
 
-	// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection
+		// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection
 
 		rootCmd := getConfigTestRootCommand()
 
@@ -73,7 +73,7 @@ func TestAcceptance_US021_ConfigureRepositoryConnection(t *testing.T) {
 	t.Run("authentication_configuration", func(t *testing.T) {
 		// AC: Given authentication needs, when required, then auth method is configurable
 
-	// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection
+		// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection
 
 		rootCmd := getConfigTestRootCommand()
 
@@ -123,7 +123,7 @@ func TestAcceptance_US021_ConfigureRepositoryConnection(t *testing.T) {
 	t.Run("proxy_configuration", func(t *testing.T) {
 		// AC: Given network restrictions, when present, then proxy configuration works
 
-	// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection
+		// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection
 
 		rootCmd := getConfigTestRootCommand()
 
@@ -146,7 +146,7 @@ func TestAcceptance_US021_ConfigureRepositoryConnection(t *testing.T) {
 	t.Run("protocol_selection", func(t *testing.T) {
 		// AC: Given protocol preference, when set, then SSH vs HTTPS is respected
 
-	// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection
+		// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection
 
 		rootCmd := getConfigTestRootCommand()
 
@@ -169,7 +169,7 @@ func TestAcceptance_US021_ConfigureRepositoryConnection(t *testing.T) {
 	t.Run("custom_remote_naming", func(t *testing.T) {
 		// AC: Given remote naming, when customized, then custom names are used
 
-	// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection
+		// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection
 
 		rootCmd := getConfigTestRootCommand()
 
@@ -187,7 +187,7 @@ func TestAcceptance_US021_ConfigureRepositoryConnection(t *testing.T) {
 	t.Run("repository_connection_testing", func(t *testing.T) {
 		// Test connection testing functionality
 
-	// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection
+		// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection
 
 		// Create basic config first
 		env := NewTestEnvironment(t)
@@ -217,7 +217,7 @@ variables:
 	t.Run("repository_status_command", func(t *testing.T) {
 		// Test repository status functionality
 
-	// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection
+		// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection
 
 		// Create basic config
 		env := NewTestEnvironment(t)
@@ -244,11 +244,10 @@ variables:
 		}
 	})
 
-
 	t.Run("configuration_validation_with_advanced_features", func(t *testing.T) {
 		// Test validation of advanced repository configuration
 
-	// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection
+		// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection
 
 		// Advanced configuration example (not used in simplified config)
 		_ = `version: "2.0"
@@ -301,7 +300,7 @@ variables:
 	t.Run("timeout_and_retry_configuration", func(t *testing.T) {
 		// Test network timeout and retry settings
 
-	// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection
+		// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection
 
 		rootCmd := getConfigTestRootCommand()
 
@@ -326,7 +325,7 @@ variables:
 func TestRepositoryConfigurationCommands_Contract(t *testing.T) {
 
 	t.Run("config_set_repository_fields", func(t *testing.T) {
-	// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection
+		// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection
 
 		rootCmd := getConfigTestRootCommand()
 
@@ -358,7 +357,7 @@ func TestRepositoryConfigurationCommands_Contract(t *testing.T) {
 	})
 
 	t.Run("config_get_repository_fields", func(t *testing.T) {
-	// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection
+		// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection
 
 		// Create config with repository settings
 		env := NewTestEnvironment(t)
@@ -393,7 +392,7 @@ variables:
 	})
 
 	t.Run("repository_subcommands", func(t *testing.T) {
-	// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection
+		// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection
 
 		env := NewTestEnvironment(t)
 		config := `version: "1.0"

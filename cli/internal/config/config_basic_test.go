@@ -15,7 +15,7 @@ func TestDefaultConfig_Basic(t *testing.T) {
 	t.Parallel()
 	// Test the raw DefaultConfig, not a loaded one
 	config := &Config{
-		Version: "2.0",
+		Version:         "2.0",
 		LibraryBasePath: "./library",
 		Repository: &NewRepositoryConfig{
 			URL:           "https://github.com/easel/ddx",
@@ -59,7 +59,7 @@ func TestLoadConfig_LocalConfig_Basic(t *testing.T) {
 
 	// Create local config
 	localConfig := &Config{
-		Version: "2.0",
+		Version:         "2.0",
 		LibraryBasePath: "./custom-library",
 		Repository: &NewRepositoryConfig{
 			URL:           "https://github.com/custom/repo",
@@ -95,7 +95,7 @@ func TestLoadLocal_Basic(t *testing.T) {
 
 	// Create local config
 	localConfig := &Config{
-		Version: "1.5",
+		Version:         "1.5",
 		LibraryBasePath: "./library",
 		Repository: &NewRepositoryConfig{
 			URL:           "https://github.com/local/repo",

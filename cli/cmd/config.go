@@ -164,7 +164,6 @@ func resetConfig(cmd *cobra.Command, global bool) error {
 
 // Business Logic Layer - Pure Functions
 
-
 // configGet retrieves a configuration value
 func configGet(workingDir string, key string, global bool) (string, error) {
 	var cfg *config.Config
@@ -199,11 +198,11 @@ func configSet(workingDir string, key, value string, global bool) error {
 			// If file doesn't exist in working dir, create a new config
 			if os.IsNotExist(err) {
 				cfg = &config.Config{
-					Version:   "1.0",
+					Version:         "1.0",
 					LibraryBasePath: "./library",
 					Repository: &config.NewRepositoryConfig{
-						URL: "https://github.com/easel/ddx",
-						Branch: "main",
+						URL:           "https://github.com/easel/ddx",
+						Branch:        "main",
 						SubtreePrefix: "library",
 					},
 					Variables: make(map[string]string),
@@ -455,7 +454,7 @@ func setConfigValueInStruct(cfg *config.Config, key, value string) error {
 				cfg.Repository.Branch = value
 			case "subtree_prefix":
 				cfg.Repository.SubtreePrefix = value
-			// Note: path, remote, protocol, priority fields removed in simplified config
+				// Note: path, remote, protocol, priority fields removed in simplified config
 			}
 		}
 	} else {
@@ -493,8 +492,6 @@ func getConfigValueWithWorkingDir(cmd *cobra.Command, key string, global bool, w
 	fmt.Fprintln(cmd.OutOrStdout(), value)
 	return nil
 }
-
-
 
 // outputConfigFiles handles outputting configuration file locations
 func (f *CommandFactory) outputConfigFiles(cmd *cobra.Command, files []ConfigFileInfo) error {
@@ -1031,5 +1028,3 @@ func deleteProfile(cmd *cobra.Command, profileName string) error {
 }
 
 // ConfigValueWithSource represents a configuration value with its source attribution
-
-

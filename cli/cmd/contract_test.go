@@ -64,7 +64,7 @@ func TestInitCommand_Contract(t *testing.T) {
 			description: "Exit code 2: Configuration already exists",
 			args:        []string{"init", "--no-git"},
 			setup: func(t *testing.T) string {
-	workDir := t.TempDir()
+				workDir := t.TempDir()
 				// Initialize git repository for init command
 				gitInit := exec.Command("git", "init")
 				gitInit.Dir = workDir
@@ -97,7 +97,7 @@ func TestInitCommand_Contract(t *testing.T) {
 			description: "--force flag overwrites existing config",
 			args:        []string{"init", "--force", "--no-git"},
 			setup: func(t *testing.T) string {
-	workDir := t.TempDir()
+				workDir := t.TempDir()
 				// Initialize git repository for init command in the correct directory
 				gitInit := exec.Command("git", "init")
 				gitInit.Dir = workDir
@@ -319,7 +319,7 @@ func TestConfigCommand_Contract(t *testing.T) {
 			description: "Config output is valid YAML as per contract",
 			args:        []string{"config", "export"},
 			setup: func(t *testing.T) string {
-	workDir := t.TempDir()
+				workDir := t.TempDir()
 
 				config := `version: "1.0"
 repository:
@@ -342,7 +342,7 @@ variables:
 			description: "Get operation returns specific value",
 			args:        []string{"config", "get", "version"},
 			setup: func(t *testing.T) string {
-	workDir := t.TempDir()
+				workDir := t.TempDir()
 
 				config := `version: "1.0"`
 				ddxDir := filepath.Join(workDir, ".ddx")
@@ -374,7 +374,6 @@ variables:
 				factory = NewCommandFactory("/tmp")
 			}
 			rootCmd := factory.NewRootCommand()
-
 
 			output, err := executeContractCommand(rootCmd, tt.args...)
 			assert.NoError(t, err)

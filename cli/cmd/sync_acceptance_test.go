@@ -25,7 +25,7 @@ func withTempDir(t *testing.T, fn func(tempDir string)) {
 	// No need to track original directory - use temp directory exclusively
 
 	// Create temp directory
-		tempDir := t.TempDir()
+	tempDir := t.TempDir()
 
 	// Change to temp directory
 	// err = os.Chdir(tempDir) // REMOVED: Using CommandFactory injection
@@ -84,8 +84,6 @@ func TestAcceptance_US004_UpdateAssetsFromMaster(t *testing.T) {
 		})
 	})
 
-
-
 	t.Run("preserve_local_changes", func(t *testing.T) {
 		withTempDir(t, func(tempDir string) {
 			// Given: Local modifications exist
@@ -111,9 +109,7 @@ func TestAcceptance_US004_UpdateAssetsFromMaster(t *testing.T) {
 		})
 	})
 
-
 }
-
 
 // TestAcceptance_US009_PullUpdatesFromUpstream tests US-009: Pull Updates from Upstream
 func TestAcceptance_US009_PullUpdatesFromUpstream(t *testing.T) {

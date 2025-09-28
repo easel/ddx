@@ -378,7 +378,7 @@ func TestPersonaBindCommand_Contract(t *testing.T) {
 			description: "Exit code 0: Successfully bind persona to role",
 			args:        []string{"persona", "bind", "code-reviewer", "strict-reviewer"},
 			setup: func(t *testing.T) string {
-		workDir := t.TempDir()
+				workDir := t.TempDir()
 
 				// Create .ddx/config.yaml configuration
 				ddxDir := filepath.Join(workDir, ".ddx")
@@ -440,7 +440,7 @@ tags: [strict]
 			description: "Exit code 6: Persona not found",
 			args:        []string{"persona", "bind", "code-reviewer", "nonexistent-persona"},
 			setup: func(t *testing.T) string {
-		workDir := t.TempDir()
+				workDir := t.TempDir()
 
 				ddxDir := filepath.Join(workDir, ".ddx")
 				require.NoError(t, os.MkdirAll(ddxDir, 0755))
@@ -470,7 +470,7 @@ tags: [strict]
 			description: "Exit code 3: No .ddx/config.yaml configuration found",
 			args:        []string{"persona", "bind", "code-reviewer", "test-persona"},
 			setup: func(t *testing.T) string {
-		workDir := t.TempDir()
+				workDir := t.TempDir()
 				// No .ddx/config.yaml file created
 				return workDir
 			},
@@ -537,7 +537,7 @@ func TestPersonaLoadCommand_Contract(t *testing.T) {
 			description: "Exit code 0: Load all bound personas",
 			args:        []string{"persona", "load"},
 			setup: func(t *testing.T) string {
-		workDir := t.TempDir()
+				workDir := t.TempDir()
 
 				// Create .ddx/config.yaml with persona bindings (new format)
 				config := `version: "1.0"
@@ -633,7 +633,7 @@ You follow TDD practices.`
 			description: "Exit code 0: Load specific persona",
 			args:        []string{"persona", "load", "strict-reviewer"},
 			setup: func(t *testing.T) string {
-		workDir := t.TempDir()
+				workDir := t.TempDir()
 
 				// Create .ddx/config.yaml configuration (new format)
 				libraryDir := filepath.Join(workDir, "library")
@@ -708,7 +708,7 @@ You are a strict code reviewer.`
 			description: "Exit code 6: Persona not found",
 			args:        []string{"persona", "load", "nonexistent-persona"},
 			setup: func(t *testing.T) string {
-		workDir := t.TempDir()
+				workDir := t.TempDir()
 
 				// Create empty personas directory
 				homeDir := t.TempDir()
@@ -780,7 +780,7 @@ func TestPersonaBindingsCommand_Contract(t *testing.T) {
 			description: "Exit code 0: Display current persona bindings",
 			args:        []string{"persona", "bindings"},
 			setup: func(t *testing.T) string {
-		workDir := t.TempDir()
+				workDir := t.TempDir()
 
 				// Create .ddx/config.yaml with persona bindings (new format)
 				config := `version: "1.0"
@@ -821,7 +821,7 @@ persona_bindings:
 			description: "Exit code 0: No persona bindings configured",
 			args:        []string{"persona", "bindings"},
 			setup: func(t *testing.T) string {
-		workDir := t.TempDir()
+				workDir := t.TempDir()
 
 				// Create .ddx/config.yaml without persona bindings
 				ddxDir := filepath.Join(workDir, ".ddx")
@@ -848,7 +848,7 @@ repository:
 			description: "Exit code 3: No .ddx/config.yaml configuration found",
 			args:        []string{"persona", "bindings"},
 			setup: func(t *testing.T) string {
-		workDir := t.TempDir()
+				workDir := t.TempDir()
 				// No .ddx/config.yaml file created
 				return workDir
 			},
@@ -904,7 +904,7 @@ func TestPersonaStatusCommand_Contract(t *testing.T) {
 			description: "Exit code 0: Display loaded personas",
 			args:        []string{"persona", "status"},
 			setup: func(t *testing.T) string {
-		workDir := t.TempDir()
+				workDir := t.TempDir()
 
 				// Create CLAUDE.md with loaded personas
 				claudeContent := `# CLAUDE.md
@@ -943,7 +943,7 @@ You follow TDD practices.
 			description: "Exit code 0: No personas loaded",
 			args:        []string{"persona", "status"},
 			setup: func(t *testing.T) string {
-		workDir := t.TempDir()
+				workDir := t.TempDir()
 
 				// Create CLAUDE.md without personas
 				claudeContent := `# CLAUDE.md
@@ -968,7 +968,7 @@ This is the project guidance.`
 			description: "Exit code 0: No CLAUDE.md file",
 			args:        []string{"persona", "status"},
 			setup: func(t *testing.T) string {
-		workDir := t.TempDir()
+				workDir := t.TempDir()
 				// No CLAUDE.md file created
 				return workDir
 			},

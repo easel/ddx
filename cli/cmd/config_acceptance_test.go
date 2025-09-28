@@ -166,7 +166,7 @@ variables:
 	t.Run("environment_variable_override", func(t *testing.T) {
 		// AC: Given multiple config sources exist, when settings are loaded, then environment variables override config files
 
-	//	// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
+		//	// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
 
 		config := `version: "2.0"
 variables:
@@ -194,7 +194,7 @@ variables:
 	t.Run("configuration_value_validation", func(t *testing.T) {
 		// AC: Given I set a configuration value, when it's saved, then the value is validated against acceptable options
 
-	//	// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
+		//	// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
 
 		// Create basic config
 		config := `version: "2.0"`
@@ -227,7 +227,7 @@ variables:
 	t.Run("export_import_configurations", func(t *testing.T) {
 		// AC: Given I need to share configs, when I run export/import commands, then configurations can be transferred between systems
 
-	// sourceDir := t.TempDir() // REMOVED: Using CommandFactory injection
+		// sourceDir := t.TempDir() // REMOVED: Using CommandFactory injection
 
 		// Create source config
 		sourceConfig := `version: "2.0"
@@ -269,7 +269,7 @@ repository:
 	t.Run("show_config_file_locations", func(t *testing.T) {
 		// AC: Given I'm troubleshooting, when I run `ddx config --show-files`, then all config file locations are displayed
 
-	//	// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
+		//	// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
 
 		rootCmd := getConfigTestRootCommand()
 		output, err := executeCommand(rootCmd, "config", "--show-files")
@@ -288,7 +288,7 @@ repository:
 	t.Run("configuration_validation_command", func(t *testing.T) {
 		// Test the --validate flag functionality
 
-	//	// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
+		//	// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
 
 		// Create valid config
 		validConfig := `version: "2.0"
@@ -310,7 +310,7 @@ repository:
 	t.Run("configuration_error_handling", func(t *testing.T) {
 		// Test various error scenarios
 
-	//	// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
+		//	// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
 
 		// Create invalid YAML
 		invalidYaml := `version: "2.0"

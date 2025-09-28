@@ -275,7 +275,7 @@ func TestAcceptance_US016_ManageAuthentication(t *testing.T) {
 	t.Run("secure_credential_storage", func(t *testing.T) {
 		t.Run("no_plaintext_storage", func(t *testing.T) {
 			ctx := context.Background()
-	tempDir := t.TempDir()
+			tempDir := t.TempDir()
 			authFile := filepath.Join(tempDir, ".ddx-auth")
 
 			// Setup: Create file store with test credential containing sensitive data
@@ -320,7 +320,7 @@ func TestAcceptance_US016_ManageAuthentication(t *testing.T) {
 			ctx := context.Background()
 
 			// Setup: Create file store (keychain disabled in our config)
-	tempDir := t.TempDir()
+			tempDir := t.TempDir()
 			authFile := filepath.Join(tempDir, ".ddx-auth")
 			fileStore := auth.NewFileStore(authFile, "test-passphrase")
 

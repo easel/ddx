@@ -163,7 +163,6 @@ func TestE2E_TemplateWithVariables(t *testing.T) {
 	projectDir := t.TempDir()
 	cliPath := filepath.Join(projectDir, "ddx")
 
-
 	// Initialize project with new config format
 	config := `version: "1.0"
 library_base_path: "./library"
@@ -224,7 +223,6 @@ func TestE2E_GitIntegration(t *testing.T) {
 
 	workspace := t.TempDir()
 	cliPath := filepath.Join(workspace, "ddx")
-
 
 	// Initialize git repo
 	cmd := exec.Command("git", "init")

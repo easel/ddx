@@ -32,7 +32,7 @@ func executeStatusCommand(root *cobra.Command, args ...string) (output string, e
 
 // Helper to setup test environment with DDX project
 func setupStatusTestDir(t *testing.T) (string, func()) {
-		tempDir := t.TempDir()
+	tempDir := t.TempDir()
 	//	// originalDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
 
 	// Change to temp directory

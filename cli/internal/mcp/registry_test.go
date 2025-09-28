@@ -128,7 +128,7 @@ func TestRegistryGetServer(t *testing.T) {
 	defer cleanup()
 
 	wd, _ := os.Getwd()
-		registry, err := mcp.LoadRegistry(registryPath, wd)
+	registry, err := mcp.LoadRegistry(registryPath, wd)
 	require.NoError(t, err)
 
 	t.Run("get existing server", func(t *testing.T) {
@@ -164,7 +164,7 @@ func TestRegistrySearch(t *testing.T) {
 	defer cleanup()
 
 	wd, _ := os.Getwd()
-		registry, err := mcp.LoadRegistry(registryPath, wd)
+	registry, err := mcp.LoadRegistry(registryPath, wd)
 	require.NoError(t, err)
 
 	t.Run("search by name", func(t *testing.T) {
@@ -205,7 +205,7 @@ func TestRegistryFilterByCategory(t *testing.T) {
 	defer cleanup()
 
 	wd, _ := os.Getwd()
-		registry, err := mcp.LoadRegistry(registryPath, wd)
+	registry, err := mcp.LoadRegistry(registryPath, wd)
 	require.NoError(t, err)
 
 	t.Run("filter by category", func(t *testing.T) {
@@ -308,7 +308,7 @@ func TestListServers(t *testing.T) {
 	defer cleanup()
 
 	wd, _ := os.Getwd()
-		registry, err := mcp.LoadRegistry(registryPath, wd)
+	registry, err := mcp.LoadRegistry(registryPath, wd)
 	require.NoError(t, err)
 
 	t.Run("list all", func(t *testing.T) {

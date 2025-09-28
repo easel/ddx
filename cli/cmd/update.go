@@ -38,11 +38,11 @@ type ConflictInfo struct {
 
 // UpdateResult represents the result of an update operation
 type UpdateResult struct {
-	Success     bool
-	Message     string
+	Success      bool
+	Message      string
 	UpdatedFiles []string
-	Conflicts   []ConflictInfo
-	BackupPath  string
+	Conflicts    []ConflictInfo
+	BackupPath   string
 }
 
 // CommandFactory method - CLI interface layer
@@ -393,7 +393,7 @@ func executeUpdateInDir(workingDir string, cfg *config.Config, opts *UpdateOptio
 		}
 	} else {
 		// Simulate updating multiple resources (simplified config doesn't track specific files)
-		result.UpdatedFiles = []string{"library/"}  // Indicate library was updated
+		result.UpdatedFiles = []string{"library/"} // Indicate library was updated
 		if opts.Force {
 			result.Message = "DDx updated successfully! Used force mode to override any conflicts."
 		} else if opts.Strategy != "" {
@@ -478,15 +478,15 @@ func displayUpdateResult(cmd *cobra.Command, result *UpdateResult, opts *UpdateO
 	// Display initial message based on operation type
 	if opts.Resource != "" {
 		if opts.DryRun {
-			cyan.Fprintf(writer,"🔍 Preview update for DDx toolkit: %s...\n", opts.Resource)
+			cyan.Fprintf(writer, "🔍 Preview update for DDx toolkit: %s...\n", opts.Resource)
 		} else {
-			cyan.Fprintf(writer,"🔄 Updating DDx toolkit: %s...\n", opts.Resource)
+			cyan.Fprintf(writer, "🔄 Updating DDx toolkit: %s...\n", opts.Resource)
 		}
 	} else {
 		if opts.DryRun {
-			cyan.Fprintln(writer,"🔍 Preview update for DDx toolkit...")
+			cyan.Fprintln(writer, "🔍 Preview update for DDx toolkit...")
 		} else {
-			cyan.Fprintln(writer,"🔄 Updating DDx toolkit...")
+			cyan.Fprintln(writer, "🔄 Updating DDx toolkit...")
 		}
 	}
 	fmt.Fprintln(out)
@@ -496,7 +496,7 @@ func displayUpdateResult(cmd *cobra.Command, result *UpdateResult, opts *UpdateO
 		if len(result.Conflicts) > 0 {
 			return handleConflictOutput(out, result.Conflicts, opts)
 		}
-		red.Fprintln(writer,"❌", result.Message)
+		red.Fprintln(writer, "❌", result.Message)
 		return nil
 	}
 
@@ -552,18 +552,18 @@ func handleConflictOutput(out interface{}, conflicts []ConflictInfo, opts *Updat
 	red.Fprintln(writer, "⚠️  MERGE CONFLICTS DETECTED")
 	fmt.Fprintln(writer, "")
 
-	fmt.Fprintf(writer,"Found %d conflict(s) that require resolution:\n", len(conflicts))
+	fmt.Fprintf(writer, "Found %d conflict(s) that require resolution:\n", len(conflicts))
 	fmt.Fprintln(writer, "")
 
 	// Display detailed conflict information
 	for i, conflict := range conflicts {
-		red.Fprintf(writer,"❌ Conflict %d: %s (line %d)\n", i+1, conflict.FilePath, conflict.LineNumber)
+		red.Fprintf(writer, "❌ Conflict %d: %s (line %d)\n", i+1, conflict.FilePath, conflict.LineNumber)
 		fmt.Fprintln(writer, "")
 	}
 
 	// Provide resolution guidance
 	fmt.Fprintln(writer, "")
-	cyan.Fprintln(writer,"🔧 RESOLUTION OPTIONS")
+	cyan.Fprintln(writer, "🔧 RESOLUTION OPTIONS")
 	fmt.Fprintln(writer, "")
 	fmt.Fprintln(writer, "Choose one of the following resolution strategies:")
 	fmt.Fprintln(writer, "")

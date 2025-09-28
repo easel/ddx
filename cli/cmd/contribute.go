@@ -26,13 +26,13 @@ type ContributeOptions struct {
 
 // ContributeResult represents the result of a contribute operation
 type ContributeResult struct {
-	Success       bool
-	Message       string
-	Branch        string
-	ResourcePath  string
+	Success           bool
+	Message           string
+	Branch            string
+	ResourcePath      string
 	ValidationResults []ValidationResult
-	PRInfo        *PRInfo
-	DryRunPreview *DryRunInfo
+	PRInfo            *PRInfo
+	DryRunPreview     *DryRunInfo
 }
 
 // ValidationResult represents validation check results
@@ -52,10 +52,10 @@ type PRInfo struct {
 
 // DryRunInfo represents dry run preview information
 type DryRunInfo struct {
-	WouldContribute string
-	Branch          string
-	FilesCount      int
-	HasDocumentation bool
+	WouldContribute    string
+	Branch             string
+	FilesCount         int
+	HasDocumentation   bool
 	ValidationWarnings []string
 }
 
@@ -301,7 +301,7 @@ func performDryRunInDir(workingDir string, cfg *config.Config, opts *ContributeO
 	fullPath := getResourcePath(workingDir, opts.ResourcePath)
 	dryRunInfo := &DryRunInfo{
 		WouldContribute: opts.ResourcePath,
-		Branch:         opts.Branch,
+		Branch:          opts.Branch,
 	}
 
 	if stat, err := os.Stat(fullPath); err == nil {

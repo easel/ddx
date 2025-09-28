@@ -154,7 +154,7 @@ func TestWorkflowCommandCLI(t *testing.T) {
 
 // Helper function to setup helix workflow commands
 func setupHelixWorkflowCommands(t *testing.T) string {
-		workDir := t.TempDir()
+	workDir := t.TempDir()
 
 	commandsDir := filepath.Join(workDir, "library", "workflows", "helix", "commands")
 	require.NoError(t, os.MkdirAll(commandsDir, 0755))
@@ -190,7 +190,7 @@ Continue work on the current user story following HELIX methodology.`
 
 // Helper function to setup empty workspace
 func setupEmptyWorkspace(t *testing.T) string {
-		workDir := t.TempDir()
+	workDir := t.TempDir()
 	return workDir
 }
 

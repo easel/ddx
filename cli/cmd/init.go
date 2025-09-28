@@ -203,7 +203,6 @@ func initProject(workingDir string, opts InitOptions) (*InitResult, error) {
 	return result, nil
 }
 
-
 // isDDxRepository checks if we're in the DDx repository
 func isDDxRepository(workingDir string) bool {
 	// Check for identifying files that indicate this is the DDx repo
@@ -423,10 +422,8 @@ func createProjectConfig(projectName, projectType string) *config.Config {
 		},
 	}
 
-
 	return cfg
 }
-
 
 // validateConfiguration validates the configuration during creation
 func validateConfiguration(cfg *config.Config) error {
@@ -518,7 +515,6 @@ func setupGitSubtreeLibraryPure(cfg *config.Config, workingDir string) error {
 
 	return nil
 }
-
 
 // setupGitSubtreeLibrary sets up the library using git-subtree (CLI wrapper)
 func setupGitSubtreeLibrary(cfg *config.Config, cmd *cobra.Command, workingDir string) error {

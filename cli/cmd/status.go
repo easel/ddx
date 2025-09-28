@@ -537,4 +537,3 @@ func checkUpstreamUpdates() (*UpstreamInfo, error) {
 func getStatusResources() ([]StatusResourceInfo, error) {
 	return getStatusResourcesFromDir("")
 }
-

@@ -162,7 +162,6 @@ You think in terms of system boundaries, data flow, and long-term evolution.
 				factory := NewCommandFactory(workDir)
 				rootCmd := factory.NewRootCommand()
 
-
 				// TODO: Add persona command when implemented
 				// Commands already registered
 				_, err := executeCommand(rootCmd, "persona", "load")
@@ -205,7 +204,7 @@ You think in terms of system boundaries, data flow, and long-term evolution.
 			scenario: "Developer loads specific persona by name",
 			given: func(t *testing.T) (string, string) {
 				// Given: I have personas available and want to load a specific one
-		workDir := t.TempDir()
+				workDir := t.TempDir()
 
 				// Create CLAUDE.md
 				claudeContent := `# CLAUDE.md
@@ -265,7 +264,6 @@ You are a security analyst focused on identifying vulnerabilities and security i
 				factory := NewCommandFactory(workDir)
 				rootCmd := factory.NewRootCommand()
 
-
 				// TODO: Add persona command when implemented
 				// Commands already registered
 				_, err := executeCommand(rootCmd, "persona", "load", "security-analyst")
@@ -321,7 +319,7 @@ func TestAcceptance_US031_BindPersonasToRoles(t *testing.T) {
 			scenario: "Team lead binds specific persona to role in project configuration",
 			given: func(t *testing.T) (string, string) {
 				// Given: I am a team lead with a project and available personas
-		workDir := t.TempDir()
+				workDir := t.TempDir()
 
 				// Create initial .ddx.yml configuration
 				config := `version: "1.0"
@@ -372,7 +370,6 @@ You provide constructive, balanced code reviews that consider both quality and t
 				factory := NewCommandFactory(workDir)
 				rootCmd := factory.NewRootCommand()
 
-
 				// TODO: Add persona command when implemented
 				// Commands already registered
 				_, err := executeCommand(rootCmd, "persona", "bind", "code-reviewer", "balanced-code-reviewer")
@@ -410,7 +407,7 @@ You provide constructive, balanced code reviews that consider both quality and t
 			scenario: "Team lead changes existing persona binding",
 			given: func(t *testing.T) (string, string) {
 				// Given: I have a project with existing persona bindings
-		workDir := t.TempDir()
+				workDir := t.TempDir()
 
 				config := `version: "1.0"
 persona_bindings:
@@ -455,7 +452,6 @@ tags: [modern, efficient]
 				// When: I bind a new persona to an existing role
 				factory := NewCommandFactory(workDir)
 				rootCmd := factory.NewRootCommand()
-
 
 				// TODO: Add persona command when implemented
 				// Commands already registered
@@ -515,7 +511,7 @@ func TestAcceptance_US032_WorkflowAuthorRequiringRoles(t *testing.T) {
 			scenario: "Workflow author specifies required roles for phases and artifacts",
 			given: func(t *testing.T) (string, string) {
 				// Given: I am a workflow author creating a workflow with role requirements
-		workDir := t.TempDir()
+				workDir := t.TempDir()
 
 				// Create workflow with required roles
 				workflowContent := `name: test-workflow
@@ -668,7 +664,7 @@ func TestAcceptance_US033_DeveloperContributingPersonas(t *testing.T) {
 			scenario: "Developer creates new persona for community contribution",
 			given: func(t *testing.T) (string, string) {
 				// Given: I am a developer with a refined interaction pattern I want to share
-		workDir := t.TempDir()
+				workDir := t.TempDir()
 
 				// Simulate developer working directory with DDx
 				config := `version: "1.0"
@@ -786,7 +782,7 @@ func TestAcceptance_US034_DeveloperDiscoveringPersonas(t *testing.T) {
 			scenario: "Developer discovers personas by role for their needs",
 			given: func(t *testing.T) (string, string) {
 				// Given: I am a developer looking for personas for a specific role
-		workDir := t.TempDir()
+				workDir := t.TempDir()
 
 				// Create variety of personas to discover
 				homeDir := t.TempDir()
@@ -832,7 +828,7 @@ tags: [security, vulnerability]
 				}
 
 				for filename, content := range personas {
-				require.NoError(t, os.MkdirAll(filepath.Join(workDir, ".ddx"), 0755))
+					require.NoError(t, os.MkdirAll(filepath.Join(workDir, ".ddx"), 0755))
 					require.NoError(t, os.WriteFile(
 						filepath.Join(personasDir, filename),
 						[]byte(content),
@@ -874,7 +870,7 @@ tags: [security, vulnerability]
 			scenario: "Developer discovers personas by capability tags",
 			given: func(t *testing.T) (string, string) {
 				// Given: I need personas with specific capabilities
-		workDir := t.TempDir()
+				workDir := t.TempDir()
 
 				homeDir := t.TempDir()
 				t.Setenv("HOME", homeDir)
@@ -911,7 +907,7 @@ tags: [security, code-review, strict]
 				}
 
 				for filename, content := range personas {
-				require.NoError(t, os.MkdirAll(filepath.Join(workDir, ".ddx"), 0755))
+					require.NoError(t, os.MkdirAll(filepath.Join(workDir, ".ddx"), 0755))
 					require.NoError(t, os.WriteFile(
 						filepath.Join(personasDir, filename),
 						[]byte(content),
@@ -976,7 +972,7 @@ func TestAcceptance_US035_DeveloperOverridingWorkflowPersonas(t *testing.T) {
 			scenario: "Developer overrides default persona for specific workflow",
 			given: func(t *testing.T) (string, string) {
 				// Given: I have default persona bindings but want different approach for specific workflow
-		workDir := t.TempDir()
+				workDir := t.TempDir()
 
 				// Create .ddx.yml with default bindings
 				config := `version: "1.0"

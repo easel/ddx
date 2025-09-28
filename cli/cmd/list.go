@@ -77,7 +77,6 @@ func listResources(workingDir, resourceType, filter string) (*ListResponse, erro
 		libPath = filepath.Join(workingDir, libPath)
 	}
 
-
 	// Check if library exists
 	if _, err := os.Stat(libPath); os.IsNotExist(err) {
 		return &ListResponse{
@@ -103,7 +102,6 @@ func listResources(workingDir, resourceType, filter string) (*ListResponse, erro
 	for _, resType := range resourceTypes {
 		// Simplified: just use manual discovery (no complex filtering)
 		filteredPaths := discoverResourcesManually(libPath, resType)
-
 
 		var categoryResources []Resource
 		for _, itemPath := range filteredPaths {
@@ -242,7 +240,6 @@ func outputListHuman(cmd *cobra.Command, response *ListResponse, filter, resourc
 
 	return nil
 }
-
 
 // getResourceInfo returns descriptive information about a resource
 func getResourceInfo(path string, entry os.DirEntry) string {
