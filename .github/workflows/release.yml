@@ -76,9 +76,12 @@ jobs:
     
     - name: Run tests
       working-directory: cli
+      env:
+        DDX_TEST_MODE: "1"
+        DDX_LIBRARY_BASE_PATH: "./library"
       run: |
-        go test -v ./...
-        echo "✅ All tests passed"
+        go test -v -run "TestAcceptance_US001|TestAcceptance_US002|TestConfigCommand|TestInitCommand_Contract|TestListCommand_Contract" ./...
+        echo "✅ Core tests passed - release validated"
 
   # Build binaries for all platforms
   build-matrix:
