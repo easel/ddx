@@ -88,6 +88,12 @@ type Registry struct {
 
 	// Claude CLI wrapper for checking installed servers
 	claude *ClaudeWrapper
+
+	// Working directory for resolving library paths
+	workingDir string
+
+	// Library path for direct resource resolution
+	libraryPath string
 }
 
 // ServerReference is a lightweight reference in the registry

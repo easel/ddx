@@ -25,9 +25,8 @@ func TestAcceptance_US007_ConfigureDDxSettings(t *testing.T) {
 
 		// Setup temp project directory
 		tempDir := t.TempDir()
-		require.NoError(t, os.Chdir(tempDir))
 
-		// Create a basic .ddx.yml config file using DDx structure
+		// Create a basic .ddx/config.yaml config file using DDx structure
 		config := `version: "2.0"
 repository:
   url: "https://github.com/test/repo"
@@ -36,12 +35,16 @@ variables:
   author: "Test User"
   email: "test@example.com"
 `
-		require.NoError(t, os.WriteFile(".ddx.yml", []byte(config), 0644))
+		ddxDir := filepath.Join(tempDir, ".ddx")
+		require.NoError(t, os.MkdirAll(ddxDir, 0755))
+		configPath := filepath.Join(ddxDir, "config.yaml")
+		require.NoError(t, os.WriteFile(configPath, []byte(config), 0644))
 
-		rootCmd := getConfigTestRootCommand()
-		output, err := executeCommand(rootCmd, "config", "--show")
+		factory := NewCommandFactory(tempDir)
+		rootCmd := factory.NewRootCommand()
+		output, err := executeCommand(rootCmd, "config", "export")
 
-		require.NoError(t, err, "Config show should work")
+		require.NoError(t, err, "Config export should work")
 		assert.Contains(t, output, "Test User", "Should show author")
 		assert.Contains(t, output, "test@example.com", "Should show email")
 		assert.Contains(t, output, "https://github.com/test/repo", "Should show repository URL")
@@ -55,16 +58,19 @@ variables:
 		// AC: Given I want to change a setting, when I run `ddx config set <key> <value>`, then the setting is updated and confirmed
 
 		tempDir := t.TempDir()
-		require.NoError(t, os.Chdir(tempDir))
 
 		// Create initial config using DDx structure
 		config := `version: "2.0"
 variables:
   author: "Old User"
 `
-		require.NoError(t, os.WriteFile(".ddx.yml", []byte(config), 0644))
+		ddxDir := filepath.Join(tempDir, ".ddx")
+		require.NoError(t, os.MkdirAll(ddxDir, 0755))
+		configPath := filepath.Join(ddxDir, "config.yaml")
+		require.NoError(t, os.WriteFile(configPath, []byte(config), 0644))
 
-		rootCmd := getConfigTestRootCommand()
+		factory := NewCommandFactory(tempDir)
+		rootCmd := factory.NewRootCommand()
 
 		// Set a new value using variables namespace
 		output, err := executeCommand(rootCmd, "config", "set", "variables.author", "New User")
@@ -73,7 +79,7 @@ variables:
 		assert.Contains(t, output, "author", "Should mention the key being set")
 
 		// Verify the value was actually set
-		getCmd := getConfigTestRootCommand()
+		getCmd := factory.NewRootCommand()
 		getOutput, err := executeCommand(getCmd, "config", "get", "variables.author")
 		require.NoError(t, err, "Config get should work")
 		assert.Contains(t, getOutput, "New User", "Should retrieve the updated value")
@@ -83,7 +89,6 @@ variables:
 		// AC: Given I need a specific value, when I run `ddx config get <key>`, then the current value for that key is displayed
 
 		tempDir := t.TempDir()
-		require.NoError(t, os.Chdir(tempDir))
 
 		config := `version: "2.0"
 repository:
@@ -91,9 +96,13 @@ repository:
 variables:
   author: "Specific User"
 `
-		require.NoError(t, os.WriteFile(".ddx.yml", []byte(config), 0644))
+		ddxDir := filepath.Join(tempDir, ".ddx")
+		require.NoError(t, os.MkdirAll(ddxDir, 0755))
+		configPath := filepath.Join(ddxDir, "config.yaml")
+		require.NoError(t, os.WriteFile(configPath, []byte(config), 0644))
 
-		rootCmd := getConfigTestRootCommand()
+		factory := NewCommandFactory(tempDir)
+		rootCmd := factory.NewRootCommand()
 
 		// Get author using variables namespace
 		output, err := executeCommand(rootCmd, "config", "get", "variables.author")
@@ -101,7 +110,7 @@ variables:
 		assert.Contains(t, output, "Specific User", "Should show author value")
 
 		// Get nested value
-		repoCmd := getConfigTestRootCommand()
+		repoCmd := factory.NewRootCommand()
 		repoOutput, err := executeCommand(repoCmd, "config", "get", "repository.url")
 		require.NoError(t, err, "Config get nested value should work")
 		assert.Contains(t, repoOutput, "https://github.com/specific/repo", "Should show repository URL")
@@ -115,16 +124,22 @@ variables:
 		t.Setenv("HOME", homeDir)
 
 		// Create global config
-		globalConfig := `version: "2.0"
+		globalConfigDir := filepath.Join(homeDir, ".ddx")
+		require.NoError(t, os.MkdirAll(globalConfigDir, 0755))
+		globalConfig := `version: "1.0"
+library_base_path: "./library"
+repository:
+  url: "https://github.com/easel/ddx"
+  branch: "main"
+  subtree_prefix: "library"
 variables:
   author: "Global User"
   email: "global@example.com"
 `
-		require.NoError(t, os.WriteFile(filepath.Join(homeDir, ".ddx.yml"), []byte(globalConfig), 0644))
+		require.NoError(t, os.WriteFile(filepath.Join(globalConfigDir, "config.yaml"), []byte(globalConfig), 0644))
 
 		// Setup project directory with local config
 		projectDir := t.TempDir()
-		require.NoError(t, os.Chdir(projectDir))
 
 		localConfig := `version: "2.0"
 repository:
@@ -132,12 +147,16 @@ repository:
 variables:
   author: "Project User"
 `
-		require.NoError(t, os.WriteFile(".ddx.yml", []byte(localConfig), 0644))
+		localDdxDir := filepath.Join(projectDir, ".ddx")
+		require.NoError(t, os.MkdirAll(localDdxDir, 0755))
+		localConfigPath := filepath.Join(localDdxDir, "config.yaml")
+		require.NoError(t, os.WriteFile(localConfigPath, []byte(localConfig), 0644))
 
-		rootCmd := getConfigTestRootCommand()
-		output, err := executeCommand(rootCmd, "config", "--show")
+		factory := NewCommandFactory(projectDir)
+		rootCmd := factory.NewRootCommand()
+		output, err := executeCommand(rootCmd, "config", "export")
 
-		require.NoError(t, err, "Should show merged config")
+		require.NoError(t, err, "Should export merged config")
 		// Project config should override global for author
 		assert.Contains(t, output, "Project User", "Project config should override global")
 		// Global email should be available if not overridden
@@ -147,14 +166,14 @@ variables:
 	t.Run("environment_variable_override", func(t *testing.T) {
 		// AC: Given multiple config sources exist, when settings are loaded, then environment variables override config files
 
-		tempDir := t.TempDir()
-		require.NoError(t, os.Chdir(tempDir))
+	//	// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
 
 		config := `version: "2.0"
 variables:
   author: "Config User"
 `
-		require.NoError(t, os.WriteFile(".ddx.yml", []byte(config), 0644))
+		env := NewTestEnvironment(t)
+		env.CreateConfig(config)
 
 		// Set environment variable
 		t.Setenv("DDX_AUTHOR", "Env User")
@@ -175,12 +194,12 @@ variables:
 	t.Run("configuration_value_validation", func(t *testing.T) {
 		// AC: Given I set a configuration value, when it's saved, then the value is validated against acceptable options
 
-		tempDir := t.TempDir()
-		require.NoError(t, os.Chdir(tempDir))
+	//	// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
 
 		// Create basic config
 		config := `version: "2.0"`
-		require.NoError(t, os.WriteFile(".ddx.yml", []byte(config), 0644))
+		env := NewTestEnvironment(t)
+		env.CreateConfig(config)
 
 		rootCmd := getConfigTestRootCommand()
 
@@ -208,8 +227,7 @@ variables:
 	t.Run("export_import_configurations", func(t *testing.T) {
 		// AC: Given I need to share configs, when I run export/import commands, then configurations can be transferred between systems
 
-		sourceDir := t.TempDir()
-		require.NoError(t, os.Chdir(sourceDir))
+	// sourceDir := t.TempDir() // REMOVED: Using CommandFactory injection
 
 		// Create source config
 		sourceConfig := `version: "2.0"
@@ -218,7 +236,8 @@ email: "export@example.com"
 repository:
   url: "https://github.com/export/repo"
 `
-		require.NoError(t, os.WriteFile(".ddx.yml", []byte(sourceConfig), 0644))
+		env := NewTestEnvironment(t)
+		env.CreateConfig(sourceConfig)
 
 		rootCmd := getConfigTestRootCommand()
 
@@ -227,8 +246,7 @@ repository:
 
 		if exportErr == nil && len(exportOutput) > 0 {
 			// Export is working, test import
-			targetDir := t.TempDir()
-			require.NoError(t, os.Chdir(targetDir))
+			// targetDir := t.TempDir() // REMOVED: Using CommandFactory injection
 
 			importCmd := getConfigTestRootCommand()
 			_, importErr := executeCommand(importCmd, "config", "import", exportOutput)
@@ -251,15 +269,14 @@ repository:
 	t.Run("show_config_file_locations", func(t *testing.T) {
 		// AC: Given I'm troubleshooting, when I run `ddx config --show-files`, then all config file locations are displayed
 
-		tempDir := t.TempDir()
-		require.NoError(t, os.Chdir(tempDir))
+	//	// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
 
 		rootCmd := getConfigTestRootCommand()
 		output, err := executeCommand(rootCmd, "config", "--show-files")
 
 		if err == nil {
 			// --show-files is implemented
-			assert.Contains(t, output, ".ddx.yml", "Should show config file name")
+			assert.Contains(t, output, "config.yaml", "Should show config file name")
 			assert.Contains(t, output, "config", "Should mention configuration")
 		} else {
 			// --show-files needs implementation
@@ -271,8 +288,7 @@ repository:
 	t.Run("configuration_validation_command", func(t *testing.T) {
 		// Test the --validate flag functionality
 
-		tempDir := t.TempDir()
-		require.NoError(t, os.Chdir(tempDir))
+	//	// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
 
 		// Create valid config
 		validConfig := `version: "2.0"
@@ -281,7 +297,8 @@ repository:
   url: "https://github.com/valid/repo"
   branch: "main"
 `
-		require.NoError(t, os.WriteFile(".ddx.yml", []byte(validConfig), 0644))
+		env := NewTestEnvironment(t)
+		env.CreateConfig(validConfig)
 
 		rootCmd := getConfigTestRootCommand()
 		output, err := executeCommand(rootCmd, "config", "--validate")
@@ -293,18 +310,20 @@ repository:
 	t.Run("configuration_error_handling", func(t *testing.T) {
 		// Test various error scenarios
 
-		tempDir := t.TempDir()
-		require.NoError(t, os.Chdir(tempDir))
+	//	// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
 
 		// Create invalid YAML
 		invalidYaml := `version: "2.0"
 author: "Test
 # Missing closing quote - invalid YAML
 `
-		require.NoError(t, os.WriteFile(".ddx.yml", []byte(invalidYaml), 0644))
+		env := NewTestEnvironment(t)
+		// For invalid YAML test, we need to write directly
+		require.NoError(t, os.MkdirAll(filepath.Join(env.Dir, ".ddx"), 0755))
+		require.NoError(t, os.WriteFile(env.ConfigPath, []byte(invalidYaml), 0644))
 
 		rootCmd := getConfigTestRootCommand()
-		output, err := executeCommand(rootCmd, "config", "--show")
+		output, err := executeCommand(rootCmd, "config", "export")
 
 		// Should handle invalid YAML gracefully
 		if err != nil {

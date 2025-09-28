@@ -181,7 +181,6 @@ When responding, adopt the appropriate persona based on the task.
 		t.Run(tt.name, func(t *testing.T) {
 			// Create temporary CLAUDE.md file
 			workDir := t.TempDir()
-			require.NoError(t, os.Chdir(workDir))
 
 			claudePath := filepath.Join(workDir, "CLAUDE.md")
 			require.NoError(t, os.WriteFile(claudePath, []byte(tt.initialContent), 0644))
@@ -337,7 +336,6 @@ When responding, adopt the appropriate persona based on the task.
 		t.Run(tt.name, func(t *testing.T) {
 			// Create temporary CLAUDE.md file
 			workDir := t.TempDir()
-			require.NoError(t, os.Chdir(workDir))
 
 			claudePath := filepath.Join(workDir, "CLAUDE.md")
 			require.NoError(t, os.WriteFile(claudePath, []byte(tt.initialContent), 0644))
@@ -477,7 +475,6 @@ Some content.`,
 		t.Run(tt.name, func(t *testing.T) {
 			// Create temporary CLAUDE.md file
 			workDir := t.TempDir()
-			require.NoError(t, os.Chdir(workDir))
 
 			claudePath := filepath.Join(workDir, "CLAUDE.md")
 			require.NoError(t, os.WriteFile(claudePath, []byte(tt.initialContent), 0644))
@@ -585,7 +582,6 @@ When responding, adopt the appropriate persona based on the task.
 		t.Run(tt.name, func(t *testing.T) {
 			// Create temporary CLAUDE.md file
 			workDir := t.TempDir()
-			require.NoError(t, os.Chdir(workDir))
 
 			claudePath := filepath.Join(workDir, "CLAUDE.md")
 			require.NoError(t, os.WriteFile(claudePath, []byte(tt.content), 0644))
@@ -613,8 +609,7 @@ When responding, adopt the appropriate persona based on the task.
 func TestClaudeInjector_NoClaudeFile(t *testing.T) {
 	// Cannot use t.Parallel() with os.Chdir
 
-	workDir := t.TempDir()
-	require.NoError(t, os.Chdir(workDir))
+	_ = t.TempDir() // Create temp dir but use absolute paths instead of changing directory
 	// No CLAUDE.md file created
 
 	tests := []struct {

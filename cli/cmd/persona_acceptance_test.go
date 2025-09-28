@@ -15,8 +15,8 @@ import (
 // These tests follow the Given/When/Then pattern from user stories US-030 through US-035
 
 // Helper function to create a fresh root command for tests
-func getPersonaTestRootCommand() *cobra.Command {
-	factory := NewCommandFactory("/tmp")
+func getPersonaTestRootCommand(workingDir string) *cobra.Command {
+	factory := NewCommandFactory(workingDir)
 	return factory.NewRootCommand()
 }
 
@@ -35,20 +35,23 @@ func TestAcceptance_US030_LoadPersonasForSession(t *testing.T) {
 			given: func(t *testing.T) (string, string) {
 				// Given: I am a developer with a project that has persona bindings configured
 				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
 
-				// Create .ddx.yml with persona bindings
+				// Create .ddx/config.yaml with persona bindings
+				ddxDir := filepath.Join(workDir, ".ddx")
+				require.NoError(t, os.MkdirAll(ddxDir, 0755))
 				config := `version: "1.0"
+library_base_path: "./library"
 repository:
   url: "https://github.com/test/project"
   branch: "main"
+  subtree_prefix: "library"
 persona_bindings:
-  code-reviewer: strict-code-reviewer
-  test-engineer: test-engineer-tdd
-  architect: architect-systems`
+  code-reviewer: "strict-code-reviewer"
+  test-engineer: "test-engineer-tdd"
+  architect: "architect-systems"`
 
 				require.NoError(t, os.WriteFile(
-					filepath.Join(workDir, ".ddx.yml"),
+					filepath.Join(ddxDir, "config.yaml"),
 					[]byte(config),
 					0644,
 				))
@@ -61,6 +64,7 @@ This is my project's guidance for Claude.
 ## Project Context
 This is a test project for validating persona functionality.`
 
+				require.NoError(t, os.MkdirAll(filepath.Join(workDir, ".ddx"), 0755))
 				require.NoError(t, os.WriteFile(
 					filepath.Join(workDir, "CLAUDE.md"),
 					[]byte(claudeContent),
@@ -130,18 +134,21 @@ You think in terms of system boundaries, data flow, and long-term evolution.
 - Consider operational concerns early
 - Document architectural decisions`
 
+				require.NoError(t, os.MkdirAll(filepath.Join(workDir, ".ddx"), 0755))
 				require.NoError(t, os.WriteFile(
 					filepath.Join(personasDir, "strict-code-reviewer.md"),
 					[]byte(strictReviewerContent),
 					0644,
 				))
 
+				require.NoError(t, os.MkdirAll(filepath.Join(workDir, ".ddx"), 0755))
 				require.NoError(t, os.WriteFile(
 					filepath.Join(personasDir, "test-engineer-tdd.md"),
 					[]byte(tddEngineerContent),
 					0644,
 				))
 
+				require.NoError(t, os.MkdirAll(filepath.Join(workDir, ".ddx"), 0755))
 				require.NoError(t, os.WriteFile(
 					filepath.Join(personasDir, "architect-systems.md"),
 					[]byte(architectContent),
@@ -152,7 +159,10 @@ You think in terms of system boundaries, data flow, and long-term evolution.
 			},
 			when: func(t *testing.T, workDir string) error {
 				// When: I run `ddx persona load` to load all bound personas
-				rootCmd := getPersonaTestRootCommand()
+				factory := NewCommandFactory(workDir)
+				rootCmd := factory.NewRootCommand()
+
+
 				// TODO: Add persona command when implemented
 				// Commands already registered
 				_, err := executeCommand(rootCmd, "persona", "load")
@@ -195,16 +205,29 @@ You think in terms of system boundaries, data flow, and long-term evolution.
 			scenario: "Developer loads specific persona by name",
 			given: func(t *testing.T) (string, string) {
 				// Given: I have personas available and want to load a specific one
-				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
+		workDir := t.TempDir()
 
 				// Create CLAUDE.md
 				claudeContent := `# CLAUDE.md
 
 Project guidance for my application.`
+				require.NoError(t, os.MkdirAll(filepath.Join(workDir, ".ddx"), 0755))
 				require.NoError(t, os.WriteFile(
 					filepath.Join(workDir, "CLAUDE.md"),
 					[]byte(claudeContent),
+					0644,
+				))
+
+				// Create .ddx.yml to make this a valid DDx project
+				config := `version: "1.0"
+repository:
+  url: "https://github.com/test/project"
+  branch: "main"`
+
+				require.NoError(t, os.MkdirAll(filepath.Join(workDir, ".ddx"), 0755))
+				require.NoError(t, os.WriteFile(
+					filepath.Join(workDir, ".ddx", "config.yaml"),
+					[]byte(config),
 					0644,
 				))
 
@@ -228,6 +251,7 @@ tags: [security, vulnerability, compliance]
 
 You are a security analyst focused on identifying vulnerabilities and security issues.`
 
+				require.NoError(t, os.MkdirAll(filepath.Join(workDir, ".ddx"), 0755))
 				require.NoError(t, os.WriteFile(
 					filepath.Join(personasDir, "security-analyst.md"),
 					[]byte(personaContent),
@@ -238,7 +262,10 @@ You are a security analyst focused on identifying vulnerabilities and security i
 			},
 			when: func(t *testing.T, workDir string) error {
 				// When: I run `ddx persona load security-analyst`
-				rootCmd := getPersonaTestRootCommand()
+				factory := NewCommandFactory(workDir)
+				rootCmd := factory.NewRootCommand()
+
+
 				// TODO: Add persona command when implemented
 				// Commands already registered
 				_, err := executeCommand(rootCmd, "persona", "load", "security-analyst")
@@ -266,8 +293,7 @@ You are a security analyst focused on identifying vulnerabilities and security i
 		t.Run(tt.name, func(t *testing.T) {
 			// Commands are isolated via factory, no need to reset
 
-			originalDir, _ := os.Getwd()
-			defer os.Chdir(originalDir)
+			//	// originalDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
 
 			// Given
 			_, workDir := tt.given(t)
@@ -295,8 +321,7 @@ func TestAcceptance_US031_BindPersonasToRoles(t *testing.T) {
 			scenario: "Team lead binds specific persona to role in project configuration",
 			given: func(t *testing.T) (string, string) {
 				// Given: I am a team lead with a project and available personas
-				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
+		workDir := t.TempDir()
 
 				// Create initial .ddx.yml configuration
 				config := `version: "1.0"
@@ -306,8 +331,9 @@ repository:
 variables:
   project_name: "team-project"`
 
+				require.NoError(t, os.MkdirAll(filepath.Join(workDir, ".ddx"), 0755))
 				require.NoError(t, os.WriteFile(
-					filepath.Join(workDir, ".ddx.yml"),
+					filepath.Join(workDir, ".ddx", "config.yaml"),
 					[]byte(config),
 					0644,
 				))
@@ -332,6 +358,7 @@ tags: [balanced, pragmatic, team]
 
 You provide constructive, balanced code reviews that consider both quality and team velocity.`
 
+				require.NoError(t, os.MkdirAll(filepath.Join(workDir, ".ddx"), 0755))
 				require.NoError(t, os.WriteFile(
 					filepath.Join(personasDir, "balanced-code-reviewer.md"),
 					[]byte(personaContent),
@@ -342,7 +369,10 @@ You provide constructive, balanced code reviews that consider both quality and t
 			},
 			when: func(t *testing.T, workDir string) error {
 				// When: I run `ddx persona bind code-reviewer balanced-code-reviewer`
-				rootCmd := getPersonaTestRootCommand()
+				factory := NewCommandFactory(workDir)
+				rootCmd := factory.NewRootCommand()
+
+
 				// TODO: Add persona command when implemented
 				// Commands already registered
 				_, err := executeCommand(rootCmd, "persona", "bind", "code-reviewer", "balanced-code-reviewer")
@@ -355,7 +385,7 @@ You provide constructive, balanced code reviews that consider both quality and t
 				assert.NoError(t, err, "Binding persona should succeed")
 
 				// Verify .ddx.yml has been updated with persona binding
-				configPath := filepath.Join(workDir, ".ddx.yml")
+				configPath := filepath.Join(workDir, ".ddx", "config.yaml")
 				content, readErr := os.ReadFile(configPath)
 				require.NoError(t, readErr)
 
@@ -380,16 +410,16 @@ You provide constructive, balanced code reviews that consider both quality and t
 			scenario: "Team lead changes existing persona binding",
 			given: func(t *testing.T) (string, string) {
 				// Given: I have a project with existing persona bindings
-				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
+		workDir := t.TempDir()
 
 				config := `version: "1.0"
 persona_bindings:
-  code-reviewer: old-reviewer
-  test-engineer: current-tester`
+  code-reviewer: "old-reviewer"
+  test-engineer: "current-tester"`
 
+				require.NoError(t, os.MkdirAll(filepath.Join(workDir, ".ddx"), 0755))
 				require.NoError(t, os.WriteFile(
-					filepath.Join(workDir, ".ddx.yml"),
+					filepath.Join(workDir, ".ddx", "config.yaml"),
 					[]byte(config),
 					0644,
 				))
@@ -412,6 +442,7 @@ tags: [modern, efficient]
 
 # New Reviewer`
 
+				require.NoError(t, os.MkdirAll(filepath.Join(workDir, ".ddx"), 0755))
 				require.NoError(t, os.WriteFile(
 					filepath.Join(personasDir, "new-reviewer.md"),
 					[]byte(personaContent),
@@ -422,7 +453,10 @@ tags: [modern, efficient]
 			},
 			when: func(t *testing.T, workDir string) error {
 				// When: I bind a new persona to an existing role
-				rootCmd := getPersonaTestRootCommand()
+				factory := NewCommandFactory(workDir)
+				rootCmd := factory.NewRootCommand()
+
+
 				// TODO: Add persona command when implemented
 				// Commands already registered
 				_, err := executeCommand(rootCmd, "persona", "bind", "code-reviewer", "new-reviewer")
@@ -435,7 +469,7 @@ tags: [modern, efficient]
 				assert.NoError(t, err, "Updating binding should succeed")
 
 				// Verify binding was updated
-				configPath := filepath.Join(workDir, ".ddx.yml")
+				configPath := filepath.Join(workDir, ".ddx", "config.yaml")
 				content, readErr := os.ReadFile(configPath)
 				require.NoError(t, readErr)
 
@@ -453,8 +487,7 @@ tags: [modern, efficient]
 		t.Run(tt.name, func(t *testing.T) {
 			// Commands are isolated via factory, no need to reset
 
-			originalDir, _ := os.Getwd()
-			defer os.Chdir(originalDir)
+			//	// originalDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
 
 			// Given
 			_, workDir := tt.given(t)
@@ -482,8 +515,7 @@ func TestAcceptance_US032_WorkflowAuthorRequiringRoles(t *testing.T) {
 			scenario: "Workflow author specifies required roles for phases and artifacts",
 			given: func(t *testing.T) (string, string) {
 				// Given: I am a workflow author creating a workflow with role requirements
-				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
+		workDir := t.TempDir()
 
 				// Create workflow with required roles
 				workflowContent := `name: test-workflow
@@ -514,6 +546,7 @@ artifacts:
 
 				workflowDir := filepath.Join(workDir, "workflows", "test-workflow")
 				require.NoError(t, os.MkdirAll(workflowDir, 0755))
+				require.NoError(t, os.MkdirAll(filepath.Join(workDir, ".ddx"), 0755))
 				require.NoError(t, os.WriteFile(
 					filepath.Join(workflowDir, "workflow.yml"),
 					[]byte(workflowContent),
@@ -523,11 +556,12 @@ artifacts:
 				// Create .ddx.yml to make this a valid DDx project
 				config := `version: "1.0"
 persona_bindings:
-  architect: systems-architect
-  test-engineer: test-engineer-tdd`
+  architect: "systems-architect"
+  test-engineer: "test-engineer-tdd"`
 
+				require.NoError(t, os.MkdirAll(filepath.Join(workDir, ".ddx"), 0755))
 				require.NoError(t, os.WriteFile(
-					filepath.Join(workDir, ".ddx.yml"),
+					filepath.Join(workDir, ".ddx", "config.yaml"),
 					[]byte(config),
 					0644,
 				))
@@ -554,12 +588,14 @@ tags: [testing]
 ---
 # TDD Engineer`
 
+				require.NoError(t, os.MkdirAll(filepath.Join(workDir, ".ddx"), 0755))
 				require.NoError(t, os.WriteFile(
 					filepath.Join(personasDir, "systems-architect.md"),
 					[]byte(architectContent),
 					0644,
 				))
 
+				require.NoError(t, os.MkdirAll(filepath.Join(workDir, ".ddx"), 0755))
 				require.NoError(t, os.WriteFile(
 					filepath.Join(personasDir, "test-engineer-tdd.md"),
 					[]byte(tddContent),
@@ -604,8 +640,7 @@ tags: [testing]
 		t.Run(tt.name, func(t *testing.T) {
 			// Commands are isolated via factory, no need to reset
 
-			originalDir, _ := os.Getwd()
-			defer os.Chdir(originalDir)
+			//	// originalDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
 
 			// Given
 			_, workDir := tt.given(t)
@@ -633,8 +668,7 @@ func TestAcceptance_US033_DeveloperContributingPersonas(t *testing.T) {
 			scenario: "Developer creates new persona for community contribution",
 			given: func(t *testing.T) (string, string) {
 				// Given: I am a developer with a refined interaction pattern I want to share
-				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
+		workDir := t.TempDir()
 
 				// Simulate developer working directory with DDx
 				config := `version: "1.0"
@@ -642,8 +676,9 @@ repository:
   url: "https://github.com/ddx-toolkit/ddx"
   branch: "main"`
 
+				require.NoError(t, os.MkdirAll(filepath.Join(workDir, ".ddx"), 0755))
 				require.NoError(t, os.WriteFile(
-					filepath.Join(workDir, ".ddx.yml"),
+					filepath.Join(workDir, ".ddx", "config.yaml"),
 					[]byte(config),
 					0644,
 				))
@@ -723,8 +758,7 @@ Your reviews prioritize performance characteristics and efficient resource utili
 		t.Run(tt.name, func(t *testing.T) {
 			// Commands are isolated via factory, no need to reset
 
-			originalDir, _ := os.Getwd()
-			defer os.Chdir(originalDir)
+			//	// originalDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
 
 			// Given
 			_, workDir := tt.given(t)
@@ -752,8 +786,7 @@ func TestAcceptance_US034_DeveloperDiscoveringPersonas(t *testing.T) {
 			scenario: "Developer discovers personas by role for their needs",
 			given: func(t *testing.T) (string, string) {
 				// Given: I am a developer looking for personas for a specific role
-				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
+		workDir := t.TempDir()
 
 				// Create variety of personas to discover
 				homeDir := t.TempDir()
@@ -799,6 +832,7 @@ tags: [security, vulnerability]
 				}
 
 				for filename, content := range personas {
+				require.NoError(t, os.MkdirAll(filepath.Join(workDir, ".ddx"), 0755))
 					require.NoError(t, os.WriteFile(
 						filepath.Join(personasDir, filename),
 						[]byte(content),
@@ -810,7 +844,8 @@ tags: [security, vulnerability]
 			},
 			when: func(t *testing.T, workDir string) (string, error) {
 				// When: I search for personas by role
-				rootCmd := getPersonaTestRootCommand()
+				factory := NewCommandFactory(workDir)
+				rootCmd := factory.NewRootCommand()
 				// TODO: Add persona command when implemented
 				// Commands already registered
 				return executeCommand(rootCmd, "persona", "list", "--role", "code-reviewer")
@@ -839,8 +874,7 @@ tags: [security, vulnerability]
 			scenario: "Developer discovers personas by capability tags",
 			given: func(t *testing.T) (string, string) {
 				// Given: I need personas with specific capabilities
-				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
+		workDir := t.TempDir()
 
 				homeDir := t.TempDir()
 				t.Setenv("HOME", homeDir)
@@ -877,6 +911,7 @@ tags: [security, code-review, strict]
 				}
 
 				for filename, content := range personas {
+				require.NoError(t, os.MkdirAll(filepath.Join(workDir, ".ddx"), 0755))
 					require.NoError(t, os.WriteFile(
 						filepath.Join(personasDir, filename),
 						[]byte(content),
@@ -888,7 +923,8 @@ tags: [security, code-review, strict]
 			},
 			when: func(t *testing.T, workDir string) (string, error) {
 				// When: I search for personas by tag
-				rootCmd := getPersonaTestRootCommand()
+				factory := NewCommandFactory(workDir)
+				rootCmd := factory.NewRootCommand()
 				// TODO: Add persona command when implemented
 				// Commands already registered
 				return executeCommand(rootCmd, "persona", "list", "--tag", "security")
@@ -912,8 +948,7 @@ tags: [security, code-review, strict]
 		t.Run(tt.name, func(t *testing.T) {
 			// Commands are isolated via factory, no need to reset
 
-			originalDir, _ := os.Getwd()
-			defer os.Chdir(originalDir)
+			//	// originalDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
 
 			// Given
 			_, workDir := tt.given(t)
@@ -941,20 +976,20 @@ func TestAcceptance_US035_DeveloperOverridingWorkflowPersonas(t *testing.T) {
 			scenario: "Developer overrides default persona for specific workflow",
 			given: func(t *testing.T) (string, string) {
 				// Given: I have default persona bindings but want different approach for specific workflow
-				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
+		workDir := t.TempDir()
 
 				// Create .ddx.yml with default bindings
 				config := `version: "1.0"
 persona_bindings:
-  test-engineer: test-engineer-tdd
+  test-engineer: "test-engineer-tdd"
 
 overrides:
   performance-workflow:
-    test-engineer: test-engineer-bdd  # Use BDD approach for performance testing`
+    test-engineer: "test-engineer-bdd"  # Use BDD approach for performance testing`
 
+				require.NoError(t, os.MkdirAll(filepath.Join(workDir, ".ddx"), 0755))
 				require.NoError(t, os.WriteFile(
-					filepath.Join(workDir, ".ddx.yml"),
+					filepath.Join(workDir, ".ddx", "config.yaml"),
 					[]byte(config),
 					0644,
 				))
@@ -981,12 +1016,14 @@ tags: [bdd, behavior]
 ---
 # BDD Engineer`
 
+				require.NoError(t, os.MkdirAll(filepath.Join(workDir, ".ddx"), 0755))
 				require.NoError(t, os.WriteFile(
 					filepath.Join(personasDir, "test-engineer-tdd.md"),
 					[]byte(tddContent),
 					0644,
 				))
 
+				require.NoError(t, os.MkdirAll(filepath.Join(workDir, ".ddx"), 0755))
 				require.NoError(t, os.WriteFile(
 					filepath.Join(personasDir, "test-engineer-bdd.md"),
 					[]byte(bddContent),
@@ -999,7 +1036,7 @@ tags: [bdd, behavior]
 				// When: I execute the performance workflow
 				// TODO: This would be done by workflow engine
 				// For now, just verify the configuration structure is correct
-				configPath := filepath.Join(workDir, ".ddx.yml")
+				configPath := filepath.Join(workDir, ".ddx", "config.yaml")
 				_, err := os.Stat(configPath)
 				return err
 			},
@@ -1008,7 +1045,7 @@ tags: [bdd, behavior]
 				assert.NoError(t, err, "Configuration should exist")
 
 				// Verify override configuration structure
-				configPath := filepath.Join(workDir, ".ddx.yml")
+				configPath := filepath.Join(workDir, ".ddx", "config.yaml")
 				content, readErr := os.ReadFile(configPath)
 				require.NoError(t, readErr)
 
@@ -1036,8 +1073,7 @@ tags: [bdd, behavior]
 		t.Run(tt.name, func(t *testing.T) {
 			// Commands are isolated via factory, no need to reset
 
-			originalDir, _ := os.Getwd()
-			defer os.Chdir(originalDir)
+			//	// originalDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
 
 			// Given
 			_, workDir := tt.given(t)

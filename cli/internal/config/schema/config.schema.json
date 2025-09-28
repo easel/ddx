@@ -1,0 +1,115 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ddx-tools.github.io/schemas/config.schema.json",
+  "title": "DDx Configuration Schema",
+  "description": "Schema for DDx project configuration files (.ddx/config.yaml)",
+  "type": "object",
+  "required": ["version"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+$",
+      "description": "Configuration schema version (e.g., '1.0')",
+      "examples": ["1.0"]
+    },
+    "library_base_path": {
+      "type": "string",
+      "default": "./library",
+      "description": "Path to DDx library relative to config.yaml",
+      "examples": ["./library", "../shared/ddx-library", "/opt/ddx/library"]
+    },
+    "repository": {
+      "type": "object",
+      "description": "Repository configuration for git subtree synchronization",
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "DDx repository URL",
+          "examples": [
+            "https://github.com/easel/ddx",
+            "https://github.com/company/ddx-enterprise"
+          ]
+        },
+        "branch": {
+          "type": "string",
+          "description": "Branch to sync from repository",
+          "default": "main",
+          "examples": ["main", "master", "stable", "v2"]
+        },
+        "subtree_prefix": {
+          "type": "string",
+          "description": "Path within repository to sync (what gets synced to library_base_path)",
+          "default": "library",
+          "examples": ["library", "assets", "content"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "variables": {
+      "type": "object",
+      "description": "Project variables for template substitution",
+      "properties": {
+        "project_name": {
+          "type": "string",
+          "description": "Project identifier used in templates"
+        },
+        "author": {
+          "type": "string",
+          "description": "Author name for templates and git operations"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Author email for templates and git operations"
+        }
+      },
+      "additionalProperties": {
+        "type": "string",
+        "description": "Custom project variables"
+      }
+    },
+    "persona_bindings": {
+      "type": "object",
+      "description": "Bindings between roles and persona names",
+      "additionalProperties": {
+        "type": "string",
+        "description": "Persona name for the role"
+      },
+      "examples": [
+        {
+          "code-reviewer": "strict-reviewer",
+          "test-engineer": "tdd-engineer"
+        }
+      ]
+    }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "version": "1.0",
+      "library_base_path": "./library",
+      "variables": {
+        "project_name": "my-project",
+        "author": "John Doe",
+        "email": "john@example.com"
+      }
+    },
+    {
+      "version": "1.0",
+      "library_base_path": "./library",
+      "repository": {
+        "url": "https://github.com/company/ddx-enterprise",
+        "branch": "stable",
+        "subtree_prefix": "assets"
+      },
+      "variables": {
+        "project_name": "enterprise-app",
+        "author": "Jane Smith",
+        "email": "jane@company.com",
+        "environment": "production",
+        "api_url": "https://api.company.com"
+      }
+    }
+  ]
+}

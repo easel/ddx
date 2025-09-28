@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -10,15 +11,10 @@ import (
 
 // TestUS019_EnvironmentConfigFiles tests US-019: Override Configuration
 func TestUS019_EnvironmentConfigFiles(t *testing.T) {
-	// Save original directory and restore at end
-	origDir, _ := os.Getwd()
-	defer os.Chdir(origDir)
-
 	t.Run("environment_specific_config_files_supported", func(t *testing.T) {
 		// AC: Given environment configs, when present, then .ddx.dev.yml, .ddx.staging.yml are supported
 
 		tempDir := t.TempDir()
-		require.NoError(t, os.Chdir(tempDir))
 
 		// Create base config
 		baseConfig := `version: "2.0"
@@ -30,32 +26,32 @@ variables:
   log_level: "info"
   cache_enabled: "false"
 `
-		require.NoError(t, os.WriteFile(".ddx.yml", []byte(baseConfig), 0644))
+		require.NoError(t, os.WriteFile(filepath.Join(tempDir, ".ddx.yml"), []byte(baseConfig), 0644))
 
 		// Create development override
 		devConfig := `variables:
   log_level: "debug"
   cache_enabled: "false"
 `
-		require.NoError(t, os.WriteFile(".ddx.dev.yml", []byte(devConfig), 0644))
+		require.NoError(t, os.WriteFile(filepath.Join(tempDir, ".ddx.dev.yml"), []byte(devConfig), 0644))
 
 		// Create staging override
 		stagingConfig := `variables:
   api_url: "https://api.staging.com"
   log_level: "warn"
 `
-		require.NoError(t, os.WriteFile(".ddx.staging.yml", []byte(stagingConfig), 0644))
+		require.NoError(t, os.WriteFile(filepath.Join(tempDir, ".ddx.staging.yml"), []byte(stagingConfig), 0644))
 
 		// Test dev environment
 		t.Setenv("DDX_ENV", "dev")
-		config, err := Load()
+		config, err := LoadWithWorkingDir(tempDir)
 		require.NoError(t, err)
 		assert.Equal(t, "debug", config.Variables["log_level"], "Dev config should override log_level")
 		assert.Equal(t, "http://localhost:3000", config.Variables["api_url"], "Dev config should preserve base api_url")
 
 		// Test staging environment
 		t.Setenv("DDX_ENV", "staging")
-		config, err = Load()
+		config, err = LoadWithWorkingDir(tempDir)
 		require.NoError(t, err)
 		assert.Equal(t, "warn", config.Variables["log_level"], "Staging config should override log_level")
 		assert.Equal(t, "https://api.staging.com", config.Variables["api_url"], "Staging config should override api_url")
@@ -65,44 +61,43 @@ variables:
 		// AC: Given DDX_ENV variable, when set, then appropriate override file is selected
 
 		tempDir := t.TempDir()
-		require.NoError(t, os.Chdir(tempDir))
 
 		baseConfig := `version: "2.0"
 variables:
   env_name: "base"
 `
-		require.NoError(t, os.WriteFile(".ddx.yml", []byte(baseConfig), 0644))
+		require.NoError(t, os.WriteFile(filepath.Join(tempDir, ".ddx.yml"), []byte(baseConfig), 0644))
 
 		// Create different environment overrides
 		prodConfig := `variables:
   env_name: "production"
   api_url: "https://api.production.com"
 `
-		require.NoError(t, os.WriteFile(".ddx.prod.yml", []byte(prodConfig), 0644))
+		require.NoError(t, os.WriteFile(filepath.Join(tempDir, ".ddx.prod.yml"), []byte(prodConfig), 0644))
 
 		testConfig := `variables:
   env_name: "test"
   debug: "true"
 `
-		require.NoError(t, os.WriteFile(".ddx.test.yml", []byte(testConfig), 0644))
+		require.NoError(t, os.WriteFile(filepath.Join(tempDir, ".ddx.test.yml"), []byte(testConfig), 0644))
 
 		// Test production environment
 		t.Setenv("DDX_ENV", "prod")
-		config, err := Load()
+		config, err := LoadWithWorkingDir(tempDir)
 		require.NoError(t, err)
 		assert.Equal(t, "production", config.Variables["env_name"])
 		assert.Equal(t, "https://api.production.com", config.Variables["api_url"])
 
 		// Test test environment
 		t.Setenv("DDX_ENV", "test")
-		config, err = Load()
+		config, err = LoadWithWorkingDir(tempDir)
 		require.NoError(t, err)
 		assert.Equal(t, "test", config.Variables["env_name"])
 		assert.Equal(t, "true", config.Variables["debug"])
 
 		// Test no environment (should use base)
 		os.Unsetenv("DDX_ENV")
-		config, err = Load()
+		config, err = LoadWithWorkingDir(tempDir)
 		require.NoError(t, err)
 		assert.Equal(t, "base", config.Variables["env_name"])
 		assert.NotContains(t, config.Variables, "api_url")
@@ -113,7 +108,6 @@ variables:
 		// AC: Given overrides, when loaded, then they merge correctly with base configuration
 
 		tempDir := t.TempDir()
-		require.NoError(t, os.Chdir(tempDir))
 
 		baseConfig := `version: "2.0"
 repository:
@@ -129,7 +123,7 @@ variables:
   cache_enabled: "false"
   base_only: "value"
 `
-		require.NoError(t, os.WriteFile(".ddx.yml", []byte(baseConfig), 0644))
+		require.NoError(t, os.WriteFile(filepath.Join(tempDir, ".ddx.yml"), []byte(baseConfig), 0644))
 
 		envConfig := `repository:
   branch: "develop"
@@ -139,10 +133,10 @@ variables:
   log_level: "debug"
   env_only: "env_value"
 `
-		require.NoError(t, os.WriteFile(".ddx.dev.yml", []byte(envConfig), 0644))
+		require.NoError(t, os.WriteFile(filepath.Join(tempDir, ".ddx.dev.yml"), []byte(envConfig), 0644))
 
 		t.Setenv("DDX_ENV", "dev")
-		config, err := Load()
+		config, err := LoadWithWorkingDir(tempDir)
 		require.NoError(t, err)
 
 		// Repository should merge
@@ -167,7 +161,6 @@ variables:
 		// AC: Given any config value, when overridden, then override takes precedence
 
 		tempDir := t.TempDir()
-		require.NoError(t, os.Chdir(tempDir))
 
 		baseConfig := `version: "1.0"
 repository:
@@ -177,7 +170,7 @@ variables:
   all_override: "base_value"
   partial_override: "base_value"
 `
-		require.NoError(t, os.WriteFile(".ddx.yml", []byte(baseConfig), 0644))
+		require.NoError(t, os.WriteFile(filepath.Join(tempDir, ".ddx.yml"), []byte(baseConfig), 0644))
 
 		overrideConfig := `version: "2.0"
 repository:
@@ -187,10 +180,10 @@ variables:
   all_override: "override_value"
   partial_override: "override_value"
 `
-		require.NoError(t, os.WriteFile(".ddx.prod.yml", []byte(overrideConfig), 0644))
+		require.NoError(t, os.WriteFile(filepath.Join(tempDir, ".ddx.prod.yml"), []byte(overrideConfig), 0644))
 
 		t.Setenv("DDX_ENV", "prod")
-		config, err := Load()
+		config, err := LoadWithWorkingDir(tempDir)
 		require.NoError(t, err)
 
 		// All overridden values should use override
@@ -205,7 +198,6 @@ variables:
 		// AC: Given partial configs, when used as overrides, then only specified values are changed
 
 		tempDir := t.TempDir()
-		require.NoError(t, os.Chdir(tempDir))
 
 		baseConfig := `version: "2.0"
 repository:
@@ -217,16 +209,16 @@ variables:
   var2: "base2"
   var3: "base3"
 `
-		require.NoError(t, os.WriteFile(".ddx.yml", []byte(baseConfig), 0644))
+		require.NoError(t, os.WriteFile(filepath.Join(tempDir, ".ddx.yml"), []byte(baseConfig), 0644))
 
 		// Partial override - only changes var2
 		partialConfig := `variables:
   var2: "overridden2"
 `
-		require.NoError(t, os.WriteFile(".ddx.partial.yml", []byte(partialConfig), 0644))
+		require.NoError(t, os.WriteFile(filepath.Join(tempDir, ".ddx.partial.yml"), []byte(partialConfig), 0644))
 
 		t.Setenv("DDX_ENV", "partial")
-		config, err := Load()
+		config, err := LoadWithWorkingDir(tempDir)
 		require.NoError(t, err)
 
 		// Only var2 should be overridden
@@ -243,17 +235,16 @@ variables:
 		// Edge case: Missing environment override file when DDX_ENV is set
 
 		tempDir := t.TempDir()
-		require.NoError(t, os.Chdir(tempDir))
 
 		baseConfig := `version: "2.0"
 variables:
   env: "base"
 `
-		require.NoError(t, os.WriteFile(".ddx.yml", []byte(baseConfig), 0644))
+		require.NoError(t, os.WriteFile(filepath.Join(tempDir, ".ddx.yml"), []byte(baseConfig), 0644))
 
 		// Set environment but don't create the file
 		t.Setenv("DDX_ENV", "nonexistent")
-		config, err := Load()
+		config, err := LoadWithWorkingDir(tempDir)
 
 		// Should load successfully with just base config
 		require.NoError(t, err, "Should handle missing environment file gracefully")
@@ -264,19 +255,18 @@ variables:
 		// Edge case: Empty override files
 
 		tempDir := t.TempDir()
-		require.NoError(t, os.Chdir(tempDir))
 
 		baseConfig := `version: "2.0"
 variables:
   test: "base"
 `
-		require.NoError(t, os.WriteFile(".ddx.yml", []byte(baseConfig), 0644))
+		require.NoError(t, os.WriteFile(filepath.Join(tempDir, ".ddx.yml"), []byte(baseConfig), 0644))
 
 		// Create empty override file
-		require.NoError(t, os.WriteFile(".ddx.empty.yml", []byte(""), 0644))
+		require.NoError(t, os.WriteFile(filepath.Join(tempDir, ".ddx.empty.yml"), []byte(""), 0644))
 
 		t.Setenv("DDX_ENV", "empty")
-		config, err := Load()
+		config, err := LoadWithWorkingDir(tempDir)
 		require.NoError(t, err, "Should handle empty override file")
 		assert.Equal(t, "base", config.Variables["test"], "Base config should be preserved")
 	})
@@ -285,23 +275,22 @@ variables:
 		// Edge case: Invalid override file syntax
 
 		tempDir := t.TempDir()
-		require.NoError(t, os.Chdir(tempDir))
 
 		baseConfig := `version: "2.0"
 variables:
   test: "base"
 `
-		require.NoError(t, os.WriteFile(".ddx.yml", []byte(baseConfig), 0644))
+		require.NoError(t, os.WriteFile(filepath.Join(tempDir, ".ddx.yml"), []byte(baseConfig), 0644))
 
 		// Create invalid YAML override file
 		invalidConfig := `version: "2.0"
 variables:
   test: [invalid: yaml: syntax
 `
-		require.NoError(t, os.WriteFile(".ddx.invalid.yml", []byte(invalidConfig), 0644))
+		require.NoError(t, os.WriteFile(filepath.Join(tempDir, ".ddx.invalid.yml"), []byte(invalidConfig), 0644))
 
 		t.Setenv("DDX_ENV", "invalid")
-		_, err := Load()
+		_, err := LoadWithWorkingDir(tempDir)
 
 		// Should fail with clear error
 		require.Error(t, err, "Should fail on invalid YAML syntax")
@@ -311,15 +300,10 @@ variables:
 
 // TestUS019_PrecedenceOrder tests the precedence order implementation
 func TestUS019_PrecedenceOrder(t *testing.T) {
-	// Save original directory and restore at end
-	origDir, _ := os.Getwd()
-	defer os.Chdir(origDir)
-
 	t.Run("precedence_order_correct", func(t *testing.T) {
 		// Test precedence: Command-line flags > Environment override > Base config > Defaults
 
 		tempDir := t.TempDir()
-		require.NoError(t, os.Chdir(tempDir))
 
 		// 1. Base configuration
 		baseConfig := `version: "2.0"
@@ -327,17 +311,17 @@ variables:
   test_var: "base_value"
   base_only: "base"
 `
-		require.NoError(t, os.WriteFile(".ddx.yml", []byte(baseConfig), 0644))
+		require.NoError(t, os.WriteFile(filepath.Join(tempDir, ".ddx.yml"), []byte(baseConfig), 0644))
 
 		// 2. Environment override
 		envConfig := `variables:
   test_var: "env_value"
   env_only: "env"
 `
-		require.NoError(t, os.WriteFile(".ddx.test.yml", []byte(envConfig), 0644))
+		require.NoError(t, os.WriteFile(filepath.Join(tempDir, ".ddx.test.yml"), []byte(envConfig), 0644))
 
 		t.Setenv("DDX_ENV", "test")
-		config, err := Load()
+		config, err := LoadWithWorkingDir(tempDir)
 		require.NoError(t, err)
 
 		// Environment should override base
@@ -352,13 +336,8 @@ variables:
 
 // TestUS019_AcceptanceCriteria tests all acceptance criteria for US-019
 func TestUS019_AcceptanceCriteria(t *testing.T) {
-	// Save original directory and restore at end
-	origDir, _ := os.Getwd()
-	defer os.Chdir(origDir)
-
 	t.Run("all_acceptance_criteria", func(t *testing.T) {
 		tempDir := t.TempDir()
-		require.NoError(t, os.Chdir(tempDir))
 
 		// Setup base config
 		baseConfig := `version: "2.0"
@@ -370,30 +349,30 @@ variables:
   log_level: "info"
   cache_enabled: "false"
 `
-		require.NoError(t, os.WriteFile(".ddx.yml", []byte(baseConfig), 0644))
+		require.NoError(t, os.WriteFile(filepath.Join(tempDir, ".ddx.yml"), []byte(baseConfig), 0644))
 
 		// Setup multiple environment configs
 		devConfig := `variables:
   log_level: "debug"
 `
-		require.NoError(t, os.WriteFile(".ddx.dev.yml", []byte(devConfig), 0644))
+		require.NoError(t, os.WriteFile(filepath.Join(tempDir, ".ddx.dev.yml"), []byte(devConfig), 0644))
 
 		prodConfig := `variables:
   api_url: "https://api.production.com"
   log_level: "error"
   cache_enabled: "true"
 `
-		require.NoError(t, os.WriteFile(".ddx.prod.yml", []byte(prodConfig), 0644))
+		require.NoError(t, os.WriteFile(filepath.Join(tempDir, ".ddx.prod.yml"), []byte(prodConfig), 0644))
 
 		// AC: Environment configs are supported
 		t.Setenv("DDX_ENV", "dev")
-		devLoadedConfig, err := Load()
+		devLoadedConfig, err := LoadWithWorkingDir(tempDir)
 		require.NoError(t, err)
 		assert.Equal(t, "debug", devLoadedConfig.Variables["log_level"])
 
 		// AC: DDX_ENV variable selects appropriate file
 		t.Setenv("DDX_ENV", "prod")
-		prodLoadedConfig, err := Load()
+		prodLoadedConfig, err := LoadWithWorkingDir(tempDir)
 		require.NoError(t, err)
 		assert.Equal(t, "error", prodLoadedConfig.Variables["log_level"])
 		assert.Equal(t, "https://api.production.com", prodLoadedConfig.Variables["api_url"])
@@ -406,7 +385,7 @@ variables:
 
 		// AC: Partial configs only change specified values
 		t.Setenv("DDX_ENV", "dev")
-		devPartialConfig, err := Load()
+		devPartialConfig, err := LoadWithWorkingDir(tempDir)
 		require.NoError(t, err)
 		assert.Equal(t, "debug", devPartialConfig.Variables["log_level"], "Only log_level overridden")
 		assert.Equal(t, "http://localhost:3000", devPartialConfig.Variables["api_url"], "api_url preserved from base")

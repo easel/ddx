@@ -15,11 +15,18 @@ import (
 
 // runPromptsList implements the prompts list command
 func runPromptsList(cmd *cobra.Command, args []string) error {
-	// Get library path
-	libPath, err := config.GetLibraryPath(getLibraryPath())
-	if err != nil {
-		return fmt.Errorf("failed to get library path: %w", err)
+	// Get working directory from command factory context
+	workingDir := "."
+	if factory, ok := cmd.Context().Value("factory").(*CommandFactory); ok {
+		workingDir = factory.WorkingDir
 	}
+
+	// Get library path using working directory
+	cfg, err := config.LoadWithWorkingDir(workingDir)
+	if err != nil {
+		return fmt.Errorf("failed to load config: %w", err)
+	}
+	libPath := cfg.LibraryBasePath
 
 	promptsDir := filepath.Join(libPath, "prompts")
 
@@ -90,11 +97,18 @@ func runPromptsList(cmd *cobra.Command, args []string) error {
 func runPromptsShow(cmd *cobra.Command, args []string) error {
 	promptName := args[0]
 
-	// Get library path
-	libPath, err := config.GetLibraryPath(getLibraryPath())
-	if err != nil {
-		return fmt.Errorf("failed to get library path: %w", err)
+	// Get working directory from command factory context
+	workingDir := "."
+	if factory, ok := cmd.Context().Value("factory").(*CommandFactory); ok {
+		workingDir = factory.WorkingDir
 	}
+
+	// Get library path using working directory
+	cfg, err := config.LoadWithWorkingDir(workingDir)
+	if err != nil {
+		return fmt.Errorf("failed to load config: %w", err)
+	}
+	libPath := cfg.LibraryBasePath
 
 	// Try different paths for the prompt
 	possiblePaths := []string{

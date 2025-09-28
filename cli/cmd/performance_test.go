@@ -26,9 +26,8 @@ func getPerfTestRootCommand() *cobra.Command {
 func BenchmarkInitCommand(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()
-		tempDir := b.TempDir()
-		originalDir, _ := os.Getwd()
-		os.Chdir(tempDir)
+		_ = b.TempDir()
+		//	// originalDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
 
 		rootCmd := getPerfTestRootCommand()
 
@@ -36,7 +35,6 @@ func BenchmarkInitCommand(b *testing.B) {
 		executeCommand(rootCmd, "init")
 		b.StopTimer()
 
-		os.Chdir(originalDir)
 	}
 }
 
@@ -109,7 +107,6 @@ func BenchmarkApplyTemplate(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				b.StopTimer()
 				workDir := b.TempDir()
-				os.Chdir(workDir)
 
 				// Create config
 				config := `version: "1.0"`
@@ -148,8 +145,7 @@ func TestPerformance_MemoryUsage(t *testing.T) {
 		{
 			name: "config_command_memory",
 			operation: func() {
-				workDir := t.TempDir()
-				os.Chdir(workDir)
+				workDir := os.TempDir()
 
 				config := `version: "1.0"`
 				os.WriteFile(filepath.Join(workDir, ".ddx.yml"), []byte(config), 0644)
@@ -344,8 +340,7 @@ func TestPerformance_LargeFileHandling(t *testing.T) {
 			os.WriteFile(largeFile, content, 0644)
 
 			// Setup work directory
-			workDir := t.TempDir()
-			os.Chdir(workDir)
+			workDir := os.TempDir()
 
 			config := `version: "1.0"`
 			os.WriteFile(filepath.Join(workDir, ".ddx.yml"), []byte(config), 0644)

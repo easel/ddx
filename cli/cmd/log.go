@@ -3,14 +3,38 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
 )
+
+// LogEntry represents a single log entry
+type LogEntry struct {
+	Hash    string   `json:"hash"`
+	Date    string   `json:"date"`
+	Author  string   `json:"author"`
+	Message string   `json:"message"`
+	Files   []string `json:"files,omitempty"`
+	Changes string   `json:"changes,omitempty"`
+}
+
+// LogOptions contains options for retrieving log history
+type LogOptions struct {
+	Limit      int
+	Oneline    bool
+	Diff       bool
+	Since      string
+	Author     string
+	Grep       string
+	PathFilter string
+	Export     string
+}
 
 var logCmd = &cobra.Command{
 	Use:   "log",
@@ -32,18 +56,17 @@ Examples:
 
 // Remove init function - commands are now registered via command factory
 
+// CLI Interface Layer - handles UI concerns only
 func runLog(cmd *cobra.Command, args []string) error {
-	// Verify we're in a DDX project
-	if !isDDXProject() {
-		return fmt.Errorf("not a DDX project - run 'ddx init' first")
-	}
+	return runLogWithWorkingDir(cmd, args, "")
+}
 
-	ddxDir := ".ddx"
-	if _, err := os.Stat(ddxDir); os.IsNotExist(err) {
-		return fmt.Errorf("DDX directory not found - project may not be properly initialized")
-	}
+func (f *CommandFactory) runLog(cmd *cobra.Command, args []string) error {
+	return runLogWithWorkingDir(cmd, args, f.WorkingDir)
+}
 
-	// Get flag values
+func runLogWithWorkingDir(cmd *cobra.Command, args []string, workingDir string) error {
+	// Extract flags - CLI interface layer responsibility
 	logLimit, _ := cmd.Flags().GetInt("number")
 	logLimitAlt, _ := cmd.Flags().GetInt("limit")
 	logOneline, _ := cmd.Flags().GetBool("oneline")
@@ -64,120 +87,223 @@ func runLog(cmd *cobra.Command, args []string) error {
 		pathFilter = args[0]
 	}
 
-	// Handle export functionality
-	if logExport != "" {
-		return exportLog(ddxDir, logExport, logLimit, logOneline, logDiff, logSince, logAuthor, logGrep, pathFilter)
+	// Build options
+	opts := LogOptions{
+		Limit:      logLimit,
+		Oneline:    logOneline,
+		Diff:       logDiff,
+		Since:      logSince,
+		Author:     logAuthor,
+		Grep:       logGrep,
+		PathFilter: pathFilter,
+		Export:     logExport,
 	}
 
-	return showGitLog(cmd, ddxDir, logLimit, logOneline, logDiff, logSince, logAuthor, logGrep, pathFilter)
+	// Handle export functionality
+	if logExport != "" {
+		return handleLogExport(workingDir, opts)
+	}
+
+	return handleLogDisplay(cmd.OutOrStdout(), cmd.ErrOrStderr(), workingDir, opts)
 }
 
-func showGitLog(cmd *cobra.Command, ddxDir string, logLimit int, logOneline, logDiff bool, logSince, logAuthor, logGrep, pathFilter string) error {
+// CLI handlers - handle presentation and user interaction
+func handleLogDisplay(stdout, stderr io.Writer, workingDir string, opts LogOptions) error {
+	entries, err := logHistory(workingDir, opts)
+	if err != nil {
+		return err
+	}
+
+	// Present log entries to user
+	fmt.Fprintln(stdout, "DDX Asset History")
+	fmt.Fprintln(stdout, "================")
+	fmt.Fprintln(stdout)
+
+	if len(entries) == 0 {
+		fmt.Fprintln(stdout, "No log entries found.")
+		return nil
+	}
+
+	if opts.Oneline {
+		// Compact format
+		for _, entry := range entries {
+			fmt.Fprintf(stdout, "%s %s %s\n", entry.Hash[:8], entry.Date, entry.Message)
+		}
+	} else {
+		// Detailed format
+		for i, entry := range entries {
+			if i > 0 {
+				fmt.Fprintln(stdout)
+			}
+			fmt.Fprintf(stdout, "commit %s\n", entry.Hash)
+			fmt.Fprintf(stdout, "Date: %s\n", entry.Date)
+			fmt.Fprintf(stdout, "Author: %s\n", entry.Author)
+			fmt.Fprintf(stdout, "\n    %s\n", entry.Message)
+			if opts.Diff && entry.Changes != "" {
+				fmt.Fprintf(stdout, "\n%s\n", entry.Changes)
+			}
+		}
+	}
+
+	return nil
+}
+
+func handleLogExport(workingDir string, opts LogOptions) error {
+	entries, err := logHistory(workingDir, opts)
+	if err != nil {
+		return err
+	}
+
+	return exportLogEntries(entries, opts.Export)
+}
+
+// Business Logic Layer - pure functions that return data
+// logHistory returns log entries from the DDX directory
+func logHistory(workingDir string, opts LogOptions) ([]LogEntry, error) {
+	// Determine DDX directory path
+	ddxDir := ".ddx"
+	if workingDir != "" {
+		ddxDir = filepath.Join(workingDir, ".ddx")
+	}
+
+	// Verify DDX project exists
+	if !isDDXProjectInDir(workingDir) {
+		return nil, fmt.Errorf("not a DDX project - run 'ddx init' first")
+	}
+
+	if _, err := os.Stat(ddxDir); os.IsNotExist(err) {
+		return nil, fmt.Errorf("DDX directory not found - project may not be properly initialized")
+	}
+
+	// Try to get git log data first
+	entries, err := getGitLogData(ddxDir, opts)
+	if err != nil {
+		// Fallback to file-based data
+		return getFileBasedLogData(ddxDir, opts)
+	}
+
+	return entries, nil
+}
+
+// isDDXProjectInDir checks if a directory contains a DDX project
+func isDDXProjectInDir(workingDir string) bool {
+	if workingDir == "" {
+		return isDDXProject()
+	}
+
+	ddxFile := filepath.Join(workingDir, ".ddx.yml")
+	if _, err := os.Stat(ddxFile); err == nil {
+		return true
+	}
+
+	ddxDir := filepath.Join(workingDir, ".ddx")
+	if _, err := os.Stat(ddxDir); err == nil {
+		return true
+	}
+
+	return false
+}
+
+// getGitLogData retrieves log data from git in the given directory
+func getGitLogData(ddxDir string, opts LogOptions) ([]LogEntry, error) {
 	// Build git log command
 	args := []string{"log"}
 
 	// Add limit
-	if logLimit > 0 {
-		args = append(args, "-n", strconv.Itoa(logLimit))
+	if opts.Limit > 0 {
+		args = append(args, "-n", strconv.Itoa(opts.Limit))
 	}
 
-	// Add format options
-	if logOneline {
-		args = append(args, "--oneline")
-	} else {
-		args = append(args, "--pretty=format:%C(yellow)%h %C(blue)%ad %C(reset)%s %C(green)(%an)%C(reset)")
-		args = append(args, "--date=short")
-	}
-
-	// Add diff options
-	if logDiff {
-		if logOneline {
-			args = append(args, "--stat")
-		} else {
-			args = append(args, "--patch")
-		}
-	}
+	// Add format for structured parsing
+	args = append(args, "--pretty=format:%H|%ad|%an|%s", "--date=short")
 
 	// Add filters
-	if logSince != "" {
-		args = append(args, "--since", logSince)
+	if opts.Since != "" {
+		args = append(args, "--since", opts.Since)
 	}
 
-	if logAuthor != "" {
-		args = append(args, "--author", logAuthor)
+	if opts.Author != "" {
+		args = append(args, "--author", opts.Author)
 	}
 
-	if logGrep != "" {
-		args = append(args, "--grep", logGrep)
+	if opts.Grep != "" {
+		args = append(args, "--grep", opts.Grep)
 	}
 
 	// Add path filter
-	if pathFilter != "" {
-		args = append(args, "--", pathFilter)
+	if opts.PathFilter != "" {
+		args = append(args, "--", opts.PathFilter)
 	}
 
 	// Execute git log command
 	gitCmd := exec.Command("git", args...)
 	gitCmd.Dir = ddxDir
-	gitCmd.Stdout = cmd.OutOrStdout()
-	gitCmd.Stderr = cmd.ErrOrStderr()
-
-	err := gitCmd.Run()
+	output, err := gitCmd.Output()
 	if err != nil {
-		// If git is not available or no repository, show alternative information
-		return showAlternativeLog(cmd, ddxDir, pathFilter, logLimit, logDiff)
+		return nil, fmt.Errorf("git log failed: %w", err)
 	}
 
-	return nil
-}
+	// Parse git log output
+	entries := []LogEntry{}
+	lines := strings.Split(string(output), "\n")
+	for _, line := range lines {
+		if line == "" {
+			continue
+		}
+		parts := strings.SplitN(line, "|", 4)
+		if len(parts) == 4 {
+			entry := LogEntry{
+				Hash:    parts[0],
+				Date:    parts[1],
+				Author:  parts[2],
+				Message: parts[3],
+			}
 
-func showAlternativeLog(cmd *cobra.Command, ddxDir, pathFilter string, logLimit int, logDiff bool) error {
-	fmt.Fprintln(cmd.OutOrStdout(), "DDX Asset History")
-	fmt.Fprintln(cmd.OutOrStdout(), "=================")
-	fmt.Fprintln(cmd.OutOrStdout())
+			// Add diff if requested
+			if opts.Diff {
+				changes, _ := getGitDiffForCommit(ddxDir, entry.Hash)
+				entry.Changes = changes
+			}
 
-	// Get file modification times as a fallback
-	fmt.Fprintln(cmd.OutOrStdout(), "Recent Changes (based on file modification times):")
-	fmt.Fprintln(cmd.OutOrStdout())
-
-	// This is a simplified version that shows file modifications
-	// In a real implementation, this would be more sophisticated
-	fmt.Fprintln(cmd.OutOrStdout(), "Note: Git history not available. Showing file-based history.")
-	fmt.Fprintln(cmd.OutOrStdout(), "Initialize git in .ddx directory for full history tracking.")
-	fmt.Fprintln(cmd.OutOrStdout())
-
-	// Build find command with optional path filter
-	findArgs := []string{ddxDir, "-type", "f"}
-	if pathFilter != "" {
-		findArgs = append(findArgs, "-path", "*"+pathFilter+"*")
-	}
-	findArgs = append(findArgs, "-printf", "%TY-%Tm-%Td %TH:%TM %p\n")
-
-	// Show recent files by modification time
-	findCmd := exec.Command("find", findArgs...)
-	findCmd.Stdout = cmd.OutOrStdout()
-	err := findCmd.Run()
-
-	if err != nil {
-		// Fallback for systems without find -printf
-		return showBasicFileList(cmd, ddxDir)
+			entries = append(entries, entry)
+		}
 	}
 
-	return nil
+	return entries, nil
 }
 
-func showBasicFileList(cmd *cobra.Command, ddxDir string) error {
-	fmt.Fprintln(cmd.OutOrStdout(), "DDX Files:")
-
-	lsCmd := exec.Command("ls", "-la", ddxDir)
-	lsCmd.Stdout = cmd.OutOrStdout()
-	lsCmd.Stderr = cmd.ErrOrStderr()
-
-	return lsCmd.Run()
+// getGitDiffForCommit gets the diff for a specific commit
+func getGitDiffForCommit(ddxDir, hash string) (string, error) {
+	cmd := exec.Command("git", "show", "--stat", hash)
+	cmd.Dir = ddxDir
+	output, err := cmd.Output()
+	return string(output), err
 }
 
-// exportLog handles exporting log data to various formats
-func exportLog(ddxDir, exportPath string, logLimit int, logOneline, logDiff bool, logSince, logAuthor, logGrep, pathFilter string) error {
+// getFileBasedLogData creates log entries from file modification times
+func getFileBasedLogData(ddxDir string, opts LogOptions) ([]LogEntry, error) {
+	entries := []LogEntry{}
+
+	// Create a simple entry based on DDX directory
+	entry := LogEntry{
+		Hash:    "file-based",
+		Date:    time.Now().Format("2006-01-02"),
+		Author:  "DDX System",
+		Message: "File-based history (git not available)",
+		Files:   []string{ddxDir},
+	}
+
+	if opts.PathFilter != "" {
+		entry.Message = fmt.Sprintf("File-based history for %s (git not available)", opts.PathFilter)
+		entry.Files = []string{opts.PathFilter}
+	}
+
+	entries = append(entries, entry)
+	return entries, nil
+}
+
+// exportLogEntries exports log entries to a file
+func exportLogEntries(entries []LogEntry, exportPath string) error {
 	// Determine export format from file extension
 	format := "markdown" // default
 	if strings.HasSuffix(exportPath, ".json") {
@@ -195,69 +321,20 @@ func exportLog(ddxDir, exportPath string, logLimit int, logOneline, logDiff bool
 	}
 	defer file.Close()
 
-	// Try to get git log data first
-	gitLog, err := getGitLogData(ddxDir, logLimit, logOneline, logDiff, logSince, logAuthor, logGrep, pathFilter)
-	if err != nil {
-		// Fallback to file-based data
-		gitLog, err = getFileBasedLogData(ddxDir, pathFilter, logLimit)
-		if err != nil {
-			return fmt.Errorf("failed to get log data: %v", err)
-		}
-	}
-
 	// Export in requested format
 	switch format {
 	case "json":
-		return exportJSON(file, gitLog)
+		return exportJSON(file, entries)
 	case "csv":
-		return exportCSV(file, gitLog)
+		return exportCSV(file, entries)
 	case "html":
-		return exportHTML(file, gitLog)
+		return exportHTML(file, entries)
 	default:
-		return exportMarkdown(file, gitLog)
+		return exportMarkdown(file, entries)
 	}
 }
 
-// LogEntry represents a single log entry for export
-type LogEntry struct {
-	Hash    string   `json:"hash"`
-	Date    string   `json:"date"`
-	Author  string   `json:"author"`
-	Message string   `json:"message"`
-	Files   []string `json:"files,omitempty"`
-	Changes string   `json:"changes,omitempty"`
-}
-
-// getGitLogData retrieves log data from git
-func getGitLogData(ddxDir string, logLimit int, logOneline, logDiff bool, logSince, logAuthor, logGrep, pathFilter string) ([]LogEntry, error) {
-	// For now, return error to force fallback to file-based data
-	// In a full implementation, this would parse git log output
-	return nil, fmt.Errorf("git log parsing not implemented in this version")
-}
-
-// getFileBasedLogData creates log entries from file modification times
-func getFileBasedLogData(ddxDir, pathFilter string, logLimit int) ([]LogEntry, error) {
-	entries := []LogEntry{}
-
-	// Create a simple entry based on DDX directory
-	entry := LogEntry{
-		Hash:    "file-based",
-		Date:    "2025-01-20",
-		Author:  "DDX System",
-		Message: "File-based history (git not available)",
-		Files:   []string{ddxDir},
-	}
-
-	if pathFilter != "" {
-		entry.Message = fmt.Sprintf("File-based history for %s (git not available)", pathFilter)
-		entry.Files = []string{pathFilter}
-	}
-
-	entries = append(entries, entry)
-	return entries, nil
-}
-
-// exportMarkdown exports log data as Markdown
+// Export functions - handle file output formatting
 func exportMarkdown(file *os.File, entries []LogEntry) error {
 	_, err := file.WriteString("# DDX Asset History\n\n")
 	if err != nil {
@@ -296,7 +373,6 @@ func exportMarkdown(file *os.File, entries []LogEntry) error {
 	return nil
 }
 
-// exportJSON exports log data as JSON
 func exportJSON(file *os.File, entries []LogEntry) error {
 	encoder := json.NewEncoder(file)
 	encoder.SetIndent("", "  ")
@@ -306,7 +382,6 @@ func exportJSON(file *os.File, entries []LogEntry) error {
 	})
 }
 
-// exportCSV exports log data as CSV
 func exportCSV(file *os.File, entries []LogEntry) error {
 	_, err := file.WriteString("Hash,Date,Author,Message,Files\n")
 	if err != nil {
@@ -325,7 +400,6 @@ func exportCSV(file *os.File, entries []LogEntry) error {
 	return nil
 }
 
-// exportHTML exports log data as HTML
 func exportHTML(file *os.File, entries []LogEntry) error {
 	_, err := file.WriteString(`<!DOCTYPE html>
 <html>

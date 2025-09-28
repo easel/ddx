@@ -145,7 +145,7 @@ func (f *CommandFactory) runDoctor(cmd *cobra.Command, args []string) error {
 
 	// Check 7: Library Path
 	fmt.Print("✓ Checking Library Path... ")
-	if checkLibraryPath() {
+	if checkLibraryPathFromWorkingDir(f.WorkingDir) {
 		fmt.Println("✅ Library Path Accessible")
 	} else {
 		fmt.Println("⚠️  Library Path Issues (optional)")
@@ -164,7 +164,7 @@ func (f *CommandFactory) runDoctor(cmd *cobra.Command, args []string) error {
 					"Re-clone or update DDX library repository",
 				},
 				SystemInfo: map[string]string{
-					"library_path": getLibraryPathInfo(),
+					"library_path": getLibraryPathInfo(f.WorkingDir),
 					"config_file":  getConfigFileInfo(),
 					"env_override": os.Getenv("DDX_LIBRARY_BASE_PATH"),
 				},
@@ -230,17 +230,17 @@ func checkPermissions() bool {
 }
 
 // checkLibraryPath verifies library path is accessible
-func checkLibraryPath() bool {
-	libPath, err := config.GetLibraryPath("")
+func checkLibraryPathFromWorkingDir(workingDir string) bool {
+	cfg, err := config.LoadWithWorkingDir(workingDir)
 	if err != nil {
 		return false
 	}
 
-	if libPath == "" {
+	if cfg.LibraryBasePath == "" {
 		return false
 	}
 
-	_, err = os.Stat(libPath)
+	_, err = os.Stat(cfg.LibraryBasePath)
 	return err == nil
 }
 
@@ -324,9 +324,9 @@ func getDirectoryPermissions(workingDir string) string {
 }
 
 // getLibraryPathInfo returns information about the DDX library path
-func getLibraryPathInfo() string {
-	if libPath, err := config.GetLibraryPath(""); err == nil && libPath != "" {
-		return libPath
+func getLibraryPathInfo(workingDir string) string {
+	if cfg, err := config.LoadWithWorkingDir(workingDir); err == nil && cfg.LibraryBasePath != "" {
+		return cfg.LibraryBasePath
 	}
 	return "not configured"
 }

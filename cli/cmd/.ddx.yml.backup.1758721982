@@ -1,0 +1,22 @@
+version: "2.0"
+repository:
+    url: https://github.com/easel/ddx
+    branch: main
+    path: .ddx/
+includes:
+    - prompts/claude
+    - scripts/hooks
+    - templates/common
+resources:
+    templates:
+        include:
+            - nextjs
+        exclude:
+            - react-legacy
+variables:
+    ai_model: claude-3-opus
+    author: ""
+    email: ""
+    library_base_path: /host-home/erik/Projects/ddx/library
+    new_var: new_value
+    project_name: 7thsense

@@ -4,12 +4,13 @@ template: false
 version: 1.0.0
 ---
 
-# ADR-005: Configuration Management and .ddx.yml Schema
+# ADR-005: Configuration Management Architecture
 
 **Date**: 2025-01-14
-**Status**: Proposed
+**Updated**: 2025-01-24
+**Status**: Accepted
 **Deciders**: DDX Development Team
-**Technical Story**: Define the configuration management strategy and schema for DDX project configuration
+**Technical Story**: Define the configuration management architecture and file structure for DDX project configuration
 
 ## Context
 
@@ -49,115 +50,113 @@ Implement a layered configuration system with:
 4. **Smart defaults** with progressive disclosure
 5. **Semantic versioning** for configuration compatibility
 
+### Configuration File Location
+**Decision**: Move configuration from `.ddx.yml` to `.ddx/config.yaml`
+
+**Rationale**:
+- Organizes all DDX files in a dedicated directory
+- Separates configuration from project root
+- Provides clear structure for library, cache, and state files
+- Uses standard `.yaml` extension
+
+### Directory Structure
+```
+project/
+├── .ddx/
+│   ├── config.yaml         # DDX configuration (moved from .ddx.yml)
+│   ├── library/            # Git subtree synced with upstream
+│   ├── cache/              # Local cache files
+│   ├── state/              # Workflow state
+│   └── local/              # User customizations
+└── src/                    # Project code
+```
+
 ### Configuration Hierarchy
 ```
 1. Built-in defaults (lowest priority)
-2. Global user config (~/.ddx/config.yml)
-3. Project config (.ddx.yml)
-4. Environment overrides (.ddx.{env}.yml)
+2. Global user config (~/.ddx/config.yaml)
+3. Project config (.ddx/config.yaml)
+4. Environment overrides (.ddx/config.{env}.yaml)
 5. Environment variables (DDX_*)
 6. Command-line flags (highest priority)
 ```
 
-### Schema Definition
+### Library Management Architecture
+**Decision**: Use git subtree for library synchronization to `.ddx/library/` subfolder only
+
+**Rationale**:
+- Separates synced library content from local configuration and state
+- Allows local customizations without sync conflicts
+- Maintains git history for library changes
+- Provides clear boundary between upstream and local content
+
+### Library Path Resolution
+**Decision**: Make `library_base_path` a top-level configuration property with explicit default
+
+**Rationale**:
+- Library location is architectural, not just a variable
+- Default value (`./library`) should be explicit and documented
+- Provides clear override mechanism for advanced users
+- Simplifies configuration for typical use cases
+
+### Simplified Configuration Schema
+**Decision**: Simplify configuration schema, removing complex resource selection
+
 ```yaml
-# .ddx.yml schema version 1.0
-version: "1.0"  # Configuration schema version
+# .ddx/config.yaml schema version 1.0
+version: "1.0"                      # Required: Configuration schema version
 
-# Project metadata
-project:
-  name: string  # Optional project name
-  description: string  # Optional description
-  type: string  # Project type (web, cli, library, etc.)
-  languages: [string]  # Primary languages used
+# Library location (top-level with explicit default)
+library_base_path: "./library"      # Path to DDX library relative to config.yaml
 
-# Repository configuration
+# Repository configuration (optional - for advanced users)
 repository:
-  url: string  # DDX repository URL
-  branch: string  # Branch to track (default: main)
-  path: string  # Path within repository (default: /)
+  url: string                       # DDX repository URL (default: github.com/easel/ddx)
+  branch: string                    # Branch to sync (default: main)
+  subtree_prefix: string            # What to sync from upstream (default: library)
 
-# Resource selection
-resources:
-  templates:
-    include: [string]  # Templates to include
-    exclude: [string]  # Templates to exclude
-  patterns:
-    include: [string]  # Patterns to include
-    exclude: [string]  # Patterns to exclude
-  prompts:
-    include: [string]  # Prompts to include
-    exclude: [string]  # Prompts to exclude
-  configs:
-    include: [string]  # Configs to include
-    exclude: [string]  # Configs to exclude
-
-# Variable definitions for substitution
+# Project variables for template substitution
 variables:
-  # User-defined variables
-  key: value
-  nested:
-    key: value
-  # Special variables
-  $env: {}  # Environment variable passthrough
-  $git: {}  # Git metadata injection
-
-# Workflow configuration
-workflows:
-  enabled: [string]  # Enabled workflows
-  disabled: [string]  # Explicitly disabled workflows
-  custom: {}  # Custom workflow definitions
-
-# Validator configuration
-validators:
-  enabled: boolean  # Global validator toggle
-  rules: [string]  # Active validation rules
-  custom: {}  # Custom validator definitions
-  strict: boolean  # Fail on validation warnings
-
-# Extension configuration
-extensions:
-  starlark:
-    enabled: boolean
-    modules: [string]  # Starlark modules to load
-    timeout: number  # Execution timeout in ms
-    memory_limit: string  # Memory limit (e.g., "100MB")
-
-# Update configuration
-updates:
-  check: boolean  # Check for updates
-  auto_pull: boolean  # Automatically pull updates
-  frequency: string  # Check frequency (daily, weekly, monthly)
-  channel: string  # Update channel (stable, beta, edge)
-
-# Contribution configuration
-contribution:
-  enabled: boolean  # Allow contributions
-  branch_prefix: string  # Prefix for contribution branches
-  sign_commits: boolean  # GPG sign commits
-
-# Local overrides
-local:
-  paths:
-    templates: string  # Local templates directory
-    patterns: string  # Local patterns directory
-    prompts: string  # Local prompts directory
-  ignore: [string]  # Patterns to ignore
-
-# Hooks configuration
-hooks:
-  pre_apply: [string]  # Commands before apply
-  post_apply: [string]  # Commands after apply
-  pre_update: [string]  # Commands before update
-  post_update: [string]  # Commands after update
+  project_name: string              # Project identifier
+  author: string                    # Author name
+  email: string                     # Author email
+  # Additional custom variables as needed
 ```
 
-### Rationale
-- **YAML Format**: Human-readable, widely supported, git-friendly
-- **Schema Validation**: Catches errors early, enables IDE support
-- **Layered Configuration**: Supports multiple use cases from simple to complex
-- **Environment Overrides**: Enables CI/CD and multi-environment workflows
-- **Semantic Versioning**: Allows evolution while maintaining compatibility
+**Rationale for Simplification**:
+- Most users don't need complex resource selection
+- Git subtree handles inclusion/exclusion at the repository level
+- Simpler schema is easier to understand and validate
+- Advanced users can still customize via repository settings
+- Reduces cognitive load for new users
+
+### Migration Path
+**Decision**: Provide backwards compatibility and automatic migration
+
+**Strategy**:
+1. Auto-detect `.ddx.yml` and migrate to `.ddx/config.yaml`
+2. Support both formats during transition period
+3. Show deprecation warnings for old format
+4. Remove legacy support in v2.0
+
+## Consequences
+
+### Positive
+- **Better Organization**: All DDX files in dedicated `.ddx/` directory
+- **Clearer Separation**: Library, config, cache, and state are distinct
+- **Simpler Configuration**: Fewer required fields, sensible defaults
+- **Git Subtree Isolation**: Only library syncs, preserving local customizations
+- **Future-Proof**: Room for additional DDX metadata and state
+
+### Negative
+- **Breaking Change**: Requires migration for existing projects
+- **Learning Curve**: Users must understand new directory structure
+- **Migration Complexity**: Must handle edge cases during transition
+
+### Neutral
+- **File Format**: Remains YAML, no syntax changes
+- **Validation**: Still uses JSON Schema (implementation detail)
+- **Git Integration**: Still uses git subtree (different target path)
 
 ## Alternatives Considered
 

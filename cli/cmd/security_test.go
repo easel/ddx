@@ -57,8 +57,7 @@ func TestSecurity_PathTraversal(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			originalDir, _ := os.Getwd()
-			defer os.Chdir(originalDir)
+			//	// originalDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
 
 			if tt.setup != nil {
 				tt.setup(t)
@@ -100,8 +99,7 @@ func TestSecurity_SensitiveDataHandling(t *testing.T) {
 			name:        "no_secrets_in_config",
 			description: "Config should not contain sensitive data in plain text",
 			setup: func(t *testing.T) string {
-				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
+		workDir := t.TempDir()
 
 				// Create config with potential sensitive data
 				config := `version: "1.0"
@@ -161,8 +159,7 @@ variables:
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			originalDir, _ := os.Getwd()
-			defer os.Chdir(originalDir)
+			//	// originalDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
 
 			var workDir string
 			if tt.setup != nil {
@@ -188,8 +185,7 @@ func TestSecurity_FilePermissions(t *testing.T) {
 			name:        "config_file_permissions",
 			description: "Config files should have restricted permissions",
 			setup: func(t *testing.T) string {
-				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
+		workDir := t.TempDir()
 
 				rootCmd := getSecurityTestRootCommand()
 				// Commands already registered
@@ -214,8 +210,7 @@ func TestSecurity_FilePermissions(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			originalDir, _ := os.Getwd()
-			defer os.Chdir(originalDir)
+			//	// originalDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
 
 			var workDir string
 			if tt.setup != nil {
@@ -262,8 +257,7 @@ func TestSecurity_CommandInjection(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			originalDir, _ := os.Getwd()
-			defer os.Chdir(originalDir)
+			//	// originalDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
 
 			if tt.setup != nil {
 				tt.setup(t)
@@ -335,8 +329,7 @@ func TestSecurity_InputValidation(t *testing.T) {
 // Helper functions
 
 func setupSecurityTestEnv(t *testing.T) string {
-	workDir := t.TempDir()
-	require.NoError(t, os.Chdir(workDir))
+		workDir := t.TempDir()
 
 	// Create minimal config
 	config := `version: "1.0"`

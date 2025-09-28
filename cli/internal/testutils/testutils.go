@@ -36,7 +36,7 @@ func NewTestEnvironment(t *testing.T) *TestEnvironment {
 
 	// Set up isolated environment
 	t.Setenv("HOME", tempHome)
-	require.NoError(t, os.Chdir(tempWorkDir))
+	// Don't change working directory - use absolute paths instead
 
 	return env
 }
@@ -47,7 +47,7 @@ func (env *TestEnvironment) Cleanup() {
 	if env.origHome != "" {
 		os.Setenv("HOME", env.origHome)
 	}
-	os.Chdir(env.origDir)
+	// Working directory doesn't need restoration since we never changed it
 }
 
 // HomeDir returns the temporary home directory

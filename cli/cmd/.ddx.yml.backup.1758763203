@@ -1,0 +1,17 @@
+version: "1.0"
+library_path: ../library
+repository:
+    url: https://github.com/easel/ddx
+    branch: main
+    path: .ddx/
+includes:
+    - prompts/claude
+    - scripts/hooks
+    - templates/common
+variables:
+    ai_model: claude-3-opus
+    author: ""
+    email: ""
+    library_base_path: /host-home/erik/Projects/ddx/library
+    project_name: "001"
+    project_type: git

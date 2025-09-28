@@ -1,14 +1,11 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
-	"time"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/easel/ddx/internal/config"
@@ -20,9 +17,9 @@ import (
 // Command registration is now handled by command_factory.go
 // This file only contains the run function implementation
 
-// runConfig implements the config command logic
-func runConfig(cmd *cobra.Command, args []string) error {
-	// Get flag values locally
+// runConfig implements the config command logic for CommandFactory
+func (f *CommandFactory) runConfig(cmd *cobra.Command, args []string) error {
+	// Extract flags from cobra.Command
 	showFlag, _ := cmd.Flags().GetBool("show")
 	showFilesFlag, _ := cmd.Flags().GetBool("show-files")
 	editFlag, _ := cmd.Flags().GetBool("edit")
@@ -31,35 +28,54 @@ func runConfig(cmd *cobra.Command, args []string) error {
 	validateFlag, _ := cmd.Flags().GetBool("validate")
 	globalFlag, _ := cmd.Flags().GetBool("global")
 
-	// Handle flags
+	// Handle flags by calling pure business logic functions
 	if showFlag {
-		return showEffectiveConfig(cmd, []string{})
+		return fmt.Errorf("config show removed - use 'cat .ddx/config.yaml' to view configuration")
 	}
 
 	if showFilesFlag {
-		return showConfigFiles(cmd)
+		files := configListFiles(f.WorkingDir)
+		return f.outputConfigFiles(cmd, files)
 	}
 
 	if editFlag {
-		return editConfig(cmd, globalFlag)
+		configPath := configGetPath(f.WorkingDir, globalFlag)
+		return f.editConfigFile(cmd, configPath)
 	}
 
 	if resetFlag {
-		return resetConfig(cmd, globalFlag)
+		configPath := configGetPath(f.WorkingDir, globalFlag)
+		if err := configReset(f.WorkingDir, globalFlag); err != nil {
+			return err
+		}
+		fmt.Fprintf(cmd.OutOrStdout(), "✅ Configuration reset to defaults: %s\n", configPath)
+		return nil
 	}
 
 	if wizardFlag {
-		return initConfigWizard()
+		cfg, err := configWizard()
+		if err != nil {
+			return err
+		}
+		if err := configSave(f.WorkingDir, cfg, false); err != nil {
+			return err
+		}
+		fmt.Fprintln(cmd.OutOrStdout(), "✅ Configuration saved to .ddx/config.yaml")
+		return nil
 	}
 
 	if validateFlag {
-		return validateConfig(cmd)
+		if err := configValidate(f.WorkingDir); err != nil {
+			return err
+		}
+		fmt.Fprintln(cmd.OutOrStdout(), "✅ Configuration is valid")
+		return nil
 	}
 
 	// Handle subcommands
 	if len(args) == 0 {
-		// Default behavior: show config if no args or flags
-		return showEffectiveConfig(cmd, []string{})
+		// Default behavior: show help
+		return cmd.Help()
 	}
 
 	subcommand := args[0]
@@ -68,369 +84,174 @@ func runConfig(cmd *cobra.Command, args []string) error {
 		if len(args) < 2 {
 			return fmt.Errorf("key required for get command")
 		}
-		return getConfigValue(cmd, args[1], globalFlag)
+		value, err := configGet(f.WorkingDir, args[1], globalFlag)
+		if err != nil {
+			return err
+		}
+		fmt.Fprintln(cmd.OutOrStdout(), value)
+		return nil
 	case "set":
 		if len(args) < 3 {
 			return fmt.Errorf("key and value required for set command")
 		}
-		return setConfigValue(cmd, args[1], args[2], globalFlag)
+		if err := configSet(f.WorkingDir, args[1], args[2], globalFlag); err != nil {
+			return err
+		}
+		fmt.Fprintf(cmd.OutOrStdout(), "✅ Set %s = %s\n", args[1], args[2])
+		return nil
 	case "validate":
-		return validateConfig(cmd)
+		if err := configValidate(f.WorkingDir); err != nil {
+			return err
+		}
+		fmt.Fprintln(cmd.OutOrStdout(), "✅ Configuration is valid")
+		return nil
 	case "export":
-		return showEffectiveConfig(cmd, []string{})
+		// Simply output the config file content
+		var configPath string
+		if globalFlag {
+			// Use global config path
+			homeDir, err := os.UserHomeDir()
+			if err != nil {
+				return fmt.Errorf("failed to get home directory: %w", err)
+			}
+			configPath = filepath.Join(homeDir, ".ddx", "config.yaml")
+		} else {
+			// Use local config path
+			configPath = filepath.Join(f.WorkingDir, ".ddx", "config.yaml")
+		}
+
+		content, err := os.ReadFile(configPath)
+		if err != nil {
+			return fmt.Errorf("failed to read config file: %w", err)
+		}
+		fmt.Fprint(cmd.OutOrStdout(), string(content))
+		return nil
 	case "import":
 		// For now, just read from stdin
 		return fmt.Errorf("import not yet implemented")
-	case "show":
-		// Enhanced config show with source attribution
-		return showEffectiveConfig(cmd, args[1:])
 	case "profile":
 		if len(args) < 2 {
 			return fmt.Errorf("profile subcommand requires additional arguments")
 		}
-		return handleProfileSubcommand(cmd, args[1:])
-	case "repository":
-		return fmt.Errorf("repository branch management is not yet implemented. Use 'config set repository.branch <name>' instead")
+		return f.handleProfileSubcommand(cmd, args[1:])
 	default:
-		return fmt.Errorf("unknown subcommand: %s", subcommand)
+		return fmt.Errorf("unknown config subcommand: %s", subcommand)
 	}
 }
 
+// Legacy wrapper functions for backwards compatibility
+func runConfig(cmd *cobra.Command, args []string) error {
+	f := &CommandFactory{WorkingDir: ""}
+	return f.runConfig(cmd, args)
+}
+
+// Legacy functions - replaced by pure business logic functions above
 func editConfig(cmd *cobra.Command, global bool) error {
-	editor := os.Getenv("EDITOR")
-	if editor == "" {
-		editor = "vi"
-	}
-
-	configPath := ".ddx.yml"
-	if global {
-		home, err := os.UserHomeDir()
-		if err != nil {
-			return err
-		}
-		configPath = filepath.Join(home, ".ddx.yml")
-	}
-
-	// Open editor
-	fmt.Fprintf(cmd.OutOrStdout(), "Opening %s in %s...\n", configPath, editor)
-	// In real implementation, would exec the editor
-	return nil
+	f := &CommandFactory{WorkingDir: ""}
+	configPath := configGetPath(f.WorkingDir, global)
+	return f.editConfigFile(cmd, configPath)
 }
 
 func resetConfig(cmd *cobra.Command, global bool) error {
-	configPath := ".ddx.yml"
-	if global {
-		home, err := os.UserHomeDir()
-		if err != nil {
-			return err
-		}
-		configPath = filepath.Join(home, ".ddx.yml")
+	f := &CommandFactory{WorkingDir: ""}
+	if err := configReset(f.WorkingDir, global); err != nil {
+		return err
 	}
-
-	// Create default config
-	cfg := config.DefaultConfig
-	data, err := yaml.Marshal(cfg)
-	if err != nil {
-		return fmt.Errorf("failed to marshal default configuration: %w", err)
-	}
-
-	// Write config file
-	if err := os.WriteFile(configPath, data, 0644); err != nil {
-		return fmt.Errorf("failed to write configuration: %w", err)
-	}
-
+	configPath := configGetPath(f.WorkingDir, global)
 	fmt.Fprintf(cmd.OutOrStdout(), "✅ Configuration reset to defaults: %s\n", configPath)
 	return nil
 }
 
-func getConfigValue(cmd *cobra.Command, key string, global bool) error {
-	cfg, err := config.Load()
-	if err != nil {
-		return fmt.Errorf("failed to load configuration: %w", err)
-	}
+// Business Logic Layer - Pure Functions
 
-	// Handle nested keys
-	if strings.HasPrefix(key, "variables.") {
-		// Extract the variable name after "variables."
-		varName := strings.TrimPrefix(key, "variables.")
-		if val, ok := cfg.Variables[varName]; ok {
-			fmt.Fprintln(cmd.OutOrStdout(), val)
-		} else {
-			return fmt.Errorf("key not found: %s", key)
-		}
-	} else if strings.HasPrefix(key, "repositories.") {
-		// Handle repositories.name.field pattern
-		parts := strings.Split(key, ".")
-		if len(parts) >= 3 {
-			repoName := parts[1]
-			field := strings.Join(parts[2:], ".")
 
-			if cfg.Repositories == nil || cfg.Repositories[repoName].URL == "" {
-				fmt.Fprintln(cmd.OutOrStdout(), "")
-				return nil
-			}
+// configGet retrieves a configuration value
+func configGet(workingDir string, key string, global bool) (string, error) {
+	var cfg *config.Config
+	var err error
 
-			repo := cfg.Repositories[repoName]
-			switch field {
-			case "url":
-				fmt.Fprintln(cmd.OutOrStdout(), repo.URL)
-			case "branch":
-				fmt.Fprintln(cmd.OutOrStdout(), repo.Branch)
-			case "path":
-				fmt.Fprintln(cmd.OutOrStdout(), repo.Path)
-			case "remote":
-				fmt.Fprintln(cmd.OutOrStdout(), repo.Remote)
-			case "protocol":
-				fmt.Fprintln(cmd.OutOrStdout(), repo.Protocol)
-			case "priority":
-				fmt.Fprintln(cmd.OutOrStdout(), repo.Priority)
-			default:
-				return fmt.Errorf("key not found: %s", key)
-			}
-		} else {
-			return fmt.Errorf("key not found: %s", key)
-		}
-	} else {
-		// Handle other known keys
-		switch key {
-		case "version":
-			fmt.Fprintln(cmd.OutOrStdout(), cfg.Version)
-		case "repository.url":
-			fmt.Fprintln(cmd.OutOrStdout(), cfg.Repository.URL)
-		case "repository.branch":
-			fmt.Fprintln(cmd.OutOrStdout(), cfg.Repository.Branch)
-		case "repository.path":
-			fmt.Fprintln(cmd.OutOrStdout(), cfg.Repository.Path)
-		case "repository.remote":
-			fmt.Fprintln(cmd.OutOrStdout(), cfg.Repository.Remote)
-		case "repository.protocol":
-			fmt.Fprintln(cmd.OutOrStdout(), cfg.Repository.Protocol)
-		case "repository.sync.frequency":
-			if cfg.Repository.Sync != nil {
-				fmt.Fprintln(cmd.OutOrStdout(), cfg.Repository.Sync.Frequency)
-			} else {
-				fmt.Fprintln(cmd.OutOrStdout(), "")
-			}
-		case "repository.sync.auto_update":
-			if cfg.Repository.Sync != nil {
-				fmt.Fprintln(cmd.OutOrStdout(), cfg.Repository.Sync.AutoUpdate)
-			} else {
-				fmt.Fprintln(cmd.OutOrStdout(), false)
-			}
-		case "repository.sync.timeout":
-			if cfg.Repository.Sync != nil {
-				fmt.Fprintln(cmd.OutOrStdout(), cfg.Repository.Sync.Timeout)
-			} else {
-				fmt.Fprintln(cmd.OutOrStdout(), 0)
-			}
-		case "repository.sync.retry_count":
-			if cfg.Repository.Sync != nil {
-				fmt.Fprintln(cmd.OutOrStdout(), cfg.Repository.Sync.RetryCount)
-			} else {
-				fmt.Fprintln(cmd.OutOrStdout(), 0)
-			}
-		case "repository.auth.method":
-			if cfg.Repository.Auth != nil {
-				fmt.Fprintln(cmd.OutOrStdout(), cfg.Repository.Auth.Method)
-			} else {
-				fmt.Fprintln(cmd.OutOrStdout(), "")
-			}
-		case "repository.auth.key_path":
-			if cfg.Repository.Auth != nil {
-				fmt.Fprintln(cmd.OutOrStdout(), cfg.Repository.Auth.KeyPath)
-			} else {
-				fmt.Fprintln(cmd.OutOrStdout(), "")
-			}
-		case "repository.auth.token":
-			if cfg.Repository.Auth != nil {
-				fmt.Fprintln(cmd.OutOrStdout(), cfg.Repository.Auth.Token)
-			} else {
-				fmt.Fprintln(cmd.OutOrStdout(), "")
-			}
-		case "repository.proxy.url":
-			if cfg.Repository.Proxy != nil {
-				fmt.Fprintln(cmd.OutOrStdout(), cfg.Repository.Proxy.URL)
-			} else {
-				fmt.Fprintln(cmd.OutOrStdout(), "")
-			}
-		case "repository.proxy.auth":
-			if cfg.Repository.Proxy != nil {
-				fmt.Fprintln(cmd.OutOrStdout(), cfg.Repository.Proxy.Auth)
-			} else {
-				fmt.Fprintln(cmd.OutOrStdout(), "")
-			}
-		default:
-			if val, ok := cfg.Variables[key]; ok {
-				fmt.Fprintln(cmd.OutOrStdout(), val)
-			} else {
-				return fmt.Errorf("key not found: %s", key)
-			}
-		}
-	}
-	return nil
-}
-
-func setConfigValue(cmd *cobra.Command, key, value string, global bool) error {
-	cfg, err := config.Load()
-	if err != nil {
-		return fmt.Errorf("failed to load configuration: %w", err)
-	}
-
-	// Handle nested keys
-	if strings.HasPrefix(key, "variables.") {
-		// Extract the variable name after "variables."
-		varName := strings.TrimPrefix(key, "variables.")
-		if cfg.Variables == nil {
-			cfg.Variables = make(map[string]string)
-		}
-		cfg.Variables[varName] = value
-	} else if strings.HasPrefix(key, "repositories.") {
-		// Handle repositories.name.field pattern
-		parts := strings.Split(key, ".")
-		if len(parts) >= 3 {
-			repoName := parts[1]
-			field := strings.Join(parts[2:], ".")
-
-			if cfg.Repositories == nil {
-				cfg.Repositories = make(map[string]config.Repository)
-			}
-
-			repo, exists := cfg.Repositories[repoName]
-			if !exists {
-				repo = config.Repository{}
-			}
-
-			switch field {
-			case "url":
-				repo.URL = value
-			case "branch":
-				repo.Branch = value
-			case "path":
-				repo.Path = value
-			case "remote":
-				repo.Remote = value
-			case "protocol":
-				repo.Protocol = value
-			case "priority":
-				if priority, err := strconv.Atoi(value); err == nil {
-					repo.Priority = priority
-				}
-			}
-
-			cfg.Repositories[repoName] = repo
-		}
-	} else {
-		// Handle other known keys
-		switch key {
-		case "repository.url":
-			cfg.Repository.URL = value
-		case "repository.branch":
-			cfg.Repository.Branch = value
-		case "repository.path":
-			cfg.Repository.Path = value
-		case "repository.remote":
-			cfg.Repository.Remote = value
-		case "repository.protocol":
-			cfg.Repository.Protocol = value
-		case "repository.sync.frequency":
-			if cfg.Repository.Sync == nil {
-				cfg.Repository.Sync = &config.SyncConfig{}
-			}
-			cfg.Repository.Sync.Frequency = value
-		case "repository.sync.auto_update":
-			if cfg.Repository.Sync == nil {
-				cfg.Repository.Sync = &config.SyncConfig{}
-			}
-			cfg.Repository.Sync.AutoUpdate = value == "true"
-		case "repository.sync.timeout":
-			if cfg.Repository.Sync == nil {
-				cfg.Repository.Sync = &config.SyncConfig{}
-			}
-			if timeout, err := strconv.Atoi(value); err == nil {
-				cfg.Repository.Sync.Timeout = timeout
-			}
-		case "repository.sync.retry_count":
-			if cfg.Repository.Sync == nil {
-				cfg.Repository.Sync = &config.SyncConfig{}
-			}
-			if retryCount, err := strconv.Atoi(value); err == nil {
-				cfg.Repository.Sync.RetryCount = retryCount
-			}
-		case "repository.auth.method":
-			if cfg.Repository.Auth == nil {
-				cfg.Repository.Auth = &config.AuthConfig{}
-			}
-			cfg.Repository.Auth.Method = value
-		case "repository.auth.key_path":
-			if cfg.Repository.Auth == nil {
-				cfg.Repository.Auth = &config.AuthConfig{}
-			}
-			cfg.Repository.Auth.KeyPath = value
-		case "repository.auth.token":
-			if cfg.Repository.Auth == nil {
-				cfg.Repository.Auth = &config.AuthConfig{}
-			}
-			cfg.Repository.Auth.Token = value
-		case "repository.proxy.url":
-			if cfg.Repository.Proxy == nil {
-				cfg.Repository.Proxy = &config.ProxyConfig{}
-			}
-			cfg.Repository.Proxy.URL = value
-		case "repository.proxy.auth":
-			if cfg.Repository.Proxy == nil {
-				cfg.Repository.Proxy = &config.ProxyConfig{}
-			}
-			cfg.Repository.Proxy.Auth = value
-		default:
-			// If no prefix, assume it's a variable
-			if cfg.Variables == nil {
-				cfg.Variables = make(map[string]string)
-			}
-			cfg.Variables[key] = value
-		}
-	}
-
-	// Save config
-	configPath := ".ddx.yml"
-	if global {
-		home, err := os.UserHomeDir()
+	if workingDir != "" && !global {
+		// Load config from specific working directory using new format
+		cfg, err = config.LoadWithWorkingDir(workingDir)
 		if err != nil {
-			return err
+			return "", fmt.Errorf("failed to load configuration from %s: %w", workingDir, err)
 		}
-		configPath = filepath.Join(home, ".ddx.yml")
+	} else {
+		// Use standard config loading (current directory)
+		cfg, err = config.Load()
+		if err != nil {
+			return "", fmt.Errorf("failed to load configuration: %w", err)
+		}
 	}
 
-	data, err := yaml.Marshal(cfg)
-	if err != nil {
-		return fmt.Errorf("failed to marshal configuration: %w", err)
-	}
-
-	if err := os.WriteFile(configPath, data, 0644); err != nil {
-		return fmt.Errorf("failed to write configuration: %w", err)
-	}
-
-	fmt.Fprintf(cmd.OutOrStdout(), "✅ Set %s = %s\n", key, value)
-	return nil
+	return extractConfigValue(cfg, key)
 }
 
-func validateConfig(cmd *cobra.Command) error {
-	cfg, err := config.Load()
+// configSet sets a configuration value
+func configSet(workingDir string, key, value string, global bool) error {
+	var cfg *config.Config
+	var err error
+
+	if workingDir != "" && !global {
+		// Load config from specific working directory using new format
+		cfg, err = config.LoadWithWorkingDir(workingDir)
+		if err != nil {
+			// If file doesn't exist in working dir, create a new config
+			if os.IsNotExist(err) {
+				cfg = &config.Config{
+					Version:   "1.0",
+					LibraryBasePath: "./library",
+					Repository: &config.NewRepositoryConfig{
+						URL: "https://github.com/easel/ddx",
+						Branch: "main",
+						SubtreePrefix: "library",
+					},
+					Variables: make(map[string]string),
+				}
+			} else {
+				return fmt.Errorf("failed to load configuration from %s: %w", workingDir, err)
+			}
+		}
+	} else {
+		// Use standard config loading (current directory)
+		cfg, err = config.Load()
+		if err != nil {
+			return fmt.Errorf("failed to load configuration: %w", err)
+		}
+	}
+
+	if err := setConfigValueInStruct(cfg, key, value); err != nil {
+		return err
+	}
+
+	return configSave(workingDir, cfg, global)
+}
+
+// configValidate validates the configuration
+func configValidate(workingDir string) error {
+	var cfg *config.Config
+	var err error
+	if workingDir != "" {
+		cfg, err = config.LoadWithWorkingDir(workingDir)
+	} else {
+		cfg, err = config.Load()
+	}
 	if err != nil {
 		return fmt.Errorf("failed to load configuration: %w", err)
 	}
 
-	// Validate configuration
-	if err := cfg.Validate(); err != nil {
-		return fmt.Errorf("configuration validation failed: %w", err)
-	}
-
-	fmt.Fprintln(cmd.OutOrStdout(), "✅ Configuration is valid")
-	return nil
+	return cfg.Validate()
 }
 
-func initConfigWizard() error {
-	cyan := color.New(color.FgCyan)
+// configReset resets configuration to defaults
+func configReset(workingDir string, global bool) error {
+	cfg := config.DefaultConfig
+	return configSave(workingDir, cfg, global)
+}
 
+// configWizard runs the configuration wizard
+func configWizard() (*config.Config, error) {
+	cyan := color.New(color.FgCyan)
 	cyan.Println("🧙 DDx Configuration Wizard")
 	fmt.Println()
 
@@ -447,14 +268,7 @@ func initConfigWizard() error {
 				Default: cfg.Variables["ai_model"],
 			},
 		},
-		{
-			Name: "includes",
-			Prompt: &survey.MultiSelect{
-				Message: "Resources to include:",
-				Options: []string{"prompts", "templates", "patterns", "configs", "scripts"},
-				Default: cfg.Includes,
-			},
-		},
+		// Note: Includes field removed in simplified config format
 	}
 
 	answers := struct {
@@ -463,24 +277,288 @@ func initConfigWizard() error {
 	}{}
 
 	if err := survey.Ask(questions, &answers); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Update config with answers
 	cfg.Variables["ai_model"] = answers.AIModel
-	cfg.Includes = answers.Includes
+	// Note: Includes field removed in simplified config format
 
-	// Marshal to YAML
-	configYAML, err := yaml.Marshal(&cfg)
+	return &cfg, nil
+}
+
+// configListFiles returns a list of configuration file locations
+func configListFiles(workingDir string) []ConfigFileInfo {
+	var files []ConfigFileInfo
+
+	// Current directory config
+	localConfig := ".ddx/config.yaml"
+	if workingDir != "" {
+		localConfig = filepath.Join(workingDir, ".ddx", "config.yaml")
+	}
+	if _, err := os.Stat(localConfig); err == nil {
+		files = append(files, ConfigFileInfo{Path: localConfig, Type: "project", Exists: true})
+	} else {
+		files = append(files, ConfigFileInfo{Path: localConfig, Type: "project", Exists: false})
+	}
+
+	// Global config
+	home, err := os.UserHomeDir()
+	if err == nil {
+		globalConfig := filepath.Join(home, ".ddx", "config.yaml")
+		if _, err := os.Stat(globalConfig); err == nil {
+			files = append(files, ConfigFileInfo{Path: globalConfig, Type: "global", Exists: true})
+		} else {
+			files = append(files, ConfigFileInfo{Path: globalConfig, Type: "global", Exists: false})
+		}
+
+		// Config directory
+		configDir := filepath.Join(home, ".ddx")
+		if _, err := os.Stat(configDir); err == nil {
+			files = append(files, ConfigFileInfo{Path: configDir, Type: "directory", Exists: true})
+		} else {
+			files = append(files, ConfigFileInfo{Path: configDir, Type: "directory", Exists: false})
+		}
+	}
+
+	return files
+}
+
+// configGetPath returns the config file path for editing
+func configGetPath(workingDir string, global bool) string {
+	if global {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return "~/.ddx/config.yaml"
+		}
+		return filepath.Join(home, ".ddx", "config.yaml")
+	}
+	if workingDir != "" {
+		return filepath.Join(workingDir, ".ddx", "config.yaml")
+	}
+	return ".ddx/config.yaml"
+}
+
+// configSave saves configuration to file
+func configSave(workingDir string, cfg *config.Config, global bool) error {
+	configPath := configGetPath(workingDir, global)
+
+	// Ensure the .ddx directory exists
+	if err := os.MkdirAll(filepath.Dir(configPath), 0755); err != nil {
+		return fmt.Errorf("failed to create .ddx directory: %w", err)
+	}
+
+	data, err := yaml.Marshal(cfg)
 	if err != nil {
 		return fmt.Errorf("failed to marshal configuration: %w", err)
 	}
 
-	// Write to file
-	if err := os.WriteFile(".ddx.yml", configYAML, 0644); err != nil {
+	if err := os.WriteFile(configPath, data, 0644); err != nil {
 		return fmt.Errorf("failed to write configuration: %w", err)
 	}
 
+	return nil
+}
+
+// Helper types and functions
+type ConfigFileInfo struct {
+	Path   string
+	Type   string
+	Exists bool
+}
+
+// extractConfigValue extracts a value from config by key
+func extractConfigValue(cfg *config.Config, key string) (string, error) {
+	// Handle nested keys
+	if strings.HasPrefix(key, "variables.") {
+		// Extract the variable name after "variables."
+		varName := strings.TrimPrefix(key, "variables.")
+		if val, ok := cfg.Variables[varName]; ok {
+			return val, nil
+		} else {
+			return "", fmt.Errorf("key not found: %s", key)
+		}
+	} else if strings.HasPrefix(key, "repositories.") {
+		// Handle repositories.name.field pattern
+		parts := strings.Split(key, ".")
+		if len(parts) >= 3 {
+			// repoName := parts[1] // Not used in simplified config
+			field := strings.Join(parts[2:], ".")
+
+			if cfg.Repository == nil || cfg.Repository.URL == "" {
+				return "", nil
+			}
+
+			repo := cfg.Repository
+			switch field {
+			case "url":
+				return repo.URL, nil
+			case "branch":
+				return repo.Branch, nil
+			case "subtree_prefix":
+				return repo.SubtreePrefix, nil
+			// Note: path, remote, protocol, priority fields removed in simplified config
+			default:
+				return "", fmt.Errorf("key not found: %s", key)
+			}
+		} else {
+			return "", fmt.Errorf("key not found: %s", key)
+		}
+	} else {
+		// Handle other known keys
+		switch key {
+		case "version":
+			return cfg.Version, nil
+		case "repository.url":
+			return cfg.Repository.URL, nil
+		case "repository.branch":
+			return cfg.Repository.Branch, nil
+		case "repository.subtree_prefix":
+			return cfg.Repository.SubtreePrefix, nil
+		// Note: repository.path, remote, protocol, sync fields removed in simplified config
+		// Note: sync, auth, and proxy fields removed in simplified config format
+		default:
+			if val, ok := cfg.Variables[key]; ok {
+				return val, nil
+			} else {
+				return "", fmt.Errorf("key not found: %s", key)
+			}
+		}
+	}
+}
+
+// setConfigValueInStruct sets a value in the config struct by key
+func setConfigValueInStruct(cfg *config.Config, key, value string) error {
+	// Handle nested keys
+	if strings.HasPrefix(key, "variables.") {
+		// Extract the variable name after "variables."
+		varName := strings.TrimPrefix(key, "variables.")
+		if cfg.Variables == nil {
+			cfg.Variables = make(map[string]string)
+		}
+		cfg.Variables[varName] = value
+	} else if strings.HasPrefix(key, "repositories.") {
+		// Handle repositories.name.field pattern (legacy - not fully supported in simplified config)
+		parts := strings.Split(key, ".")
+		if len(parts) >= 3 {
+			// repoName := parts[1] // Not used in simplified config
+			field := strings.Join(parts[2:], ".")
+
+			if cfg.Repository == nil {
+				cfg.Repository = &config.NewRepositoryConfig{}
+			}
+
+			switch field {
+			case "url":
+				cfg.Repository.URL = value
+			case "branch":
+				cfg.Repository.Branch = value
+			case "subtree_prefix":
+				cfg.Repository.SubtreePrefix = value
+			// Note: path, remote, protocol, priority fields removed in simplified config
+			}
+		}
+	} else {
+		// Handle other known keys
+		switch key {
+		case "repository.url":
+			cfg.Repository.URL = value
+		case "repository.branch":
+			cfg.Repository.Branch = value
+		case "repository.subtree_prefix":
+			cfg.Repository.SubtreePrefix = value
+		// Note: repository.path, remote, protocol, sync, auth, proxy fields removed in simplified config format
+		default:
+			// If no prefix, assume it's a variable
+			if cfg.Variables == nil {
+				cfg.Variables = make(map[string]string)
+			}
+			cfg.Variables[key] = value
+		}
+	}
+	return nil
+}
+
+// CLI Interface Layer Functions
+
+func getConfigValue(cmd *cobra.Command, key string, global bool) error {
+	return getConfigValueWithWorkingDir(cmd, key, global, "")
+}
+
+func getConfigValueWithWorkingDir(cmd *cobra.Command, key string, global bool, workingDir string) error {
+	value, err := configGet(workingDir, key, global)
+	if err != nil {
+		return err
+	}
+	fmt.Fprintln(cmd.OutOrStdout(), value)
+	return nil
+}
+
+
+
+// outputConfigFiles handles outputting configuration file locations
+func (f *CommandFactory) outputConfigFiles(cmd *cobra.Command, files []ConfigFileInfo) error {
+	fmt.Fprintln(cmd.OutOrStdout(), "📋 DDx Configuration File Locations:")
+	fmt.Fprintln(cmd.OutOrStdout())
+
+	for _, file := range files {
+		if file.Exists {
+			fmt.Fprintf(cmd.OutOrStdout(), "✅ %s config: %s (exists)\n", file.Type, file.Path)
+		} else {
+			fmt.Fprintf(cmd.OutOrStdout(), "⬜ %s config: %s (not found)\n", file.Type, file.Path)
+		}
+	}
+
+	fmt.Fprintln(cmd.OutOrStdout())
+	fmt.Fprintln(cmd.OutOrStdout(), "Priority order: Environment variables > Project config > Global config > Defaults")
+	return nil
+}
+
+// editConfigFile handles opening a config file in an editor
+func (f *CommandFactory) editConfigFile(cmd *cobra.Command, configPath string) error {
+	editor := os.Getenv("EDITOR")
+	if editor == "" {
+		editor = "vi"
+	}
+
+	// Open editor
+	fmt.Fprintf(cmd.OutOrStdout(), "Opening %s in %s...\n", configPath, editor)
+	// In real implementation, would exec the editor
+	return nil
+}
+
+// handleProfileSubcommand handles profile-specific operations
+func (f *CommandFactory) handleProfileSubcommand(cmd *cobra.Command, args []string) error {
+	return handleProfileSubcommand(cmd, args)
+}
+
+func setConfigValueWithWorkingDir(cmd *cobra.Command, key, value string, global bool, workingDir string) error {
+	if err := configSet(workingDir, key, value, global); err != nil {
+		return err
+	}
+	fmt.Fprintf(cmd.OutOrStdout(), "✅ Set %s = %s\n", key, value)
+	return nil
+}
+
+func validateConfig(cmd *cobra.Command) error {
+	if err := configValidate(""); err != nil {
+		return fmt.Errorf("configuration validation failed: %w", err)
+	}
+	fmt.Fprintln(cmd.OutOrStdout(), "✅ Configuration is valid")
+	return nil
+}
+
+func initConfigWizard() error {
+	cfg, err := configWizard()
+	if err != nil {
+		return err
+	}
+
+	if err := configSave("", cfg, false); err != nil {
+		return err
+	}
+
+	cyan := color.New(color.FgCyan)
 	cyan.Println("✅ Configuration saved to .ddx.yml")
 	return nil
 }
@@ -509,42 +587,9 @@ func copyFile(src, dst string) error {
 
 // showConfigFiles displays all config file locations
 func showConfigFiles(cmd *cobra.Command) error {
-	fmt.Fprintln(cmd.OutOrStdout(), "📋 DDx Configuration File Locations:")
-	fmt.Fprintln(cmd.OutOrStdout())
-
-	// Current directory config
-	localConfig := ".ddx.yml"
-	if _, err := os.Stat(localConfig); err == nil {
-		fmt.Fprintf(cmd.OutOrStdout(), "✅ Project config: %s (exists)\n", localConfig)
-	} else {
-		fmt.Fprintf(cmd.OutOrStdout(), "⬜ Project config: %s (not found)\n", localConfig)
-	}
-
-	// Global config
-	home, err := os.UserHomeDir()
-	if err != nil {
-		fmt.Fprintf(cmd.OutOrStdout(), "❌ Global config: Error getting home directory: %v\n", err)
-	} else {
-		globalConfig := filepath.Join(home, ".ddx.yml")
-		if _, err := os.Stat(globalConfig); err == nil {
-			fmt.Fprintf(cmd.OutOrStdout(), "✅ Global config: %s (exists)\n", globalConfig)
-		} else {
-			fmt.Fprintf(cmd.OutOrStdout(), "⬜ Global config: %s (not found)\n", globalConfig)
-		}
-	}
-
-	// Config directory
-	configDir := filepath.Join(home, ".ddx")
-	if _, err := os.Stat(configDir); err == nil {
-		fmt.Fprintf(cmd.OutOrStdout(), "✅ Config directory: %s (exists)\n", configDir)
-	} else {
-		fmt.Fprintf(cmd.OutOrStdout(), "⬜ Config directory: %s (not found)\n", configDir)
-	}
-
-	fmt.Fprintln(cmd.OutOrStdout())
-	fmt.Fprintln(cmd.OutOrStdout(), "Priority order: Environment variables > Project config > Global config > Defaults")
-
-	return nil
+	f := &CommandFactory{WorkingDir: ""}
+	files := configListFiles(f.WorkingDir)
+	return f.outputConfigFiles(cmd, files)
 }
 
 // handleProfileSubcommand handles profile-specific subcommands for US-023
@@ -986,600 +1031,5 @@ func deleteProfile(cmd *cobra.Command, profileName string) error {
 }
 
 // ConfigValueWithSource represents a configuration value with its source attribution
-type ConfigValueWithSource struct {
-	Value      interface{} `yaml:"value"`
-	Source     string      `yaml:"source"`
-	SourceType string      `yaml:"source_type"`
-	IsOverride bool        `yaml:"is_override,omitempty"`
-	IsDefault  bool        `yaml:"is_default,omitempty"`
-	IsComputed bool        `yaml:"is_computed,omitempty"`
-}
 
-// EffectiveConfig represents the complete configuration with source attribution
-type EffectiveConfig struct {
-	GeneratedAt   string                            `yaml:"generated_at"`
-	ActiveProfile string                            `yaml:"active_profile,omitempty"`
-	Version       *ConfigValueWithSource            `yaml:"version"`
-	LibraryPath   *ConfigValueWithSource            `yaml:"library_path,omitempty"`
-	Repository    map[string]*ConfigValueWithSource `yaml:"repository"`
-	Variables     map[string]*ConfigValueWithSource `yaml:"variables"`
-	Includes      []*ConfigValueWithSource          `yaml:"includes"`
-	Overrides     map[string]*ConfigValueWithSource `yaml:"overrides,omitempty"`
-	Resources     map[string]*ConfigValueWithSource `yaml:"resources,omitempty"`
-}
 
-// showEffectiveConfig implements the enhanced config show command with source attribution
-func showEffectiveConfig(cmd *cobra.Command, args []string) error {
-	// Parse command arguments and flags
-	var section string
-	if len(args) > 0 {
-		section = args[0]
-	}
-
-	// Get flags from the main config command
-	format := "yaml" // default format
-	if cmd.Flags().Changed("format") {
-		format, _ = cmd.Flags().GetString("format")
-	}
-
-	verbose, _ := cmd.Flags().GetBool("verbose")
-	onlyOverrides := false
-	if cmd.Flags().Changed("only-overrides") {
-		onlyOverrides, _ = cmd.Flags().GetBool("only-overrides")
-	}
-
-	// Load configuration with source tracking
-	effectiveConfig, err := buildEffectiveConfigWithSources()
-	if err != nil {
-		return fmt.Errorf("failed to build effective configuration: %w", err)
-	}
-
-	// Filter by section if specified
-	if section != "" {
-		return showConfigSection(cmd, effectiveConfig, section, format, verbose)
-	}
-
-	// Filter to only overrides if requested
-	if onlyOverrides {
-		effectiveConfig = filterOverridesOnly(effectiveConfig)
-	}
-
-	// Output in requested format
-	switch format {
-	case "json":
-		return outputConfigAsJSON(cmd, effectiveConfig)
-	case "table":
-		return outputConfigAsTable(cmd, effectiveConfig)
-	case "yaml":
-		fallthrough
-	default:
-		return outputConfigAsYAML(cmd, effectiveConfig, verbose)
-	}
-}
-
-// buildEffectiveConfigWithSources builds the effective configuration with source attribution
-func buildEffectiveConfigWithSources() (*EffectiveConfig, error) {
-	// Load configurations individually to track sources
-	defaultCfg := config.DefaultConfig
-	globalCfg, _ := config.LoadGlobal()
-	localCfg, _ := config.LoadLocal()
-	envCfg, _ := config.LoadEnvironmentConfig()
-
-	// Build effective config with source tracking
-	effective := &EffectiveConfig{
-		GeneratedAt: fmt.Sprintf("%s", time.Now().Format("2006-01-02 15:04:05")),
-		Repository:  make(map[string]*ConfigValueWithSource),
-		Variables:   make(map[string]*ConfigValueWithSource),
-		Includes:    []*ConfigValueWithSource{},
-		Overrides:   make(map[string]*ConfigValueWithSource),
-		Resources:   make(map[string]*ConfigValueWithSource),
-	}
-
-	// Set active profile if DDX_ENV is set
-	if envName := os.Getenv("DDX_ENV"); envName != "" {
-		effective.ActiveProfile = envName
-	}
-
-	// Track version source
-	effective.Version = determineValueSource("version",
-		defaultCfg.Version, globalCfg, localCfg, envCfg, "version")
-
-	// Track library path source
-	if defaultCfg.LibraryPath != "" || (globalCfg != nil && globalCfg.LibraryPath != "") ||
-		(localCfg != nil && localCfg.LibraryPath != "") || (envCfg != nil && envCfg.LibraryPath != "") {
-		effective.LibraryPath = determineValueSource("library_path",
-			defaultCfg.LibraryPath, globalCfg, localCfg, envCfg, "library_path")
-	}
-
-	// Track repository sources
-	effective.Repository["url"] = determineValueSource("repository.url",
-		defaultCfg.Repository.URL, globalCfg, localCfg, envCfg, "repository.url")
-	effective.Repository["branch"] = determineValueSource("repository.branch",
-		defaultCfg.Repository.Branch, globalCfg, localCfg, envCfg, "repository.branch")
-	effective.Repository["path"] = determineValueSource("repository.path",
-		defaultCfg.Repository.Path, globalCfg, localCfg, envCfg, "repository.path")
-
-	// Track variables sources
-	allVarKeys := make(map[string]bool)
-	for k := range defaultCfg.Variables {
-		allVarKeys[k] = true
-	}
-	if globalCfg != nil {
-		for k := range globalCfg.Variables {
-			allVarKeys[k] = true
-		}
-	}
-	if localCfg != nil {
-		for k := range localCfg.Variables {
-			allVarKeys[k] = true
-		}
-	}
-	if envCfg != nil {
-		for k := range envCfg.Variables {
-			allVarKeys[k] = true
-		}
-	}
-
-	for varKey := range allVarKeys {
-		defaultVal := defaultCfg.Variables[varKey]
-		effective.Variables[varKey] = determineValueSource(fmt.Sprintf("variables.%s", varKey),
-			defaultVal, globalCfg, localCfg, envCfg, fmt.Sprintf("variables.%s", varKey))
-	}
-
-	// Track includes sources (this is more complex as it's a slice)
-	allIncludes := make(map[string]string)
-	for _, inc := range defaultCfg.Includes {
-		allIncludes[inc] = "default"
-	}
-	if globalCfg != nil {
-		for _, inc := range globalCfg.Includes {
-			allIncludes[inc] = "global"
-		}
-	}
-	if localCfg != nil {
-		for _, inc := range localCfg.Includes {
-			allIncludes[inc] = "local"
-		}
-	}
-	if envCfg != nil {
-		for _, inc := range envCfg.Includes {
-			allIncludes[inc] = "environment"
-		}
-	}
-
-	for include, source := range allIncludes {
-		sourceFile := getSourceFile(source)
-		effective.Includes = append(effective.Includes, &ConfigValueWithSource{
-			Value:      include,
-			Source:     sourceFile,
-			SourceType: source,
-			IsDefault:  source == "default",
-			IsOverride: source == "environment",
-		})
-	}
-
-	return effective, nil
-}
-
-// determineValueSource determines the source of a configuration value
-func determineValueSource(key, defaultVal string, globalCfg, localCfg, envCfg *config.Config, path string) *ConfigValueWithSource {
-	result := &ConfigValueWithSource{
-		Value:      defaultVal,
-		Source:     "default",
-		SourceType: "default",
-		IsDefault:  true,
-	}
-
-	// Check global config
-	if globalCfg != nil {
-		if globalVal := getConfigValueByPath(globalCfg, path); globalVal != "" {
-			result.Value = globalVal
-			result.Source = getGlobalConfigFile()
-			result.SourceType = "global"
-			result.IsDefault = false
-		}
-	}
-
-	// Check local config (overrides global)
-	if localCfg != nil {
-		if localVal := getConfigValueByPath(localCfg, path); localVal != "" {
-			result.Value = localVal
-			result.Source = ".ddx.yml"
-			result.SourceType = "local"
-			result.IsDefault = false
-		}
-	}
-
-	// Check environment config (overrides local)
-	if envCfg != nil {
-		if envVal := getConfigValueByPath(envCfg, path); envVal != "" {
-			envName := os.Getenv("DDX_ENV")
-			result.Value = envVal
-			result.Source = fmt.Sprintf(".ddx.%s.yml", envName)
-			result.SourceType = "environment"
-			result.IsDefault = false
-			result.IsOverride = true
-		}
-	}
-
-	// Check for environment variable override
-	if envVar := getEnvVarForPath(path); envVar != "" {
-		if envVal := os.Getenv(envVar); envVal != "" {
-			result.Value = envVal
-			result.Source = fmt.Sprintf("env:%s", envVar)
-			result.SourceType = "environment_variable"
-			result.IsDefault = false
-			result.IsOverride = true
-		}
-	}
-
-	return result
-}
-
-// getConfigValueByPath extracts a value from config using dot notation path
-func getConfigValueByPath(cfg *config.Config, path string) string {
-	parts := strings.Split(path, ".")
-
-	switch parts[0] {
-	case "version":
-		return cfg.Version
-	case "library_path":
-		return cfg.LibraryPath
-	case "repository":
-		if len(parts) > 1 {
-			switch parts[1] {
-			case "url":
-				return cfg.Repository.URL
-			case "branch":
-				return cfg.Repository.Branch
-			case "path":
-				return cfg.Repository.Path
-			}
-		}
-	case "variables":
-		if len(parts) > 1 && cfg.Variables != nil {
-			return cfg.Variables[parts[1]]
-		}
-	}
-
-	return ""
-}
-
-// getEnvVarForPath returns the environment variable name for a config path
-func getEnvVarForPath(path string) string {
-	envMap := map[string]string{
-		"repository.url":    "DDX_REPOSITORY_URL",
-		"repository.branch": "DDX_REPOSITORY_BRANCH",
-		"repository.path":   "DDX_REPOSITORY_PATH",
-		"library_path":      "DDX_LIBRARY_PATH",
-	}
-
-	return envMap[path]
-}
-
-// getSourceFile returns the config file name for a source type
-func getSourceFile(sourceType string) string {
-	switch sourceType {
-	case "global":
-		return getGlobalConfigFile()
-	case "local":
-		return ".ddx.yml"
-	case "environment":
-		if envName := os.Getenv("DDX_ENV"); envName != "" {
-			return fmt.Sprintf(".ddx.%s.yml", envName)
-		}
-		return ".ddx.env.yml"
-	default:
-		return "default"
-	}
-}
-
-// getGlobalConfigFile returns the global config file path
-func getGlobalConfigFile() string {
-	if home, err := os.UserHomeDir(); err == nil {
-		return filepath.Join(home, ".ddx.yml")
-	}
-	return "~/.ddx.yml"
-}
-
-// outputConfigAsYAML outputs the effective config in YAML format with color coding
-func outputConfigAsYAML(cmd *cobra.Command, effective *EffectiveConfig, verbose bool) error {
-	// Create color functions
-	green := color.New(color.FgGreen).SprintFunc()     // Base config
-	yellow := color.New(color.FgYellow).SprintFunc()   // Overrides
-	blue := color.New(color.FgBlue).SprintFunc()       // Environment variables
-	cyan := color.New(color.FgCyan).SprintFunc()       // Defaults
-	magenta := color.New(color.FgMagenta).SprintFunc() // Command-line flags
-	red := color.New(color.FgRed).SprintFunc()         // Computed values
-
-	out := cmd.OutOrStdout()
-
-	// Header
-	fmt.Fprintf(out, "# DDx Effective Configuration\n")
-	fmt.Fprintf(out, "# Generated: %s\n", effective.GeneratedAt)
-	if effective.ActiveProfile != "" {
-		fmt.Fprintf(out, "# Active Profile: %s\n", effective.ActiveProfile)
-	}
-	fmt.Fprintf(out, "\n")
-
-	// Version
-	if effective.Version != nil {
-		valueColor := getColorForSourceType(effective.Version.SourceType)
-		fmt.Fprintf(out, "version: %s", valueColor(fmt.Sprintf("\"%s\"", effective.Version.Value)))
-		if verbose {
-			fmt.Fprintf(out, " # Source: %s", effective.Version.Source)
-		}
-		fmt.Fprintf(out, "\n\n")
-	}
-
-	// Library Path
-	if effective.LibraryPath != nil {
-		valueColor := getColorForSourceType(effective.LibraryPath.SourceType)
-		fmt.Fprintf(out, "library_path: %s", valueColor(fmt.Sprintf("\"%s\"", effective.LibraryPath.Value)))
-		if verbose {
-			fmt.Fprintf(out, " # Source: %s", effective.LibraryPath.Source)
-		}
-		fmt.Fprintf(out, "\n\n")
-	}
-
-	// Repository
-	fmt.Fprintf(out, "repository:\n")
-	for key, value := range effective.Repository {
-		valueColor := getColorForSourceType(value.SourceType)
-		fmt.Fprintf(out, "  %s: %s", key, valueColor(fmt.Sprintf("\"%s\"", value.Value)))
-		if verbose {
-			fmt.Fprintf(out, " # Source: %s", value.Source)
-			if value.IsOverride {
-				fmt.Fprintf(out, " (override)")
-			}
-		}
-		fmt.Fprintf(out, "\n")
-	}
-	fmt.Fprintf(out, "\n")
-
-	// Variables
-	if len(effective.Variables) > 0 {
-		fmt.Fprintf(out, "variables:\n")
-		for key, value := range effective.Variables {
-			valueColor := getColorForSourceType(value.SourceType)
-			fmt.Fprintf(out, "  %s: %s", key, valueColor(fmt.Sprintf("\"%s\"", value.Value)))
-			if verbose {
-				fmt.Fprintf(out, " # Source: %s", value.Source)
-				if value.IsOverride {
-					fmt.Fprintf(out, " (override)")
-				}
-				if value.IsDefault {
-					fmt.Fprintf(out, " (default)")
-				}
-			}
-			fmt.Fprintf(out, "\n")
-		}
-		fmt.Fprintf(out, "\n")
-	}
-
-	// Includes
-	if len(effective.Includes) > 0 {
-		fmt.Fprintf(out, "includes:\n")
-		for _, include := range effective.Includes {
-			valueColor := getColorForSourceType(include.SourceType)
-			fmt.Fprintf(out, "  - %s", valueColor(fmt.Sprintf("\"%s\"", include.Value)))
-			if verbose {
-				fmt.Fprintf(out, " # Source: %s", include.Source)
-				if include.IsOverride {
-					fmt.Fprintf(out, " (override)")
-				}
-			}
-			fmt.Fprintf(out, "\n")
-		}
-		fmt.Fprintf(out, "\n")
-	}
-
-	// Color legend if verbose
-	if verbose {
-		fmt.Fprintf(out, "# Color Legend:\n")
-		fmt.Fprintf(out, "# %s - Base configuration\n", green("Green"))
-		fmt.Fprintf(out, "# %s - Overridden values\n", yellow("Yellow"))
-		fmt.Fprintf(out, "# %s - Environment variables\n", blue("Blue"))
-		fmt.Fprintf(out, "# %s - Default values\n", cyan("Cyan"))
-		fmt.Fprintf(out, "# %s - Command-line flags\n", magenta("Magenta"))
-		fmt.Fprintf(out, "# %s - Computed/resolved values\n", red("Red"))
-	}
-
-	return nil
-}
-
-// getColorForSourceType returns the appropriate color function for a source type
-func getColorForSourceType(sourceType string) func(a ...interface{}) string {
-	switch sourceType {
-	case "global", "local":
-		return color.New(color.FgGreen).SprintFunc() // Base config
-	case "environment":
-		return color.New(color.FgYellow).SprintFunc() // Profile overrides
-	case "environment_variable":
-		return color.New(color.FgBlue).SprintFunc() // Environment variables
-	case "default":
-		return color.New(color.FgCyan).SprintFunc() // Defaults
-	case "command_line":
-		return color.New(color.FgMagenta).SprintFunc() // Command-line flags
-	case "computed":
-		return color.New(color.FgRed).SprintFunc() // Computed values
-	default:
-		return color.New(color.FgWhite).SprintFunc() // Unknown
-	}
-}
-
-// outputConfigAsJSON outputs the effective config in JSON format
-func outputConfigAsJSON(cmd *cobra.Command, effective *EffectiveConfig) error {
-	data, err := json.MarshalIndent(effective, "", "  ")
-	if err != nil {
-		return fmt.Errorf("failed to marshal config to JSON: %w", err)
-	}
-
-	fmt.Fprint(cmd.OutOrStdout(), string(data))
-	return nil
-}
-
-// outputConfigAsTable outputs the effective config in table format
-func outputConfigAsTable(cmd *cobra.Command, effective *EffectiveConfig) error {
-	out := cmd.OutOrStdout()
-
-	// Table header
-	fmt.Fprintf(out, "%-20s | %-20s | %-30s | %-15s | %-10s\n",
-		"Section", "Key", "Value", "Source", "Type")
-	fmt.Fprintf(out, "%s\n", strings.Repeat("-", 100))
-
-	// Version
-	if effective.Version != nil {
-		fmt.Fprintf(out, "%-20s | %-20s | %-30s | %-15s | %-10s\n",
-			"system", "version", fmt.Sprintf("%v", effective.Version.Value),
-			effective.Version.Source, effective.Version.SourceType)
-	}
-
-	// Repository
-	for key, value := range effective.Repository {
-		fmt.Fprintf(out, "%-20s | %-20s | %-30s | %-15s | %-10s\n",
-			"repository", key, fmt.Sprintf("%v", value.Value),
-			value.Source, value.SourceType)
-	}
-
-	// Variables
-	for key, value := range effective.Variables {
-		fmt.Fprintf(out, "%-20s | %-20s | %-30s | %-15s | %-10s\n",
-			"variables", key, fmt.Sprintf("%v", value.Value),
-			value.Source, value.SourceType)
-	}
-
-	return nil
-}
-
-// showConfigSection shows only a specific section of the configuration
-func showConfigSection(cmd *cobra.Command, effective *EffectiveConfig, section, format string, verbose bool) error {
-	switch strings.ToLower(section) {
-	case "variables":
-		return showVariablesSection(cmd, effective.Variables, format, verbose)
-	case "repository":
-		return showRepositorySection(cmd, effective.Repository, format, verbose)
-	case "includes":
-		return showIncludesSection(cmd, effective.Includes, format, verbose)
-	default:
-		return fmt.Errorf("unknown section: %s (available: variables, repository, includes)", section)
-	}
-}
-
-// showVariablesSection shows only the variables section
-func showVariablesSection(cmd *cobra.Command, variables map[string]*ConfigValueWithSource, format string, verbose bool) error {
-	if format == "json" {
-		data, err := json.MarshalIndent(variables, "", "  ")
-		if err != nil {
-			return err
-		}
-		fmt.Fprint(cmd.OutOrStdout(), string(data))
-		return nil
-	}
-
-	out := cmd.OutOrStdout()
-	fmt.Fprintf(out, "variables:\n")
-	for key, value := range variables {
-		valueColor := getColorForSourceType(value.SourceType)
-		fmt.Fprintf(out, "  %s: %s", key, valueColor(fmt.Sprintf("\"%s\"", value.Value)))
-		if verbose {
-			fmt.Fprintf(out, " # Source: %s", value.Source)
-		}
-		fmt.Fprintf(out, "\n")
-	}
-	return nil
-}
-
-// showRepositorySection shows only the repository section
-func showRepositorySection(cmd *cobra.Command, repository map[string]*ConfigValueWithSource, format string, verbose bool) error {
-	if format == "json" {
-		data, err := json.MarshalIndent(repository, "", "  ")
-		if err != nil {
-			return err
-		}
-		fmt.Fprint(cmd.OutOrStdout(), string(data))
-		return nil
-	}
-
-	out := cmd.OutOrStdout()
-	fmt.Fprintf(out, "repository:\n")
-	for key, value := range repository {
-		valueColor := getColorForSourceType(value.SourceType)
-		fmt.Fprintf(out, "  %s: %s", key, valueColor(fmt.Sprintf("\"%s\"", value.Value)))
-		if verbose {
-			fmt.Fprintf(out, " # Source: %s", value.Source)
-		}
-		fmt.Fprintf(out, "\n")
-	}
-	return nil
-}
-
-// showIncludesSection shows only the includes section
-func showIncludesSection(cmd *cobra.Command, includes []*ConfigValueWithSource, format string, verbose bool) error {
-	if format == "json" {
-		data, err := json.MarshalIndent(includes, "", "  ")
-		if err != nil {
-			return err
-		}
-		fmt.Fprint(cmd.OutOrStdout(), string(data))
-		return nil
-	}
-
-	out := cmd.OutOrStdout()
-	fmt.Fprintf(out, "includes:\n")
-	for _, include := range includes {
-		valueColor := getColorForSourceType(include.SourceType)
-		fmt.Fprintf(out, "  - %s", valueColor(fmt.Sprintf("\"%s\"", include.Value)))
-		if verbose {
-			fmt.Fprintf(out, " # Source: %s", include.Source)
-		}
-		fmt.Fprintf(out, "\n")
-	}
-	return nil
-}
-
-// filterOverridesOnly filters the config to show only overridden values
-func filterOverridesOnly(effective *EffectiveConfig) *EffectiveConfig {
-	filtered := &EffectiveConfig{
-		GeneratedAt:   effective.GeneratedAt,
-		ActiveProfile: effective.ActiveProfile,
-		Repository:    make(map[string]*ConfigValueWithSource),
-		Variables:     make(map[string]*ConfigValueWithSource),
-		Includes:      []*ConfigValueWithSource{},
-		Overrides:     make(map[string]*ConfigValueWithSource),
-		Resources:     make(map[string]*ConfigValueWithSource),
-	}
-
-	// Only include version if it's overridden
-	if effective.Version != nil && effective.Version.IsOverride {
-		filtered.Version = effective.Version
-	}
-
-	// Only include library_path if it's overridden
-	if effective.LibraryPath != nil && effective.LibraryPath.IsOverride {
-		filtered.LibraryPath = effective.LibraryPath
-	}
-
-	// Filter repository values
-	for key, value := range effective.Repository {
-		if value.IsOverride {
-			filtered.Repository[key] = value
-		}
-	}
-
-	// Filter variables
-	for key, value := range effective.Variables {
-		if value.IsOverride {
-			filtered.Variables[key] = value
-		}
-	}
-
-	// Filter includes
-	for _, include := range effective.Includes {
-		if include.IsOverride {
-			filtered.Includes = append(filtered.Includes, include)
-		}
-	}
-
-	return filtered
-}

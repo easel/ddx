@@ -11,6 +11,26 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// WithIsolatedDirectory runs a test function in an isolated temp directory
+// This replaces the pattern of os.Chdir() + defer cleanup
+// Usage: WithIsolatedDirectory(t, func(dir string) { /* test code using dir */ })
+func WithIsolatedDirectory(t *testing.T, testFunc func(workingDir string)) {
+	t.Helper()
+
+	// Create temp directory
+	tempDir := t.TempDir()
+
+	// Run test function with temp directory
+	testFunc(tempDir)
+}
+
+// GetCommandInDirectory creates a command configured to run in the specified directory
+// This replaces getFreshRootCmd() calls after os.Chdir()
+func GetCommandInDirectory(workingDir string) *cobra.Command {
+	factory := NewCommandFactory(workingDir)
+	return factory.NewRootCommand()
+}
+
 // TestHarness provides complete isolation for tests
 type TestHarness struct {
 	t         *testing.T
@@ -29,30 +49,21 @@ type TestHarness struct {
 func NewTestHarness(t *testing.T) *TestHarness {
 	t.Helper()
 
-	// Get working directory, handle case where it might be deleted
-	origDir, err := os.Getwd()
-	if err != nil {
-		// Current directory might have been deleted by another test
-		// Use a safe temp directory path but don't change to it
-		safeTempDir, err := os.MkdirTemp("", "ddx-test-harness-*")
-		require.NoError(t, err, "Failed to create safe temp directory")
-		origDir = safeTempDir
-		t.Cleanup(func() {
-			os.RemoveAll(safeTempDir)
-		})
-	}
+	// Use a default safe directory for factory initialization
+	// Tests should use WithTempDir() to set specific working directory
+	defaultDir := "/tmp"
 
 	// Create isolated viper instance
 	v := viper.New()
 
 	// Create command factory with isolated viper
-	factory := NewCommandFactoryWithViper(origDir, v)
+	factory := NewCommandFactoryWithViper(defaultDir, v)
 
 	// Create test harness
 	h := &TestHarness{
 		t:         t,
 		factory:   factory,
-		origDir:   origDir,
+		origDir:   defaultDir,
 		output:    new(bytes.Buffer),
 		errOutput: new(bytes.Buffer),
 		viper:     v,

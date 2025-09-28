@@ -90,7 +90,8 @@ func TestLoadRegistry(t *testing.T) {
 	defer cleanup()
 
 	t.Run("successful load", func(t *testing.T) {
-		registry, err := mcp.LoadRegistry(registryPath)
+		wd, _ := os.Getwd()
+		registry, err := mcp.LoadRegistry(registryPath, wd)
 		require.NoError(t, err)
 		assert.NotNil(t, registry)
 		assert.Equal(t, "1.0.0", registry.Version)
@@ -100,13 +101,15 @@ func TestLoadRegistry(t *testing.T) {
 
 	t.Run("load with empty path uses default", func(t *testing.T) {
 		// Library path is already set via DDX_LIBRARY_BASE_PATH in setupTestRegistry
-		registry, err := mcp.LoadRegistry("")
+		wd, _ := os.Getwd()
+		registry, err := mcp.LoadRegistry("", wd)
 		require.NoError(t, err)
 		assert.NotNil(t, registry)
 	})
 
 	t.Run("file not found", func(t *testing.T) {
-		_, err := mcp.LoadRegistry("/nonexistent/registry.yml")
+		wd, _ := os.Getwd()
+		_, err := mcp.LoadRegistry("/nonexistent/registry.yml", wd)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "reading registry file")
 	})
@@ -114,7 +117,8 @@ func TestLoadRegistry(t *testing.T) {
 	t.Run("invalid YAML", func(t *testing.T) {
 		invalidPath := filepath.Join(t.TempDir(), "invalid.yml")
 		os.WriteFile(invalidPath, []byte("invalid: yaml: content:"), 0644)
-		_, err := mcp.LoadRegistry(invalidPath)
+		wd, _ := os.Getwd()
+		_, err := mcp.LoadRegistry(invalidPath, wd)
 		assert.Error(t, err)
 	})
 }
@@ -123,7 +127,8 @@ func TestRegistryGetServer(t *testing.T) {
 	registryPath, cleanup := setupTestRegistry(t)
 	defer cleanup()
 
-	registry, err := mcp.LoadRegistry(registryPath)
+	wd, _ := os.Getwd()
+		registry, err := mcp.LoadRegistry(registryPath, wd)
 	require.NoError(t, err)
 
 	t.Run("get existing server", func(t *testing.T) {
@@ -158,7 +163,8 @@ func TestRegistrySearch(t *testing.T) {
 	registryPath, cleanup := setupTestRegistry(t)
 	defer cleanup()
 
-	registry, err := mcp.LoadRegistry(registryPath)
+	wd, _ := os.Getwd()
+		registry, err := mcp.LoadRegistry(registryPath, wd)
 	require.NoError(t, err)
 
 	t.Run("search by name", func(t *testing.T) {
@@ -198,7 +204,8 @@ func TestRegistryFilterByCategory(t *testing.T) {
 	registryPath, cleanup := setupTestRegistry(t)
 	defer cleanup()
 
-	registry, err := mcp.LoadRegistry(registryPath)
+	wd, _ := os.Getwd()
+		registry, err := mcp.LoadRegistry(registryPath, wd)
 	require.NoError(t, err)
 
 	t.Run("filter by category", func(t *testing.T) {
@@ -300,7 +307,8 @@ func TestListServers(t *testing.T) {
 	registryPath, cleanup := setupTestRegistry(t)
 	defer cleanup()
 
-	registry, err := mcp.LoadRegistry(registryPath)
+	wd, _ := os.Getwd()
+		registry, err := mcp.LoadRegistry(registryPath, wd)
 	require.NoError(t, err)
 
 	t.Run("list all", func(t *testing.T) {

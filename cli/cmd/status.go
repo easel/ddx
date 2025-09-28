@@ -41,27 +41,26 @@ Examples:
 
 // Remove init function - commands are now registered via command factory
 
-func runStatus(cmd *cobra.Command, args []string) error {
-	// Verify we're in a DDX project
-	if !isDDXProject() {
-		return fmt.Errorf("not a DDX project - run 'ddx init' first")
-	}
-
+// CommandFactory method - CLI interface layer
+func (f *CommandFactory) runStatus(cmd *cobra.Command, args []string) error {
 	// Get flag values
 	checkUpstream, _ := cmd.Flags().GetBool("check-upstream")
 	showChanges, _ := cmd.Flags().GetBool("changes")
 	showDiff, _ := cmd.Flags().GetBool("diff")
 	exportPath, _ := cmd.Flags().GetString("export")
 
-	status, err := collectStatusInfo(checkUpstream, showChanges, showDiff)
+	// Call pure business logic
+	status, err := checkStatus(f.WorkingDir, checkUpstream, showChanges, showDiff)
 	if err != nil {
-		return fmt.Errorf("failed to collect status information: %w", err)
+		return err
 	}
 
+	// Handle export if requested
 	if exportPath != "" {
 		return exportStatusManifest(cmd, status, exportPath)
 	}
 
+	// Display results
 	displayStatus(cmd, status, showChanges, showDiff)
 	return nil
 }
@@ -105,8 +104,14 @@ type PerformanceInfo struct {
 	CollectionTime time.Duration `yaml:"collection_time" json:"collection_time"`
 }
 
-func collectStatusInfo(checkUpstream, showChanges, showDiff bool) (*StatusInfo, error) {
+// checkStatus is the pure business logic function
+func checkStatus(workingDir string, checkUpstream, showChanges, showDiff bool) (*StatusInfo, error) {
 	start := time.Now()
+
+	// Verify we're in a DDx project
+	if !isDDXProjectInDir(workingDir) {
+		return nil, fmt.Errorf("not a DDX project - run 'ddx init' first")
+	}
 
 	status := &StatusInfo{
 		Performance: PerformanceInfo{
@@ -115,7 +120,7 @@ func collectStatusInfo(checkUpstream, showChanges, showDiff bool) (*StatusInfo, 
 	}
 
 	// Get version information
-	version, hash, err := getVersionInfo()
+	version, hash, err := getVersionInfoFromDir(workingDir)
 	if err != nil {
 		return nil, err
 	}
@@ -123,14 +128,14 @@ func collectStatusInfo(checkUpstream, showChanges, showDiff bool) (*StatusInfo, 
 	status.CommitHash = hash
 
 	// Get last updated time
-	lastUpdated, err := getLastUpdatedTime()
+	lastUpdated, err := getLastUpdatedTimeFromDir(workingDir)
 	if err != nil {
 		return nil, err
 	}
 	status.LastUpdated = lastUpdated
 
 	// Check for local modifications
-	modifications, err := getLocalModifications()
+	modifications, err := getLocalModificationsFromDir(workingDir)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +143,7 @@ func collectStatusInfo(checkUpstream, showChanges, showDiff bool) (*StatusInfo, 
 
 	// Check upstream updates if requested
 	if checkUpstream {
-		upstream, err := checkUpstreamUpdates()
+		upstream, err := checkUpstreamUpdatesFromDir(workingDir)
 		if err != nil {
 			return nil, err
 		}
@@ -146,7 +151,7 @@ func collectStatusInfo(checkUpstream, showChanges, showDiff bool) (*StatusInfo, 
 	}
 
 	// Collect resource information
-	resources, err := getStatusResources()
+	resources, err := getStatusResourcesFromDir(workingDir)
 	if err != nil {
 		return nil, err
 	}
@@ -156,15 +161,30 @@ func collectStatusInfo(checkUpstream, showChanges, showDiff bool) (*StatusInfo, 
 	return status, nil
 }
 
-func getVersionInfo() (version, hash string, err error) {
+func getVersionInfoFromDir(workingDir string) (version, hash string, err error) {
 	// Try to get from .ddx.yml first
-	version = viper.GetString("version")
+	configPath := ".ddx.yml"
+	if workingDir != "" {
+		configPath = filepath.Join(workingDir, ".ddx.yml")
+	}
+
+	// Create a temporary viper instance for this specific config
+	v := viper.New()
+	v.SetConfigFile(configPath)
+	if err := v.ReadInConfig(); err == nil {
+		version = v.GetString("version")
+	}
+
 	if version == "" {
 		version = "v0.0.1" // Default if not set
 	}
 
 	// Get git commit hash from .ddx directory
 	ddxDir := ".ddx"
+	if workingDir != "" {
+		ddxDir = filepath.Join(workingDir, ".ddx")
+	}
+
 	if _, err := os.Stat(ddxDir); os.IsNotExist(err) {
 		return version, "unknown", nil
 	}
@@ -181,17 +201,25 @@ func getVersionInfo() (version, hash string, err error) {
 	return version, hash, nil
 }
 
-func getLastUpdatedTime() (time.Time, error) {
-	// Check .ddx.yml for last_updated field
-	lastUpdatedStr := viper.GetString("last_updated")
-	if lastUpdatedStr != "" {
-		if t, err := time.Parse(time.RFC3339, lastUpdatedStr); err == nil {
-			return t, nil
+func getLastUpdatedTimeFromDir(workingDir string) (time.Time, error) {
+	configPath := ".ddx.yml"
+	if workingDir != "" {
+		configPath = filepath.Join(workingDir, ".ddx.yml")
+	}
+
+	// Create a temporary viper instance for this specific config
+	v := viper.New()
+	v.SetConfigFile(configPath)
+	if err := v.ReadInConfig(); err == nil {
+		lastUpdatedStr := v.GetString("last_updated")
+		if lastUpdatedStr != "" {
+			if t, err := time.Parse(time.RFC3339, lastUpdatedStr); err == nil {
+				return t, nil
+			}
 		}
 	}
 
 	// Fallback to .ddx.yml modification time
-	configPath := ".ddx.yml"
 	if info, err := os.Stat(configPath); err == nil {
 		return info.ModTime(), nil
 	}
@@ -199,10 +227,14 @@ func getLastUpdatedTime() (time.Time, error) {
 	return time.Now(), nil
 }
 
-func getLocalModifications() ([]ModifiedFile, error) {
+func getLocalModificationsFromDir(workingDir string) ([]ModifiedFile, error) {
 	var modifications []ModifiedFile
 
 	ddxDir := ".ddx"
+	if workingDir != "" {
+		ddxDir = filepath.Join(workingDir, ".ddx")
+	}
+
 	if _, err := os.Stat(ddxDir); os.IsNotExist(err) {
 		return modifications, nil
 	}
@@ -213,7 +245,7 @@ func getLocalModifications() ([]ModifiedFile, error) {
 	output, err := cmd.Output()
 	if err != nil {
 		// If git not available, scan for recent modifications
-		return scanForModifications(ddxDir)
+		return scanForModificationsInDir(ddxDir)
 	}
 
 	lines := strings.Split(strings.TrimSpace(string(output)), "\n")
@@ -253,7 +285,7 @@ func getLocalModifications() ([]ModifiedFile, error) {
 	return modifications, nil
 }
 
-func scanForModifications(ddxDir string) ([]ModifiedFile, error) {
+func scanForModificationsInDir(ddxDir string) ([]ModifiedFile, error) {
 	var modifications []ModifiedFile
 
 	err := filepath.Walk(ddxDir, func(path string, info os.FileInfo, err error) error {
@@ -281,7 +313,7 @@ func scanForModifications(ddxDir string) ([]ModifiedFile, error) {
 	return modifications, err
 }
 
-func checkUpstreamUpdates() (*UpstreamInfo, error) {
+func checkUpstreamUpdatesFromDir(workingDir string) (*UpstreamInfo, error) {
 	upstream := &UpstreamInfo{
 		Available: false,
 	}
@@ -299,10 +331,14 @@ func checkUpstreamUpdates() (*UpstreamInfo, error) {
 	return upstream, nil
 }
 
-func getStatusResources() ([]StatusResourceInfo, error) {
+func getStatusResourcesFromDir(workingDir string) ([]StatusResourceInfo, error) {
 	var resources []StatusResourceInfo
 
 	ddxDir := ".ddx"
+	if workingDir != "" {
+		ddxDir = filepath.Join(workingDir, ".ddx")
+	}
+
 	if _, err := os.Stat(ddxDir); os.IsNotExist(err) {
 		return resources, nil
 	}
@@ -443,6 +479,62 @@ func exportStatusManifest(cmd *cobra.Command, status *StatusInfo, path string) e
 }
 
 func isDDXProject() bool {
-	_, err := os.Stat(".ddx.yml")
-	return err == nil
+	return isDDXProjectInDir("")
 }
+
+// Legacy functions kept for compatibility
+func runStatus(cmd *cobra.Command, args []string) error {
+	return runStatusWithWorkingDir(cmd, args, "")
+}
+
+func runStatusWithWorkingDir(cmd *cobra.Command, args []string, workingDir string) error {
+	// Get flag values
+	checkUpstream, _ := cmd.Flags().GetBool("check-upstream")
+	showChanges, _ := cmd.Flags().GetBool("changes")
+	showDiff, _ := cmd.Flags().GetBool("diff")
+	exportPath, _ := cmd.Flags().GetString("export")
+
+	// Call pure business logic
+	status, err := checkStatus(workingDir, checkUpstream, showChanges, showDiff)
+	if err != nil {
+		return err
+	}
+
+	// Handle export if requested
+	if exportPath != "" {
+		return exportStatusManifest(cmd, status, exportPath)
+	}
+
+	// Display results
+	displayStatus(cmd, status, showChanges, showDiff)
+	return nil
+}
+
+func collectStatusInfo(checkUpstream, showChanges, showDiff bool) (*StatusInfo, error) {
+	return checkStatus("", checkUpstream, showChanges, showDiff)
+}
+
+func getVersionInfo() (version, hash string, err error) {
+	return getVersionInfoFromDir("")
+}
+
+func getLastUpdatedTime() (time.Time, error) {
+	return getLastUpdatedTimeFromDir("")
+}
+
+func getLocalModifications() ([]ModifiedFile, error) {
+	return getLocalModificationsFromDir("")
+}
+
+func scanForModifications(ddxDir string) ([]ModifiedFile, error) {
+	return scanForModificationsInDir(ddxDir)
+}
+
+func checkUpstreamUpdates() (*UpstreamInfo, error) {
+	return checkUpstreamUpdatesFromDir("")
+}
+
+func getStatusResources() ([]StatusResourceInfo, error) {
+	return getStatusResourcesFromDir("")
+}
+

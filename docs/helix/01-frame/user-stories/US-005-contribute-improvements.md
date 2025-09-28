@@ -3,7 +3,7 @@
 **Story ID**: US-005
 **Feature**: FEAT-001 - Core CLI Framework
 **Priority**: P1
-**Status**: Draft
+**Status**: Future
 **Created**: 2025-01-14
 **Updated**: 2025-01-14
 

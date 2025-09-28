@@ -25,9 +25,6 @@ func TestListCommand(t *testing.T) {
 			setup: func(t *testing.T) string {
 				// Setup test directory with library
 				testDir := t.TempDir()
-				origWd, _ := os.Getwd()
-				require.NoError(t, os.Chdir(testDir))
-				t.Cleanup(func() { os.Chdir(origWd) })
 
 				// Create library structure
 				libraryDir := filepath.Join(testDir, "library")
@@ -53,7 +50,7 @@ library_path: ./library
 repository:
   url: https://github.com/easel/ddx
   branch: main`)
-				require.NoError(t, os.WriteFile(".ddx.yml", config, 0644))
+				require.NoError(t, os.WriteFile(filepath.Join(testDir, ".ddx.yml"), config, 0644))
 
 				return testDir
 			},
@@ -68,9 +65,6 @@ repository:
 			args: []string{"list", "workflows"},
 			setup: func(t *testing.T) string {
 				testDir := t.TempDir()
-				origWd, _ := os.Getwd()
-				require.NoError(t, os.Chdir(testDir))
-				t.Cleanup(func() { os.Chdir(origWd) })
 
 				libraryDir := filepath.Join(testDir, "library")
 				workflowsDir := filepath.Join(libraryDir, "workflows")
@@ -82,7 +76,7 @@ repository:
 				// Create .ddx.yml config
 				config := []byte(`version: "2.0"
 library_path: ./library`)
-				require.NoError(t, os.WriteFile(".ddx.yml", config, 0644))
+				require.NoError(t, os.WriteFile(filepath.Join(testDir, ".ddx.yml"), config, 0644))
 
 				return testDir
 			},
@@ -96,9 +90,6 @@ library_path: ./library`)
 			args: []string{"list"},
 			setup: func(t *testing.T) string {
 				testDir := t.TempDir()
-				origWd, _ := os.Getwd()
-				require.NoError(t, os.Chdir(testDir))
-				t.Cleanup(func() { os.Chdir(origWd) })
 				// Don't create library or config - should fail gracefully
 				return testDir
 			},
@@ -113,9 +104,6 @@ library_path: ./library`)
 			args: []string{"list", "--json"},
 			setup: func(t *testing.T) string {
 				testDir := t.TempDir()
-				origWd, _ := os.Getwd()
-				require.NoError(t, os.Chdir(testDir))
-				t.Cleanup(func() { os.Chdir(origWd) })
 
 				libraryDir := filepath.Join(testDir, "library")
 				workflowsDir := filepath.Join(libraryDir, "workflows", "test")
@@ -132,7 +120,7 @@ library_path: ./library`)
 				// Create config
 				config := []byte(`version: "2.0"
 library_path: ./library`)
-				require.NoError(t, os.WriteFile(".ddx.yml", config, 0644))
+				require.NoError(t, os.WriteFile(filepath.Join(testDir, ".ddx.yml"), config, 0644))
 
 				return testDir
 			},
@@ -149,8 +137,11 @@ library_path: ./library`)
 			// Create a fresh command for test isolation
 			// (flags are now local to the command)
 
+			var testDir string
 			if tt.setup != nil {
-				tt.setup(t)
+				testDir = tt.setup(t)
+			} else {
+				testDir = t.TempDir()
 			}
 
 			rootCmd := &cobra.Command{
@@ -159,7 +150,7 @@ library_path: ./library`)
 			}
 
 			// Create fresh list command to avoid state pollution
-			factory := NewCommandFactory("/tmp")
+			factory := NewCommandFactory(testDir)
 			freshListCmd := &cobra.Command{
 				Use:   "list",
 				Short: "List available DDx resources",

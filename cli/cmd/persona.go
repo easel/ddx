@@ -8,13 +8,22 @@ import (
 	"text/tabwriter"
 
 	"github.com/easel/ddx/internal/config"
-	// "github.com/easel/ddx/internal/persona" // Will be used when persona package is implemented
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
 
 // Command registration is now handled by command_factory.go
 // This file only contains the run function implementation
+
+// PersonaInfo represents persona information
+type PersonaInfo struct {
+	Name        string
+	Roles       []string
+	Description string
+	Tags        []string
+	Content     string
+	FilePath    string
+}
 
 // PersonaMetadata represents parsed persona frontmatter
 type PersonaMetadata struct {
@@ -24,73 +33,130 @@ type PersonaMetadata struct {
 	Tags        []string `yaml:"tags"`
 }
 
+// PersonaBindings represents persona-role bindings
+type PersonaBindings map[string]string
+
+// PersonaStatus represents the status of active personas
+type PersonaStatus struct {
+	LoadedPersonas []string
+	LoadedRoles    []string
+	BindingsCount  int
+	HasCLAUDEFile  bool
+}
+
+// =============================================================================
+// CLI Interface Layer - Handles cobra.Command interactions and user output
+// =============================================================================
+
+// runPersona implements the persona command logic for CommandFactory
+func (f *CommandFactory) runPersona(cmd *cobra.Command, args []string) error {
+	return runPersonaWithWorkingDir(cmd, args, f.WorkingDir)
+}
+
 // runPersona implements the persona command logic
 func runPersona(cmd *cobra.Command, args []string) error {
-	// Get flag values locally
+	return runPersonaWithWorkingDir(cmd, args, "")
+}
+
+// runPersonaWithWorkingDir implements the persona command logic with working directory support
+func runPersonaWithWorkingDir(cmd *cobra.Command, args []string, workingDir string) error {
+	// Extract flags from cobra.Command
 	listFlag, _ := cmd.Flags().GetBool("list")
 	showFlag, _ := cmd.Flags().GetString("show")
 	bindFlag, _ := cmd.Flags().GetString("bind")
 	roleFlag, _ := cmd.Flags().GetString("role")
+	roleFilter, _ := cmd.Flags().GetString("role")
+	tagFilter, _ := cmd.Flags().GetString("tag")
 
 	// Handle subcommands
 	if len(args) > 0 {
 		switch args[0] {
 		case "list":
-			return listPersonas(cmd)
+			personas, err := personaList(workingDir, roleFilter, tagFilter)
+			if err != nil {
+				return err
+			}
+			return displayPersonaList(cmd, personas)
 		case "show":
 			if len(args) < 2 {
 				return fmt.Errorf("persona name required")
 			}
-			return showPersona(cmd, args[1])
+			persona, err := personaShow(workingDir, args[1])
+			if err != nil {
+				return err
+			}
+			return displayPersona(cmd, persona)
 		case "bind":
 			if len(args) < 3 {
 				return fmt.Errorf("role and persona name required")
 			}
-			return bindPersona(cmd, args[1], args[2])
+			err := personaBind(workingDir, args[1], args[2])
+			if err != nil {
+				return err
+			}
+			fmt.Fprintf(cmd.OutOrStdout(), "✅ Bound role '%s' to persona '%s'\n", args[1], args[2])
+			return nil
 		case "load":
-			return loadPersonas(cmd, args[1:]...)
+			loadedPersonas, err := personaLoad(workingDir, args[1:]...)
+			if err != nil {
+				return err
+			}
+			return displayLoadResult(cmd, args[1:], loadedPersonas)
 		case "bindings":
-			return showBindings(cmd)
+			bindings, err := personaBindings(workingDir)
+			if err != nil {
+				return err
+			}
+			return displayBindings(cmd, bindings)
 		case "status":
-			return showStatus(cmd)
+			status, err := personaStatus(workingDir)
+			if err != nil {
+				return err
+			}
+			return displayPersonaStatus(cmd, status)
 		}
 	}
 
 	// Handle flags
 	if listFlag {
-		return listPersonas(cmd)
+		personas, err := personaList(workingDir, roleFilter, tagFilter)
+		if err != nil {
+			return err
+		}
+		return displayPersonaList(cmd, personas)
 	}
 
 	if showFlag != "" {
-		return showPersona(cmd, showFlag)
+		persona, err := personaShow(workingDir, showFlag)
+		if err != nil {
+			return err
+		}
+		return displayPersona(cmd, persona)
 	}
 
 	if bindFlag != "" && roleFlag != "" {
-		return bindPersona(cmd, roleFlag, bindFlag)
-	}
-
-	// Default to list
-	return listPersonas(cmd)
-}
-
-func listPersonas(cmd *cobra.Command) error {
-	// Get library path
-	libPath, err := config.GetLibraryPath(getLibraryPath())
-	if err != nil {
-		return fmt.Errorf("failed to get library path: %w", err)
-	}
-
-	personasDir := filepath.Join(libPath, "personas")
-
-	// Check if personas directory exists
-	if _, err := os.Stat(personasDir); os.IsNotExist(err) {
-		fmt.Fprintln(cmd.OutOrStdout(), "No personas directory found")
+		err := personaBind(workingDir, roleFlag, bindFlag)
+		if err != nil {
+			return err
+		}
+		fmt.Fprintf(cmd.OutOrStdout(), "✅ Bound role '%s' to persona '%s'\n", roleFlag, bindFlag)
 		return nil
 	}
 
-	// Get filter flags
-	roleFilter, _ := cmd.Flags().GetString("role")
-	tagFilter, _ := cmd.Flags().GetString("tag")
+	// Default to list
+	personas, err := personaList(workingDir, "", "")
+	if err != nil {
+		return err
+	}
+	return displayPersonaList(cmd, personas)
+}
+
+// displayPersonaList displays the list of personas to the user
+func displayPersonaList(cmd *cobra.Command, personas []PersonaInfo) error {
+	if len(personas) == 0 {
+		fmt.Fprintln(cmd.OutOrStdout(), "No personas found")
+		return nil
+	}
 
 	fmt.Fprintln(cmd.OutOrStdout(), "Available Personas:")
 	fmt.Fprintln(cmd.OutOrStdout())
@@ -100,14 +166,148 @@ func listPersonas(cmd *cobra.Command) error {
 	fmt.Fprintln(w, "PERSONA\tROLE\tDESCRIPTION")
 	fmt.Fprintln(w, "-------\t----\t-----------")
 
+	for _, persona := range personas {
+		roleStr := "general"
+		if len(persona.Roles) > 0 {
+			roleStr = persona.Roles[0]
+		}
+		fmt.Fprintf(w, "%s\t%s\t%s\n", persona.Name, roleStr, persona.Description)
+	}
+
+	w.Flush()
+	return nil
+}
+
+// displayPersona displays a single persona to the user
+func displayPersona(cmd *cobra.Command, persona *PersonaInfo) error {
+	if persona == nil {
+		return fmt.Errorf("persona not found")
+	}
+
+	// Parse metadata from content
+	metadata := parsePersonaMetadata(persona.Content)
+	if metadata != nil {
+		// Display formatted metadata
+		fmt.Fprintf(cmd.OutOrStdout(), "Name: %s\n", metadata.Name)
+		fmt.Fprintf(cmd.OutOrStdout(), "Roles: %s\n", strings.Join(metadata.Roles, ", "))
+		fmt.Fprintf(cmd.OutOrStdout(), "Description: %s\n", metadata.Description)
+		fmt.Fprintf(cmd.OutOrStdout(), "Tags: %s\n", strings.Join(metadata.Tags, ", "))
+
+		// Display content after frontmatter
+		lines := strings.Split(persona.Content, "\n")
+		contentStart := 0
+		foundEnd := false
+		for i, line := range lines {
+			if i > 0 && line == "---" {
+				contentStart = i + 1
+				foundEnd = true
+				break
+			}
+		}
+		if foundEnd && contentStart < len(lines) {
+			fmt.Fprintln(cmd.OutOrStdout())
+			fmt.Fprint(cmd.OutOrStdout(), strings.Join(lines[contentStart:], "\n"))
+		}
+	} else {
+		// No frontmatter, display raw content
+		fmt.Fprint(cmd.OutOrStdout(), persona.Content)
+	}
+	return nil
+}
+
+// displayBindings displays persona bindings to the user
+func displayBindings(cmd *cobra.Command, bindings PersonaBindings) error {
+	if len(bindings) == 0 {
+		fmt.Fprintln(cmd.OutOrStdout(), "No persona bindings configured")
+		return nil
+	}
+
+	fmt.Fprintln(cmd.OutOrStdout(), "Current Persona Bindings:")
+	fmt.Fprintln(cmd.OutOrStdout())
+
+	// Create tabwriter for aligned output
+	w := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 0, 2, ' ', 0)
+	fmt.Fprintln(w, "ROLE\tPERSONA")
+	fmt.Fprintln(w, "----\t-------")
+
+	for role, persona := range bindings {
+		fmt.Fprintf(w, "%s\t%s\n", role, persona)
+	}
+
+	w.Flush()
+	return nil
+}
+
+// displayPersonaStatus displays persona status to the user
+func displayPersonaStatus(cmd *cobra.Command, status PersonaStatus) error {
+	if !status.HasCLAUDEFile {
+		fmt.Fprintln(cmd.OutOrStdout(), "No CLAUDE.md file found - no personas loaded")
+		return nil
+	}
+
+	if len(status.LoadedPersonas) > 0 {
+		fmt.Fprintln(cmd.OutOrStdout(), "Loaded Personas:")
+		for i, persona := range status.LoadedPersonas {
+			fmt.Fprintf(cmd.OutOrStdout(), "  - %s (%s)\n", persona, status.LoadedRoles[i])
+		}
+	} else {
+		fmt.Fprintln(cmd.OutOrStdout(), "No personas currently loaded")
+	}
+
+	if status.BindingsCount > 0 {
+		fmt.Fprintf(cmd.OutOrStdout(), "\n%d persona binding(s) configured\n", status.BindingsCount)
+	}
+
+	return nil
+}
+
+// displayLoadResult displays the result of loading personas
+func displayLoadResult(cmd *cobra.Command, requestedPersonas []string, loadedPersonas []string) error {
+	if len(requestedPersonas) > 0 {
+		// Specific personas loaded
+		if len(loadedPersonas) == 1 {
+			fmt.Fprintf(cmd.OutOrStdout(), "✅ Loaded persona '%s' into CLAUDE.md\n", loadedPersonas[0])
+		} else {
+			fmt.Fprintf(cmd.OutOrStdout(), "✅ Loaded %d personas into CLAUDE.md\n", len(loadedPersonas))
+		}
+	} else {
+		// All bound personas loaded
+		if len(loadedPersonas) > 0 {
+			fmt.Fprintf(cmd.OutOrStdout(), "✅ Loaded %d personas (%s) into CLAUDE.md\n",
+				len(loadedPersonas), strings.Join(loadedPersonas, ", "))
+		} else {
+			fmt.Fprintln(cmd.OutOrStdout(), "No bound personas to load")
+		}
+	}
+	return nil
+}
+
+// =============================================================================
+// Business Logic Layer - Pure functions that operate on working directory
+// =============================================================================
+
+// personaList returns a list of available personas
+func personaList(workingDir string, roleFilter, tagFilter string) ([]PersonaInfo, error) {
+	// Get library path
+	libPath, err := getPersonaLibraryPath(workingDir)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get library path: %w", err)
+	}
+
+	personasDir := filepath.Join(libPath, "personas")
+
+	// Check if personas directory exists
+	if _, err := os.Stat(personasDir); os.IsNotExist(err) {
+		return []PersonaInfo{}, nil
+	}
+
 	// Read personas directory
 	entries, err := os.ReadDir(personasDir)
 	if err != nil {
-		return fmt.Errorf("failed to read personas directory: %w", err)
+		return nil, fmt.Errorf("failed to read personas directory: %w", err)
 	}
 
-	// Track if any personas were found
-	personasFound := false
+	var personas []PersonaInfo
 
 	for _, entry := range entries {
 		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".md") {
@@ -115,9 +315,10 @@ func listPersonas(cmd *cobra.Command) error {
 		}
 
 		name := strings.TrimSuffix(entry.Name(), ".md")
+		filePath := filepath.Join(personasDir, entry.Name())
 
 		// Read and parse persona file
-		content, err := os.ReadFile(filepath.Join(personasDir, entry.Name()))
+		content, err := os.ReadFile(filePath)
 		if err != nil {
 			continue
 		}
@@ -161,170 +362,223 @@ func listPersonas(cmd *cobra.Command) error {
 			}
 		}
 
-		// Display persona
-		roleStr := "general"
-		if len(metadata.Roles) > 0 {
-			roleStr = metadata.Roles[0]
+		// Create persona info
+		personaInfo := PersonaInfo{
+			Name:        name,
+			Roles:       metadata.Roles,
+			Description: metadata.Description,
+			Tags:        metadata.Tags,
+			Content:     string(content),
+			FilePath:    filePath,
 		}
-		fmt.Fprintf(w, "%s\t%s\t%s\n", name, roleStr, metadata.Description)
-		personasFound = true
+		personas = append(personas, personaInfo)
 	}
 
-	w.Flush()
-
-	// Show message if no personas found
-	if !personasFound {
-		if roleFilter != "" || tagFilter != "" {
-			fmt.Fprintln(cmd.OutOrStdout(), "\nNo personas found matching criteria")
-		} else {
-			fmt.Fprintln(cmd.OutOrStdout(), "No personas found")
-		}
-	}
-
-	return nil
+	return personas, nil
 }
 
-// parsePersonaMetadata parses YAML frontmatter from persona content
-func parsePersonaMetadata(content string) *PersonaMetadata {
-	lines := strings.Split(content, "\n")
-	if len(lines) == 0 || lines[0] != "---" {
-		return nil
-	}
-
-	// Find end of frontmatter
-	endIdx := -1
-	for i := 1; i < len(lines); i++ {
-		if lines[i] == "---" {
-			endIdx = i
-			break
-		}
-	}
-
-	if endIdx == -1 {
-		return nil
-	}
-
-	// Parse YAML frontmatter
-	frontmatter := strings.Join(lines[1:endIdx], "\n")
-	var metadata PersonaMetadata
-	if err := yaml.Unmarshal([]byte(frontmatter), &metadata); err != nil {
-		return nil
-	}
-
-	return &metadata
-}
-
-func showPersona(cmd *cobra.Command, personaName string) error {
+// personaShow returns detailed information about a specific persona
+func personaShow(workingDir string, personaName string) (*PersonaInfo, error) {
 	// Get library path
-	libPath, err := config.GetLibraryPath(getLibraryPath())
+	libPath, err := getPersonaLibraryPath(workingDir)
 	if err != nil {
-		return fmt.Errorf("failed to get library path: %w", err)
+		return nil, fmt.Errorf("failed to get library path: %w", err)
 	}
 
 	personaPath := filepath.Join(libPath, "personas", personaName+".md")
 
 	// Check if persona exists
 	if _, err := os.Stat(personaPath); os.IsNotExist(err) {
-		return fmt.Errorf("persona '%s' not found", personaName)
+		return nil, fmt.Errorf("persona '%s' not found", personaName)
 	}
 
 	// Read persona content
 	content, err := os.ReadFile(personaPath)
 	if err != nil {
-		return fmt.Errorf("failed to read persona: %w", err)
+		return nil, fmt.Errorf("failed to read persona: %w", err)
 	}
 
 	// Parse metadata
 	metadata := parsePersonaMetadata(string(content))
-	if metadata != nil {
-		// Display formatted metadata
-		fmt.Fprintf(cmd.OutOrStdout(), "Name: %s\n", metadata.Name)
-		fmt.Fprintf(cmd.OutOrStdout(), "Roles: %s\n", strings.Join(metadata.Roles, ", "))
-		fmt.Fprintf(cmd.OutOrStdout(), "Description: %s\n", metadata.Description)
-		fmt.Fprintf(cmd.OutOrStdout(), "Tags: %s\n", strings.Join(metadata.Tags, ", "))
-
-		// Display content after frontmatter
-		lines := strings.Split(string(content), "\n")
-		contentStart := 0
-		foundEnd := false
-		for i, line := range lines {
-			if i > 0 && line == "---" {
-				contentStart = i + 1
-				foundEnd = true
-				break
-			}
+	if metadata == nil {
+		metadata = &PersonaMetadata{
+			Name:        personaName,
+			Roles:       []string{"general"},
+			Description: personaName,
 		}
-		if foundEnd && contentStart < len(lines) {
-			fmt.Fprintln(cmd.OutOrStdout())
-			fmt.Fprint(cmd.OutOrStdout(), strings.Join(lines[contentStart:], "\n"))
-		}
-	} else {
-		// No frontmatter, display raw content
-		fmt.Fprint(cmd.OutOrStdout(), string(content))
 	}
-	return nil
+
+	return &PersonaInfo{
+		Name:        personaName,
+		Roles:       metadata.Roles,
+		Description: metadata.Description,
+		Tags:        metadata.Tags,
+		Content:     string(content),
+		FilePath:    personaPath,
+	}, nil
 }
 
-func bindPersona(cmd *cobra.Command, role, personaName string) error {
-	// Load config
-	cfg, err := config.Load()
-	if err != nil {
-		return fmt.Errorf("failed to load configuration: %w", err)
-	}
-
-	// Check if persona exists
-	libPath, err := config.GetLibraryPath(getLibraryPath())
+// personaBind binds a role to a persona
+func personaBind(workingDir string, role, personaName string) error {
+	// Check if persona exists first
+	libPath, err := getPersonaLibraryPath(workingDir)
 	if err != nil {
 		return fmt.Errorf("failed to get library path: %w", err)
 	}
 
 	personaPath := filepath.Join(libPath, "personas", personaName+".md")
 	if _, err := os.Stat(personaPath); os.IsNotExist(err) {
-		return fmt.Errorf("persona '%s' not found", personaName)
+		return fmt.Errorf("persona '%s' not found at path %s", personaName, personaPath)
 	}
 
-	// Update persona bindings
-	if cfg.PersonaBindings == nil {
-		cfg.PersonaBindings = make(map[string]string)
+	// Load only the local config file to preserve structure
+	configPath := ".ddx/config.yaml"
+	if workingDir != "" {
+		configPath = filepath.Join(workingDir, ".ddx/config.yaml")
 	}
-	cfg.PersonaBindings[role] = personaName
 
-	// Save config
-	// TODO: Add Save method to Config or use yaml.Marshal
-	data, err := yaml.Marshal(cfg)
+	// Read current config as raw YAML node to preserve structure
+	data, err := os.ReadFile(configPath)
 	if err != nil {
-		return fmt.Errorf("failed to marshal configuration: %w", err)
-	}
-	if err := os.WriteFile(".ddx.yml", data, 0644); err != nil {
-		return fmt.Errorf("failed to save configuration: %w", err)
+		return fmt.Errorf("failed to read config file %s: %w", configPath, err)
 	}
 
-	fmt.Fprintf(cmd.OutOrStdout(), "✅ Bound role '%s' to persona '%s'\n", role, personaName)
+	var rootNode yaml.Node
+	if err := yaml.Unmarshal(data, &rootNode); err != nil {
+		return fmt.Errorf("failed to parse config: %w", err)
+	}
+
+	// Find or create persona_bindings section
+	if err := addPersonaBindingToNode(&rootNode, role, personaName); err != nil {
+		return fmt.Errorf("failed to add persona binding: %w", err)
+	}
+
+	// Write back to file
+	newData, err := yaml.Marshal(&rootNode)
+	if err != nil {
+		return fmt.Errorf("failed to marshal config: %w", err)
+	}
+
+	if err := os.WriteFile(configPath, newData, 0644); err != nil {
+		return fmt.Errorf("failed to write config file %s: %w", configPath, err)
+	}
+
 	return nil
 }
 
-func loadPersonas(cmd *cobra.Command, personas ...string) error {
-	// Check if config file exists when loading all personas
-	if len(personas) == 0 {
-		if _, err := os.Stat(".ddx.yml"); os.IsNotExist(err) {
-			return fmt.Errorf("No .ddx.yml configuration found")
+// personaBindings returns the current persona bindings
+func personaBindings(workingDir string) (PersonaBindings, error) {
+	// Check if config file exists first (new format)
+	configPath := ".ddx/config.yaml"
+	if workingDir != "" {
+		configPath = filepath.Join(workingDir, ".ddx/config.yaml")
+	}
+
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("No .ddx/config.yaml configuration found")
+	}
+
+	// Load config
+	cfg, err := loadPersonaConfig(workingDir)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load configuration: %w", err)
+	}
+
+	if cfg.PersonaBindings == nil {
+		return PersonaBindings{}, nil
+	}
+
+	return PersonaBindings(cfg.PersonaBindings), nil
+}
+
+// personaStatus returns the status of active personas
+func personaStatus(workingDir string) (PersonaStatus, error) {
+	claudePath := "CLAUDE.md"
+	if workingDir != "" {
+		claudePath = filepath.Join(workingDir, "CLAUDE.md")
+	}
+
+	status := PersonaStatus{
+		HasCLAUDEFile: false,
+	}
+
+	// Check if CLAUDE.md exists
+	if _, err := os.Stat(claudePath); os.IsNotExist(err) {
+		return status, nil
+	}
+
+	status.HasCLAUDEFile = true
+
+	// Read CLAUDE.md
+	content, err := os.ReadFile(claudePath)
+	if err != nil {
+		return status, fmt.Errorf("failed to read CLAUDE.md: %w", err)
+	}
+
+	// Parse loaded personas
+	claudeStr := string(content)
+	if strings.Contains(claudeStr, "<!-- PERSONAS:START -->") &&
+		strings.Contains(claudeStr, "<!-- PERSONAS:END -->") {
+		// Extract persona section
+		startIdx := strings.Index(claudeStr, "<!-- PERSONAS:START -->")
+		endIdx := strings.Index(claudeStr, "<!-- PERSONAS:END -->")
+		if startIdx != -1 && endIdx != -1 && endIdx > startIdx {
+			personaSection := claudeStr[startIdx:endIdx]
+
+			// Parse loaded personas
+			lines := strings.Split(personaSection, "\n")
+			for _, line := range lines {
+				if strings.HasPrefix(line, "### ") {
+					// Parse role and persona from header
+					header := strings.TrimPrefix(line, "### ")
+					parts := strings.Split(header, ": ")
+					if len(parts) == 2 {
+						status.LoadedRoles = append(status.LoadedRoles, parts[0])
+						status.LoadedPersonas = append(status.LoadedPersonas, parts[1])
+					}
+				}
+			}
 		}
 	}
 
+	// Get bindings count
+	cfg, err := loadPersonaConfig(workingDir)
+	if err == nil && cfg.PersonaBindings != nil {
+		status.BindingsCount = len(cfg.PersonaBindings)
+	}
+
+	return status, nil
+}
+
+// personaLoad loads personas into CLAUDE.md
+func personaLoad(workingDir string, personas ...string) ([]string, error) {
+	// Always check if config file exists (new format)
+	configPath := ".ddx/config.yaml"
+	if workingDir != "" {
+		configPath = filepath.Join(workingDir, ".ddx/config.yaml")
+	}
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("No .ddx/config.yaml configuration found")
+	}
+
 	// Load config to get persona bindings
-	cfg, err := config.Load()
+	cfg, err := loadPersonaConfig(workingDir)
 	if err != nil {
-		return fmt.Errorf("failed to load configuration: %w", err)
+		return nil, fmt.Errorf("failed to load configuration: %w", err)
 	}
 
 	// Get library path
-	libPath, err := config.GetLibraryPath(getLibraryPath())
+	libPath, err := getPersonaLibraryPath(workingDir)
 	if err != nil {
-		return fmt.Errorf("failed to get library path: %w", err)
+		return nil, fmt.Errorf("failed to get library path: %w", err)
 	}
 
 	// Read CLAUDE.md if it exists
 	claudePath := "CLAUDE.md"
+	if workingDir != "" {
+		claudePath = filepath.Join(workingDir, "CLAUDE.md")
+	}
+
 	var claudeContent string
 	if data, err := os.ReadFile(claudePath); err == nil {
 		claudeContent = string(data)
@@ -359,30 +613,14 @@ func loadPersonas(cmd *cobra.Command, personas ...string) error {
 			personaPath := filepath.Join(libPath, "personas", personaName+".md")
 			if content, err := os.ReadFile(personaPath); err == nil {
 				// Validate persona content if it has frontmatter
-				contentStr := string(content)
-				if strings.HasPrefix(contentStr, "---\n") {
-					// Try to parse the frontmatter to validate it
-					lines := strings.Split(contentStr, "\n")
-					endIdx := -1
-					for i := 1; i < len(lines); i++ {
-						if lines[i] == "---" {
-							endIdx = i
-							break
-						}
-					}
-					if endIdx > 0 {
-						frontmatter := strings.Join(lines[1:endIdx], "\n")
-						var metadata PersonaMetadata
-						if err := yaml.Unmarshal([]byte(frontmatter), &metadata); err != nil {
-							return fmt.Errorf("failed to parse YAML frontmatter in persona '%s': %w", personaName, err)
-						}
-					}
+				if err := validatePersonaContent(string(content), personaName); err != nil {
+					return nil, err
 				}
 				// Just add the content - personas have their own titles
 				personaSection.WriteString(string(content) + "\n")
 				loadedPersonas = append(loadedPersonas, personaName)
 			} else if os.IsNotExist(err) {
-				return fmt.Errorf("persona '%s' not found", personaName)
+				return nil, fmt.Errorf("persona '%s' not found", personaName)
 			}
 		}
 	} else {
@@ -392,24 +630,8 @@ func loadPersonas(cmd *cobra.Command, personas ...string) error {
 				personaPath := filepath.Join(libPath, "personas", personaName+".md")
 				if content, err := os.ReadFile(personaPath); err == nil {
 					// Validate persona content if it has frontmatter
-					contentStr := string(content)
-					if strings.HasPrefix(contentStr, "---\n") {
-						// Try to parse the frontmatter to validate it
-						lines := strings.Split(contentStr, "\n")
-						endIdx := -1
-						for i := 1; i < len(lines); i++ {
-							if lines[i] == "---" {
-								endIdx = i
-								break
-							}
-						}
-						if endIdx > 0 {
-							frontmatter := strings.Join(lines[1:endIdx], "\n")
-							var metadata PersonaMetadata
-							if err := yaml.Unmarshal([]byte(frontmatter), &metadata); err != nil {
-								return fmt.Errorf("failed to parse YAML frontmatter in persona '%s': %w", personaName, err)
-							}
-						}
+					if err := validatePersonaContent(string(content), personaName); err != nil {
+						return nil, err
 					}
 					// Add role header with proper capitalization
 					capitalizedRole := strings.Title(strings.ReplaceAll(role, "-", " "))
@@ -428,122 +650,187 @@ func loadPersonas(cmd *cobra.Command, personas ...string) error {
 
 	// Write updated CLAUDE.md
 	if err := os.WriteFile(claudePath, []byte(claudeContent), 0644); err != nil {
-		return fmt.Errorf("failed to write CLAUDE.md: %w", err)
+		return nil, fmt.Errorf("failed to write CLAUDE.md: %w", err)
 	}
 
-	// Provide detailed output
-	if len(personas) > 0 {
-		// Specific personas loaded
-		if len(loadedPersonas) == 1 {
-			fmt.Fprintf(cmd.OutOrStdout(), "✅ Loaded persona '%s' into CLAUDE.md\n", loadedPersonas[0])
-		} else {
-			fmt.Fprintf(cmd.OutOrStdout(), "✅ Loaded %d personas into CLAUDE.md\n", len(loadedPersonas))
+	return loadedPersonas, nil
+}
+
+// =============================================================================
+// Helper Functions
+// =============================================================================
+
+// parsePersonaMetadata parses YAML frontmatter from persona content
+func parsePersonaMetadata(content string) *PersonaMetadata {
+	lines := strings.Split(content, "\n")
+	if len(lines) == 0 || lines[0] != "---" {
+		return nil
+	}
+
+	// Find end of frontmatter
+	endIdx := -1
+	for i := 1; i < len(lines); i++ {
+		if lines[i] == "---" {
+			endIdx = i
+			break
 		}
-	} else {
-		// All bound personas loaded
-		if len(loadedPersonas) > 0 {
-			fmt.Fprintf(cmd.OutOrStdout(), "✅ Loaded %d personas (%s) into CLAUDE.md\n",
-				len(loadedPersonas), strings.Join(loadedPersonas, ", "))
-		} else {
-			fmt.Fprintln(cmd.OutOrStdout(), "No bound personas to load")
+	}
+
+	if endIdx == -1 {
+		return nil
+	}
+
+	// Parse YAML frontmatter
+	frontmatter := strings.Join(lines[1:endIdx], "\n")
+	var metadata PersonaMetadata
+	if err := yaml.Unmarshal([]byte(frontmatter), &metadata); err != nil {
+		return nil
+	}
+
+	return &metadata
+}
+
+// validatePersonaContent validates persona content structure
+func validatePersonaContent(content, personaName string) error {
+	if strings.HasPrefix(content, "---\n") {
+		// Try to parse the frontmatter to validate it
+		lines := strings.Split(content, "\n")
+		endIdx := -1
+		for i := 1; i < len(lines); i++ {
+			if lines[i] == "---" {
+				endIdx = i
+				break
+			}
+		}
+		if endIdx > 0 {
+			frontmatter := strings.Join(lines[1:endIdx], "\n")
+			var metadata PersonaMetadata
+			if err := yaml.Unmarshal([]byte(frontmatter), &metadata); err != nil {
+				return fmt.Errorf("failed to parse YAML frontmatter in persona '%s': %w", personaName, err)
+			}
 		}
 	}
 	return nil
 }
 
-// showBindings displays current persona-role bindings
-func showBindings(cmd *cobra.Command) error {
-	// Check if config file exists
-	if _, err := os.Stat(".ddx.yml"); os.IsNotExist(err) {
-		return fmt.Errorf("no .ddx.yml configuration found")
+// getPersonaLibraryPath gets library path with working directory context for persona operations
+func getPersonaLibraryPath(workingDir string) (string, error) {
+	// Use the config system with working directory parameter
+	if workingDir == "" {
+		return "", fmt.Errorf("working directory must be provided")
 	}
 
-	// Load config
-	cfg, err := config.Load()
+	// Use the library path resolution from config
+	cfg, err := config.LoadWithWorkingDir(workingDir)
 	if err != nil {
-		return fmt.Errorf("failed to load configuration: %w", err)
+		return "", err
 	}
-
-	if cfg.PersonaBindings == nil || len(cfg.PersonaBindings) == 0 {
-		fmt.Fprintln(cmd.OutOrStdout(), "No persona bindings configured")
-		return nil
-	}
-
-	fmt.Fprintln(cmd.OutOrStdout(), "Current Persona Bindings:")
-	fmt.Fprintln(cmd.OutOrStdout())
-
-	// Create tabwriter for aligned output
-	w := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 0, 2, ' ', 0)
-	fmt.Fprintln(w, "ROLE\tPERSONA")
-	fmt.Fprintln(w, "----\t-------")
-
-	for role, persona := range cfg.PersonaBindings {
-		fmt.Fprintf(w, "%s\t%s\n", role, persona)
-	}
-
-	w.Flush()
-	return nil
+	return cfg.LibraryBasePath, nil
 }
 
-// showStatus displays the status of active personas
-func showStatus(cmd *cobra.Command) error {
-	// Check if CLAUDE.md exists
-	claudePath := "CLAUDE.md"
-	if _, err := os.Stat(claudePath); os.IsNotExist(err) {
-		fmt.Fprintln(cmd.OutOrStdout(), "No CLAUDE.md file found - no personas loaded")
-		return nil
+// loadPersonaConfig loads config with working directory context for persona operations
+func loadPersonaConfig(workingDir string) (*config.Config, error) {
+	return config.LoadWithWorkingDir(workingDir)
+}
+
+// savePersonaConfig saves config to working directory for persona operations
+func savePersonaConfig(workingDir string, cfg *config.Config) error {
+	// Create .ddx directory if it doesn't exist
+	ddxDir := ".ddx"
+	if workingDir != "" {
+		ddxDir = filepath.Join(workingDir, ".ddx")
+	}
+	if err := os.MkdirAll(ddxDir, 0755); err != nil {
+		return fmt.Errorf("failed to create .ddx directory: %w", err)
 	}
 
-	// Read CLAUDE.md
-	content, err := os.ReadFile(claudePath)
+	configPath := filepath.Join(ddxDir, "config.yaml")
+
+	data, err := yaml.Marshal(cfg)
 	if err != nil {
-		return fmt.Errorf("failed to read CLAUDE.md: %w", err)
+		return fmt.Errorf("failed to marshal configuration: %w", err)
 	}
 
-	// Check for persona markers
-	claudeStr := string(content)
-	if strings.Contains(claudeStr, "<!-- PERSONAS:START -->") &&
-		strings.Contains(claudeStr, "<!-- PERSONAS:END -->") {
-		// Extract persona section
-		startIdx := strings.Index(claudeStr, "<!-- PERSONAS:START -->")
-		endIdx := strings.Index(claudeStr, "<!-- PERSONAS:END -->")
-		if startIdx != -1 && endIdx != -1 && endIdx > startIdx {
-			personaSection := claudeStr[startIdx:endIdx]
+	return os.WriteFile(configPath, data, 0644)
+}
 
-			// Parse loaded personas
-			loadedPersonas := []string{}
-			loadedRoles := []string{}
-			lines := strings.Split(personaSection, "\n")
-			for _, line := range lines {
-				if strings.HasPrefix(line, "### ") {
-					// Parse role and persona from header
-					header := strings.TrimPrefix(line, "### ")
-					parts := strings.Split(header, ": ")
-					if len(parts) == 2 {
-						loadedRoles = append(loadedRoles, parts[0])
-						loadedPersonas = append(loadedPersonas, parts[1])
-					}
-				}
-			}
-
-			if len(loadedPersonas) > 0 {
-				fmt.Fprintln(cmd.OutOrStdout(), "Loaded Personas:")
-				for i, persona := range loadedPersonas {
-					fmt.Fprintf(cmd.OutOrStdout(), "  - %s (%s)\n", persona, loadedRoles[i])
-				}
-			} else {
-				fmt.Fprintln(cmd.OutOrStdout(), "No personas currently loaded")
-			}
-		}
+// addPersonaBindingToNode adds or updates a persona binding in a YAML node tree
+func addPersonaBindingToNode(rootNode *yaml.Node, role, personaName string) error {
+	// Find the document node
+	var docNode *yaml.Node
+	if rootNode.Kind == yaml.DocumentNode && len(rootNode.Content) > 0 {
+		docNode = rootNode.Content[0]
+	} else if rootNode.Kind == yaml.MappingNode {
+		docNode = rootNode
 	} else {
-		fmt.Fprintln(cmd.OutOrStdout(), "No personas currently loaded")
+		return fmt.Errorf("invalid YAML structure")
 	}
 
-	// Show bindings from config
-	cfg, err := config.Load()
-	if err == nil && cfg.PersonaBindings != nil && len(cfg.PersonaBindings) > 0 {
-		fmt.Fprintf(cmd.OutOrStdout(), "\n%d persona binding(s) configured\n", len(cfg.PersonaBindings))
+	if docNode.Kind != yaml.MappingNode {
+		return fmt.Errorf("root node is not a mapping")
 	}
+
+	// Look for existing persona_bindings key
+	for i := 0; i < len(docNode.Content); i += 2 {
+		keyNode := docNode.Content[i]
+		if keyNode.Value == "persona_bindings" {
+			// Found existing persona_bindings, update it
+			valueNode := docNode.Content[i+1]
+			if valueNode.Kind != yaml.MappingNode {
+				// Convert to mapping node
+				valueNode.Kind = yaml.MappingNode
+				valueNode.Content = []*yaml.Node{}
+			}
+
+			// Look for existing role or add new one
+			found := false
+			for j := 0; j < len(valueNode.Content); j += 2 {
+				roleKeyNode := valueNode.Content[j]
+				if roleKeyNode.Value == role {
+					// Update existing role
+					valueNode.Content[j+1].Value = personaName
+					found = true
+					break
+				}
+			}
+
+			if !found {
+				// Add new role-persona pair
+				roleKeyNode := &yaml.Node{
+					Kind:  yaml.ScalarNode,
+					Value: role,
+				}
+				personaValueNode := &yaml.Node{
+					Kind:  yaml.ScalarNode,
+					Value: personaName,
+				}
+				valueNode.Content = append(valueNode.Content, roleKeyNode, personaValueNode)
+			}
+			return nil
+		}
+	}
+
+	// persona_bindings key not found, add it
+	bindingsKeyNode := &yaml.Node{
+		Kind:  yaml.ScalarNode,
+		Value: "persona_bindings",
+	}
+
+	roleKeyNode := &yaml.Node{
+		Kind:  yaml.ScalarNode,
+		Value: role,
+	}
+	personaValueNode := &yaml.Node{
+		Kind:  yaml.ScalarNode,
+		Value: personaName,
+	}
+
+	bindingsValueNode := &yaml.Node{
+		Kind:    yaml.MappingNode,
+		Content: []*yaml.Node{roleKeyNode, personaValueNode},
+	}
+
+	docNode.Content = append(docNode.Content, bindingsKeyNode, bindingsValueNode)
 
 	return nil
 }

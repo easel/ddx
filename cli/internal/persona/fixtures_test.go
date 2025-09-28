@@ -25,7 +25,7 @@ func SetupTestEnvironment(t *testing.T) *TestFixtures {
 
 	// Set environment
 	t.Setenv("HOME", homeDir)
-	require.NoError(t, os.Chdir(workDir))
+	// Don't change working directory - tests should use absolute paths
 
 	// Create personas directory
 	personasDir := filepath.Join(homeDir, ".ddx", "personas")

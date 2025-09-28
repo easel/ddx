@@ -32,11 +32,10 @@ func executeStatusCommand(root *cobra.Command, args ...string) (output string, e
 
 // Helper to setup test environment with DDX project
 func setupStatusTestDir(t *testing.T) (string, func()) {
-	tempDir := t.TempDir()
-	originalDir, _ := os.Getwd()
+		tempDir := t.TempDir()
+	//	// originalDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
 
 	// Change to temp directory
-	require.NoError(t, os.Chdir(tempDir))
 
 	// Create basic DDX structure
 	ddxDir := filepath.Join(tempDir, ".ddx")
@@ -55,7 +54,6 @@ last_updated: "2025-01-14T10:30:00Z"
 	require.NoError(t, err)
 
 	cleanup := func() {
-		os.Chdir(originalDir)
 	}
 
 	return tempDir, cleanup
@@ -71,7 +69,8 @@ func TestAcceptance_US012_TrackAssetVersions(t *testing.T) {
 		defer os.RemoveAll(testDir)
 
 		// Execute status command
-		rootCmd := getStatusTestRootCommand()
+		factory := NewCommandFactory(testDir)
+		rootCmd := factory.NewRootCommand()
 		output, err := executeStatusCommand(rootCmd, "status")
 
 		// Should succeed
@@ -99,7 +98,8 @@ func TestAcceptance_US012_TrackAssetVersions(t *testing.T) {
 		require.NoError(t, err)
 
 		// Execute status command
-		rootCmd := getStatusTestRootCommand()
+		factory := NewCommandFactory(testDir)
+		rootCmd := factory.NewRootCommand()
 		output, err := executeStatusCommand(rootCmd, "status")
 
 		// Should succeed
@@ -116,7 +116,8 @@ func TestAcceptance_US012_TrackAssetVersions(t *testing.T) {
 		defer os.RemoveAll(testDir)
 
 		// Execute status command with upstream check
-		rootCmd := getStatusTestRootCommand()
+		factory := NewCommandFactory(testDir)
+		rootCmd := factory.NewRootCommand()
 		output, err := executeStatusCommand(rootCmd, "status", "--check-upstream")
 
 		// Should detect updates (our implementation always shows them for now)
@@ -131,7 +132,8 @@ func TestAcceptance_US012_TrackAssetVersions(t *testing.T) {
 		defer cleanup()
 		defer os.RemoveAll(testDir)
 
-		rootCmd := getStatusTestRootCommand()
+		factory := NewCommandFactory(testDir)
+		rootCmd := factory.NewRootCommand()
 		output, err := executeStatusCommand(rootCmd, "status", "--verbose")
 
 		assert.NoError(t, err)
@@ -155,7 +157,8 @@ func TestAcceptance_US012_TrackAssetVersions(t *testing.T) {
 		changeFile := filepath.Join(changesDir, "auth-pattern.go")
 		os.WriteFile(changeFile, []byte("modified content"), 0644)
 
-		rootCmd := getStatusTestRootCommand()
+		factory := NewCommandFactory(testDir)
+		rootCmd := factory.NewRootCommand()
 		output, err := executeStatusCommand(rootCmd, "status", "--changes")
 
 		assert.NoError(t, err)
@@ -169,7 +172,8 @@ func TestAcceptance_US012_TrackAssetVersions(t *testing.T) {
 		defer cleanup()
 		defer os.RemoveAll(testDir)
 
-		rootCmd := getStatusTestRootCommand()
+		factory := NewCommandFactory(testDir)
+		rootCmd := factory.NewRootCommand()
 		output, err := executeStatusCommand(rootCmd, "log")
 
 		// Since there's no git repo, this will show alternative history
@@ -197,7 +201,8 @@ func TestAcceptance_US012_TrackAssetVersions(t *testing.T) {
 		defer cleanup()
 		defer os.RemoveAll(testDir)
 
-		rootCmd := getStatusTestRootCommand()
+		factory := NewCommandFactory(testDir)
+		rootCmd := factory.NewRootCommand()
 		output, err := executeStatusCommand(rootCmd, "status", "--diff")
 
 		assert.NoError(t, err)
@@ -214,7 +219,8 @@ func TestAcceptance_US012_TrackAssetVersions(t *testing.T) {
 
 		manifestPath := filepath.Join(testDir, "manifest.yml")
 
-		rootCmd := getStatusTestRootCommand()
+		factory := NewCommandFactory(testDir)
+		rootCmd := factory.NewRootCommand()
 		_, err := executeStatusCommand(rootCmd, "status", "--export", manifestPath)
 
 		assert.NoError(t, err)
@@ -274,11 +280,10 @@ func TestStatusCommand_Contract(t *testing.T) {
 	t.Run("requires_ddx_project", func(t *testing.T) {
 		// Should fail in non-DDX directory
 		tempDir := t.TempDir()
-		originalDir, _ := os.Getwd()
-		os.Chdir(tempDir)
-		defer os.Chdir(originalDir)
+		//	// originalDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
 
-		rootCmd := getStatusTestRootCommand()
+		factory := NewCommandFactory(tempDir)
+		rootCmd := factory.NewRootCommand()
 		_, err := executeStatusCommand(rootCmd, "status")
 
 		assert.Error(t, err)
@@ -292,7 +297,8 @@ func TestStatusCommand_Contract(t *testing.T) {
 		defer os.RemoveAll(testDir)
 
 		start := time.Now()
-		rootCmd := getStatusTestRootCommand()
+		factory := NewCommandFactory(testDir)
+		rootCmd := factory.NewRootCommand()
 		output, err := executeStatusCommand(rootCmd, "status")
 		duration := time.Since(start)
 
@@ -321,7 +327,8 @@ func TestLogCommand_Contract(t *testing.T) {
 		defer os.RemoveAll(testDir)
 
 		start := time.Now()
-		rootCmd := getStatusTestRootCommand()
+		factory := NewCommandFactory(testDir)
+		rootCmd := factory.NewRootCommand()
 		_, _ = executeStatusCommand(rootCmd, "log")
 		duration := time.Since(start)
 

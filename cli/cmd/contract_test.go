@@ -35,14 +35,22 @@ func TestInitCommand_Contract(t *testing.T) {
 		{
 			name:        "contract_exit_code_0_success",
 			description: "Exit code 0: Success",
-			args:        []string{"init"},
+			args:        []string{"init", "--no-git"},
 			setup: func(t *testing.T) string {
 				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
-				// Initialize git repository for init command
-				require.NoError(t, exec.Command("git", "init").Run())
-				require.NoError(t, exec.Command("git", "config", "user.email", "test@example.com").Run())
-				require.NoError(t, exec.Command("git", "config", "user.name", "Test User").Run())
+				// Initialize git repository for init command in the correct directory
+				gitInit := exec.Command("git", "init")
+				gitInit.Dir = workDir
+				require.NoError(t, gitInit.Run())
+
+				gitEmail := exec.Command("git", "config", "user.email", "test@example.com")
+				gitEmail.Dir = workDir
+				require.NoError(t, gitEmail.Run())
+
+				gitName := exec.Command("git", "config", "user.name", "Test User")
+				gitName.Dir = workDir
+				require.NoError(t, gitName.Run())
+
 				return workDir
 			},
 			expectCode: 0,
@@ -54,18 +62,27 @@ func TestInitCommand_Contract(t *testing.T) {
 		{
 			name:        "contract_exit_code_2_exists",
 			description: "Exit code 2: Configuration already exists",
-			args:        []string{"init"},
+			args:        []string{"init", "--no-git"},
 			setup: func(t *testing.T) string {
-				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
+	workDir := t.TempDir()
 				// Initialize git repository for init command
-				require.NoError(t, exec.Command("git", "init").Run())
-				require.NoError(t, exec.Command("git", "config", "user.email", "test@example.com").Run())
-				require.NoError(t, exec.Command("git", "config", "user.name", "Test User").Run())
-				// Create existing config
+				gitInit := exec.Command("git", "init")
+				gitInit.Dir = workDir
+				require.NoError(t, gitInit.Run())
+
+				gitConfigEmail := exec.Command("git", "config", "user.email", "test@example.com")
+				gitConfigEmail.Dir = workDir
+				require.NoError(t, gitConfigEmail.Run())
+
+				gitConfigName := exec.Command("git", "config", "user.name", "Test User")
+				gitConfigName.Dir = workDir
+				require.NoError(t, gitConfigName.Run())
+				// Create existing config in new format
+				ddxDir := filepath.Join(workDir, ".ddx")
+				require.NoError(t, os.MkdirAll(ddxDir, 0755))
 				require.NoError(t, os.WriteFile(
-					filepath.Join(workDir, ".ddx.yml"),
-					[]byte("version: 1.0"),
+					filepath.Join(ddxDir, "config.yaml"),
+					[]byte("version: \"1.0\"\nlibrary_base_path: \"./library\"\nrepository:\n  url: \"https://github.com/easel/ddx\"\n  branch: \"main\"\n  subtree_prefix: \"library\"\nvariables: {}"),
 					0644,
 				))
 				return workDir
@@ -78,18 +95,27 @@ func TestInitCommand_Contract(t *testing.T) {
 		{
 			name:        "contract_force_flag",
 			description: "--force flag overwrites existing config",
-			args:        []string{"init", "--force"},
+			args:        []string{"init", "--force", "--no-git"},
 			setup: func(t *testing.T) string {
-				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
-				// Initialize git repository for init command
-				require.NoError(t, exec.Command("git", "init").Run())
-				require.NoError(t, exec.Command("git", "config", "user.email", "test@example.com").Run())
-				require.NoError(t, exec.Command("git", "config", "user.name", "Test User").Run())
-				// Create existing config
+	workDir := t.TempDir()
+				// Initialize git repository for init command in the correct directory
+				gitInit := exec.Command("git", "init")
+				gitInit.Dir = workDir
+				require.NoError(t, gitInit.Run())
+
+				gitEmail := exec.Command("git", "config", "user.email", "test@example.com")
+				gitEmail.Dir = workDir
+				require.NoError(t, gitEmail.Run())
+
+				gitName := exec.Command("git", "config", "user.name", "Test User")
+				gitName.Dir = workDir
+				require.NoError(t, gitName.Run())
+				// Create existing config in new format
+				ddxDir := filepath.Join(workDir, ".ddx")
+				require.NoError(t, os.MkdirAll(ddxDir, 0755))
 				require.NoError(t, os.WriteFile(
-					filepath.Join(workDir, ".ddx.yml"),
-					[]byte("version: 0.9"),
+					filepath.Join(ddxDir, "config.yaml"),
+					[]byte("version: \"0.9\"\nlibrary_base_path: \"./library\"\nrepository:\n  url: \"https://github.com/easel/ddx\"\n  branch: \"main\"\n  subtree_prefix: \"library\"\nvariables: {}"),
 					0644,
 				))
 				return workDir
@@ -106,15 +132,21 @@ func TestInitCommand_Contract(t *testing.T) {
 			// Create a fresh command for test isolation
 			// (flags are now local to the command)
 
-			originalDir, _ := os.Getwd()
-			defer os.Chdir(originalDir)
+			//	// originalDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
 
+			var workDir string
 			if tt.setup != nil {
-				tt.setup(t)
+				workDir = tt.setup(t)
 			}
 
-			// Create a fresh root command to avoid state pollution
-			rootCmd := getContractTestRootCommand()
+			// Create a fresh root command with the test working directory
+			var rootCmd *cobra.Command
+			if workDir != "" {
+				factory := NewCommandFactory(workDir)
+				rootCmd = factory.NewRootCommand()
+			} else {
+				rootCmd = getContractTestRootCommand()
+			}
 
 			output, err := executeContractCommand(rootCmd, tt.args...)
 
@@ -150,24 +182,33 @@ func TestListCommand_Contract(t *testing.T) {
 			args:        []string{"list"},
 			setup: func(t *testing.T) string {
 				testDir := t.TempDir()
-				origWd, _ := os.Getwd()
-				require.NoError(t, os.Chdir(testDir))
-				t.Cleanup(func() { os.Chdir(origWd) })
 
 				// Create library structure as per contract
 				libraryDir := filepath.Join(testDir, "library")
+
+				// Explicitly create workflows directory structure
 				workflowsDir := filepath.Join(libraryDir, "workflows")
+				require.NoError(t, os.MkdirAll(workflowsDir, 0755))
 				require.NoError(t, os.MkdirAll(filepath.Join(workflowsDir, "helix"), 0755))
 				require.NoError(t, os.WriteFile(filepath.Join(workflowsDir, "helix", "workflow.yml"), []byte("name: helix"), 0644))
 
+				// Explicitly create prompts directory structure
 				promptsDir := filepath.Join(libraryDir, "prompts")
+				require.NoError(t, os.MkdirAll(promptsDir, 0755))
 				require.NoError(t, os.MkdirAll(filepath.Join(promptsDir, "claude"), 0755))
 				require.NoError(t, os.WriteFile(filepath.Join(promptsDir, "claude", "prompt.md"), []byte("# Prompt"), 0644))
 
-				// Create config
-				config := []byte(`version: "2.0"
-library_path: ./library`)
-				require.NoError(t, os.WriteFile(".ddx.yml", config, 0644))
+				// Create config in the test directory
+				config := []byte(`version: "1.0"
+library_base_path: ./library
+repository:
+  url: "https://github.com/easel/ddx"
+  branch: "main"
+  subtree_prefix: "library"
+variables: {}`)
+				ddxDir := filepath.Join(testDir, ".ddx")
+				require.NoError(t, os.MkdirAll(ddxDir, 0755))
+				require.NoError(t, os.WriteFile(filepath.Join(ddxDir, "config.yaml"), config, 0644))
 
 				return testDir
 			},
@@ -184,9 +225,6 @@ library_path: ./library`)
 			args:        []string{"list", "workflows"},
 			setup: func(t *testing.T) string {
 				testDir := t.TempDir()
-				origWd, _ := os.Getwd()
-				require.NoError(t, os.Chdir(testDir))
-				t.Cleanup(func() { os.Chdir(origWd) })
 
 				libraryDir := filepath.Join(testDir, "library")
 				workflowsDir := filepath.Join(libraryDir, "workflows")
@@ -197,10 +235,17 @@ library_path: ./library`)
 				require.NoError(t, os.MkdirAll(filepath.Join(promptsDir, "claude"), 0755))
 				require.NoError(t, os.WriteFile(filepath.Join(promptsDir, "claude", "prompt.md"), []byte("# Prompt"), 0644))
 
-				// Create config
-				config := []byte(`version: "2.0"
-library_path: ./library`)
-				require.NoError(t, os.WriteFile(".ddx.yml", config, 0644))
+				// Create config in the test directory
+				config := []byte(`version: "1.0"
+library_base_path: ./library
+repository:
+  url: "https://github.com/easel/ddx"
+  branch: "main"
+  subtree_prefix: "library"
+variables: {}`)
+				ddxDir := filepath.Join(testDir, ".ddx")
+				require.NoError(t, os.MkdirAll(ddxDir, 0755))
+				require.NoError(t, os.WriteFile(filepath.Join(ddxDir, "config.yaml"), config, 0644))
 
 				return testDir
 			},
@@ -218,12 +263,18 @@ library_path: ./library`)
 			// Create a fresh command for test isolation
 			// (flags are now local to the command)
 
+			var workDir string
 			if tt.setup != nil {
-				tt.setup(t)
+				workDir = tt.setup(t)
 			}
 
 			// Create a fresh list command to avoid state pollution
-			factory := NewCommandFactory("/tmp")
+			var factory *CommandFactory
+			if workDir != "" {
+				factory = NewCommandFactory(workDir)
+			} else {
+				factory = NewCommandFactory("/tmp")
+			}
 			freshListCmd := &cobra.Command{
 				Use:   "list",
 				Short: "List available resources",
@@ -266,17 +317,18 @@ func TestConfigCommand_Contract(t *testing.T) {
 		{
 			name:        "contract_yaml_output",
 			description: "Config output is valid YAML as per contract",
-			args:        []string{"config"},
+			args:        []string{"config", "export"},
 			setup: func(t *testing.T) string {
-				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
+	workDir := t.TempDir()
 
 				config := `version: "1.0"
 repository:
   url: "https://github.com/test/repo"
 variables:
   test: "value"`
-				require.NoError(t, os.WriteFile(filepath.Join(workDir, ".ddx.yml"), []byte(config), 0644))
+				ddxDir := filepath.Join(workDir, ".ddx")
+				require.NoError(t, os.MkdirAll(ddxDir, 0755))
+				require.NoError(t, os.WriteFile(filepath.Join(ddxDir, "config.yaml"), []byte(config), 0644))
 				return workDir
 			},
 			validateOutput: func(t *testing.T, output string) {
@@ -290,11 +342,12 @@ variables:
 			description: "Get operation returns specific value",
 			args:        []string{"config", "get", "version"},
 			setup: func(t *testing.T) string {
-				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
+	workDir := t.TempDir()
 
 				config := `version: "1.0"`
-				require.NoError(t, os.WriteFile(filepath.Join(workDir, ".ddx.yml"), []byte(config), 0644))
+				ddxDir := filepath.Join(workDir, ".ddx")
+				require.NoError(t, os.MkdirAll(ddxDir, 0755))
+				require.NoError(t, os.WriteFile(filepath.Join(ddxDir, "config.yaml"), []byte(config), 0644))
 				return workDir
 			},
 			validateOutput: func(t *testing.T, output string) {
@@ -306,14 +359,22 @@ variables:
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			originalDir, _ := os.Getwd()
-			defer os.Chdir(originalDir)
+			//	// originalDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
 
+			var workDir string
 			if tt.setup != nil {
-				tt.setup(t)
+				workDir = tt.setup(t)
 			}
 
-			rootCmd := getContractTestRootCommand()
+			// Use CommandFactory with the test working directory
+			var factory *CommandFactory
+			if workDir != "" {
+				factory = NewCommandFactory(workDir)
+			} else {
+				factory = NewCommandFactory("/tmp")
+			}
+			rootCmd := factory.NewRootCommand()
+
 
 			output, err := executeContractCommand(rootCmd, tt.args...)
 			assert.NoError(t, err)

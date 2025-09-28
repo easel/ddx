@@ -1,8 +1,10 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -11,15 +13,15 @@ import (
 )
 
 // Helper function to create a fresh root command for tests
-func getPersonaContractTestRootCommand() *cobra.Command {
-	factory := NewCommandFactory("/tmp")
+func getPersonaContractTestRootCommand(workingDir string) *cobra.Command {
+	factory := NewCommandFactory(workingDir)
 	return factory.NewRootCommand()
 }
 
 // createFreshPersonaCmd creates a fresh persona command tree to avoid state pollution
-func createFreshPersonaCmd() *cobra.Command {
+func createFreshPersonaCmd(workingDir string) *cobra.Command {
 	// Get fresh root command with all subcommands
-	rootCmd := getPersonaContractTestRootCommand()
+	rootCmd := getPersonaContractTestRootCommand(workingDir)
 	// Find and return the persona command
 	for _, cmd := range rootCmd.Commands() {
 		if cmd.Use == "persona" {
@@ -48,7 +50,6 @@ func TestPersonaListCommand_Contract(t *testing.T) {
 			args:        []string{"persona", "list"},
 			setup: func(t *testing.T) string {
 				testWorkDir := t.TempDir()
-				require.NoError(t, os.Chdir(testWorkDir))
 
 				homeDir := t.TempDir()
 				t.Setenv("HOME", homeDir)
@@ -92,7 +93,6 @@ You are a test code reviewer.`
 			args:        []string{"persona", "list"},
 			setup: func(t *testing.T) string {
 				testWorkDir := t.TempDir()
-				require.NoError(t, os.Chdir(testWorkDir))
 
 				homeDir := t.TempDir()
 				t.Setenv("HOME", homeDir)
@@ -117,7 +117,6 @@ You are a test code reviewer.`
 			args:        []string{"persona", "list", "--role", "test-engineer"},
 			setup: func(t *testing.T) string {
 				testWorkDir := t.TempDir()
-				require.NoError(t, os.Chdir(testWorkDir))
 
 				homeDir := t.TempDir()
 				t.Setenv("HOME", homeDir)
@@ -171,7 +170,6 @@ tags: [test, tdd]
 			args:        []string{"persona", "list", "--tag", "tdd"},
 			setup: func(t *testing.T) string {
 				testWorkDir := t.TempDir()
-				require.NoError(t, os.Chdir(testWorkDir))
 
 				homeDir := t.TempDir()
 				t.Setenv("HOME", homeDir)
@@ -225,15 +223,14 @@ tags: [test, bdd]
 		t.Run(tt.name, func(t *testing.T) {
 			// Commands are isolated via factory, no need to reset
 
+			var workDir string
 			if tt.setup != nil {
-				tt.setup(t)
+				workDir = tt.setup(t)
 			}
 
-			rootCmd := &cobra.Command{
-				Use:   "ddx",
-				Short: "DDx CLI",
-			}
-			rootCmd.AddCommand(createFreshPersonaCmd())
+			// Create command factory with the correct working directory
+			factory := NewCommandFactory(workDir)
+			rootCmd := factory.NewRootCommand()
 
 			output, err := executeContractCommand(rootCmd, tt.args...)
 
@@ -267,7 +264,6 @@ func TestPersonaShowCommand_Contract(t *testing.T) {
 			args:        []string{"persona", "show", "test-reviewer"},
 			setup: func(t *testing.T) string {
 				testWorkDir := t.TempDir()
-				require.NoError(t, os.Chdir(testWorkDir))
 
 				homeDir := t.TempDir()
 				t.Setenv("HOME", homeDir)
@@ -318,7 +314,6 @@ You are an experienced code reviewer who enforces high standards.
 			args:        []string{"persona", "show", "nonexistent-persona"},
 			setup: func(t *testing.T) string {
 				testWorkDir := t.TempDir()
-				require.NoError(t, os.Chdir(testWorkDir))
 
 				homeDir := t.TempDir()
 				t.Setenv("HOME", homeDir)
@@ -342,15 +337,14 @@ You are an experienced code reviewer who enforces high standards.
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Commands are isolated via factory
+			var workDir string
 			if tt.setup != nil {
-				tt.setup(t)
+				workDir = tt.setup(t)
 			}
 
-			rootCmd := &cobra.Command{
-				Use:   "ddx",
-				Short: "DDx CLI",
-			}
-			rootCmd.AddCommand(createFreshPersonaCmd())
+			// Create command factory with the correct working directory
+			factory := NewCommandFactory(workDir)
+			rootCmd := factory.NewRootCommand()
 
 			output, err := executeContractCommand(rootCmd, tt.args...)
 
@@ -384,16 +378,19 @@ func TestPersonaBindCommand_Contract(t *testing.T) {
 			description: "Exit code 0: Successfully bind persona to role",
 			args:        []string{"persona", "bind", "code-reviewer", "strict-reviewer"},
 			setup: func(t *testing.T) string {
-				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
+		workDir := t.TempDir()
 
-				// Create .ddx.yml configuration
+				// Create .ddx/config.yaml configuration
+				ddxDir := filepath.Join(workDir, ".ddx")
+				require.NoError(t, os.MkdirAll(ddxDir, 0755))
 				config := `version: "1.0"
+library_base_path: "./library"
 repository:
   url: "https://github.com/test/repo"
-  branch: "main"`
+  branch: "main"
+  subtree_prefix: "library"`
 				require.NoError(t, os.WriteFile(
-					filepath.Join(workDir, ".ddx.yml"),
+					filepath.Join(ddxDir, "config.yaml"),
 					[]byte(config),
 					0644,
 				))
@@ -428,8 +425,8 @@ tags: [strict]
 				assert.Contains(t, output, "Bound role 'code-reviewer' to persona 'strict-reviewer'")
 			},
 			validateFiles: func(t *testing.T, workDir string) {
-				// Should update .ddx.yml with persona binding
-				configPath := filepath.Join(workDir, ".ddx.yml")
+				// Should update .ddx/config.yaml with persona binding
+				configPath := filepath.Join(workDir, ".ddx/config.yaml")
 				content, err := os.ReadFile(configPath)
 				require.NoError(t, err)
 
@@ -443,12 +440,13 @@ tags: [strict]
 			description: "Exit code 6: Persona not found",
 			args:        []string{"persona", "bind", "code-reviewer", "nonexistent-persona"},
 			setup: func(t *testing.T) string {
-				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
+		workDir := t.TempDir()
 
+				ddxDir := filepath.Join(workDir, ".ddx")
+				require.NoError(t, os.MkdirAll(ddxDir, 0755))
 				config := `version: "1.0"`
 				require.NoError(t, os.WriteFile(
-					filepath.Join(workDir, ".ddx.yml"),
+					filepath.Join(ddxDir, "config.yaml"),
 					[]byte(config),
 					0644,
 				))
@@ -469,18 +467,17 @@ tags: [strict]
 		},
 		{
 			name:        "contract_exit_code_3_no_config",
-			description: "Exit code 3: No .ddx.yml configuration found",
+			description: "Exit code 3: No .ddx/config.yaml configuration found",
 			args:        []string{"persona", "bind", "code-reviewer", "test-persona"},
 			setup: func(t *testing.T) string {
-				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
-				// No .ddx.yml file created
+		workDir := t.TempDir()
+				// No .ddx/config.yaml file created
 				return workDir
 			},
 			expectCode: 3,
 			validateOutput: func(t *testing.T, output string) {
 				// Should indicate no configuration
-				assert.Contains(t, output, "No .ddx.yml configuration found")
+				assert.Contains(t, output, "No .ddx/config.yaml configuration found")
 			},
 		},
 	}
@@ -493,19 +490,16 @@ tags: [strict]
 			// Reset flags on the global personaLoadCmd to avoid interference between tests
 			// No need to reset flags
 
-			originalDir, _ := os.Getwd()
-			defer os.Chdir(originalDir)
+			//	// originalDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
 
 			var workDir string
 			if tt.setup != nil {
 				workDir = tt.setup(t)
 			}
 
-			rootCmd := &cobra.Command{
-				Use:   "ddx",
-				Short: "DDx CLI",
-			}
-			rootCmd.AddCommand(createFreshPersonaCmd())
+			// Create command factory with the correct working directory
+			factory := NewCommandFactory(workDir)
+			rootCmd := factory.NewRootCommand()
 
 			output, err := executeContractCommand(rootCmd, tt.args...)
 
@@ -543,16 +537,23 @@ func TestPersonaLoadCommand_Contract(t *testing.T) {
 			description: "Exit code 0: Load all bound personas",
 			args:        []string{"persona", "load"},
 			setup: func(t *testing.T) string {
-				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
+		workDir := t.TempDir()
 
-				// Create .ddx.yml with persona bindings
+				// Create .ddx/config.yaml with persona bindings (new format)
 				config := `version: "1.0"
+library_base_path: "./library"
+repository:
+  url: "https://github.com/easel/ddx"
+  branch: "main"
+  subtree_prefix: "library"
+variables: {}
 persona_bindings:
   code-reviewer: strict-reviewer
   test-engineer: tdd-engineer`
+				ddxDir := filepath.Join(workDir, ".ddx")
+				require.NoError(t, os.MkdirAll(ddxDir, 0755))
 				require.NoError(t, os.WriteFile(
-					filepath.Join(workDir, ".ddx.yml"),
+					filepath.Join(ddxDir, "config.yaml"),
 					[]byte(config),
 					0644,
 				))
@@ -632,8 +633,26 @@ You follow TDD practices.`
 			description: "Exit code 0: Load specific persona",
 			args:        []string{"persona", "load", "strict-reviewer"},
 			setup: func(t *testing.T) string {
-				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
+		workDir := t.TempDir()
+
+				// Create .ddx/config.yaml configuration (new format)
+				libraryDir := filepath.Join(workDir, "library")
+				config := fmt.Sprintf(`version: "1.0"
+library_base_path: %s
+repository:
+  url: "https://github.com/test/repo"
+  branch: "main"
+  subtree_prefix: "library"
+variables: {}
+persona_bindings:
+  code-reviewer: strict-reviewer`, strconv.Quote(libraryDir))
+				ddxDir := filepath.Join(workDir, ".ddx")
+				require.NoError(t, os.MkdirAll(ddxDir, 0755))
+				require.NoError(t, os.WriteFile(
+					filepath.Join(ddxDir, "config.yaml"),
+					[]byte(config),
+					0644,
+				))
 
 				// Create CLAUDE.md
 				claudeContent := `# CLAUDE.md
@@ -648,8 +667,6 @@ This is the project guidance.`
 				// Create persona
 				homeDir := t.TempDir()
 				t.Setenv("HOME", homeDir)
-				libraryDir := filepath.Join(workDir, ".ddx", "library")
-				t.Setenv("DDX_LIBRARY_BASE_PATH", libraryDir)
 				personasDir := filepath.Join(libraryDir, "personas")
 				require.NoError(t, os.MkdirAll(personasDir, 0755))
 
@@ -691,8 +708,7 @@ You are a strict code reviewer.`
 			description: "Exit code 6: Persona not found",
 			args:        []string{"persona", "load", "nonexistent-persona"},
 			setup: func(t *testing.T) string {
-				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
+		workDir := t.TempDir()
 
 				// Create empty personas directory
 				homeDir := t.TempDir()
@@ -718,19 +734,16 @@ You are a strict code reviewer.`
 			// Reset flags on the global personaLoadCmd to avoid interference between tests
 			// No need to reset flags
 
-			originalDir, _ := os.Getwd()
-			defer os.Chdir(originalDir)
+			//	// originalDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
 
 			var workDir string
 			if tt.setup != nil {
 				workDir = tt.setup(t)
 			}
 
-			rootCmd := &cobra.Command{
-				Use:   "ddx",
-				Short: "DDx CLI",
-			}
-			rootCmd.AddCommand(createFreshPersonaCmd())
+			// Create command factory with the correct working directory
+			factory := NewCommandFactory(workDir)
+			rootCmd := factory.NewRootCommand()
 
 			output, err := executeContractCommand(rootCmd, tt.args...)
 
@@ -767,17 +780,24 @@ func TestPersonaBindingsCommand_Contract(t *testing.T) {
 			description: "Exit code 0: Display current persona bindings",
 			args:        []string{"persona", "bindings"},
 			setup: func(t *testing.T) string {
-				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
+		workDir := t.TempDir()
 
-				// Create .ddx.yml with persona bindings
+				// Create .ddx/config.yaml with persona bindings (new format)
 				config := `version: "1.0"
+library_base_path: "./library"
+repository:
+  url: "https://github.com/test/repo"
+  branch: "main"
+  subtree_prefix: "library"
+variables: {}
 persona_bindings:
   code-reviewer: strict-reviewer
   test-engineer: tdd-engineer
   architect: systems-architect`
+				ddxDir := filepath.Join(workDir, ".ddx")
+				require.NoError(t, os.MkdirAll(ddxDir, 0755))
 				require.NoError(t, os.WriteFile(
-					filepath.Join(workDir, ".ddx.yml"),
+					filepath.Join(ddxDir, "config.yaml"),
 					[]byte(config),
 					0644,
 				))
@@ -801,15 +821,16 @@ persona_bindings:
 			description: "Exit code 0: No persona bindings configured",
 			args:        []string{"persona", "bindings"},
 			setup: func(t *testing.T) string {
-				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
+		workDir := t.TempDir()
 
-				// Create .ddx.yml without persona bindings
+				// Create .ddx/config.yaml without persona bindings
+				ddxDir := filepath.Join(workDir, ".ddx")
+				require.NoError(t, os.MkdirAll(ddxDir, 0755))
 				config := `version: "1.0"
 repository:
   url: "https://github.com/test/repo"`
 				require.NoError(t, os.WriteFile(
-					filepath.Join(workDir, ".ddx.yml"),
+					filepath.Join(ddxDir, "config.yaml"),
 					[]byte(config),
 					0644,
 				))
@@ -824,36 +845,33 @@ repository:
 		},
 		{
 			name:        "contract_exit_code_3_no_config",
-			description: "Exit code 3: No .ddx.yml configuration found",
+			description: "Exit code 3: No .ddx/config.yaml configuration found",
 			args:        []string{"persona", "bindings"},
 			setup: func(t *testing.T) string {
-				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
-				// No .ddx.yml file created
+		workDir := t.TempDir()
+				// No .ddx/config.yaml file created
 				return workDir
 			},
 			expectCode: 3,
 			validateOutput: func(t *testing.T, output string) {
 				// Should indicate no configuration
-				assert.Contains(t, output, "No .ddx.yml configuration found")
+				assert.Contains(t, output, "No .ddx/config.yaml configuration found")
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			originalDir, _ := os.Getwd()
-			defer os.Chdir(originalDir)
+			//	// originalDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
 
+			var workDir string
 			if tt.setup != nil {
-				tt.setup(t)
+				workDir = tt.setup(t)
 			}
 
-			rootCmd := &cobra.Command{
-				Use:   "ddx",
-				Short: "DDx CLI",
-			}
-			rootCmd.AddCommand(createFreshPersonaCmd())
+			// Create command factory with the correct working directory
+			factory := NewCommandFactory(workDir)
+			rootCmd := factory.NewRootCommand()
 
 			output, err := executeContractCommand(rootCmd, tt.args...)
 
@@ -886,8 +904,7 @@ func TestPersonaStatusCommand_Contract(t *testing.T) {
 			description: "Exit code 0: Display loaded personas",
 			args:        []string{"persona", "status"},
 			setup: func(t *testing.T) string {
-				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
+		workDir := t.TempDir()
 
 				// Create CLAUDE.md with loaded personas
 				claudeContent := `# CLAUDE.md
@@ -926,8 +943,7 @@ You follow TDD practices.
 			description: "Exit code 0: No personas loaded",
 			args:        []string{"persona", "status"},
 			setup: func(t *testing.T) string {
-				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
+		workDir := t.TempDir()
 
 				// Create CLAUDE.md without personas
 				claudeContent := `# CLAUDE.md
@@ -952,8 +968,7 @@ This is the project guidance.`
 			description: "Exit code 0: No CLAUDE.md file",
 			args:        []string{"persona", "status"},
 			setup: func(t *testing.T) string {
-				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
+		workDir := t.TempDir()
 				// No CLAUDE.md file created
 				return workDir
 			},
@@ -967,18 +982,16 @@ This is the project guidance.`
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			originalDir, _ := os.Getwd()
-			defer os.Chdir(originalDir)
+			//	// originalDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
 
+			var workDir string
 			if tt.setup != nil {
-				tt.setup(t)
+				workDir = tt.setup(t)
 			}
 
-			rootCmd := &cobra.Command{
-				Use:   "ddx",
-				Short: "DDx CLI",
-			}
-			rootCmd.AddCommand(createFreshPersonaCmd())
+			// Create command factory with the correct working directory
+			factory := NewCommandFactory(workDir)
+			rootCmd := factory.NewRootCommand()
 
 			output, err := executeContractCommand(rootCmd, tt.args...)
 

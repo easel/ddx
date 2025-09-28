@@ -3,7 +3,7 @@
 **Story ID**: US-013
 **Feature**: FEAT-002 - Upstream Synchronization System
 **Priority**: P0
-**Status**: Draft
+**Status**: Future
 **Created**: 2025-01-14
 **Updated**: 2025-01-14
 

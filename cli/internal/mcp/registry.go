@@ -23,15 +23,37 @@ var (
 )
 
 // LoadRegistry loads the MCP server registry from a file
-func LoadRegistry(path string) (*Registry, error) {
+func LoadRegistry(path, workingDir string) (*Registry, error) {
 	if path == "" {
 		// Resolve the registry path using library path resolution
-		resolvedPath, err := config.ResolveLibraryResource(DefaultRegistryPath, "")
+		resolvedPath, err := config.ResolveLibraryResource(DefaultRegistryPath, "", workingDir)
 		if err != nil {
 			return nil, fmt.Errorf("resolving registry path: %w", err)
 		}
 		path = resolvedPath
 	}
+
+	return loadRegistryFromPath(path, workingDir, "")
+}
+
+// LoadRegistryWithLibraryPath loads the MCP server registry with explicit library path
+func LoadRegistryWithLibraryPath(path, workingDir, libraryPath string) (*Registry, error) {
+	if path == "" && libraryPath != "" {
+		path = filepath.Join(libraryPath, "mcp-servers", "registry.yml")
+	} else if path == "" {
+		// Fall back to old resolution method
+		resolvedPath, err := config.ResolveLibraryResource(DefaultRegistryPath, "", workingDir)
+		if err != nil {
+			return nil, fmt.Errorf("resolving registry path: %w", err)
+		}
+		path = resolvedPath
+	}
+
+	return loadRegistryFromPath(path, workingDir, libraryPath)
+}
+
+// loadRegistryFromPath is the common implementation for loading registry
+func loadRegistryFromPath(path, workingDir, libraryPath string) (*Registry, error) {
 
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -46,6 +68,12 @@ func LoadRegistry(path string) (*Registry, error) {
 	if err := registry.validate(); err != nil {
 		return nil, fmt.Errorf("validating registry: %w", err)
 	}
+
+	// Set working directory for library path resolution
+	registry.workingDir = workingDir
+
+	// Set library path if provided for direct resource resolution
+	registry.libraryPath = libraryPath
 
 	registry.buildCache()
 
@@ -219,11 +247,19 @@ func (r *Registry) buildCache() {
 
 // loadServerFromFile loads a server definition from its YAML file
 func (r *Registry) loadServerFromFile(file string) (*Server, error) {
-	// Construct path relative to mcp-servers directory in library
-	mcpPath := filepath.Join("mcp-servers", file)
-	serverPath, err := config.ResolveLibraryResource(mcpPath, "")
-	if err != nil {
-		return nil, fmt.Errorf("resolving server file path: %w", err)
+	var serverPath string
+
+	// Use library path if available (preferred method)
+	if r.libraryPath != "" {
+		serverPath = filepath.Join(r.libraryPath, "mcp-servers", file)
+	} else {
+		// Fall back to old resolution method for backward compatibility
+		mcpPath := filepath.Join("mcp-servers", file)
+		var err error
+		serverPath, err = config.ResolveLibraryResource(mcpPath, "", r.workingDir)
+		if err != nil {
+			return nil, fmt.Errorf("resolving server file path: %w", err)
+		}
 	}
 
 	data, err := os.ReadFile(serverPath)
@@ -315,7 +351,8 @@ func (rc *RegistryCache) Get() (*Registry, error) {
 		return rc.registry, nil
 	}
 
-	registry, err := LoadRegistry(rc.path)
+	wd, _ := os.Getwd()
+	registry, err := LoadRegistry(rc.path, wd)
 	if err != nil {
 		return nil, err
 	}

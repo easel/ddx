@@ -18,7 +18,9 @@ func TestAcceptance_US015_ViewChangeHistory(t *testing.T) {
 		defer cleanup()
 		defer os.RemoveAll(testDir)
 
-		rootCmd := getStatusTestRootCommand()
+		// Use CommandFactory with the test working directory
+		factory := NewCommandFactory(testDir)
+		rootCmd := factory.NewRootCommand()
 		output, err := executeStatusCommand(rootCmd, "log")
 
 		assert.NoError(t, err)
@@ -38,7 +40,9 @@ func TestAcceptance_US015_ViewChangeHistory(t *testing.T) {
 		patternFile := filepath.Join(patternsDir, "auth-pattern.md")
 		os.WriteFile(patternFile, []byte("# Auth Pattern\nTest content"), 0644)
 
-		rootCmd := getStatusTestRootCommand()
+		// Use CommandFactory with the test working directory
+		factory := NewCommandFactory(testDir)
+		rootCmd := factory.NewRootCommand()
 		output, err := executeStatusCommand(rootCmd, "log", "patterns/auth-pattern.md")
 
 		assert.NoError(t, err)
@@ -52,7 +56,9 @@ func TestAcceptance_US015_ViewChangeHistory(t *testing.T) {
 		defer cleanup()
 		defer os.RemoveAll(testDir)
 
-		rootCmd := getStatusTestRootCommand()
+		// Use CommandFactory with the test working directory
+		factory := NewCommandFactory(testDir)
+		rootCmd := factory.NewRootCommand()
 		output, err := executeStatusCommand(rootCmd, "log")
 
 		assert.NoError(t, err)
@@ -66,7 +72,9 @@ func TestAcceptance_US015_ViewChangeHistory(t *testing.T) {
 		defer cleanup()
 		defer os.RemoveAll(testDir)
 
-		rootCmd := getStatusTestRootCommand()
+		// Use CommandFactory with the test working directory
+		factory := NewCommandFactory(testDir)
+		rootCmd := factory.NewRootCommand()
 		output, err := executeStatusCommand(rootCmd, "log")
 
 		assert.NoError(t, err)
@@ -79,7 +87,9 @@ func TestAcceptance_US015_ViewChangeHistory(t *testing.T) {
 		defer cleanup()
 		defer os.RemoveAll(testDir)
 
-		rootCmd := getStatusTestRootCommand()
+		// Use CommandFactory with the test working directory
+		factory := NewCommandFactory(testDir)
+		rootCmd := factory.NewRootCommand()
 		output, err := executeStatusCommand(rootCmd, "log", "--limit", "5")
 
 		// This should fail initially because --limit flag doesn't exist yet
@@ -96,7 +106,9 @@ func TestAcceptance_US015_ViewChangeHistory(t *testing.T) {
 		defer cleanup()
 		defer os.RemoveAll(testDir)
 
-		rootCmd := getStatusTestRootCommand()
+		// Use CommandFactory with the test working directory
+		factory := NewCommandFactory(testDir)
+		rootCmd := factory.NewRootCommand()
 		output, err := executeStatusCommand(rootCmd, "log", "--diff")
 
 		// This should fail initially because --diff flag doesn't exist yet
@@ -115,7 +127,9 @@ func TestAcceptance_US015_ViewChangeHistory(t *testing.T) {
 
 		exportFile := filepath.Join(testDir, "history.md")
 
-		rootCmd := getStatusTestRootCommand()
+		// Use CommandFactory with the test working directory
+		factory := NewCommandFactory(testDir)
+		rootCmd := factory.NewRootCommand()
 		_, err := executeStatusCommand(rootCmd, "log", "--export", exportFile)
 
 		// This should fail initially because --export flag doesn't exist yet
@@ -134,7 +148,9 @@ func TestAcceptance_US015_ViewChangeHistory(t *testing.T) {
 
 		// This test verifies that git integration is attempted
 		// Current implementation already does this
-		rootCmd := getStatusTestRootCommand()
+		// Use CommandFactory with the test working directory
+		factory := NewCommandFactory(testDir)
+		rootCmd := factory.NewRootCommand()
 		output, err := executeStatusCommand(rootCmd, "log")
 
 		assert.NoError(t, err)
@@ -147,7 +163,9 @@ func TestAcceptance_US015_ViewChangeHistory(t *testing.T) {
 func TestLogCommand_US015_Features(t *testing.T) {
 	t.Run("accepts_limit_flag", func(t *testing.T) {
 		// --limit flag should be accepted
-		rootCmd := getStatusTestRootCommand()
+		// Use CommandFactory with temp directory for help command
+		factory := NewCommandFactory(t.TempDir())
+		rootCmd := factory.NewRootCommand()
 		output, err := executeStatusCommand(rootCmd, "log", "--help")
 
 		assert.NoError(t, err)
@@ -157,7 +175,9 @@ func TestLogCommand_US015_Features(t *testing.T) {
 
 	t.Run("accepts_diff_flag", func(t *testing.T) {
 		// --diff flag should be accepted
-		rootCmd := getStatusTestRootCommand()
+		// Use CommandFactory with temp directory for help command
+		factory := NewCommandFactory(t.TempDir())
+		rootCmd := factory.NewRootCommand()
 		output, err := executeStatusCommand(rootCmd, "log", "--help")
 
 		assert.NoError(t, err)
@@ -167,7 +187,9 @@ func TestLogCommand_US015_Features(t *testing.T) {
 
 	t.Run("accepts_export_flag", func(t *testing.T) {
 		// --export flag should be accepted
-		rootCmd := getStatusTestRootCommand()
+		// Use CommandFactory with temp directory for help command
+		factory := NewCommandFactory(t.TempDir())
+		rootCmd := factory.NewRootCommand()
 		output, err := executeStatusCommand(rootCmd, "log", "--help")
 
 		assert.NoError(t, err)
@@ -181,7 +203,9 @@ func TestLogCommand_US015_Features(t *testing.T) {
 		defer cleanup()
 		defer os.RemoveAll(testDir)
 
-		rootCmd := getStatusTestRootCommand()
+		// Use CommandFactory with the test working directory
+		factory := NewCommandFactory(testDir)
+		rootCmd := factory.NewRootCommand()
 		_, err := executeStatusCommand(rootCmd, "log", "some/path")
 
 		// Should not fail due to extra arguments
@@ -200,7 +224,9 @@ func TestLogCommand_US015_Features(t *testing.T) {
 			t.Run(format, func(t *testing.T) {
 				exportFile := filepath.Join(testDir, format)
 
-				rootCmd := getStatusTestRootCommand()
+				// Use CommandFactory with the test working directory
+		factory := NewCommandFactory(testDir)
+		rootCmd := factory.NewRootCommand()
 				_, err := executeStatusCommand(rootCmd, "log", "--export", exportFile)
 
 				// Initially this will fail because --export doesn't exist
@@ -222,7 +248,9 @@ func TestLogCommand_US015_Features(t *testing.T) {
 		defer os.RemoveAll(testDir)
 
 		start := time.Now()
-		rootCmd := getStatusTestRootCommand()
+		// Use CommandFactory with the test working directory
+		factory := NewCommandFactory(testDir)
+		rootCmd := factory.NewRootCommand()
 		_, err := executeStatusCommand(rootCmd, "log", "--limit", "100")
 		duration := time.Since(start)
 
@@ -249,7 +277,9 @@ func TestLogCommand_US015_ValidationScenarios(t *testing.T) {
 			os.WriteFile(filepath.Join(fullDir, "test.md"), []byte("content"), 0644)
 		}
 
-		rootCmd := getStatusTestRootCommand()
+		// Use CommandFactory with the test working directory
+		factory := NewCommandFactory(testDir)
+		rootCmd := factory.NewRootCommand()
 		output, err := executeStatusCommand(rootCmd, "log")
 
 		assert.NoError(t, err)
@@ -268,7 +298,9 @@ func TestLogCommand_US015_ValidationScenarios(t *testing.T) {
 		os.MkdirAll(authDir, 0755)
 		os.WriteFile(filepath.Join(authDir, "oauth.md"), []byte("OAuth pattern"), 0644)
 
-		rootCmd := getStatusTestRootCommand()
+		// Use CommandFactory with the test working directory
+		factory := NewCommandFactory(testDir)
+		rootCmd := factory.NewRootCommand()
 		output, err := executeStatusCommand(rootCmd, "log", "patterns/auth")
 
 		assert.NoError(t, err)
@@ -282,7 +314,9 @@ func TestLogCommand_US015_ValidationScenarios(t *testing.T) {
 		defer cleanup()
 		defer os.RemoveAll(testDir)
 
-		rootCmd := getStatusTestRootCommand()
+		// Use CommandFactory with the test working directory
+		factory := NewCommandFactory(testDir)
+		rootCmd := factory.NewRootCommand()
 		_, err := executeStatusCommand(rootCmd, "log", "--limit", "10")
 
 		// Will initially fail because --limit flag doesn't exist
@@ -300,7 +334,9 @@ func TestLogCommand_US015_ValidationScenarios(t *testing.T) {
 
 		exportFile := filepath.Join(testDir, "history.md")
 
-		rootCmd := getStatusTestRootCommand()
+		// Use CommandFactory with the test working directory
+		factory := NewCommandFactory(testDir)
+		rootCmd := factory.NewRootCommand()
 		_, err := executeStatusCommand(rootCmd, "log", "--export", exportFile)
 
 		// Will initially fail because --export flag doesn't exist

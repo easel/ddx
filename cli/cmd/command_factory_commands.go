@@ -111,7 +111,7 @@ You can optionally specify a specific resource to update:
   ddx update templates/nextjs  # Update only the nextjs template
   ddx update prompts           # Update all prompts`,
 		Args: cobra.MaximumNArgs(1),
-		RunE: runUpdate,
+		RunE: f.runUpdate,
 	}
 
 	cmd.Flags().Bool("check", false, "Check for updates without applying")
@@ -147,7 +147,7 @@ Examples:
   ddx contribute prompts/claude/new-prompt.md
   ddx contribute scripts/setup/my-script.sh`,
 		Args: cobra.ExactArgs(1),
-		RunE: runContribute,
+		RunE: f.runContribute,
 	}
 
 	cmd.Flags().StringP("message", "m", "", "Contribution message")
@@ -172,20 +172,19 @@ This command allows you to:
 • Reset to defaults
 
 Examples:
-  ddx config                    # Interactive configuration
-  ddx config --show             # Display current config
+  ddx config                    # Show help
   ddx config set key value      # Set specific value
-  ddx config get key            # Get specific value`,
-		RunE: runConfig,
+  ddx config get key            # Get specific value
+  ddx config edit               # Edit config in $EDITOR
+  cat .ddx/config.yaml          # View current config`,
+		RunE: f.runConfig,
 	}
 
-	cmd.Flags().Bool("show", false, "Display current configuration")
 	cmd.Flags().Bool("show-files", false, "Display all config file locations")
 	cmd.Flags().Bool("edit", false, "Edit configuration file directly")
 	cmd.Flags().Bool("reset", false, "Reset to default configuration")
 	cmd.Flags().Bool("wizard", false, "Run configuration wizard")
 	cmd.Flags().Bool("validate", false, "Validate configuration")
-	cmd.Flags().Bool("preview", false, "Preview resource selection")
 	cmd.Flags().Bool("global", false, "Use global configuration")
 
 	// Enhanced validation flags for US-022
@@ -193,10 +192,8 @@ Examples:
 	cmd.Flags().Bool("verbose", false, "Detailed validation output")
 	cmd.Flags().Bool("offline", false, "Skip network checks during validation")
 
-	// Enhanced config show flags for US-024
-	cmd.Flags().String("format", "yaml", "Output format (yaml, json, table)")
-	cmd.Flags().Bool("only-overrides", false, "Show only overridden values")
-	cmd.Flags().String("filter", "", "Filter by key pattern")
+	// Add migrate subcommand
+	cmd.AddCommand(configMigrateCmd)
 
 	return cmd
 }
@@ -242,7 +239,7 @@ Examples:
   ddx persona list              # List available personas
   ddx persona show reviewer     # Show persona details
   ddx persona bind code-reviewer strict-reviewer`,
-		RunE: runPersona,
+		RunE: f.runPersona,
 	}
 
 	cmd.Flags().Bool("list", false, "List available personas")
@@ -271,7 +268,7 @@ Examples:
   ddx mcp list                  # List available MCP servers
   ddx mcp install github        # Install GitHub MCP server
   ddx mcp status                # Show installed servers`,
-		RunE: runMCP,
+		RunE: f.runMCP,
 	}
 
 	cmd.Flags().Bool("list", false, "List available MCP servers")
@@ -358,7 +355,7 @@ Examples:
   ddx status --changes                # List changed files
   ddx status --diff                   # Show differences
   ddx status --export manifest.yml    # Export version manifest`,
-		RunE: runStatus,
+		RunE: f.runStatus,
 	}
 
 	cmd.Flags().Bool("check-upstream", false, "Check for upstream updates")
@@ -384,7 +381,7 @@ Examples:
   ddx log -n 10              # Show last 10 commits
   ddx log --oneline          # Show compact format
   ddx log --since="1 week ago" # Show commits from last week`,
-		RunE: runLog,
+		RunE: f.runLog,
 	}
 
 	cmd.Flags().IntP("number", "n", 20, "Number of commits to show")

@@ -9,151 +9,70 @@ import (
 	"strings"
 	"time"
 
-	"github.com/briandowns/spinner"
 	"github.com/easel/ddx/internal/config"
 	"github.com/spf13/cobra"
 )
 
-// Command registration is now handled by command_factory.go
-// This file only contains the runInit function implementation
+// InitOptions contains all configuration options for project initialization
+type InitOptions struct {
+	Force    bool   // Force initialization even if config exists
+	NoGit    bool   // Skip git-related operations
+	Template string // Template to use for initialization
+}
 
-// runInit implements the init command logic
+// Command registration is now handled by command_factory.go
+// This file contains the CLI interface layer and pure business logic functions
+
+// InitResult contains the result of an initialization operation
+type InitResult struct {
+	ConfigCreated bool
+	BackupPath    string
+	LibraryExists bool
+	IsDDxRepo     bool
+	Config        *config.Config
+}
+
+// runInit implements the CLI interface layer for the init command
 func (f *CommandFactory) runInit(cmd *cobra.Command, args []string) error {
-	// Get flag values locally
+	// Extract flags from cobra.Command
 	initForce, _ := cmd.Flags().GetBool("force")
 	initNoGit, _ := cmd.Flags().GetBool("no-git")
+	template, _ := cmd.Flags().GetString("template")
 
+	// Create options struct for business logic
+	opts := InitOptions{
+		Force:    initForce,
+		NoGit:    initNoGit,
+		Template: template,
+	}
+
+	// Handle user output
 	fmt.Fprint(cmd.OutOrStdout(), "🚀 Initializing DDx in current project...\n")
 	fmt.Fprintln(cmd.OutOrStdout())
 
-	// Validate git repository unless --no-git flag is used
-	if !initNoGit {
-		if err := validateGitRepository(cmd); err != nil {
-			cmd.SilenceUsage = true
-			return NewExitError(1, err.Error())
-		}
-	}
-
-	// Check if config already exists and handle backup
-	configPath := ".ddx.yml"
-	configExists := false
-	if _, err := os.Stat(configPath); err == nil {
-		configExists = true
-		if !initForce {
-			// Config exists and --force not used - exit code 2 per contract
-			cmd.SilenceUsage = true
-			return NewExitError(2, ".ddx.yml already exists. Use --force to overwrite.")
-		}
-
-		// Create backup of existing configuration
-		backupPath := fmt.Sprintf(".ddx.yml.backup.%d", time.Now().Unix())
-		if err := copyFile(configPath, backupPath); err != nil {
-			fmt.Fprintf(cmd.OutOrStdout(), "⚠️  Warning: Failed to create backup of existing config: %v\n", err)
-		} else {
-			fmt.Fprintf(cmd.OutOrStdout(), "💾 Created backup of existing config: %s\n", backupPath)
-		}
-	}
-
-	// Initialize synchronization setup
-	fmt.Fprint(cmd.OutOrStdout(), "🔄 Setting up synchronization with upstream repository...\n")
-
-	// Check if library path exists
-	libPath, err := config.GetLibraryPath(getLibraryPath())
-	libraryExists := true
-	if err != nil || libPath == "" {
-		libraryExists = false
-	} else if _, err := os.Stat(libPath); os.IsNotExist(err) {
-		libraryExists = false
-	}
-
-	// Detect project type and gather configuration
-	projectName := filepath.Base(f.WorkingDir)
-	projectType := detectProjectType()
-
-	// Interactive prompts for configuration (skip in test mode or if not interactive)
-	if !configExists && os.Getenv("DDX_TEST_MODE") != "1" && isInteractive() {
-		if confirmedProjectName := promptForProjectName(projectName, cmd); confirmedProjectName != "" {
-			projectName = confirmedProjectName
-		}
-	}
-
-	// Create configuration with project-specific settings
-	localConfig := createProjectConfig(projectName, projectType)
-
-	// Add validation during creation
-	if err := validateConfiguration(localConfig); err != nil {
+	// Call pure business logic function
+	result, err := initProject(f.WorkingDir, opts)
+	if err != nil {
 		cmd.SilenceUsage = true
-		return NewExitError(1, fmt.Sprintf("Configuration validation failed: %v", err))
+		return err
 	}
 
-	// Check if we're in the DDx repository itself
-	if isDDxRepository(f.WorkingDir) {
-		// For DDx repo, point directly to the library directory
-		localConfig.LibraryPath = "../library"
+	// Handle user output based on results
+	if result.BackupPath != "" {
+		fmt.Fprintf(cmd.OutOrStdout(), "💾 Created backup of existing config: %s\n", result.BackupPath)
+	}
+
+	if result.IsDDxRepo {
 		fmt.Fprint(cmd.OutOrStdout(), "📚 Detected DDx repository - configuring library_path to use ../library\n")
 	}
 
-	// Try to load existing config for more accurate defaults
-	if libraryExists {
-		if cfg, err := config.Load(); err == nil {
-			localConfig.Version = cfg.Version
-			localConfig.Repository = cfg.Repository
-			localConfig.Includes = cfg.Includes
-			for k, v := range cfg.Variables {
-				if k != "project_name" { // Keep project-specific name
-					localConfig.Variables[k] = v
-				}
-			}
-		}
-	}
-
-	// Save local configuration
-	if err := config.SaveLocal(localConfig); err != nil {
-		cmd.SilenceUsage = true
-		return NewExitError(1, fmt.Sprintf("Failed to save configuration: %v", err))
-	}
-
-	// Initialize synchronization configuration
-	if err := initializeSynchronization(localConfig, cmd); err != nil {
-		cmd.SilenceUsage = true
-		return NewExitError(1, fmt.Sprintf("Failed to initialize synchronization: %v", err))
-	}
-
-	// Always create .ddx directory (required for isInitialized check)
-	localDDxPath := ".ddx"
-	if err := os.MkdirAll(localDDxPath, 0755); err != nil {
-		cmd.SilenceUsage = true
-		return NewExitError(1, fmt.Sprintf("Failed to create .ddx directory: %v", err))
-	}
-
-	// Set up git-subtree for library synchronization if not using --no-git and in git repo
-	if !initNoGit && libraryExists {
-		if err := setupGitSubtreeLibrary(localConfig, cmd); err != nil {
+	// Initialize synchronization if config was created
+	if result.Config != nil {
+		fmt.Fprintln(cmd.OutOrStdout())
+		if err := initializeSynchronization(result.Config, cmd); err != nil {
 			cmd.SilenceUsage = true
-			return NewExitError(1, fmt.Sprintf("Failed to setup git-subtree library: %v", err))
+			return err
 		}
-	} else if libraryExists {
-		// Fallback to copying resources if not using git
-		s := spinner.New(spinner.CharSets[14], 100)
-		s.Prefix = "Setting up DDx... "
-		s.Start()
-
-		// Copy selected resources
-		for _, include := range localConfig.Includes {
-			sourcePath := filepath.Join(libPath, include)
-			targetPath := filepath.Join(localDDxPath, include)
-
-			if _, err := os.Stat(sourcePath); err == nil {
-				s.Suffix = fmt.Sprintf(" Copying %s...", include)
-				if err := copyDir(sourcePath, targetPath); err != nil {
-					s.Stop()
-					cmd.SilenceUsage = true
-					return NewExitError(1, fmt.Sprintf("Failed to copy %s: %v", include, err))
-				}
-			}
-		}
-
-		s.Stop()
 	}
 
 	fmt.Fprint(cmd.OutOrStdout(), "✅ DDx initialized successfully!\n")
@@ -161,7 +80,7 @@ func (f *CommandFactory) runInit(cmd *cobra.Command, args []string) error {
 	fmt.Fprintln(cmd.OutOrStdout())
 
 	// Show next steps only if library exists
-	if libraryExists {
+	if result.LibraryExists {
 		fmt.Fprint(cmd.OutOrStdout(), "Next steps:\n")
 		fmt.Fprint(cmd.OutOrStdout(), "  ddx list          - See available resources\n")
 		fmt.Fprint(cmd.OutOrStdout(), "  ddx apply <name>  - Apply templates or patterns\n")
@@ -172,6 +91,118 @@ func (f *CommandFactory) runInit(cmd *cobra.Command, args []string) error {
 
 	return nil
 }
+
+// initProject is the pure business logic function for project initialization
+func initProject(workingDir string, opts InitOptions) (*InitResult, error) {
+	result := &InitResult{}
+
+	// Validate git repository unless --no-git flag is used
+	if !opts.NoGit {
+		if err := validateGitRepo(workingDir); err != nil {
+			return nil, NewExitError(1, err.Error())
+		}
+	}
+
+	// Check if config already exists and handle backup
+	configPath := filepath.Join(workingDir, ".ddx", "config.yaml")
+	configExists := false
+	if _, err := os.Stat(configPath); err == nil {
+		configExists = true
+		if !opts.Force {
+			// Config exists and --force not used - exit code 2 per contract
+			return nil, NewExitError(2, ".ddx/config.yaml already exists. Use --force to overwrite.")
+		}
+
+		// Create backup of existing configuration
+		backupPath := filepath.Join(workingDir, fmt.Sprintf(".ddx/config.yaml.backup.%d", time.Now().Unix()))
+		if err := copyFile(configPath, backupPath); err != nil {
+			// Continue with warning, don't fail the operation
+			// Warning will be shown by CLI layer if BackupPath is empty
+		} else {
+			result.BackupPath = backupPath
+		}
+	}
+
+	// Check if library path exists using working directory
+	cfg, err := config.LoadWithWorkingDir(workingDir)
+	libraryExists := true
+	if err != nil || cfg.LibraryBasePath == "" {
+		libraryExists = false
+	} else if _, err := os.Stat(cfg.LibraryBasePath); os.IsNotExist(err) {
+		libraryExists = false
+	}
+	result.LibraryExists = libraryExists
+
+	// Detect project type and gather configuration
+	projectName := filepath.Base(workingDir)
+	projectType := detectProjectType(workingDir)
+
+	// Interactive prompts for configuration (skip in test mode or if not interactive)
+	if !configExists && os.Getenv("DDX_TEST_MODE") != "1" && isInteractive() {
+		if confirmedProjectName := promptForProjectNamePure(projectName); confirmedProjectName != "" {
+			projectName = confirmedProjectName
+		}
+	}
+
+	// Create configuration with project-specific settings
+	localConfig := createProjectConfig(projectName, projectType)
+
+	// Add validation during creation
+	if err := validateConfiguration(localConfig); err != nil {
+		return nil, NewExitError(1, fmt.Sprintf("Configuration validation failed: %v", err))
+	}
+
+	// Check if we're in the DDx repository itself
+	if isDDxRepository(workingDir) {
+		// For DDx repo, point directly to the library directory
+		localConfig.LibraryBasePath = "../library"
+		result.IsDDxRepo = true
+	}
+
+	// Try to load existing config for more accurate defaults
+	if libraryExists {
+		if cfg, err := config.LoadWithWorkingDir(workingDir); err == nil {
+			localConfig.Version = cfg.Version
+			localConfig.Repository = cfg.Repository
+			for k, v := range cfg.Variables {
+				if k != "project_name" { // Keep project-specific name
+					localConfig.Variables[k] = v
+				}
+			}
+		}
+	}
+
+	// Save local configuration using ConfigLoader
+	loader, err := config.NewConfigLoaderWithWorkingDir(workingDir)
+	if err != nil {
+		return nil, NewExitError(1, fmt.Sprintf("Failed to create config loader: %v", err))
+	}
+	if err := loader.SaveConfig(localConfig, ".ddx/config.yaml"); err != nil {
+		return nil, NewExitError(1, fmt.Sprintf("Failed to save configuration: %v", err))
+	}
+	result.ConfigCreated = true
+
+	// Store config for CLI layer to use for sync setup
+	result.Config = localConfig
+
+	// Always create .ddx directory (required for isInitialized check)
+	localDDxPath := filepath.Join(workingDir, ".ddx")
+	if err := os.MkdirAll(localDDxPath, 0755); err != nil {
+		return nil, NewExitError(1, fmt.Sprintf("Failed to create .ddx directory: %v", err))
+	}
+
+	// Set up git-subtree for library synchronization if not using --no-git and in git repo
+	if !opts.NoGit && libraryExists {
+		if err := setupGitSubtreeLibraryPure(localConfig, workingDir); err != nil {
+			return nil, NewExitError(1, fmt.Sprintf("Failed to setup git-subtree library: %v", err))
+		}
+	}
+
+	// Configuration already saved above
+
+	return result, nil
+}
+
 
 // isDDxRepository checks if we're in the DDx repository
 func isDDxRepository(workingDir string) bool {
@@ -226,10 +257,8 @@ func copyDir(src, dst string) error {
 
 // copyFile is defined in config.go to avoid duplication
 
-// initializeSynchronization sets up the sync configuration and validates upstream connection
-func initializeSynchronization(cfg *config.Config, cmd *cobra.Command) error {
-	fmt.Fprint(cmd.OutOrStdout(), "  ✓ Validating upstream repository connection...\n")
-
+// initializeSynchronizationPure is the pure business logic for sync setup
+func initializeSynchronizationPure(cfg *config.Config) error {
 	// Validate repository configuration
 	if cfg.Repository.URL == "" {
 		return fmt.Errorf("repository URL not configured")
@@ -241,9 +270,6 @@ func initializeSynchronization(cfg *config.Config, cmd *cobra.Command) error {
 
 	// In test mode, skip actual network validation
 	if os.Getenv("DDX_TEST_MODE") == "1" {
-		fmt.Fprint(cmd.OutOrStdout(), "  ✓ Upstream repository connection verified (test mode)\n")
-		fmt.Fprint(cmd.OutOrStdout(), "  ✓ Synchronization configuration validated\n")
-		fmt.Fprint(cmd.OutOrStdout(), "  ✓ Change tracking initialized\n")
 		return nil
 	}
 
@@ -254,9 +280,29 @@ func initializeSynchronization(cfg *config.Config, cmd *cobra.Command) error {
 		return fmt.Errorf("invalid repository URL: %s", cfg.Repository.URL)
 	}
 
-	fmt.Fprint(cmd.OutOrStdout(), "  ✓ Upstream repository connection verified\n")
-	fmt.Fprint(cmd.OutOrStdout(), "  ✓ Synchronization configuration validated\n")
-	fmt.Fprint(cmd.OutOrStdout(), "  ✓ Change tracking initialized\n")
+	return nil
+}
+
+// initializeSynchronization sets up the sync configuration and validates upstream connection (CLI wrapper)
+func initializeSynchronization(cfg *config.Config, cmd *cobra.Command) error {
+	fmt.Fprint(cmd.OutOrStdout(), "Setting up synchronization...\n")
+	fmt.Fprint(cmd.OutOrStdout(), "  ✓ Validating upstream repository connection...\n")
+
+	err := initializeSynchronizationPure(cfg)
+	if err != nil {
+		return err
+	}
+
+	// In test mode, show test messages
+	if os.Getenv("DDX_TEST_MODE") == "1" {
+		fmt.Fprint(cmd.OutOrStdout(), "  ✓ Upstream repository connection verified (test mode)\n")
+		fmt.Fprint(cmd.OutOrStdout(), "  ✓ Synchronization configuration validated\n")
+		fmt.Fprint(cmd.OutOrStdout(), "  ✓ Change tracking initialized\n")
+	} else {
+		fmt.Fprint(cmd.OutOrStdout(), "  ✓ Upstream repository connection verified\n")
+		fmt.Fprint(cmd.OutOrStdout(), "  ✓ Synchronization configuration validated\n")
+		fmt.Fprint(cmd.OutOrStdout(), "  ✓ Change tracking initialized\n")
+	}
 
 	return nil
 }
@@ -288,28 +334,34 @@ func isValidRepositoryURL(url string) bool {
 	return strings.HasPrefix(url, "https://")
 }
 
-// detectProjectType analyzes the current directory to determine project type
-func detectProjectType() string {
+// detectProjectType analyzes the given directory to determine project type
+func detectProjectType(workingDir string) string {
 	// Check for common project indicators
-	if _, err := os.Stat("package.json"); err == nil {
+	if _, err := os.Stat(filepath.Join(workingDir, "package.json")); err == nil {
 		return "javascript"
 	}
-	if _, err := os.Stat("go.mod"); err == nil {
+	if _, err := os.Stat(filepath.Join(workingDir, "go.mod")); err == nil {
 		return "go"
 	}
-	if _, err := os.Stat("requirements.txt"); err == nil || fileExists("pyproject.toml") {
+	if _, err := os.Stat(filepath.Join(workingDir, "requirements.txt")); err == nil || fileExistsInDir(workingDir, "pyproject.toml") {
 		return "python"
 	}
-	if _, err := os.Stat("Cargo.toml"); err == nil {
+	if _, err := os.Stat(filepath.Join(workingDir, "Cargo.toml")); err == nil {
 		return "rust"
 	}
-	if _, err := os.Stat("pom.xml"); err == nil || fileExists("build.gradle") {
+	if _, err := os.Stat(filepath.Join(workingDir, "pom.xml")); err == nil || fileExistsInDir(workingDir, "build.gradle") {
 		return "java"
 	}
-	if _, err := os.Stat(".git"); err == nil {
+	if _, err := os.Stat(filepath.Join(workingDir, ".git")); err == nil {
 		return "git"
 	}
 	return "generic"
+}
+
+// fileExistsInDir checks if a file exists in a specific directory
+func fileExistsInDir(dir, filename string) bool {
+	_, err := os.Stat(filepath.Join(dir, filename))
+	return err == nil
 }
 
 // fileExists is already defined in diagnose.go
@@ -320,7 +372,24 @@ func isInteractive() bool {
 	return os.Getenv("TERM") != "" && os.Getenv("CI") == ""
 }
 
-// promptForProjectName prompts user for project name confirmation
+// promptForProjectNamePure is the pure business logic for project name prompting
+func promptForProjectNamePure(defaultName string) string {
+	fmt.Printf("📝 Project name [%s]: ", defaultName)
+
+	reader := bufio.NewReader(os.Stdin)
+	input, err := reader.ReadString('\n')
+	if err != nil {
+		return defaultName
+	}
+
+	input = strings.TrimSpace(input)
+	if input == "" {
+		return defaultName
+	}
+	return input
+}
+
+// promptForProjectName prompts user for project name confirmation (CLI wrapper)
 func promptForProjectName(defaultName string, cmd *cobra.Command) string {
 	fmt.Fprintf(cmd.OutOrStdout(), "📝 Project name [%s]: ", defaultName)
 
@@ -340,11 +409,12 @@ func promptForProjectName(defaultName string, cmd *cobra.Command) string {
 // createProjectConfig creates a configuration tailored to the project type
 func createProjectConfig(projectName, projectType string) *config.Config {
 	cfg := &config.Config{
-		Version: "1.0",
-		Repository: config.Repository{
-			URL:    "https://github.com/easel/ddx",
-			Branch: "main",
-			Path:   ".ddx/",
+		Version:         "1.0",
+		LibraryBasePath: "./library",
+		Repository: &config.Repository{
+			URL:           "https://github.com/easel/ddx",
+			Branch:        "main",
+			SubtreePrefix: "library",
 		},
 		Variables: map[string]string{
 			"project_name": projectName,
@@ -353,34 +423,10 @@ func createProjectConfig(projectName, projectType string) *config.Config {
 		},
 	}
 
-	// Customize includes based on project type
-	cfg.Includes = getProjectTypeIncludes(projectType)
 
 	return cfg
 }
 
-// getProjectTypeIncludes returns appropriate includes for the project type
-func getProjectTypeIncludes(projectType string) []string {
-	baseIncludes := []string{
-		"prompts/claude",
-		"scripts/hooks",
-	}
-
-	switch projectType {
-	case "javascript":
-		return append(baseIncludes, "templates/javascript", "configs/eslint", "configs/prettier")
-	case "go":
-		return append(baseIncludes, "templates/go", "configs/golint")
-	case "python":
-		return append(baseIncludes, "templates/python", "configs/black", "configs/pylint")
-	case "rust":
-		return append(baseIncludes, "templates/rust", "configs/rustfmt")
-	case "java":
-		return append(baseIncludes, "templates/java", "configs/checkstyle")
-	default:
-		return append(baseIncludes, "templates/common")
-	}
-}
 
 // validateConfiguration validates the configuration during creation
 func validateConfiguration(cfg *config.Config) error {
@@ -392,7 +438,7 @@ func validateConfiguration(cfg *config.Config) error {
 		return fmt.Errorf("version is required")
 	}
 
-	if cfg.Repository.URL == "" {
+	if cfg.Repository == nil || cfg.Repository.URL == "" {
 		return fmt.Errorf("repository URL is required")
 	}
 
@@ -411,29 +457,38 @@ func validateConfiguration(cfg *config.Config) error {
 	return nil
 }
 
-// validateGitRepository checks if the current directory is inside a git repository
-func validateGitRepository(cmd *cobra.Command) error {
-	fmt.Fprint(cmd.OutOrStdout(), "🔍 Validating git repository...\n")
-
+// validateGitRepo is the pure business logic for git repository validation
+func validateGitRepo(workingDir string) error {
 	// Use git rev-parse --git-dir to check if we're in a git repository
 	gitCmd := exec.Command("git", "rev-parse", "--git-dir")
+	gitCmd.Dir = workingDir
 	gitCmd.Stderr = nil // Suppress error output
 	if err := gitCmd.Run(); err != nil {
 		return fmt.Errorf("Error: ddx init must be run inside a git repository. Please run 'git init' first")
+	}
+
+	return nil
+}
+
+// validateGitRepository checks if the current directory is inside a git repository (CLI wrapper)
+func validateGitRepository(cmd *cobra.Command) error {
+	fmt.Fprint(cmd.OutOrStdout(), "🔍 Validating git repository...\n")
+
+	err := validateGitRepo(".")
+	if err != nil {
+		return err
 	}
 
 	fmt.Fprint(cmd.OutOrStdout(), "  ✓ Git repository detected\n")
 	return nil
 }
 
-// setupGitSubtreeLibrary sets up the library using git-subtree
-func setupGitSubtreeLibrary(cfg *config.Config, cmd *cobra.Command) error {
-	fmt.Fprint(cmd.OutOrStdout(), "📚 Setting up library via git-subtree...\n")
-
+// setupGitSubtreeLibraryPure is the pure business logic for git-subtree setup
+func setupGitSubtreeLibraryPure(cfg *config.Config, workingDir string) error {
 	// Check if .ddx/library already exists
-	libraryPath := ".ddx/library"
+	libraryPath := filepath.Join(workingDir, ".ddx/library")
 	if _, err := os.Stat(libraryPath); err == nil {
-		fmt.Fprintf(cmd.OutOrStdout(), "  ℹ️  Library directory already exists at %s\n", libraryPath)
+		// Library already exists, nothing to do
 		return nil
 	}
 
@@ -442,7 +497,6 @@ func setupGitSubtreeLibrary(cfg *config.Config, cmd *cobra.Command) error {
 		if err := os.MkdirAll(libraryPath, 0755); err != nil {
 			return fmt.Errorf("failed to create library directory: %v", err)
 		}
-		fmt.Fprint(cmd.OutOrStdout(), "  ✓ Git-subtree library setup simulated (test mode)\n")
 		return nil
 	}
 
@@ -454,6 +508,7 @@ func setupGitSubtreeLibrary(cfg *config.Config, cmd *cobra.Command) error {
 	}
 
 	gitCmd := exec.Command("git", "subtree", "add", fmt.Sprintf("--prefix=%s", libraryPath), repoURL, branch, "--squash")
+	gitCmd.Dir = workingDir
 	gitCmd.Stdout = nil // Suppress verbose git output
 	gitCmd.Stderr = nil
 
@@ -461,8 +516,37 @@ func setupGitSubtreeLibrary(cfg *config.Config, cmd *cobra.Command) error {
 		return fmt.Errorf("git subtree command failed: %v. You may need to run 'git subtree add --prefix=.ddx/library %s %s --squash' manually", err, repoURL, branch)
 	}
 
-	fmt.Fprint(cmd.OutOrStdout(), "  ✓ Library synchronized via git-subtree\n")
-	fmt.Fprintf(cmd.OutOrStdout(), "  ℹ️  To update library: git subtree pull --prefix=.ddx/library %s %s --squash\n", repoURL, branch)
+	return nil
+}
+
+
+// setupGitSubtreeLibrary sets up the library using git-subtree (CLI wrapper)
+func setupGitSubtreeLibrary(cfg *config.Config, cmd *cobra.Command, workingDir string) error {
+	fmt.Fprint(cmd.OutOrStdout(), "📚 Setting up library via git-subtree...\n")
+
+	// Check if .ddx/library already exists
+	libraryPath := filepath.Join(workingDir, ".ddx/library")
+	if _, err := os.Stat(libraryPath); err == nil {
+		fmt.Fprintf(cmd.OutOrStdout(), "  ℹ️  Library directory already exists at %s\n", libraryPath)
+		return nil
+	}
+
+	err := setupGitSubtreeLibraryPure(cfg, workingDir)
+	if err != nil {
+		return err
+	}
+
+	if os.Getenv("DDX_TEST_MODE") == "1" {
+		fmt.Fprint(cmd.OutOrStdout(), "  ✓ Git-subtree library setup simulated (test mode)\n")
+	} else {
+		repoURL := cfg.Repository.URL
+		branch := cfg.Repository.Branch
+		if branch == "" {
+			branch = "main"
+		}
+		fmt.Fprint(cmd.OutOrStdout(), "  ✓ Library synchronized via git-subtree\n")
+		fmt.Fprintf(cmd.OutOrStdout(), "  ℹ️  To update library: git subtree pull --prefix=.ddx/library %s %s --squash\n", repoURL, branch)
+	}
 
 	return nil
 }

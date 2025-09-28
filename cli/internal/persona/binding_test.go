@@ -78,7 +78,6 @@ persona_bindings: null`,
 		t.Run(tt.name, func(t *testing.T) {
 			// Create temporary config file
 			workDir := t.TempDir()
-			require.NoError(t, os.Chdir(workDir))
 
 			configPath := filepath.Join(workDir, ".ddx.yml")
 			require.NoError(t, os.WriteFile(configPath, []byte(tt.config), 0644))
@@ -208,7 +207,6 @@ repository:
 		t.Run(tt.name, func(t *testing.T) {
 			// Create temporary config file
 			workDir := t.TempDir()
-			require.NoError(t, os.Chdir(workDir))
 
 			configPath := filepath.Join(workDir, ".ddx.yml")
 			require.NoError(t, os.WriteFile(configPath, []byte(tt.initialConfig), 0644))
@@ -297,7 +295,6 @@ persona_bindings: null`,
 		t.Run(tt.name, func(t *testing.T) {
 			// Create temporary config file
 			workDir := t.TempDir()
-			require.NoError(t, os.Chdir(workDir))
 
 			configPath := filepath.Join(workDir, ".ddx.yml")
 			require.NoError(t, os.WriteFile(configPath, []byte(tt.config), 0644))
@@ -413,7 +410,6 @@ repository:
 		t.Run(tt.name, func(t *testing.T) {
 			// Create temporary config file
 			workDir := t.TempDir()
-			require.NoError(t, os.Chdir(workDir))
 
 			configPath := filepath.Join(workDir, ".ddx.yml")
 			require.NoError(t, os.WriteFile(configPath, []byte(tt.initialConfig), 0644))
@@ -551,7 +547,6 @@ overrides: {}`,
 		t.Run(tt.name, func(t *testing.T) {
 			// Create temporary config file
 			workDir := t.TempDir()
-			require.NoError(t, os.Chdir(workDir))
 
 			configPath := filepath.Join(workDir, ".ddx.yml")
 			require.NoError(t, os.WriteFile(configPath, []byte(tt.config), 0644))
@@ -582,9 +577,7 @@ overrides: {}`,
 func TestBindingManager_NoConfigFile(t *testing.T) {
 	// Cannot use t.Parallel() with os.Chdir
 
-	workDir := t.TempDir()
-	require.NoError(t, os.Chdir(workDir))
-	// No .ddx.yml file created
+	_ = t.TempDir() // Create temp dir but use absolute paths instead of changing directory
 
 	tests := []struct {
 		name      string
@@ -648,7 +641,7 @@ func TestBindingManager_InvalidConfigFile(t *testing.T) {
 	// Cannot use t.Parallel() with os.Chdir
 
 	workDir := t.TempDir()
-	require.NoError(t, os.Chdir(workDir))
+	// Use absolute paths instead of changing working directory
 
 	// Create invalid YAML file
 	invalidConfig := `version: "1.0"

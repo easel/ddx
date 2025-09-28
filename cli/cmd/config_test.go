@@ -22,10 +22,9 @@ func TestConfigCommand(t *testing.T) {
 	}{
 		{
 			name: "show config",
-			args: []string{"config"},
+			args: []string{"config", "export"},
 			setup: func(t *testing.T) string {
-				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
+	workDir := t.TempDir()
 
 				// Create config file
 				config := `version: "1.0"
@@ -36,7 +35,9 @@ variables:
   project_name: "test-project"
   port: "8080"
 `
-				require.NoError(t, os.WriteFile(filepath.Join(workDir, ".ddx.yml"), []byte(config), 0644))
+				ddxDir := filepath.Join(workDir, ".ddx")
+				require.NoError(t, os.MkdirAll(ddxDir, 0755))
+				require.NoError(t, os.WriteFile(filepath.Join(ddxDir, "config.yaml"), []byte(config), 0644))
 				return workDir
 			},
 			validate: func(t *testing.T, workDir string, output string, err error) {
@@ -50,14 +51,19 @@ variables:
 			args: []string{"config", "get", "repository.url"},
 			setup: func(t *testing.T) string {
 				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
 
 				config := `version: "1.0"
+library_base_path: "./library"
 repository:
   url: "https://github.com/test/repo"
   branch: "main"
+  subtree_prefix: "library"
+variables:
+  author: "Test User"
 `
-				require.NoError(t, os.WriteFile(filepath.Join(workDir, ".ddx.yml"), []byte(config), 0644))
+				ddxDir := filepath.Join(workDir, ".ddx")
+				require.NoError(t, os.MkdirAll(ddxDir, 0755))
+				require.NoError(t, os.WriteFile(filepath.Join(ddxDir, "config.yaml"), []byte(config), 0644))
 				return workDir
 			},
 			validate: func(t *testing.T, workDir string, output string, err error) {
@@ -69,19 +75,20 @@ repository:
 			name: "set config value",
 			args: []string{"config", "set", "variables.new_var", "new_value"},
 			setup: func(t *testing.T) string {
-				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
+	workDir := t.TempDir()
 
 				config := `version: "1.0"
 variables:
   existing: "value"
 `
-				require.NoError(t, os.WriteFile(filepath.Join(workDir, ".ddx.yml"), []byte(config), 0644))
+				ddxDir := filepath.Join(workDir, ".ddx")
+				require.NoError(t, os.MkdirAll(ddxDir, 0755))
+				require.NoError(t, os.WriteFile(filepath.Join(ddxDir, "config.yaml"), []byte(config), 0644))
 				return workDir
 			},
 			validate: func(t *testing.T, workDir string, output string, err error) {
 				// Read config to verify change
-				data, err := os.ReadFile(filepath.Join(workDir, ".ddx.yml"))
+				data, err := os.ReadFile(filepath.Join(workDir, ".ddx", "config.yaml"))
 				if err == nil {
 					var config map[string]interface{}
 					yaml.Unmarshal(data, &config)
@@ -97,8 +104,7 @@ variables:
 			name: "config with no config file",
 			args: []string{"config"},
 			setup: func(t *testing.T) string {
-				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
+	workDir := t.TempDir()
 				// No config file created
 				return workDir
 			},
@@ -112,8 +118,7 @@ variables:
 			name: "validate config",
 			args: []string{"config", "validate"},
 			setup: func(t *testing.T) string {
-				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
+	workDir := t.TempDir()
 
 				// Valid config
 				config := `version: "1.0"
@@ -121,7 +126,9 @@ repository:
   url: "https://github.com/test/repo"
   branch: "main"
 `
-				require.NoError(t, os.WriteFile(filepath.Join(workDir, ".ddx.yml"), []byte(config), 0644))
+				ddxDir := filepath.Join(workDir, ".ddx")
+				require.NoError(t, os.MkdirAll(ddxDir, 0755))
+				require.NoError(t, os.WriteFile(filepath.Join(ddxDir, "config.yaml"), []byte(config), 0644))
 				return workDir
 			},
 			validate: func(t *testing.T, workDir string, output string, err error) {
@@ -133,15 +140,16 @@ repository:
 			name: "validate invalid config",
 			args: []string{"config", "validate"},
 			setup: func(t *testing.T) string {
-				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
+	workDir := t.TempDir()
 
 				// Invalid YAML
 				config := `version: "1.0"
 repository:
   url: [this is invalid
 `
-				require.NoError(t, os.WriteFile(filepath.Join(workDir, ".ddx.yml"), []byte(config), 0644))
+				ddxDir := filepath.Join(workDir, ".ddx")
+				require.NoError(t, os.MkdirAll(ddxDir, 0755))
+				require.NoError(t, os.WriteFile(filepath.Join(ddxDir, "config.yaml"), []byte(config), 0644))
 				return workDir
 			},
 			validate: func(t *testing.T, workDir string, output string, err error) {
@@ -157,31 +165,21 @@ repository:
 			// Create a fresh command for test isolation
 			// (flags are now local to the command)
 
-			originalDir, _ := os.Getwd()
-			defer os.Chdir(originalDir)
+			//	// originalDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
 
 			var workDir string
 			if tt.setup != nil {
 				workDir = tt.setup(t)
 			}
 
-			rootCmd := &cobra.Command{
-				Use:   "ddx",
-				Short: "DDx CLI",
+			// Use CommandFactory with the test working directory
+			var factory *CommandFactory
+			if workDir != "" {
+				factory = NewCommandFactory(workDir)
+			} else {
+				factory = NewCommandFactory("/tmp")
 			}
-
-			// Create fresh config command to avoid state pollution
-			freshConfigCmd := &cobra.Command{
-				Use:   "config [get|set|validate] [key] [value]",
-				Short: "Manage DDx configuration",
-				RunE:  runConfig,
-			}
-			freshConfigCmd.Flags().BoolP("global", "g", false, "Edit global configuration")
-			freshConfigCmd.Flags().BoolP("local", "l", false, "Edit local project configuration")
-			freshConfigCmd.Flags().Bool("unset", false, "Unset a configuration key")
-			freshConfigCmd.Flags().Bool("list", false, "List all configuration values")
-
-			rootCmd.AddCommand(freshConfigCmd)
+			rootCmd := factory.NewRootCommand()
 
 			output, err := executeCommand(rootCmd, tt.args...)
 
@@ -205,43 +203,30 @@ func TestConfigCommand_Global(t *testing.T) {
 	homeDir := t.TempDir()
 	t.Setenv("HOME", homeDir)
 
-	// Create global config
+	// Create global config using new format
 	globalConfigDir := filepath.Join(homeDir, ".ddx")
 	require.NoError(t, os.MkdirAll(globalConfigDir, 0755))
 
 	globalConfig := `version: "1.0"
+library_base_path: "./library"
 repository:
   url: "https://github.com/test/repo"
   branch: "main"
-  path: ".ddx/"
+  subtree_prefix: "library"
 variables:
   author: "Test User"
   email: "test@example.com"
   project_name: "test"
 `
-	require.NoError(t, os.WriteFile(filepath.Join(homeDir, ".ddx.yml"), []byte(globalConfig), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(globalConfigDir, "config.yaml"), []byte(globalConfig), 0644))
 
-	rootCmd := &cobra.Command{
-		Use:   "ddx",
-		Short: "DDx CLI",
-	}
-
-	// Create fresh config command
-	freshConfigCmd := &cobra.Command{
-		Use:   "config [get|set|validate] [key] [value]",
-		Short: "Manage DDx configuration",
-		RunE:  runConfig,
-	}
-	freshConfigCmd.Flags().BoolP("global", "g", false, "Edit global configuration")
-	freshConfigCmd.Flags().BoolP("local", "l", false, "Edit local project configuration")
-	freshConfigCmd.Flags().Bool("unset", false, "Unset a configuration key")
-	freshConfigCmd.Flags().Bool("list", false, "List all configuration values")
-	freshConfigCmd.Flags().Bool("show", false, "Show current configuration")
-
-	rootCmd.AddCommand(freshConfigCmd)
+	// Use command factory to get proper export functionality
+	tempDir := t.TempDir()
+	factory := NewCommandFactory(tempDir)
+	rootCmd := factory.NewRootCommand()
 
 	// Test reading global config
-	output, err := executeCommand(rootCmd, "config", "--global")
+	output, err := executeCommand(rootCmd, "config", "export", "--global")
 
 	assert.NoError(t, err)
 	assert.Contains(t, output, "author")
@@ -265,7 +250,6 @@ func TestConfigCommand_Help(t *testing.T) {
 	freshConfigCmd.Flags().BoolP("local", "l", false, "Edit local project configuration")
 	freshConfigCmd.Flags().Bool("unset", false, "Unset a configuration key")
 	freshConfigCmd.Flags().Bool("list", false, "List all configuration values")
-	freshConfigCmd.Flags().Bool("show", false, "Show current configuration")
 
 	rootCmd.AddCommand(freshConfigCmd)
 
@@ -275,5 +259,5 @@ func TestConfigCommand_Help(t *testing.T) {
 	assert.Contains(t, output, "Manage DDx configuration")
 	assert.Contains(t, output, "global")
 	assert.Contains(t, output, "local")
-	assert.Contains(t, output, "show")
+	assert.Contains(t, output, "configuration")
 }

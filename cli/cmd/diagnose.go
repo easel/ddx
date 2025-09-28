@@ -83,10 +83,10 @@ func (f *CommandFactory) runDiagnose(cmd *cobra.Command, args []string) error {
 	}
 
 	// Check DDx setup
-	checkDDxSetup(result)
+	checkDDxSetup(result, f.WorkingDir)
 
 	// Check Git setup
-	checkGitSetup(result)
+	checkGitSetup(result, f.WorkingDir)
 
 	// Check project structure
 	checkProjectStructure(result)
@@ -122,9 +122,13 @@ func (f *CommandFactory) runDiagnose(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func checkDDxSetup(result *DiagnosticResult) {
-	// Check if library path exists
-	libPath, err := config.GetLibraryPath(getLibraryPath())
+func checkDDxSetup(result *DiagnosticResult, workingDir string) {
+	// Check if library path exists using working directory
+	cfg, err := config.LoadWithWorkingDir(workingDir)
+	var libPath string
+	if err == nil {
+		libPath = cfg.LibraryBasePath
+	}
 	result.DDx.Installed = err == nil && libPath != "" && dirExists(libPath)
 	result.DDx.Initialized = isInitialized()
 
@@ -133,7 +137,7 @@ func checkDDxSetup(result *DiagnosticResult) {
 	}
 
 	if result.DDx.Initialized {
-		if _, err := config.LoadLocal(); err == nil {
+		if _, err := config.Load(); err == nil {
 			result.DDx.ConfigValid = true
 		} else {
 			result.DDx.ConfigValid = false
@@ -145,7 +149,7 @@ func checkDDxSetup(result *DiagnosticResult) {
 	}
 }
 
-func checkGitSetup(result *DiagnosticResult) {
+func checkGitSetup(result *DiagnosticResult, workingDir string) {
 	// Check if it's a git repository
 	result.Git.Repository = isGitRepository()
 
@@ -166,7 +170,9 @@ func checkGitSetup(result *DiagnosticResult) {
 		}
 
 		// Check for DDx subtree (simplified check)
-		if out, err := exec.Command("git", "log", "--grep=git-subtree-dir: .ddx", "--oneline").Output(); err == nil {
+		gitLogCmd := exec.Command("git", "log", "--grep=git-subtree-dir: .ddx", "--oneline")
+		gitLogCmd.Dir = workingDir
+		if out, err := gitLogCmd.Output(); err == nil {
 			result.Git.DDxSubtree = len(strings.TrimSpace(string(out))) > 0
 		}
 

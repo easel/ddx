@@ -91,6 +91,7 @@ func TestHasSubtree_Basic(t *testing.T) {
 	originalDir, _ := os.Getwd()
 	defer os.Chdir(originalDir)
 
+	// Change to repo directory for git operations
 	require.NoError(t, os.Chdir(repoDir))
 
 	// Test when no subtree exists
@@ -101,6 +102,7 @@ func TestHasSubtree_Basic(t *testing.T) {
 	// Create a commit with git-subtree-dir marker to simulate subtree
 	cmd := exec.Command("git", "commit", "--allow-empty", "-m",
 		"Add subtree\n\ngit-subtree-dir: .ddx\ngit-subtree-split: abc123")
+	cmd.Dir = repoDir
 	output, err := cmd.CombinedOutput()
 	require.NoError(t, err, "Failed to create subtree commit: %s", string(output))
 
@@ -121,6 +123,7 @@ func TestGetCurrentBranch_Basic(t *testing.T) {
 	originalDir, _ := os.Getwd()
 	defer os.Chdir(originalDir)
 
+	// Git operations require working in the repository directory
 	require.NoError(t, os.Chdir(repoDir))
 
 	// Check default branch (master or main depending on git version)
@@ -130,6 +133,7 @@ func TestGetCurrentBranch_Basic(t *testing.T) {
 
 	// Create and switch to a new branch
 	cmd := exec.Command("git", "checkout", "-b", "feature-test")
+	cmd.Dir = repoDir
 	output, err := cmd.CombinedOutput()
 	require.NoError(t, err, "Failed to create branch: %s", string(output))
 
@@ -144,6 +148,7 @@ func TestHasUncommittedChanges_Basic(t *testing.T) {
 	originalDir, _ := os.Getwd()
 	defer os.Chdir(originalDir)
 
+	// Git operations require working in the repository directory
 	require.NoError(t, os.Chdir(repoDir))
 
 	// Clean repository
@@ -160,6 +165,7 @@ func TestHasUncommittedChanges_Basic(t *testing.T) {
 
 	// Stage the file
 	cmd := exec.Command("git", "add", "new.txt")
+	cmd.Dir = repoDir
 	require.NoError(t, cmd.Run())
 
 	// Should still have uncommitted changes (staged but not committed)
@@ -169,6 +175,7 @@ func TestHasUncommittedChanges_Basic(t *testing.T) {
 
 	// Commit the changes
 	cmd = exec.Command("git", "commit", "-m", "Add new file")
+	cmd.Dir = repoDir
 	require.NoError(t, cmd.Run())
 
 	// Now should be clean
@@ -183,6 +190,7 @@ func TestCommitChanges_Basic(t *testing.T) {
 	originalDir, _ := os.Getwd()
 	defer os.Chdir(originalDir)
 
+	// Git operations require working in the repository directory
 	require.NoError(t, os.Chdir(repoDir))
 
 	// Create a new file
@@ -199,6 +207,7 @@ func TestCommitChanges_Basic(t *testing.T) {
 
 	// Verify commit message
 	cmd := exec.Command("git", "log", "-1", "--pretty=%B")
+	cmd.Dir = repoDir
 	output, err := cmd.Output()
 	require.NoError(t, err)
 	assert.Contains(t, string(output), "Test commit")
@@ -210,6 +219,7 @@ func TestCommitChanges_EdgeCases(t *testing.T) {
 	originalDir, _ := os.Getwd()
 	defer os.Chdir(originalDir)
 
+	// Git operations require working in the repository directory
 	require.NoError(t, os.Chdir(repoDir))
 
 	// Test empty commit message
@@ -236,6 +246,7 @@ func TestHasSubtree_EdgeCases(t *testing.T) {
 	originalDir, _ := os.Getwd()
 	defer os.Chdir(originalDir)
 
+	// Git operations require working in the repository directory
 	require.NoError(t, os.Chdir(repoDir))
 
 	// Test empty prefix
@@ -259,6 +270,7 @@ func TestHasUncommittedChanges_EdgeCases(t *testing.T) {
 	originalDir, _ := os.Getwd()
 	defer os.Chdir(originalDir)
 
+	// Git operations require working in the repository directory
 	require.NoError(t, os.Chdir(repoDir))
 
 	// Test empty path (should default to current directory)
@@ -296,6 +308,7 @@ func TestSubtreeOperations_EdgeCases(t *testing.T) {
 	originalDir, _ := os.Getwd()
 	defer os.Chdir(originalDir)
 
+	// Git operations require working in the repository directory
 	require.NoError(t, os.Chdir(repoDir))
 
 	// Test SubtreeAdd with empty parameters

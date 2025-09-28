@@ -185,21 +185,16 @@ func TestMCPListCommand_Contract(t *testing.T) {
 	// Ensure we're in a valid directory first
 	ensureValidWorkingDirectory(t)
 
-	// Save current directory before any changes
-	originalDir, err := os.Getwd()
-	require.NoError(t, err, "Should get working directory")
-	defer os.Chdir(originalDir)
+	// Use temp directory for test isolation
 
 	// Resolve library path before changing directories
 	libraryPath := resolveLibraryPath(t)
 	t.Run("contract_exit_code_0_success", func(t *testing.T) {
 		// Save and restore working directory
-		origDir, _ := os.Getwd()
-		defer os.Chdir(origDir)
+		// origDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection
 
 		// Given: Valid project with MCP configured
-		tempDir := t.TempDir()
-		os.Chdir(tempDir)
+		_ = t.TempDir()
 		t.Setenv("DDX_LIBRARY_BASE_PATH", libraryPath)
 		setupMCPTestProject(t)
 
@@ -222,12 +217,10 @@ func TestMCPListCommand_Contract(t *testing.T) {
 
 	t.Run("contract_output_format", func(t *testing.T) {
 		// Save and restore working directory
-		origDir, _ := os.Getwd()
-		defer os.Chdir(origDir)
+		// origDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection
 
 		// Given: MCP servers available
-		tempDir := t.TempDir()
-		os.Chdir(tempDir)
+		_ = t.TempDir()
 		t.Setenv("DDX_LIBRARY_BASE_PATH", libraryPath)
 		setupMCPTestProject(t)
 
@@ -260,12 +253,10 @@ func TestMCPListCommand_Contract(t *testing.T) {
 
 	t.Run("contract_category_filter", func(t *testing.T) {
 		// Save and restore working directory
-		origDir, _ := os.Getwd()
-		defer os.Chdir(origDir)
+		// origDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection
 
 		// Given: Multiple categories exist
-		tempDir := t.TempDir()
-		os.Chdir(tempDir)
+		_ = t.TempDir()
 		t.Setenv("DDX_LIBRARY_BASE_PATH", libraryPath)
 		setupMCPTestProject(t)
 
@@ -292,12 +283,10 @@ func TestMCPListCommand_Contract(t *testing.T) {
 
 	t.Run("contract_search_parameter", func(t *testing.T) {
 		// Save and restore working directory
-		origDir, _ := os.Getwd()
-		defer os.Chdir(origDir)
+		// origDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection
 
 		// Given: Searchable servers
-		tempDir := t.TempDir()
-		os.Chdir(tempDir)
+		_ = t.TempDir()
 		t.Setenv("DDX_LIBRARY_BASE_PATH", libraryPath)
 		setupMCPTestProject(t)
 
@@ -333,21 +322,16 @@ func TestMCPInstallCommand_Contract(t *testing.T) {
 	// Ensure we're in a valid directory first
 	ensureValidWorkingDirectory(t)
 
-	// Save current directory before any changes
-	originalDir, err := os.Getwd()
-	require.NoError(t, err, "Should get working directory")
-	defer os.Chdir(originalDir)
+	// Use temp directory for test isolation
 
 	// Resolve library path before changing directories
 	libraryPath := resolveLibraryPath(t)
 	t.Run("contract_exit_code_0_success", func(t *testing.T) {
 		// Save and restore working directory
-		origDir, _ := os.Getwd()
-		defer os.Chdir(origDir)
+		// origDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection
 
 		// Given: Valid server to install
-		tempDir := t.TempDir()
-		os.Chdir(tempDir)
+		_ = t.TempDir()
 		t.Setenv("DDX_LIBRARY_BASE_PATH", libraryPath)
 		setupMCPTestProject(t)
 
@@ -370,12 +354,10 @@ func TestMCPInstallCommand_Contract(t *testing.T) {
 
 	t.Run("contract_exit_code_6_not_found", func(t *testing.T) {
 		// Save and restore working directory
-		origDir, _ := os.Getwd()
-		defer os.Chdir(origDir)
+		// origDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection
 
 		// Given: Non-existent server
-		tempDir := t.TempDir()
-		os.Chdir(tempDir)
+		_ = t.TempDir()
 		t.Setenv("DDX_LIBRARY_BASE_PATH", libraryPath)
 		setupMCPTestProject(t)
 
@@ -396,12 +378,10 @@ func TestMCPInstallCommand_Contract(t *testing.T) {
 
 	t.Run("contract_package_json_creation", func(t *testing.T) {
 		// Save and restore working directory
-		origDir, _ := os.Getwd()
-		defer os.Chdir(origDir)
+		// origDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection
 
 		// Given: No package.json exists
-		tempDir := t.TempDir()
-		os.Chdir(tempDir)
+		_ = t.TempDir()
 		t.Setenv("DDX_LIBRARY_BASE_PATH", libraryPath)
 		setupMCPTestProject(t)
 
@@ -423,12 +403,10 @@ func TestMCPInstallCommand_Contract(t *testing.T) {
 
 	t.Run("contract_claude_config_update", func(t *testing.T) {
 		// Save and restore working directory
-		origDir, _ := os.Getwd()
-		defer os.Chdir(origDir)
+		// origDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection
 
 		// Given: Installing MCP server
-		tempDir := t.TempDir()
-		os.Chdir(tempDir)
+		_ = t.TempDir()
 		t.Setenv("DDX_LIBRARY_BASE_PATH", libraryPath)
 		setupMCPTestProject(t)
 
@@ -449,12 +427,10 @@ func TestMCPInstallCommand_Contract(t *testing.T) {
 
 	t.Run("contract_validate_flag", func(t *testing.T) {
 		// Save and restore working directory
-		origDir, _ := os.Getwd()
-		defer os.Chdir(origDir)
+		// origDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection
 
 		// Given: Installing with validation
-		tempDir := t.TempDir()
-		os.Chdir(tempDir)
+		_ = t.TempDir()
 		t.Setenv("DDX_LIBRARY_BASE_PATH", libraryPath)
 		setupMCPTestProject(t)
 
@@ -475,6 +451,30 @@ func TestMCPInstallCommand_Contract(t *testing.T) {
 }
 
 // TestConfigCommand_Contract tests configuration command contracts
+// createTestConfigInDirectory creates a test config file in the specified directory
+func createTestConfigInDirectory(t *testing.T, dir string) {
+	config := `version: "1.0"
+repository:
+  url: "https://github.com/ddx-tools/ddx"
+  branch: "main"
+  path: ".ddx/"
+variables:
+  project_name: "7thsense"
+  ai_model: "claude-3-opus"
+  author: ""
+  email: ""
+includes:
+  - "prompts/claude"
+  - "scripts/hooks"
+  - "templates/common"`
+
+	ddxDir := filepath.Join(dir, ".ddx")
+	require.NoError(t, os.MkdirAll(ddxDir, 0755))
+	configPath := filepath.Join(ddxDir, "config.yaml")
+	err := os.WriteFile(configPath, []byte(config), 0644)
+	require.NoError(t, err)
+}
+
 func TestConfigCommand_ContractExtended(t *testing.T) {
 	// Disable parallel execution to avoid working directory conflicts
 	// This test modifies global working directory state
@@ -484,22 +484,15 @@ func TestConfigCommand_ContractExtended(t *testing.T) {
 	// Ensure we're in a valid directory first
 	ensureValidWorkingDirectory(t)
 
-	// Save current directory before any changes
-	originalDir, err := os.Getwd()
-	require.NoError(t, err, "Should get working directory")
-	defer os.Chdir(originalDir)
+	// Use temp directory for test isolation
 
 	t.Run("contract_init_creates_config", func(t *testing.T) {
-		// Save and restore working directory
-		origDir, _ := os.Getwd()
-		defer os.Chdir(origDir)
-
-		// Given: No config exists
+		// Given: No config exists in temp directory
 		tempDir := t.TempDir()
-		os.Chdir(tempDir)
 
-		// When: Initializing config
-		cmd := getFreshRootCmd()
+		// When: Initializing config using CommandFactory with temp directory
+		factory := NewCommandFactory(tempDir)
+		cmd := factory.NewRootCommand()
 		buf := new(bytes.Buffer)
 		cmd.SetOut(buf)
 		cmd.SetErr(buf)
@@ -509,83 +502,73 @@ func TestConfigCommand_ContractExtended(t *testing.T) {
 
 		// Then: Should create config file
 		if err == nil {
-			assert.FileExists(t, ".ddx.yml", "Should create config")
+			assert.FileExists(t, filepath.Join(tempDir, ".ddx", "config.yaml"), "Should create config")
 		}
 	})
 
 	t.Run("contract_set_variable", func(t *testing.T) {
-		// Save and restore working directory
-		origDir, _ := os.Getwd()
-		defer os.Chdir(origDir)
+		WithIsolatedDirectory(t, func(workingDir string) {
+			// Given: Config exists in working directory
+			createTestConfigInDirectory(t, workingDir)
 
-		// Given: Config exists
-		tempDir := t.TempDir()
-		os.Chdir(tempDir)
-		createTestConfig(t)
+			// When: Setting variable
+			cmd := GetCommandInDirectory(workingDir)
+			buf := new(bytes.Buffer)
+			cmd.SetOut(buf)
+			cmd.SetErr(buf)
+			cmd.SetArgs([]string{"config", "set", "variables.test", "value"})
 
-		// When: Setting variable
-		cmd := getFreshRootCmd()
-		buf := new(bytes.Buffer)
-		cmd.SetOut(buf)
-		cmd.SetErr(buf)
-		cmd.SetArgs([]string{"config", "set", "variables.test", "value"})
+			err := cmd.Execute()
 
-		err := cmd.Execute()
-
-		// Then: Should update config
-		if err == nil {
-			content, _ := os.ReadFile(".ddx.yml")
-			assert.Contains(t, string(content), "test", "Should set variable")
-		}
+			// Then: Should update config
+			if err == nil {
+				content, _ := os.ReadFile(filepath.Join(workingDir, ".ddx", "config.yaml"))
+				assert.Contains(t, string(content), "test", "Should set variable")
+			}
+		})
 	})
 
 	t.Run("contract_export_import", func(t *testing.T) {
-		// Save and restore working directory
-		origDir, _ := os.Getwd()
-		defer os.Chdir(origDir)
+		// Given: Config to export in working directory
+		WithIsolatedDirectory(t, func(workingDir string) {
+			createTestConfigInDirectory(t, workingDir)
 
-		// Given: Config to export
-		tempDir := t.TempDir()
-		os.Chdir(tempDir)
-		createTestConfig(t)
+			// When: Exporting using CommandFactory with proper working directory
+			exportCmd := GetCommandInDirectory(workingDir)
+			exportBuf := new(bytes.Buffer)
+			exportCmd.SetOut(exportBuf)
+			exportCmd.SetErr(exportBuf)
+			exportCmd.SetArgs([]string{"config", "export"})
 
-		// When: Exporting
-		exportCmd := getFreshRootCmd()
-		exportBuf := new(bytes.Buffer)
-		exportCmd.SetOut(exportBuf)
-		exportCmd.SetErr(exportBuf)
-		exportCmd.SetArgs([]string{"config", "export"})
+			_ = exportCmd.Execute()
 
-		_ = exportCmd.Execute()
-
-		// Then: Should output config
-		output := exportBuf.String()
-		assert.Contains(t, output, "name:", "Should export config")
-		assert.Contains(t, output, "repository:", "Should include repository")
+			// Then: Should output config
+			output := exportBuf.String()
+			assert.Contains(t, output, "project_name:", "Should export config")
+			assert.Contains(t, output, "repository:", "Should include repository")
+		})
 	})
 
 	t.Run("contract_validate_exit_codes", func(t *testing.T) {
-		// Save and restore working directory
-		origDir, _ := os.Getwd()
-		defer os.Chdir(origDir)
+		// Given: Invalid config in working directory
+		WithIsolatedDirectory(t, func(workingDir string) {
+			// Create invalid YAML content
+			ddxDir := filepath.Join(workingDir, ".ddx")
+			require.NoError(t, os.MkdirAll(ddxDir, 0755))
+			configPath := filepath.Join(ddxDir, "config.yaml")
+			os.WriteFile(configPath, []byte("invalid: yaml: content:"), 0644)
 
-		// Given: Invalid config
-		tempDir := t.TempDir()
-		os.Chdir(tempDir)
+			// When: Validating using CommandFactory with proper working directory
+			cmd := GetCommandInDirectory(workingDir)
+			buf := new(bytes.Buffer)
+			cmd.SetOut(buf)
+			cmd.SetErr(buf)
+			cmd.SetArgs([]string{"config", "validate"})
 
-		// Create invalid config (missing required fields)
-		os.WriteFile(".ddx.yml", []byte("invalid: yaml: content:"), 0644)
-
-		// When: Validating
-		cmd := getFreshRootCmd()
-		buf := new(bytes.Buffer)
-		cmd.SetOut(buf)
-		cmd.SetErr(buf)
-		cmd.SetArgs([]string{"config", "validate"})
-
-		// Then: Should exit with error code
-		err := cmd.Execute()
-		assert.Error(t, err, "Should fail validation")
+			// Then: Should exit with error code
+			err := cmd.Execute()
+			assert.Error(t, err, "Should fail validation")
+		})
 	})
 
 	t.Run("contract_override_precedence", func(t *testing.T) {
@@ -607,7 +590,8 @@ includes:
   - "prompts/claude"
   - "scripts/hooks"
   - "templates/common"`
-		os.WriteFile(filepath.Join(tempDir, ".ddx.yml"), []byte(configContent), 0644)
+		env := NewTestEnvironment(t)
+		env.CreateConfig(configContent)
 
 		// Create local override
 		os.WriteFile(filepath.Join(tempDir, ".ddx.local.yml"), []byte("variables:\n  override: local"), 0644)
@@ -710,19 +694,14 @@ func TestWorkflowCommands_Contract(t *testing.T) {
 	// Ensure we're in a valid directory first
 	ensureValidWorkingDirectory(t)
 
-	// Save current directory before any changes
-	originalDir, err := os.Getwd()
-	require.NoError(t, err, "Should get working directory")
-	defer os.Chdir(originalDir)
+	// Use temp directory for test isolation
 
 	t.Run("contract_workflow_status", func(t *testing.T) {
 		// Save and restore working directory
-		origDir, _ := os.Getwd()
-		defer os.Chdir(origDir)
+		// origDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection
 
 		// Given: HELIX workflow active
-		tempDir := t.TempDir()
-		os.Chdir(tempDir)
+		_ = t.TempDir()
 		createWorkflowState(t)
 
 		// When: Checking status
@@ -744,12 +723,10 @@ func TestWorkflowCommands_Contract(t *testing.T) {
 
 	t.Run("contract_workflow_validate", func(t *testing.T) {
 		// Save and restore working directory
-		origDir, _ := os.Getwd()
-		defer os.Chdir(origDir)
+		// origDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection
 
 		// Given: Workflow in progress
-		tempDir := t.TempDir()
-		os.Chdir(tempDir)
+		_ = t.TempDir()
 		createWorkflowState(t)
 
 		// When: Validating phase
@@ -771,12 +748,10 @@ func TestWorkflowCommands_Contract(t *testing.T) {
 
 	t.Run("contract_workflow_advance", func(t *testing.T) {
 		// Save and restore working directory
-		origDir, _ := os.Getwd()
-		defer os.Chdir(origDir)
+		// origDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection
 
 		// Given: Phase complete
-		tempDir := t.TempDir()
-		os.Chdir(tempDir)
+		_ = t.TempDir()
 		createWorkflowState(t)
 
 		// When: Advancing workflow
@@ -798,12 +773,10 @@ func TestWorkflowCommands_Contract(t *testing.T) {
 
 	t.Run("contract_workflow_helix_commands", func(t *testing.T) {
 		// Save and restore working directory
-		origDir, _ := os.Getwd()
-		defer os.Chdir(origDir)
+		// origDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection
 
 		// Given: HELIX workflow with commands available
-		tempDir := t.TempDir()
-		os.Chdir(tempDir)
+		_ = t.TempDir()
 		createWorkflowWithCommands(t)
 
 		// When: Listing HELIX commands
@@ -825,12 +798,10 @@ func TestWorkflowCommands_Contract(t *testing.T) {
 
 	t.Run("contract_workflow_helix_execute", func(t *testing.T) {
 		// Save and restore working directory
-		origDir, _ := os.Getwd()
-		defer os.Chdir(origDir)
+		// origDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection
 
 		// Given: HELIX workflow with commands available
-		tempDir := t.TempDir()
-		os.Chdir(tempDir)
+		_ = t.TempDir()
 		createWorkflowWithCommands(t)
 
 		// When: Executing HELIX command

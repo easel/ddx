@@ -38,19 +38,20 @@ func TestAcceptance_US001_InitializeProject(t *testing.T) {
 			scenario: "Initialize DDX in project without existing configuration",
 			given: func(t *testing.T) string {
 				// Given: I am in a project directory without DDX
-				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
-				return workDir
+	tempDir := t.TempDir()
+				return tempDir
 			},
 			when: func(t *testing.T, dir string) error {
 				// When: I run `ddx init`
-				rootCmd := getTestRootCommand()
+				// Use CommandFactory with the test working directory
+				factory := NewCommandFactory(dir)
+				rootCmd := factory.NewRootCommand()
 				_, err := executeCommand(rootCmd, "init")
 				return err
 			},
 			then: func(t *testing.T, dir string, err error) {
-				// Then: a `.ddx.yml` configuration file exists with my settings
-				configPath := filepath.Join(dir, ".ddx.yml")
+				// Then: a `.ddx/config.yaml` configuration file exists with my settings
+				configPath := filepath.Join(dir, ".ddx", "config.yaml")
 				if _, statErr := os.Stat(configPath); statErr == nil {
 					// Config file exists - validate structure
 					data, readErr := os.ReadFile(configPath)
@@ -70,8 +71,7 @@ func TestAcceptance_US001_InitializeProject(t *testing.T) {
 			scenario: "Initialize DDX with specific template",
 			given: func(t *testing.T) string {
 				// Given: I want to use a specific template
-				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
+	tempDir := t.TempDir()
 
 				// Setup mock template
 				homeDir := t.TempDir()
@@ -79,11 +79,13 @@ func TestAcceptance_US001_InitializeProject(t *testing.T) {
 				templateDir := filepath.Join(homeDir, ".ddx", "templates", "test-template")
 				require.NoError(t, os.MkdirAll(templateDir, 0755))
 
-				return workDir
+				return tempDir
 			},
 			when: func(t *testing.T, dir string) error {
 				// When: I run `ddx init --template test-template`
-				rootCmd := getTestRootCommand()
+				// Use CommandFactory with the test working directory
+				factory := NewCommandFactory(dir)
+				rootCmd := factory.NewRootCommand()
 				_, err := executeCommand(rootCmd, "init", "--template", "test-template")
 				return err
 			},
@@ -98,29 +100,40 @@ func TestAcceptance_US001_InitializeProject(t *testing.T) {
 			scenario: "Prevent re-initialization of DDX-enabled project",
 			given: func(t *testing.T) string {
 				// Given: DDX is already initialized
-				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
+	tempDir := t.TempDir()
 
-				// Initialize git repository first
-				require.NoError(t, exec.Command("git", "init").Run())
-				require.NoError(t, exec.Command("git", "config", "user.email", "test@example.com").Run())
-				require.NoError(t, exec.Command("git", "config", "user.name", "Test User").Run())
+				// Initialize git repository in temp directory
+				gitInit := exec.Command("git", "init")
+				gitInit.Dir = tempDir
+				require.NoError(t, gitInit.Run())
+
+				gitConfigEmail := exec.Command("git", "config", "user.email", "test@example.com")
+				gitConfigEmail.Dir = tempDir
+				require.NoError(t, gitConfigEmail.Run())
+
+				gitConfigName := exec.Command("git", "config", "user.name", "Test User")
+				gitConfigName.Dir = tempDir
+				require.NoError(t, gitConfigName.Run())
 
 				// Create existing config
 				config := `version: "1.0"
 repository:
   url: "https://github.com/test/repo"`
+				ddxDir := filepath.Join(tempDir, ".ddx")
+				require.NoError(t, os.MkdirAll(ddxDir, 0755))
 				require.NoError(t, os.WriteFile(
-					filepath.Join(workDir, ".ddx.yml"),
+					filepath.Join(ddxDir, "config.yaml"),
 					[]byte(config),
 					0644,
 				))
 
-				return workDir
+				return tempDir
 			},
 			when: func(t *testing.T, dir string) error {
 				// When: I run `ddx init` again
-				rootCmd := getTestRootCommand()
+				// Use CommandFactory with the test working directory
+				factory := NewCommandFactory(dir)
+				rootCmd := factory.NewRootCommand()
 				_, err := executeCommand(rootCmd, "init")
 				return err
 			},
@@ -136,8 +149,7 @@ repository:
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			originalDir, _ := os.Getwd()
-			defer os.Chdir(originalDir)
+			//	// originalDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
 
 			// Given
 			dir := tt.given(t)
@@ -165,20 +177,19 @@ func TestAcceptance_US002_ListAvailableAssets(t *testing.T) {
 			scenario: "List all available DDX resources",
 			given: func(t *testing.T) string {
 				// Given: DDX is initialized with available resources
-				homeDir := t.TempDir()
-				t.Setenv("HOME", homeDir)
-				ddxHome := filepath.Join(homeDir, ".ddx")
+				testLibDir := t.TempDir()
+				t.Setenv("DDX_LIBRARY_BASE_PATH", testLibDir)
 
-				// Create various resources
-				workflowsDir := filepath.Join(ddxHome, "workflows")
+				// Create various resources in library directory
+				workflowsDir := filepath.Join(testLibDir, "workflows")
 				require.NoError(t, os.MkdirAll(filepath.Join(workflowsDir, "helix"), 0755))
 				require.NoError(t, os.WriteFile(filepath.Join(workflowsDir, "helix", "workflow.yml"), []byte("name: helix"), 0644))
 
-				promptsDir := filepath.Join(ddxHome, "prompts")
+				promptsDir := filepath.Join(testLibDir, "prompts")
 				require.NoError(t, os.MkdirAll(filepath.Join(promptsDir, "claude"), 0755))
 				require.NoError(t, os.WriteFile(filepath.Join(promptsDir, "claude", "prompt.md"), []byte("# Prompt"), 0644))
 
-				return homeDir
+				return testLibDir
 			},
 			when: func(t *testing.T) (string, error) {
 				// When: I run `ddx list`
@@ -197,19 +208,18 @@ func TestAcceptance_US002_ListAvailableAssets(t *testing.T) {
 			scenario: "Filter resources by type",
 			given: func(t *testing.T) string {
 				// Given: I want to see only workflows
-				homeDir := t.TempDir()
-				t.Setenv("HOME", homeDir)
-				ddxHome := filepath.Join(homeDir, ".ddx")
+				testLibDir := t.TempDir()
+				t.Setenv("DDX_LIBRARY_BASE_PATH", testLibDir)
 
-				workflowsDir := filepath.Join(ddxHome, "workflows")
+				workflowsDir := filepath.Join(testLibDir, "workflows")
 				require.NoError(t, os.MkdirAll(filepath.Join(workflowsDir, "helix"), 0755))
 				require.NoError(t, os.WriteFile(filepath.Join(workflowsDir, "helix", "workflow.yml"), []byte("name: helix"), 0644))
 
-				promptsDir := filepath.Join(ddxHome, "prompts")
+				promptsDir := filepath.Join(testLibDir, "prompts")
 				require.NoError(t, os.MkdirAll(filepath.Join(promptsDir, "claude"), 0755))
 				require.NoError(t, os.WriteFile(filepath.Join(promptsDir, "claude", "prompt.md"), []byte("# Prompt"), 0644))
 
-				return homeDir
+				return testLibDir
 			},
 			when: func(t *testing.T) (string, error) {
 				// When: I run `ddx list workflows`
@@ -383,23 +393,25 @@ func TestAcceptance_US002_ListAvailableAssets(t *testing.T) {
 func TestAcceptance_ConfigurationManagement(t *testing.T) {
 	t.Run("view_configuration", func(t *testing.T) {
 		// Given: DDX is configured in my project
-		workDir := t.TempDir()
-		require.NoError(t, os.Chdir(workDir))
+	tempDir := t.TempDir()
 
 		config := `version: "1.0"
 repository:
   url: "https://github.com/test/repo"
 variables:
   environment: "development"`
+		ddxDir := filepath.Join(tempDir, ".ddx")
+		require.NoError(t, os.MkdirAll(ddxDir, 0755))
 		require.NoError(t, os.WriteFile(
-			filepath.Join(workDir, ".ddx.yml"),
+			filepath.Join(ddxDir, "config.yaml"),
 			[]byte(config),
 			0644,
 		))
 
-		// When: I run `ddx config`
-		rootCmd := getTestRootCommand()
-		output, err := executeCommand(rootCmd, "config")
+		// When: I run `ddx config export`
+		factory := NewCommandFactory(tempDir)
+		rootCmd := factory.NewRootCommand()
+		output, err := executeCommand(rootCmd, "config", "export")
 
 		// Then: I see my current configuration clearly displayed
 		assert.NoError(t, err)
@@ -410,17 +422,20 @@ variables:
 
 	t.Run("modify_configuration", func(t *testing.T) {
 		// Given: I need to change a configuration value
-		workDir := t.TempDir()
-		require.NoError(t, os.Chdir(workDir))
+		tempDir := t.TempDir()
 
 		config := `version: "1.0"
+library_base_path: "./library"
 variables:
   old_value: "original"`
-		configPath := filepath.Join(workDir, ".ddx.yml")
+		ddxDir := filepath.Join(tempDir, ".ddx")
+		require.NoError(t, os.MkdirAll(ddxDir, 0755))
+		configPath := filepath.Join(ddxDir, "config.yaml")
 		require.NoError(t, os.WriteFile(configPath, []byte(config), 0644))
 
 		// When: I run `ddx config set variables.new_value "updated"`
-		rootCmd := getTestRootCommand()
+		factory := NewCommandFactory(tempDir)
+		rootCmd := factory.NewRootCommand()
 		_, err := executeCommand(rootCmd, "config", "set", "variables.new_value", "updated")
 
 		// Then: the configuration is updated with the new value
@@ -447,15 +462,13 @@ func TestAcceptance_WorkflowIntegration(t *testing.T) {
 
 	t.Run("complete_project_setup", func(t *testing.T) {
 		// Scenario: Setting up a new project with DDX
-		originalDir, _ := os.Getwd()
-		defer os.Chdir(originalDir)
+		//	// originalDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
 
 		// Step 1: Initialize DDX
-		workDir := t.TempDir()
-		require.NoError(t, os.Chdir(workDir))
+	tempDir := t.TempDir()
 
 		// Create library structure with workflows
-		libraryDir := filepath.Join(workDir, "library")
+		libraryDir := filepath.Join(tempDir, "library")
 		workflowsDir := filepath.Join(libraryDir, "workflows")
 		require.NoError(t, os.MkdirAll(filepath.Join(workflowsDir, "helix"), 0755))
 		require.NoError(t, os.MkdirAll(filepath.Join(workflowsDir, "kanban"), 0755))
@@ -464,12 +477,21 @@ func TestAcceptance_WorkflowIntegration(t *testing.T) {
 		require.NoError(t, os.WriteFile(filepath.Join(workflowsDir, "helix", "workflow.yml"), []byte("name: helix"), 0644))
 		require.NoError(t, os.WriteFile(filepath.Join(workflowsDir, "kanban", "workflow.yml"), []byte("name: kanban"), 0644))
 
-		// Create config pointing to library
+		// Create config pointing to library in new format
 		config := []byte(`version: "2.0"
-library_path: ./library`)
-		require.NoError(t, os.WriteFile(".ddx.yml", config, 0644))
+library_base_path: ./library
+repository:
+  url: "https://github.com/easel/ddx"
+  branch: "main"
+  subtree_prefix: "library"
+variables: {}`)
+		ddxDir := filepath.Join(tempDir, ".ddx")
+		require.NoError(t, os.MkdirAll(ddxDir, 0755))
+		require.NoError(t, os.WriteFile(filepath.Join(ddxDir, "config.yaml"), config, 0644))
 
-		rootCmd := getTestRootCommand()
+		// Use CommandFactory with working directory
+		factory := NewCommandFactory(tempDir)
+		rootCmd := factory.NewRootCommand()
 		_, initErr := executeCommand(rootCmd, "init")
 		// Note: May fail if DDX repo not available
 		_ = initErr
@@ -505,15 +527,31 @@ func TestAcceptance_ErrorScenarios(t *testing.T) {
 			{
 				name: "already_initialized",
 				setup: func() string {
-					workDir := t.TempDir()
-					os.Chdir(workDir)
+	tempDir := t.TempDir()
 					// Initialize git repository first
-					exec.Command("git", "init").Run()
-					exec.Command("git", "config", "user.email", "test@example.com").Run()
-					exec.Command("git", "config", "user.name", "Test User").Run()
-					config := `version: "1.0"`
-					os.WriteFile(filepath.Join(workDir, ".ddx.yml"), []byte(config), 0644)
-					return workDir
+					gitInit := exec.Command("git", "init")
+					gitInit.Dir = tempDir
+					gitInit.Run()
+
+					gitConfigEmail := exec.Command("git", "config", "user.email", "test@example.com")
+					gitConfigEmail.Dir = tempDir
+					gitConfigEmail.Run()
+
+					gitConfigName := exec.Command("git", "config", "user.name", "Test User")
+					gitConfigName.Dir = tempDir
+					gitConfigName.Run()
+
+					config := `version: "1.0"
+library_base_path: "./library"
+repository:
+  url: "https://github.com/easel/ddx"
+  branch: "main"
+  subtree_prefix: "library"
+variables: {}`
+					ddxDir := filepath.Join(tempDir, ".ddx")
+					os.MkdirAll(ddxDir, 0755)
+					os.WriteFile(filepath.Join(ddxDir, "config.yaml"), []byte(config), 0644)
+					return tempDir
 				},
 				command:       []string{"init"},
 				expectedError: "already",
@@ -522,12 +560,13 @@ func TestAcceptance_ErrorScenarios(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				originalDir, _ := os.Getwd()
-				defer os.Chdir(originalDir)
+				//	// originalDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
 
-				tt.setup()
+				tempDir := tt.setup()
 
-				rootCmd := getTestRootCommand()
+				// Use CommandFactory with working directory
+				factory := NewCommandFactory(tempDir)
+				rootCmd := factory.NewRootCommand()
 				output, err := executeCommand(rootCmd, tt.command...)
 
 				// Verify clear error message
@@ -557,11 +596,10 @@ func TestAcceptance_US042_WorkflowCommandExecution(t *testing.T) {
 			scenario: "AC-001: Command Discovery",
 			given: func(t *testing.T) string {
 				// Given: I have the HELIX workflow available
-				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
+	tempDir := t.TempDir()
 
 				// Create library structure with helix commands
-				commandsDir := filepath.Join(workDir, "library", "workflows", "helix", "commands")
+				commandsDir := filepath.Join(tempDir, "library", "workflows", "helix", "commands")
 				require.NoError(t, os.MkdirAll(commandsDir, 0755))
 
 				// Create build-story command
@@ -580,7 +618,7 @@ Continue work on current story...`
 					filepath.Join(commandsDir, "continue.md"),
 					[]byte(continueContent), 0644))
 
-				return workDir
+				return tempDir
 			},
 			when: func(t *testing.T, workDir string) (string, error) {
 				// When: I run `ddx workflow helix commands`
@@ -606,10 +644,9 @@ Continue work on current story...`
 			scenario: "AC-002: Command Execution",
 			given: func(t *testing.T) string {
 				// Given: I have a workflow with commands available
-				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
+	tempDir := t.TempDir()
 
-				commandsDir := filepath.Join(workDir, "library", "workflows", "helix", "commands")
+				commandsDir := filepath.Join(tempDir, "library", "workflows", "helix", "commands")
 				require.NoError(t, os.MkdirAll(commandsDir, 0755))
 
 				buildStoryContent := `# HELIX Command: Build Story
@@ -623,7 +660,7 @@ You will receive a user story ID as an argument (e.g., US-001, US-042, etc.).`
 					filepath.Join(commandsDir, "build-story.md"),
 					[]byte(buildStoryContent), 0644))
 
-				return workDir
+				return tempDir
 			},
 			when: func(t *testing.T, workDir string) (string, error) {
 				// When: I run `ddx workflow helix execute build-story US-001`
@@ -649,9 +686,8 @@ You will receive a user story ID as an argument (e.g., US-001, US-042, etc.).`
 			scenario: "AC-003: Error Handling - Invalid Workflow",
 			given: func(t *testing.T) string {
 				// Given: I specify a non-existent workflow
-				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
-				return workDir
+	tempDir := t.TempDir()
+				return tempDir
 			},
 			when: func(t *testing.T, workDir string) (string, error) {
 				// When: I run `ddx workflow invalid commands`
@@ -675,13 +711,12 @@ You will receive a user story ID as an argument (e.g., US-001, US-042, etc.).`
 			scenario: "AC-004: Error Handling - Invalid Command",
 			given: func(t *testing.T) string {
 				// Given: I specify a non-existent command
-				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
+	tempDir := t.TempDir()
 
-				commandsDir := filepath.Join(workDir, "library", "workflows", "helix", "commands")
+				commandsDir := filepath.Join(tempDir, "library", "workflows", "helix", "commands")
 				require.NoError(t, os.MkdirAll(commandsDir, 0755))
 
-				return workDir
+				return tempDir
 			},
 			when: func(t *testing.T, workDir string) (string, error) {
 				// When: I run `ddx workflow helix execute invalid-command`
@@ -705,10 +740,9 @@ You will receive a user story ID as an argument (e.g., US-001, US-042, etc.).`
 			scenario: "AC-005: Command Arguments",
 			given: func(t *testing.T) string {
 				// Given: A command requires arguments
-				workDir := t.TempDir()
-				require.NoError(t, os.Chdir(workDir))
+	tempDir := t.TempDir()
 
-				commandsDir := filepath.Join(workDir, "library", "workflows", "helix", "commands")
+				commandsDir := filepath.Join(tempDir, "library", "workflows", "helix", "commands")
 				require.NoError(t, os.MkdirAll(commandsDir, 0755))
 
 				buildStoryContent := `# HELIX Command: Build Story
@@ -718,7 +752,7 @@ Command accepts arguments for user story processing.`
 					filepath.Join(commandsDir, "build-story.md"),
 					[]byte(buildStoryContent), 0644))
 
-				return workDir
+				return tempDir
 			},
 			when: func(t *testing.T, workDir string) (string, error) {
 				// When: I execute it with arguments
@@ -741,8 +775,7 @@ Command accepts arguments for user story processing.`
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			originalDir, _ := os.Getwd()
-			defer os.Chdir(originalDir)
+			//	// originalDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
 
 			workDir := tt.given(t)
 			output, err := tt.when(t, workDir)

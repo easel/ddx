@@ -216,7 +216,8 @@ repository:
 			cleanup := tt.setup(t)
 			defer cleanup()
 
-			result, err := GetLibraryPath(tt.overridePath)
+			wd, _ := os.Getwd()
+			result, err := GetLibraryPathWithWorkingDir(tt.overridePath, wd)
 
 			if tt.expectError {
 				assert.Error(t, err)
@@ -288,7 +289,8 @@ func TestGetLibraryPath_DevelopmentMode(t *testing.T) {
 				}
 			},
 			expectedResult: func(t *testing.T) string {
-				// Should fall back to global library
+				// Since no .ddx.yml exists and we're not in DDx development mode,
+				// should fall back to global library
 				homeDir, _ := os.UserHomeDir()
 				return filepath.Join(homeDir, ".ddx", "library")
 			},
@@ -334,7 +336,8 @@ func TestGetLibraryPath_DevelopmentMode(t *testing.T) {
 			// Clear any environment variables that might interfere
 			t.Setenv("DDX_LIBRARY_BASE_PATH", "")
 
-			result, err := GetLibraryPath("")
+			wd, _ := os.Getwd()
+			result, err := GetLibraryPathWithWorkingDir("", wd)
 
 			if tt.expectError {
 				assert.Error(t, err)
@@ -383,20 +386,21 @@ repository:
 	require.NoError(t, os.WriteFile(".ddx.yml", []byte(configContent), 0644))
 
 	// Test 1: Flag should override everything
-	result, err := GetLibraryPath(flagLib)
+	wd, _ := os.Getwd()
+	result, err := GetLibraryPathWithWorkingDir(flagLib, wd)
 	require.NoError(t, err)
 	assert.Equal(t, flagLib, result, "Flag should have highest priority")
 
 	// Test 2: Env var should override config (when no flag)
 	t.Setenv("DDX_LIBRARY_BASE_PATH", envLib)
-	result, err = GetLibraryPath("")
+	result, err = GetLibraryPathWithWorkingDir("", wd)
 	require.NoError(t, err)
 	assert.Equal(t, envLib, result, "Env var should override config")
 
 	// Test 3: Config should be used when no flag or env
 	os.Unsetenv("DDX_LIBRARY_BASE_PATH")
 	t.Setenv("DDX_LIBRARY_BASE_PATH", "") // Clear for test
-	result, err = GetLibraryPath("")
+	result, err = GetLibraryPathWithWorkingDir("", wd)
 	require.NoError(t, err)
 	expected := filepath.Join(testDir, "config-lib")
 	assert.Equal(t, expected, result, "Config library_path should be used")
@@ -475,10 +479,11 @@ func TestConfigLibraryPath_Validation(t *testing.T) {
 			if tt.expectError {
 				if err == nil {
 					// Validation might happen during library path resolution
-					_, err = GetLibraryPath("")
+					wd, _ := os.Getwd()
+					_, err = GetLibraryPathWithWorkingDir("", wd)
 				}
 				assert.Error(t, err)
-				if tt.errorMsg != "" {
+				if err != nil && tt.errorMsg != "" {
 					assert.Contains(t, err.Error(), tt.errorMsg)
 				}
 			} else {

@@ -206,7 +206,6 @@ PowerShell:
 	rootCmd.AddCommand(f.newListCommand())
 	rootCmd.AddCommand(f.newDiagnoseCommand())
 	rootCmd.AddCommand(f.newUpdateCommand())
-	rootCmd.AddCommand(f.newRollbackCommand())
 	rootCmd.AddCommand(f.newContributeCommand())
 	rootCmd.AddCommand(f.newConfigCommand())
 	rootCmd.AddCommand(f.newWorkflowCommand())

@@ -1,0 +1,15 @@
+version: "1.0"
+repository:
+    url: https://github.com/easel/ddx
+    branch: main
+    path: .ddx/
+includes:
+    - prompts/claude
+    - scripts/hooks
+    - templates/javascript
+    - configs/eslint
+    - configs/prettier
+variables:
+    ai_model: claude-3-opus
+    project_name: tmp
+    project_type: javascript

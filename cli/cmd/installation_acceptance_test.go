@@ -25,8 +25,8 @@ type InstallationResult struct {
 	ExitCode                  int
 }
 
-// TestEnvironment simulates different platform environments for testing
-type TestEnvironment struct {
+// InstallationTestEnvironment simulates different platform environments for testing
+type InstallationTestEnvironment struct {
 	Platform     string
 	Architecture string
 	TempDir      string
@@ -42,13 +42,13 @@ func getInstallationTestRootCommand() *cobra.Command {
 }
 
 // setupTestEnvironment creates a mock environment for installation testing
-func setupTestEnvironment(t *testing.T, platform, arch string) *TestEnvironment {
+func setupTestEnvironment(t *testing.T, platform, arch string) *InstallationTestEnvironment {
 	tempDir := t.TempDir()
 	homeDir := filepath.Join(tempDir, "home")
 	err := os.MkdirAll(homeDir, 0755)
 	require.NoError(t, err)
 
-	env := &TestEnvironment{
+	env := &InstallationTestEnvironment{
 		Platform:     platform,
 		Architecture: arch,
 		TempDir:      tempDir,
@@ -117,12 +117,12 @@ func setupTestEnvironment(t *testing.T, platform, arch string) *TestEnvironment 
 }
 
 // Cleanup cleans up the test environment
-func (env *TestEnvironment) Cleanup() {
+func (env *InstallationTestEnvironment) Cleanup() {
 	// Test cleanup is handled by t.TempDir()
 }
 
 // ExecuteInstallCommand simulates executing an installation command
-func (env *TestEnvironment) ExecuteInstallCommand(command string) InstallationResult {
+func (env *InstallationTestEnvironment) ExecuteInstallCommand(command string) InstallationResult {
 	start := time.Now()
 
 	// Determine expected binary path based on platform
@@ -220,7 +220,7 @@ func (env *TestEnvironment) ExecuteInstallCommand(command string) InstallationRe
 }
 
 // RunCommand simulates running a command in the test environment
-func (env *TestEnvironment) RunCommand(command string) InstallationResult {
+func (env *InstallationTestEnvironment) RunCommand(command string) InstallationResult {
 	// Check if DDX binary exists in the expected location
 	var binaryPath string
 	switch env.Platform {
@@ -347,7 +347,7 @@ func (env *TestEnvironment) RunCommand(command string) InstallationResult {
 }
 
 // FileExists checks if a file exists in the test environment
-func (env *TestEnvironment) FileExists(path string) bool {
+func (env *InstallationTestEnvironment) FileExists(path string) bool {
 	// Convert relative paths to absolute paths within test environment
 	if strings.HasPrefix(path, "~/") {
 		path = filepath.Join(env.HomeDir, path[2:])
@@ -363,7 +363,7 @@ func (env *TestEnvironment) FileExists(path string) bool {
 }
 
 // ReadFile reads a file from the test environment
-func (env *TestEnvironment) ReadFile(path string) string {
+func (env *InstallationTestEnvironment) ReadFile(path string) string {
 	if strings.HasPrefix(path, "~/") {
 		path = filepath.Join(env.HomeDir, path[2:])
 	}
@@ -966,7 +966,7 @@ func TestInstallationPerformance(t *testing.T) {
 }
 
 // configureShellPath configures the shell PATH for the test environment
-func (env *TestEnvironment) configureShellPath(installDir string) error {
+func (env *InstallationTestEnvironment) configureShellPath(installDir string) error {
 	// Convert absolute path back to tilde notation for the shell config
 	var pathForShell string
 	if strings.HasPrefix(installDir, env.HomeDir) {
@@ -1034,15 +1034,27 @@ func (env *TestEnvironment) configureShellPath(installDir string) error {
 }
 
 // setupInstallationState configures the test environment for different installation states
-func (env *TestEnvironment) setupInstallationState(state string) error {
+func (env *InstallationTestEnvironment) setupInstallationState(state string) error {
 	switch state {
 	case "healthy":
 		// Install DDX properly
 		env.ExecuteInstallCommand("install")
+		// Create library directory for doctor check
+		libDir := filepath.Join(env.HomeDir, ".ddx", "library")
+		os.MkdirAll(libDir, 0755)
+		// Create some sample resources so library appears valid
+		os.MkdirAll(filepath.Join(libDir, "workflows"), 0755)
+		os.WriteFile(filepath.Join(libDir, "workflows", "README.md"), []byte("# Workflows"), 0644)
 		return nil
 	case "broken_path":
 		// Install DDX but without PATH configuration
 		env.ExecuteInstallCommand("install")
+		// Create library directory for doctor check
+		libDir := filepath.Join(env.HomeDir, ".ddx", "library")
+		os.MkdirAll(libDir, 0755)
+		// Create some sample resources so library appears valid
+		os.MkdirAll(filepath.Join(libDir, "workflows"), 0755)
+		os.WriteFile(filepath.Join(libDir, "workflows", "README.md"), []byte("# Workflows"), 0644)
 		// Remove PATH configuration from shell profiles
 		profileFiles := []string{"~/.bashrc", "~/.zshrc", "~/.profile"}
 		for _, profileFile := range profileFiles {
@@ -1079,7 +1091,7 @@ func (env *TestEnvironment) setupInstallationState(state string) error {
 }
 
 // simulateUninstall simulates the uninstall process
-func (env *TestEnvironment) simulateUninstall(command string) InstallationResult {
+func (env *InstallationTestEnvironment) simulateUninstall(command string) InstallationResult {
 	// Remove DDX binary
 	binaryPaths := []string{
 		filepath.Join(env.HomeDir, ".local", "bin", "ddx"),

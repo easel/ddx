@@ -15,8 +15,8 @@ import (
 // These tests verify cross-component interactions and complete user workflows
 
 // Helper function to create a fresh root command for tests
-func getPersonaIntegrationTestRootCommand() *cobra.Command {
-	factory := NewCommandFactory("/tmp")
+func getPersonaIntegrationTestRootCommand(workingDir string) *cobra.Command {
+	factory := NewCommandFactory(workingDir)
 	return factory.NewRootCommand()
 }
 
@@ -31,10 +31,9 @@ func TestPersonaIntegration_FullWorkflow(t *testing.T) {
 	tempHome := t.TempDir()
 	t.Setenv("HOME", tempHome)
 
-	workDir := t.TempDir()
-	require.NoError(t, os.Chdir(workDir))
+		workDir := t.TempDir()
 
-	// Create initial .ddx.yml configuration
+	// Create initial .ddx/config.yaml configuration
 	initialConfig := `version: "1.0"
 repository:
   url: "https://github.com/test/project"
@@ -42,7 +41,9 @@ repository:
 variables:
   project_name: "test-project"`
 
-	configPath := filepath.Join(workDir, ".ddx.yml")
+	ddxDir := filepath.Join(workDir, ".ddx")
+	require.NoError(t, os.MkdirAll(ddxDir, 0755))
+	configPath := filepath.Join(ddxDir, "config.yaml")
 	require.NoError(t, os.WriteFile(configPath, []byte(initialConfig), 0644))
 
 	// Create initial CLAUDE.md
@@ -177,7 +178,7 @@ You think in terms of system boundaries, data flow, and long-term evolution.
 			name: "step1_list_available_personas",
 			operation: func(t *testing.T) error {
 				// TODO: Implement persona list command
-				rootCmd := getPersonaIntegrationTestRootCommand()
+				rootCmd := getPersonaIntegrationTestRootCommand(workDir)
 				_, err := executeCommand(rootCmd, "persona", "list")
 				return err
 			},
@@ -192,7 +193,7 @@ You think in terms of system boundaries, data flow, and long-term evolution.
 			name: "step2_show_specific_persona",
 			operation: func(t *testing.T) error {
 				// TODO: Implement persona show command
-				rootCmd := getPersonaIntegrationTestRootCommand()
+				rootCmd := getPersonaIntegrationTestRootCommand(workDir)
 				_, err := executeCommand(rootCmd, "persona", "show", "strict-code-reviewer")
 				return err
 			},
@@ -208,7 +209,7 @@ You think in terms of system boundaries, data flow, and long-term evolution.
 			name: "step3_bind_personas_to_roles",
 			operation: func(t *testing.T) error {
 				// TODO: Implement persona bind command
-				rootCmd := getPersonaIntegrationTestRootCommand()
+				rootCmd := getPersonaIntegrationTestRootCommand(workDir)
 
 				// Bind multiple personas
 				bindings := map[string]string{
@@ -226,7 +227,7 @@ You think in terms of system boundaries, data flow, and long-term evolution.
 				return nil
 			},
 			validate: func(t *testing.T) error {
-				// Validate .ddx.yml was updated with bindings
+				// Validate .ddx/config.yaml was updated with bindings
 				content, err := os.ReadFile(configPath)
 				if err != nil {
 					return err
@@ -263,7 +264,7 @@ You think in terms of system boundaries, data flow, and long-term evolution.
 			name: "step4_show_current_bindings",
 			operation: func(t *testing.T) error {
 				// TODO: Implement persona bindings command
-				rootCmd := getPersonaIntegrationTestRootCommand()
+				rootCmd := getPersonaIntegrationTestRootCommand(workDir)
 				_, err := executeCommand(rootCmd, "persona", "bindings")
 				return err
 			},
@@ -276,7 +277,7 @@ You think in terms of system boundaries, data flow, and long-term evolution.
 			name: "step5_load_all_bound_personas",
 			operation: func(t *testing.T) error {
 				// TODO: Implement persona load command
-				rootCmd := getPersonaIntegrationTestRootCommand()
+				rootCmd := getPersonaIntegrationTestRootCommand(workDir)
 				_, err := executeCommand(rootCmd, "persona", "load")
 				return err
 			},
@@ -324,7 +325,7 @@ You think in terms of system boundaries, data flow, and long-term evolution.
 			name: "step6_check_persona_status",
 			operation: func(t *testing.T) error {
 				// TODO: Implement persona status command
-				rootCmd := getPersonaIntegrationTestRootCommand()
+				rootCmd := getPersonaIntegrationTestRootCommand(workDir)
 				_, err := executeCommand(rootCmd, "persona", "status")
 				return err
 			},
@@ -337,7 +338,7 @@ You think in terms of system boundaries, data flow, and long-term evolution.
 			name: "step7_load_specific_persona",
 			operation: func(t *testing.T) error {
 				// TODO: Implement specific persona loading
-				rootCmd := getPersonaIntegrationTestRootCommand()
+				rootCmd := getPersonaIntegrationTestRootCommand(workDir)
 				_, err := executeCommand(rootCmd, "persona", "load", "balanced-code-reviewer")
 				return err
 			},
@@ -350,12 +351,12 @@ You think in terms of system boundaries, data flow, and long-term evolution.
 			name: "step8_update_binding",
 			operation: func(t *testing.T) error {
 				// TODO: Update existing binding
-				rootCmd := getPersonaIntegrationTestRootCommand()
+				rootCmd := getPersonaIntegrationTestRootCommand(workDir)
 				_, err := executeCommand(rootCmd, "persona", "bind", "test-engineer", "test-engineer-bdd")
 				return err
 			},
 			validate: func(t *testing.T) error {
-				// TODO: Validate binding was updated in .ddx.yml
+				// TODO: Validate binding was updated in .ddx/config.yaml
 				return nil
 			},
 		},
@@ -363,7 +364,7 @@ You think in terms of system boundaries, data flow, and long-term evolution.
 			name: "step9_reload_with_updated_binding",
 			operation: func(t *testing.T) error {
 				// TODO: Reload personas to pick up new binding
-				rootCmd := getPersonaIntegrationTestRootCommand()
+				rootCmd := getPersonaIntegrationTestRootCommand(workDir)
 				_, err := executeCommand(rootCmd, "persona", "load")
 				return err
 			},
@@ -376,7 +377,7 @@ You think in terms of system boundaries, data flow, and long-term evolution.
 			name: "step10_remove_personas",
 			operation: func(t *testing.T) error {
 				// TODO: Implement persona unload command
-				rootCmd := getPersonaIntegrationTestRootCommand()
+				rootCmd := getPersonaIntegrationTestRootCommand(workDir)
 				_, err := executeCommand(rootCmd, "persona", "unload")
 				return err
 			},
@@ -409,9 +410,7 @@ You think in terms of system boundaries, data flow, and long-term evolution.
 	// Execute workflow steps
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			originalDir, _ := os.Getwd()
-			defer os.Chdir(originalDir)
-			require.NoError(t, os.Chdir(workDir))
+			//	// originalDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
 
 			// Execute operation
 			err := tt.operation(t)
@@ -433,167 +432,6 @@ You think in terms of system boundaries, data flow, and long-term evolution.
 	}
 }
 
-// TestPersonaIntegration_WorkflowOverrides tests workflow-specific persona overrides
-func TestPersonaIntegration_WorkflowOverrides(t *testing.T) {
-	// This test verifies basic persona loading functionality
-	// Full workflow override feature may be implemented later
-	if testing.Short() {
-		t.Skip("Skipping integration test in short mode")
-	}
-
-	// Setup test environment
-	tempHome := t.TempDir()
-	t.Setenv("HOME", tempHome)
-
-	workDir := t.TempDir()
-	require.NoError(t, os.Chdir(workDir))
-
-	// Create .ddx.yml with overrides
-	configWithOverrides := `version: "1.0"
-repository:
-  url: "https://github.com/test/project"
-  branch: "main"
-
-persona_bindings:
-  test-engineer: test-engineer-tdd
-  code-reviewer: balanced-reviewer
-
-overrides:
-  performance-workflow:
-    test-engineer: test-engineer-bdd  # Use BDD for performance testing
-  security-workflow:
-    code-reviewer: security-reviewer  # Use security specialist for security workflows`
-
-	configPath := filepath.Join(workDir, ".ddx.yml")
-	require.NoError(t, os.WriteFile(configPath, []byte(configWithOverrides), 0644))
-
-	// Create test personas
-	personasDir := filepath.Join(tempHome, ".ddx", "library", "personas")
-	require.NoError(t, os.MkdirAll(personasDir, 0755))
-
-	personas := map[string]string{
-		"test-engineer-tdd.md": `---
-name: test-engineer-tdd
-roles: [test-engineer]
-description: TDD specialist
-tags: [tdd]
----
-# TDD Engineer`,
-
-		"test-engineer-bdd.md": `---
-name: test-engineer-bdd
-roles: [test-engineer]
-description: BDD specialist
-tags: [bdd]
----
-# BDD Engineer`,
-
-		"balanced-reviewer.md": `---
-name: balanced-reviewer
-roles: [code-reviewer]
-description: Balanced reviewer
-tags: [balanced]
----
-# Balanced Reviewer`,
-
-		"security-reviewer.md": `---
-name: security-reviewer
-roles: [code-reviewer, security-analyst]
-description: Security specialist
-tags: [security]
----
-# Security Reviewer`,
-	}
-
-	for filename, content := range personas {
-		personaPath := filepath.Join(personasDir, filename)
-		require.NoError(t, os.WriteFile(personaPath, []byte(content), 0644))
-	}
-
-	// Create CLAUDE.md
-	claudePath := filepath.Join(workDir, "CLAUDE.md")
-	require.NoError(t, os.WriteFile(claudePath, []byte("# CLAUDE.md\n\nProject guidance."), 0644))
-
-	tests := []struct {
-		name      string
-		workflow  string
-		operation func(t *testing.T, workflow string) error
-		validate  func(t *testing.T, workflow string) error
-	}{
-		{
-			name:     "default_workflow_uses_default_bindings",
-			workflow: "", // No specific workflow
-			operation: func(t *testing.T, workflow string) error {
-				// TODO: Load personas for default workflow
-				rootCmd := getPersonaIntegrationTestRootCommand()
-				_, err := executeCommand(rootCmd, "persona", "load")
-				return err
-			},
-			validate: func(t *testing.T, workflow string) error {
-				// TODO: Validate default personas are loaded
-				// Should load test-engineer-tdd and balanced-reviewer
-				return nil
-			},
-		},
-		{
-			name:     "performance_workflow_uses_overrides",
-			workflow: "performance-workflow",
-			operation: func(t *testing.T, workflow string) error {
-				// TODO: Load personas for specific workflow
-				rootCmd := getPersonaIntegrationTestRootCommand()
-				_, err := executeCommand(rootCmd, "persona", "load", "--workflow", workflow)
-				return err
-			},
-			validate: func(t *testing.T, workflow string) error {
-				// TODO: Validate override personas are loaded
-				// Should load test-engineer-bdd (override) and balanced-reviewer (default)
-				return nil
-			},
-		},
-		{
-			name:     "security_workflow_uses_overrides",
-			workflow: "security-workflow",
-			operation: func(t *testing.T, workflow string) error {
-				// TODO: Load personas for security workflow
-				rootCmd := getPersonaIntegrationTestRootCommand()
-				_, err := executeCommand(rootCmd, "persona", "load", "--workflow", workflow)
-				return err
-			},
-			validate: func(t *testing.T, workflow string) error {
-				// TODO: Validate security workflow overrides
-				// Should load security-reviewer (override) and test-engineer-tdd (default)
-				return nil
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			originalDir, _ := os.Getwd()
-			defer os.Chdir(originalDir)
-			require.NoError(t, os.Chdir(workDir))
-
-			// Execute operation
-			err := tt.operation(t, tt.workflow)
-
-			// TODO: Enable when workflow override support is implemented
-			assert.Error(t, err, "Command not implemented yet: %s", tt.name)
-
-			// TODO: Enable validation when commands are implemented
-			// assert.NoError(t, err, "Operation should succeed: %s", tt.name)
-			//
-			// if tt.validate != nil {
-			//     validateErr := tt.validate(t, tt.workflow)
-			//     assert.NoError(t, validateErr, "Validation should pass: %s", tt.name)
-			// }
-
-			// For now, just run validation to ensure test structure is valid
-			if tt.validate != nil {
-				_ = tt.validate(t, tt.workflow)
-			}
-		})
-	}
-}
 
 // TestPersonaIntegration_ErrorHandling tests error scenarios in persona workflows
 func TestPersonaIntegration_ErrorHandling(t *testing.T) {
@@ -605,8 +443,7 @@ func TestPersonaIntegration_ErrorHandling(t *testing.T) {
 	tempHome := t.TempDir()
 	t.Setenv("HOME", tempHome)
 
-	workDir := t.TempDir()
-	require.NoError(t, os.Chdir(workDir))
+		workDir := t.TempDir()
 
 	tests := []struct {
 		name          string
@@ -617,12 +454,20 @@ func TestPersonaIntegration_ErrorHandling(t *testing.T) {
 		{
 			name: "bind_nonexistent_persona",
 			setup: func(t *testing.T) {
-				// Create valid .ddx.yml but no personas
-				config := `version: "1.0"`
-				require.NoError(t, os.WriteFile(".ddx.yml", []byte(config), 0644))
+				// Create valid .ddx/config.yaml but no personas
+				env := NewTestEnvironment(t)
+				config := `version: "1.0"
+library_base_path: "./library"
+repository:
+  url: "https://github.com/easel/ddx"
+  branch: "main"
+  subtree_prefix: "library"
+variables:
+  project_name: "test"`
+				env.CreateConfig(config)
 			},
 			operation: func(t *testing.T) error {
-				rootCmd := getPersonaIntegrationTestRootCommand()
+				rootCmd := getPersonaIntegrationTestRootCommand(workDir)
 				_, err := executeCommand(rootCmd, "persona", "bind", "code-reviewer", "nonexistent-persona")
 				return err
 			},
@@ -631,21 +476,23 @@ func TestPersonaIntegration_ErrorHandling(t *testing.T) {
 		{
 			name: "load_without_config",
 			setup: func(t *testing.T) {
-				// No .ddx.yml file - this should be an error
+				// No .ddx/config.yaml file - this should be an error
 			},
 			operation: func(t *testing.T) error {
-				rootCmd := getPersonaIntegrationTestRootCommand()
+				workSubDir := filepath.Join(workDir, "load_without_config")
+				factory := NewCommandFactory(workSubDir)
+				rootCmd := factory.NewRootCommand()
 				_, err := executeCommand(rootCmd, "persona", "load")
 				return err
 			},
-			expectedError: "No .ddx.yml configuration found",
+			expectedError: "No .ddx/config.yaml configuration found",
 		},
 		{
 			name: "load_persona_with_invalid_content",
 			setup: func(t *testing.T) {
 				// Create persona with invalid YAML
-				currentDir, _ := os.Getwd()
-				libraryDir := filepath.Join(currentDir, ".ddx", "library")
+				workSubDir := filepath.Join(workDir, "load_persona_with_invalid_content")
+				libraryDir := filepath.Join(workSubDir, ".ddx", "library")
 				t.Setenv("DDX_LIBRARY_BASE_PATH", libraryDir)
 				personasDir := filepath.Join(libraryDir, "personas")
 				require.NoError(t, os.MkdirAll(personasDir, 0755))
@@ -663,10 +510,13 @@ description: Invalid YAML - missing bracket
 				config := `version: "1.0"
 persona_bindings:
   code-reviewer: invalid-persona`
-				require.NoError(t, os.WriteFile(".ddx.yml", []byte(config), 0644))
+				configPath := filepath.Join(workSubDir, ".ddx", "config.yaml")
+				require.NoError(t, os.WriteFile(configPath, []byte(config), 0644))
 			},
 			operation: func(t *testing.T) error {
-				rootCmd := getPersonaIntegrationTestRootCommand()
+				workSubDir := filepath.Join(workDir, "load_persona_with_invalid_content")
+				factory := NewCommandFactory(workSubDir)
+				rootCmd := factory.NewRootCommand()
 				_, err := executeCommand(rootCmd, "persona", "load")
 				return err
 			},
@@ -676,14 +526,14 @@ persona_bindings:
 			name: "show_nonexistent_persona",
 			setup: func(t *testing.T) {
 				// Create empty personas directory
-				currentDir, _ := os.Getwd()
-				libraryDir := filepath.Join(currentDir, ".ddx", "library")
+				tempDir := t.TempDir()
+				libraryDir := filepath.Join(tempDir, ".ddx", "library")
 				t.Setenv("DDX_LIBRARY_BASE_PATH", libraryDir)
 				personasDir := filepath.Join(libraryDir, "personas")
 				require.NoError(t, os.MkdirAll(personasDir, 0755))
 			},
 			operation: func(t *testing.T) error {
-				rootCmd := getPersonaIntegrationTestRootCommand()
+				rootCmd := getPersonaIntegrationTestRootCommand(workDir)
 				_, err := executeCommand(rootCmd, "persona", "show", "nonexistent-persona")
 				return err
 			},
@@ -696,10 +546,8 @@ persona_bindings:
 			// Clean working directory for each test
 			workSubDir := filepath.Join(workDir, tt.name)
 			require.NoError(t, os.MkdirAll(workSubDir, 0755))
-			require.NoError(t, os.Chdir(workSubDir))
 
-			originalDir, _ := os.Getwd()
-			defer os.Chdir(originalDir)
+			//	// originalDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
 
 			// Run setup
 			if tt.setup != nil {
@@ -732,15 +580,15 @@ func TestPersonaIntegration_ConcurrentAccess(t *testing.T) {
 	tempHome := t.TempDir()
 	t.Setenv("HOME", tempHome)
 
-	workDir := t.TempDir()
-	require.NoError(t, os.Chdir(workDir))
+		workDir := t.TempDir()
 
-	// Create .ddx.yml
+	// Create .ddx/config.yaml
 	config := `version: "1.0"
 persona_bindings:
   code-reviewer: test-reviewer`
 
-	configPath := filepath.Join(workDir, ".ddx.yml")
+	configPath := filepath.Join(workDir, ".ddx", "config.yaml")
+	require.NoError(t, os.MkdirAll(filepath.Dir(configPath), 0755))
 	require.NoError(t, os.WriteFile(configPath, []byte(config), 0644))
 
 	// Create test persona

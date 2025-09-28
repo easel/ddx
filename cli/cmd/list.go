@@ -15,9 +15,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Command registration is now handled by command_factory.go
-// This file only contains the runList function implementation
-
 // Resource represents a single asset for JSON output
 type Resource struct {
 	Name        string   `json:"name"`
@@ -37,76 +34,83 @@ type ListResponse struct {
 	Type      string         `json:"type,omitempty"`
 }
 
+// CommandFactory method - CLI interface layer
 func (f *CommandFactory) runList(cmd *cobra.Command, args []string) error {
 	// Get flag values
 	filterValue, _ := cmd.Flags().GetString("filter")
 	jsonOutput, _ := cmd.Flags().GetBool("json")
 	treeOutput, _ := cmd.Flags().GetBool("tree")
 
-	// Get library path using the centralized library resolution
-	libPath, err := config.GetLibraryPath(getLibraryPath())
-	if err != nil {
-		return fmt.Errorf("failed to get library path: %w", err)
+	// Get resource type from args
+	var resourceType string
+	if len(args) > 0 {
+		resourceType = args[0]
 	}
+
+	// Call pure business logic
+	response, err := listResources(f.WorkingDir, resourceType, filterValue)
+	if err != nil {
+		return err
+	}
+
+	// Handle output formatting
+	if jsonOutput {
+		return outputListJSON(cmd, response)
+	}
+	if treeOutput {
+		return outputListTree(cmd, response)
+	}
+	return outputListHuman(cmd, response, filterValue, resourceType)
+}
+
+// listResources is the pure business logic function
+func listResources(workingDir, resourceType, filter string) (*ListResponse, error) {
+	// Load config to get library path
+	cfg, err := config.LoadWithWorkingDir(workingDir)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load config: %w", err)
+	}
+	libPath := cfg.LibraryBasePath
+
+	// Resolve library path relative to working directory if it's relative
+	if !filepath.IsAbs(libPath) {
+		libPath = filepath.Join(workingDir, libPath)
+	}
+
 
 	// Check if library exists
 	if _, err := os.Stat(libPath); os.IsNotExist(err) {
-		if jsonOutput {
-			response := ListResponse{
-				Resources: []Resource{},
-				Summary:   map[string]int{},
-			}
-			jsonData, _ := json.MarshalIndent(response, "", "  ")
-			cmd.Println(string(jsonData))
-			return nil
-		}
-		cmd.PrintErr("❌ DDx library not found. Please check your configuration.")
-		return nil
+		return &ListResponse{
+			Resources: []Resource{},
+			Summary:   map[string]int{},
+		}, nil
 	}
 
 	// Define resource types to list
-	resourceTypes := []string{"workflows", "mcp-servers", "prompts", "personas", "configs", "scripts", "tools", "environments"}
+	resourceTypes := []string{"templates", "workflows", "mcp-servers", "prompts", "personas", "configs", "scripts", "tools", "environments"}
 
-	// Filter by type if specified via argument
-	var filterType string
-	if len(args) > 0 {
-		filterType = args[0]
-		resourceTypes = []string{filterType}
+	// Filter by type if specified
+	if resourceType != "" {
+		resourceTypes = []string{resourceType}
 	}
 
-	// Load configuration for resource filtering
-	cfg, configErr := config.Load()
-	var resourceFilter *config.ResourceFilterEngine
-	if configErr == nil {
-		resourceFilter = config.NewResourceFilterEngine(cfg, libPath)
-	}
+	// Simplified: no configuration loading needed for resource discovery
 
 	// Collect all resources
 	var allResources []Resource
 	summary := make(map[string]int)
 
-	for _, resourceType := range resourceTypes {
-		var filteredPaths []string
+	for _, resType := range resourceTypes {
+		// Simplified: just use manual discovery (no complex filtering)
+		filteredPaths := discoverResourcesManually(libPath, resType)
 
-		if resourceFilter != nil {
-			// Use resource filtering if configuration is available
-			discoveredPaths, err := resourceFilter.DiscoverResourcesWithFilter(resourceType)
-			if err != nil {
-				// Fall back to manual discovery if filtering fails
-				discoveredPaths = discoverResourcesManually(libPath, resourceType)
-			}
-			filteredPaths = discoveredPaths
-		} else {
-			// Fall back to manual discovery if no config
-			filteredPaths = discoverResourcesManually(libPath, resourceType)
-		}
 
 		var categoryResources []Resource
 		for _, itemPath := range filteredPaths {
 			// Apply additional text filter if specified
-			if filterValue != "" {
-				relPath := strings.TrimPrefix(itemPath, filepath.Join(libPath, resourceType)+"/")
-				if !strings.Contains(strings.ToLower(relPath), strings.ToLower(filterValue)) {
+			if filter != "" {
+				relPath := strings.TrimPrefix(itemPath, filepath.Join(libPath, resType)+"/")
+				if !strings.Contains(strings.ToLower(relPath), strings.ToLower(filter)) {
 					continue
 				}
 			}
@@ -124,7 +128,7 @@ func (f *CommandFactory) runList(cmd *cobra.Command, args []string) error {
 			}
 
 			// Get relative name for display
-			relPath := strings.TrimPrefix(itemPath, filepath.Join(libPath, resourceType)+"/")
+			relPath := strings.TrimPrefix(itemPath, filepath.Join(libPath, resType)+"/")
 			if relPath == itemPath {
 				// Fallback to basename if prefix trimming didn't work
 				relPath = filepath.Base(itemPath)
@@ -132,7 +136,7 @@ func (f *CommandFactory) runList(cmd *cobra.Command, args []string) error {
 
 			resource := Resource{
 				Name:        relPath,
-				Type:        resourceType,
+				Type:        resType,
 				Description: description,
 				Path:        itemPath,
 				IsDirectory: info.IsDir(),
@@ -145,71 +149,74 @@ func (f *CommandFactory) runList(cmd *cobra.Command, args []string) error {
 
 		if len(categoryResources) > 0 {
 			allResources = append(allResources, categoryResources...)
-			summary[resourceType] = len(categoryResources)
+			summary[resType] = len(categoryResources)
 		}
 	}
 
-	// Output results
-	if jsonOutput {
-		response := ListResponse{
-			Resources: allResources,
-			Summary:   summary,
-			Filter:    filterValue,
-			Type:      filterType,
-		}
-		jsonData, err := json.MarshalIndent(response, "", "  ")
-		if err != nil {
-			return fmt.Errorf("failed to marshal JSON: %w", err)
-		}
-		cmd.Println(string(jsonData))
-		return nil
-	}
+	return &ListResponse{
+		Resources: allResources,
+		Summary:   summary,
+		Filter:    filter,
+		Type:      resourceType,
+	}, nil
+}
 
-	// Tree output
-	if treeOutput {
-		return displayTreeOutput(cmd, allResources, filterValue)
+// Output formatting functions
+func outputListJSON(cmd *cobra.Command, response *ListResponse) error {
+	jsonData, err := json.MarshalIndent(response, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal JSON: %w", err)
 	}
+	cmd.Println(string(jsonData))
+	return nil
+}
 
+func outputListTree(cmd *cobra.Command, response *ListResponse) error {
+	return displayTreeOutput(cmd, response.Resources, response.Filter)
+}
+
+func outputListHuman(cmd *cobra.Command, response *ListResponse, filter, resourceType string) error {
 	// Human-readable output
-	if len(allResources) == 0 {
+	if len(response.Resources) == 0 {
 		cmd.Println("📋 No DDx resources found")
-		if filterValue != "" {
-			cmd.Printf("No resources match filter: '%s'\n", filterValue)
+		if filter != "" {
+			cmd.Printf("No resources match filter: '%s'\n", filter)
 		}
 		return nil
 	}
 
 	cmd.Println("📋 Available DDx Resources")
-	if filterValue != "" {
-		cmd.Printf("Filtered by: '%s'\n", filterValue)
+	if filter != "" {
+		cmd.Printf("Filtered by: '%s'\n", filter)
 	}
 	cmd.Println()
 
 	// Show summary if listing all types
-	if filterType == "" && len(summary) > 1 {
+	if resourceType == "" && len(response.Summary) > 1 {
 		cmd.Println("Summary:")
 		caser := cases.Title(language.English)
-		for resourceType, count := range summary {
-			cmd.Printf("  %s: %d items\n", caser.String(resourceType), count)
+		for resType, count := range response.Summary {
+			cmd.Printf("  %s: %d items\n", caser.String(resType), count)
 		}
 		cmd.Println()
 	}
 
 	// Group resources by type for display
 	resourcesByType := make(map[string][]Resource)
-	for _, resource := range allResources {
+	for _, resource := range response.Resources {
 		resourcesByType[resource.Type] = append(resourcesByType[resource.Type], resource)
 	}
 
 	// Display each category
+	resourceTypes := []string{"templates", "workflows", "mcp-servers", "prompts", "personas", "configs", "scripts", "tools", "environments"}
 	caser := cases.Title(language.English)
-	for _, resourceType := range resourceTypes {
-		resources, exists := resourcesByType[resourceType]
+	for _, resType := range resourceTypes {
+		resources, exists := resourcesByType[resType]
 		if !exists || len(resources) == 0 {
 			continue
 		}
 
-		cmd.Printf("%s:\n", caser.String(resourceType))
+		cmd.Printf("%s:\n", caser.String(resType))
 		for _, resource := range resources {
 			if resource.IsDirectory {
 				cmd.Printf("  📁 %s", resource.Name)
@@ -235,6 +242,7 @@ func (f *CommandFactory) runList(cmd *cobra.Command, args []string) error {
 
 	return nil
 }
+
 
 // getResourceInfo returns descriptive information about a resource
 func getResourceInfo(path string, entry os.DirEntry) string {
@@ -350,13 +358,16 @@ func discoverResourcesManually(libPath, resourceType string) []string {
 		return resources
 	}
 
-	filepath.Walk(resourcePath, func(path string, info os.FileInfo, err error) error {
-		if err != nil || path == resourcePath {
-			return nil
-		}
-		resources = append(resources, path)
-		return nil
-	})
+	// Only read the immediate children of the resource directory
+	entries, err := os.ReadDir(resourcePath)
+	if err != nil {
+		return resources
+	}
+
+	for _, entry := range entries {
+		fullPath := filepath.Join(resourcePath, entry.Name())
+		resources = append(resources, fullPath)
+	}
 
 	return resources
 }
@@ -405,7 +416,7 @@ func displayTreeOutput(cmd *cobra.Command, resources []Resource, filter string) 
 	}
 
 	// Sort types
-	types := []string{"workflows", "mcp-servers", "prompts", "personas", "configs", "scripts", "tools", "environments"}
+	types := []string{"templates", "workflows", "mcp-servers", "prompts", "personas", "configs", "scripts", "tools", "environments"}
 	for _, resourceType := range types {
 		typeResources, exists := resourcesByType[resourceType]
 		if !exists || len(typeResources) == 0 {

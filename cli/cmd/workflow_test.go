@@ -30,10 +30,9 @@ func TestWorkflowCommandDiscovery(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			originalDir, _ := os.Getwd()
+			//	// originalDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
 			_ = tt.setup(t)
 			defer func() {
-				os.Chdir(originalDir)
 			}()
 
 			// This will fail initially - function doesn't exist
@@ -69,10 +68,9 @@ func TestWorkflowCommandExecution(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			originalDir, _ := os.Getwd()
+			//	// originalDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
 			_ = tt.setup(t)
 			defer func() {
-				os.Chdir(originalDir)
 			}()
 
 			// This will fail initially - function doesn't exist
@@ -125,13 +123,14 @@ func TestWorkflowCommandCLI(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			originalDir, _ := os.Getwd()
-			_ = tt.setup(t)
+			//	// originalDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
+			workDir := tt.setup(t)
 			defer func() {
-				os.Chdir(originalDir)
 			}()
 
-			rootCmd := getTestRootCommand()
+			// Use CommandFactory with the test working directory
+			factory := NewCommandFactory(workDir)
+			rootCmd := factory.NewRootCommand()
 			buf := new(bytes.Buffer)
 			rootCmd.SetOut(buf)
 			rootCmd.SetErr(buf)
@@ -155,8 +154,7 @@ func TestWorkflowCommandCLI(t *testing.T) {
 
 // Helper function to setup helix workflow commands
 func setupHelixWorkflowCommands(t *testing.T) string {
-	workDir := t.TempDir()
-	require.NoError(t, os.Chdir(workDir))
+		workDir := t.TempDir()
 
 	commandsDir := filepath.Join(workDir, "library", "workflows", "helix", "commands")
 	require.NoError(t, os.MkdirAll(commandsDir, 0755))
@@ -192,8 +190,7 @@ Continue work on the current user story following HELIX methodology.`
 
 // Helper function to setup empty workspace
 func setupEmptyWorkspace(t *testing.T) string {
-	workDir := t.TempDir()
-	require.NoError(t, os.Chdir(workDir))
+		workDir := t.TempDir()
 	return workDir
 }
 
@@ -221,10 +218,9 @@ func TestIsKnownWorkflow(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			originalDir, _ := os.Getwd()
+			//	// originalDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
 			_ = tt.setup(t)
 			defer func() {
-				os.Chdir(originalDir)
 			}()
 
 			// This will fail initially - function doesn't exist
