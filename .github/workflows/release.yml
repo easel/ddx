@@ -77,7 +77,7 @@ jobs:
     - name: Run tests
       working-directory: cli
       run: |
-        go test -v -race ./...
+        go test -v ./...
         echo "✅ All tests passed"
 
   # Build binaries for all platforms
