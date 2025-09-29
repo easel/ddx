@@ -112,6 +112,7 @@ DDX uses an intuitive noun-verb structure for clear, discoverable commands:
 |---------|-------------|
 | `ddx init` | Initialize DDX in your project |
 | `ddx doctor` | Check installation health and diagnose issues |
+| `ddx upgrade` | Upgrade DDX binary to latest release version |
 | `ddx update` | Pull latest improvements from master repository |
 | `ddx contribute` | Share your improvements back to community |
 

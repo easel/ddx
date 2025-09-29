@@ -128,6 +128,33 @@ You can optionally specify a specific resource to update:
 	return cmd
 }
 
+// newUpgradeCommand creates a fresh upgrade command
+func (f *CommandFactory) newUpgradeCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "upgrade",
+		Short: "Upgrade DDx to the latest version",
+		Long: `Upgrade DDx binary to the latest release version.
+
+This command:
+• Checks for the latest DDx release on GitHub
+• Downloads and executes the installation script
+• Replaces the current binary with the latest version
+• Preserves all your project configurations
+
+Examples:
+  ddx upgrade              # Upgrade to latest version
+  ddx upgrade --check      # Only check for updates
+  ddx upgrade --force      # Force upgrade even if already latest`,
+		Args: cobra.NoArgs,
+		RunE: f.runUpgrade,
+	}
+
+	cmd.Flags().Bool("check", false, "Check for updates without upgrading")
+	cmd.Flags().Bool("force", false, "Force upgrade even if already on latest version")
+
+	return cmd
+}
+
 // newContributeCommand creates a fresh contribute command
 func (f *CommandFactory) newContributeCommand() *cobra.Command {
 	cmd := &cobra.Command{

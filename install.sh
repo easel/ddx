@@ -88,8 +88,19 @@ setup_ddx_directory() {
 
 # Install CLI tool
 install_cli() {
-    log "Installing DDx CLI tool..."
-    
+    # Check if DDx is already installed
+    LOCAL_BIN="${HOME}/.local/bin"
+    EXISTING_VERSION=""
+    if [ -x "${LOCAL_BIN}/ddx" ]; then
+        EXISTING_VERSION=$("${LOCAL_BIN}/ddx" version 2>/dev/null | head -1 | awk '{print $2}' || echo "")
+    fi
+
+    if [ -n "$EXISTING_VERSION" ]; then
+        log "Upgrading DDx from ${EXISTING_VERSION}..."
+    else
+        log "Installing DDx CLI tool..."
+    fi
+
     # Detect platform
     OS=$(uname -s | tr '[:upper:]' '[:lower:]')
     ARCH=$(uname -m)
@@ -146,9 +157,8 @@ install_cli() {
     else
         tar -xzf "${ARCHIVE_NAME}"
     fi
-    
+
     # Install binary directly to local bin
-    LOCAL_BIN="${HOME}/.local/bin"
     mkdir -p "${LOCAL_BIN}"
 
     # Move binary directly to local bin instead of DDx home

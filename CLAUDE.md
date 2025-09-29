@@ -139,7 +139,8 @@ The CLI follows a noun-verb command structure for clarity and consistency:
 **Core Commands:**
 - `ddx init` - Initialize DDx in a project (with optional template)
 - `ddx doctor` - Check installation health and diagnose issues
-- `ddx update` - Update toolkit from master repository
+- `ddx upgrade` - Upgrade DDx binary to latest release version
+- `ddx update` - Update toolkit resources from master repository
 - `ddx contribute` - Share improvements back to community
 
 **Resource Commands (noun-verb structure):**

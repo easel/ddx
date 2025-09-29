@@ -32,11 +32,21 @@ ddx doctor         # Analyze and report
 ddx doctor --fix   # Analyze and apply fixes
 ```
 
-### `ddx update`
-Update DDx toolkit from the master repository.
+### `ddx upgrade`
+Upgrade DDx binary to the latest release version.
 
 ```bash
-ddx update           # Update to latest version
+ddx upgrade          # Upgrade to latest version
+ddx upgrade --check  # Only check for updates
+ddx upgrade --force  # Force upgrade even if already latest
+```
+
+### `ddx update`
+Update DDx toolkit resources from the master repository.
+
+```bash
+ddx update           # Update all resources
+ddx update templates # Update only templates
 ```
 
 ### `ddx contribute`

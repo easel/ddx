@@ -206,6 +206,7 @@ PowerShell:
 	rootCmd.AddCommand(f.newListCommand())
 	rootCmd.AddCommand(f.newDoctorCommand())
 	rootCmd.AddCommand(f.newUpdateCommand())
+	rootCmd.AddCommand(f.newUpgradeCommand())
 	rootCmd.AddCommand(f.newContributeCommand())
 	rootCmd.AddCommand(f.newConfigCommand())
 	rootCmd.AddCommand(f.newWorkflowCommand())
