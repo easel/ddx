@@ -110,7 +110,7 @@ graph TB
             APPLY[apply.go<br/>Apply Resources]
             UPDATE[update.go<br/>Sync Upstream]
             CONTRIB[contribute.go<br/>Share Changes]
-            DIAG[diagnose.go<br/>Health Check]
+            DIAG[doctor.go<br/>Health Check]
         end
 
         subgraph "Core Services"
@@ -328,7 +328,7 @@ The command-line interface built with Go and Cobra framework.
 - `init` - Initialize DDx in a project
 - `list` - Display available resources
 - `apply` - Apply templates/patterns
-- `diagnose` - Analyze project health
+- `doctor` - Analyze project health
 - `update` - Update toolkit resources
 - `contribute` - Share improvements
 

@@ -28,7 +28,7 @@ This test plan defines the comprehensive testing strategy for the DDx CLI toolki
 ### 2.2 Scope
 
 **In Scope:**
-- Core CLI commands (init, diagnose, update, contribute, version)
+- Core CLI commands (init, doctor, update, contribute, version)
 - Resource commands following noun-verb structure:
   - `prompts` commands (list, show)
   - `templates` commands (list, show, apply)
@@ -54,7 +54,7 @@ This test plan defines the comprehensive testing strategy for the DDx CLI toolki
 
 | Component | Type | Priority | Coverage Target |
 |-----------|------|----------|-----------------|
-| Core Commands (init, diagnose, update) | Integration | P0 | 100% |
+| Core Commands (init, doctor, update) | Integration | P0 | 100% |
 | Prompts Commands (list, show) | Integration | P0 | 100% |
 | Templates Commands (list, show, apply) | Integration | P0 | 100% |
 | Patterns Commands (list, show, apply) | Integration | P0 | 100% |

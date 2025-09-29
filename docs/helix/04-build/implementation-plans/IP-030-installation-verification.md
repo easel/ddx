@@ -25,7 +25,7 @@ updated: 2025-01-22
 
 ## User Story Reference
 
-**US-030**: As a developer, I want to verify that DDX is properly installed so that I can diagnose and fix installation issues quickly.
+**US-030**: As a developer, I want to verify that DDX is properly installed so that I can doctor and fix installation issues quickly.
 
 **Acceptance Criteria**:
 - Verify DDX binary is executable
@@ -80,7 +80,7 @@ import (
 // doctorCmd represents the doctor command
 var doctorCmd = &cobra.Command{
 	Use:   "doctor",
-	Short: "Check DDX installation and diagnose issues",
+	Short: "Check DDX installation and doctor issues",
 	Long: `Perform comprehensive health checks on DDX installation including:
 - Binary accessibility and version
 - PATH configuration

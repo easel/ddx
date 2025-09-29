@@ -180,6 +180,14 @@ func initProject(workingDir string, opts InitOptions) (*InitResult, error) {
 		if err := setupGitSubtreeLibraryPure(localConfig, workingDir); err != nil {
 			return nil, NewExitError(1, fmt.Sprintf("Failed to setup library: %v", err))
 		}
+
+		// Commit the config file after subtree setup (unless in test mode)
+		if os.Getenv("DDX_TEST_MODE") != "1" {
+			if err := commitConfigFile(workingDir); err != nil {
+				// Warn but don't fail - config is already created
+				// Error will be logged by caller if needed
+			}
+		}
 	}
 
 	// Store config for CLI layer to use for sync setup
@@ -410,6 +418,27 @@ func setupGitSubtreeLibraryPure(cfg *config.Config, workingDir string) error {
 
 	if err := gitCmd.Run(); err != nil {
 		return fmt.Errorf("git subtree command failed: %v. You may need to run 'git subtree add --prefix=.ddx/library %s %s --squash' manually", err, repoURL, branch)
+	}
+
+	return nil
+}
+
+// commitConfigFile commits the .ddx/config.yaml file to git
+func commitConfigFile(workingDir string) error {
+	// Stage the config file
+	gitAdd := exec.Command("git", "add", ".ddx/config.yaml")
+	gitAdd.Dir = workingDir
+	if err := gitAdd.Run(); err != nil {
+		return fmt.Errorf("failed to stage config file: %v", err)
+	}
+
+	// Commit the config file
+	gitCommit := exec.Command("git", "commit", "-m", "chore: initialize DDx configuration")
+	gitCommit.Dir = workingDir
+	gitCommit.Stdout = nil
+	gitCommit.Stderr = nil
+	if err := gitCommit.Run(); err != nil {
+		return fmt.Errorf("failed to commit config file: %v", err)
 	}
 
 	return nil

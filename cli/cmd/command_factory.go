@@ -68,7 +68,7 @@ DDx is a toolkit for AI-assisted development that helps you:
 Get started:
   ddx init          Initialize DDx in your project
   ddx list          See available resources
-  ddx diagnose      Analyze your project setup
+  ddx doctor        Check installation and diagnose issues
 
 More information:
   Documentation: https://github.com/easel/ddx
@@ -204,7 +204,7 @@ PowerShell:
 	// Register all other commands
 	rootCmd.AddCommand(f.newInitCommand())
 	rootCmd.AddCommand(f.newListCommand())
-	rootCmd.AddCommand(f.newDiagnoseCommand())
+	rootCmd.AddCommand(f.newDoctorCommand())
 	rootCmd.AddCommand(f.newUpdateCommand())
 	rootCmd.AddCommand(f.newContributeCommand())
 	rootCmd.AddCommand(f.newConfigCommand())
@@ -212,7 +212,6 @@ PowerShell:
 	rootCmd.AddCommand(f.newPersonaCommand())
 	rootCmd.AddCommand(f.newMCPCommand())
 	rootCmd.AddCommand(f.newInstallCommand())
-	rootCmd.AddCommand(f.newDoctorCommand())
 	rootCmd.AddCommand(f.newUninstallCommand())
 	rootCmd.AddCommand(f.newStatusCommand())
 	rootCmd.AddCommand(f.newLogCommand())
@@ -379,32 +378,6 @@ Examples:
 	cmd.Flags().String("path", "", "Installation path (default: ~/.local/bin)")
 	cmd.Flags().Bool("force", false, "Force installation even if already installed")
 
-	return cmd
-}
-
-// newDoctorCommand creates the doctor command
-func (f *CommandFactory) newDoctorCommand() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "doctor",
-		Short: "Diagnose DDx installation and configuration",
-		Long: `Run diagnostics to verify DDx installation and configuration.
-
-This command checks:
-• DDX binary accessibility
-• PATH configuration
-• Configuration file validity
-• Git availability
-• Network connectivity
-• File permissions
-• Library path accessibility
-
-Examples:
-  ddx doctor                            # Run all diagnostic checks
-  ddx doctor --verbose                  # Run with detailed diagnostics`,
-		RunE: f.runDoctor,
-	}
-
-	cmd.Flags().Bool("verbose", false, "Show detailed diagnostic information and remediation suggestions")
 	return cmd
 }
 

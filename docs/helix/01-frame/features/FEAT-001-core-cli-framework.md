@@ -8,7 +8,7 @@
 **Updated**: 2025-01-18
 
 ## Overview
-The Core CLI Framework provides the foundational command-line interface for DDX, enabling users to interact with the asset management system through standardized commands. It follows a noun-verb command structure (e.g., `ddx prompts list`, `ddx templates apply`) for better organization and discoverability. The framework establishes both core project commands (init, diagnose, update, contribute) and resource-specific commands that allow developers to discover, apply, and share development assets. This framework serves as the primary entry point for all user interactions with DDX functionality.
+The Core CLI Framework provides the foundational command-line interface for DDX, enabling users to interact with the asset management system through standardized commands. It follows a noun-verb command structure (e.g., `ddx prompts list`, `ddx templates apply`) for better organization and discoverability. The framework establishes both core project commands (init, doctor, update, contribute) and resource-specific commands that allow developers to discover, apply, and share development assets. This framework serves as the primary entry point for all user interactions with DDX functionality.
 
 ## Problem Statement
 Development teams need a consistent, intuitive command-line interface to interact with DDX's asset management capabilities:
@@ -24,7 +24,7 @@ Development teams need a consistent, intuitive command-line interface to interac
 
 ### In Scope
 - Command-line interface for DDX asset management
-- Core project commands: init, diagnose, update, contribute
+- Core project commands: init, doctor, update, contribute
 - Resource commands following noun-verb structure:
   - `ddx prompts list/show` for AI prompts
   - `ddx templates list/apply` for project templates
@@ -70,7 +70,7 @@ The CLI follows a noun-verb command structure for better organization and discov
 
 #### Project-Level Commands
 - **Initialize** (`ddx init`): Enable DDX functionality in a project with configuration
-- **Diagnose** (`ddx diagnose`): Analyze project health and suggest improvements
+- **Diagnose** (`ddx doctor`): Analyze project health and suggest improvements
 - **Update** (`ddx update`): Pull latest improvements from master repository
 - **Contribute** (`ddx contribute`): Share improvements back to community
 - **Version** (`ddx version`): Display version information and check for updates

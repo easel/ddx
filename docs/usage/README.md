@@ -48,7 +48,7 @@ ddx list
 ddx apply <resource>
 
 # Diagnose project health
-ddx diagnose
+ddx doctor
 
 # Update toolkit
 ddx update

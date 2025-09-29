@@ -24,12 +24,12 @@ ddx init                    # Interactive initialization
 ddx init --template nextjs  # Initialize with specific template
 ```
 
-### `ddx diagnose`
+### `ddx doctor`
 Analyze your project health and suggest improvements.
 
 ```bash
-ddx diagnose         # Analyze and report
-ddx diagnose --fix   # Analyze and apply fixes
+ddx doctor         # Analyze and report
+ddx doctor --fix   # Analyze and apply fixes
 ```
 
 ### `ddx update`

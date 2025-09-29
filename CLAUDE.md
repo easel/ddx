@@ -15,7 +15,7 @@ The project has a dual structure:
 ### Key Components
 
 - `cli/` - Go CLI application source code
-  - `cmd/` - Cobra command implementations (init, list, apply, diagnose, update, contribute)
+  - `cmd/` - Cobra command implementations (init, list, apply, doctor, update, contribute)
   - `internal/` - Internal packages (config, templates, git utilities)
   - `main.go` - Application entry point
 - `library/` - DDx library resources (centralized content)
@@ -76,7 +76,7 @@ The CLI uses git subtree for managing the relationship between individual projec
 **CRITICAL**: The DDx CLI follows the principle of "Extensibility Through Composition" - keep the CLI core minimal and add features through library resources.
 
 1. **CLI Core Minimalism**:
-   - The CLI should only contain fundamental operations: init, update, apply, list, diagnose, contribute
+   - The CLI should only contain fundamental operations: init, update, apply, list, doctor, contribute
    - Tool-specific integrations (Obsidian, VSCode, etc.) belong in `library/scripts/` or `library/tools/`
    - Workflow implementations must be loaded from `library/workflows/`, never hard-coded in the CLI
 
@@ -138,7 +138,7 @@ The CLI follows a noun-verb command structure for clarity and consistency:
 
 **Core Commands:**
 - `ddx init` - Initialize DDx in a project (with optional template)
-- `ddx diagnose` - Analyze project health and suggest improvements
+- `ddx doctor` - Check installation health and diagnose issues
 - `ddx update` - Update toolkit from master repository
 - `ddx contribute` - Share improvements back to community
 

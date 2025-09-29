@@ -255,7 +255,7 @@ show_getting_started() {
     echo "   ddx --help           Show available commands"
     echo "   ddx init             Initialize DDx in a project"
     echo "   ddx list             Show available templates and patterns"
-    echo "   ddx diagnose         Analyze current project setup"
+    echo "   ddx doctor           Check installation and diagnose issues"
     echo ""
     echo "📖 Documentation:"
     echo "   ${DDX_REPO}          Online repository and documentation"

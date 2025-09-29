@@ -19,6 +19,7 @@
 - [ ] **Given** I run `ddx init`, **when** the command executes, **then** initialization proceeds automatically without interactive prompts
 - [ ] **Given** initialization completes, **when** I check the project, **then** a `.ddx/config.yaml` configuration file exists with default settings
 - [ ] **Given** DDX is being initialized, **when** the process runs, **then** git subtree connection is established to the master repository
+- [ ] **Given** initialization completes successfully, **when** git operations succeed, **then** `.ddx/config.yaml` is automatically committed to git with message "chore: initialize DDx configuration"
 - [ ] **Given** initialization succeeds or fails, **when** the process completes, **then** clear success or failure feedback is provided with next steps
 - [ ] **Given** I run `ddx init` outside a git repository, **when** validation runs, **then** an error is reported: "Error: ddx init must be run inside a git repository. Please run 'git init' first."
 - [ ] **Given** initialization in a git repository, **when** creating .ddx/library folder, **then** git-subtree is used to pull from github.com/easel/ddx library/ folder and the subtree is configured at .ddx/library path
@@ -59,6 +60,7 @@
 1. Navigate to a project without DDX
 2. Run `ddx init`
 3. **Expected**: DDX initialized successfully with default configuration
+4. **Expected**: `.ddx/config.yaml` is committed to git
 
 ### Scenario 2: Force Re-initialization
 1. Navigate to DDX-enabled project
@@ -73,6 +75,7 @@
 ### Scenario 4: No-Git Mode
 1. Run `ddx init --no-git`
 2. **Expected**: DDX initialized without git subtree setup
+3. **Expected**: No git commits are made (config file left unstaged)
 
 ## User Persona
 

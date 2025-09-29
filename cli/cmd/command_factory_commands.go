@@ -62,33 +62,33 @@ Examples:
 	return cmd
 }
 
-// newDiagnoseCommand creates a fresh diagnose command
-func (f *CommandFactory) newDiagnoseCommand() *cobra.Command {
+// newDoctorCommand creates a fresh doctor command
+func (f *CommandFactory) newDoctorCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "diagnose",
-		Short: "Analyze project health and suggest improvements",
-		Long: `Diagnose analyzes your project and provides recommendations.
+		Use:   "doctor",
+		Short: "Check installation health and diagnose issues",
+		Long: `Doctor checks your DDx installation and environment.
 
-This command checks:
+This command verifies:
+• DDx binary and PATH configuration
+• Git installation and availability
+• File system permissions
+• Network connectivity
+• Library path accessibility
 • Project structure and configuration
 • Development tool setup
 • AI integration readiness
-• Code quality metrics
-• Missing configurations
-• Potential improvements
 
-The diagnosis helps identify:
-• Configuration issues
+The doctor helps identify and resolve:
+• Installation issues
+• Configuration problems
 • Missing dependencies
-• Optimization opportunities
-• Best practice violations`,
+• Environment setup issues`,
 		Args: cobra.NoArgs,
-		RunE: f.runDiagnose,
+		RunE: f.runDoctor,
 	}
 
 	cmd.Flags().BoolP("verbose", "v", false, "Show detailed diagnostic output")
-	cmd.Flags().Bool("fix", false, "Automatically fix issues where possible")
-	cmd.Flags().String("output", "", "Output format (json, yaml, markdown)")
 
 	return cmd
 }

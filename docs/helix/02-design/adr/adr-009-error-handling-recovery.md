@@ -222,7 +222,7 @@ recovery:
 #### Manual Recovery Commands
 ```bash
 # Recover from corrupted state
-ddx doctor --diagnose
+ddx doctor --doctor
 ddx doctor --repair
 
 # Recover from interrupted operation

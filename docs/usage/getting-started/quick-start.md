@@ -103,17 +103,17 @@ ddx apply prompts/claude
 Run a diagnostic to see how your project is doing:
 
 ```bash
-ddx diagnose
+ddx doctor
 ```
 
 Get a detailed report:
 ```bash
-ddx diagnose --report
+ddx doctor --report
 ```
 
 Auto-fix common issues:
 ```bash
-ddx diagnose --fix
+ddx doctor --fix
 ```
 
 ## Understanding DDx Structure
@@ -181,7 +181,7 @@ git init
 ddx init --template nextjs
 
 # Check everything looks good
-ddx diagnose
+ddx doctor
 ```
 
 ### Adding DDx to Existing Project
@@ -208,7 +208,7 @@ ddx apply scripts/hooks
 ddx update
 
 # Check for issues after update
-ddx diagnose
+ddx doctor
 
 # See what changed
 git log --oneline .ddx/
@@ -237,7 +237,7 @@ ddx contribute patterns/my-pattern
 
 - Use `ddx init` to ensure consistent setup across team members
 - Share custom configurations via `.ddx.yml`
-- Use `ddx diagnose` in CI to enforce project health
+- Use `ddx doctor` in CI to enforce project health
 
 ### 3. Customization
 
@@ -284,7 +284,7 @@ ddx update --reset
 ### Getting Help
 
 - Run `ddx help` for command information
-- Use `ddx diagnose` to check for configuration issues
+- Use `ddx doctor` to check for configuration issues
 - Check the [documentation](../README.md) for detailed guides
 - Open an issue on [GitHub](https://github.com/easel/ddx/issues)
 

@@ -1435,10 +1435,10 @@ ddx patterns apply error-handling
 #### Project Diagnosis
 ```bash
 # Analyze your project setup
-ddx diagnose
+ddx doctor
 
 # Get improvement suggestions
-ddx diagnose --verbose
+ddx doctor --verbose
 ```
 
 ### Integration with Claude Code
@@ -1631,7 +1631,7 @@ Save this for quick reference:
 ```bash
 # Daily DDX Commands
 ddx list                    # See what's available
-ddx diagnose               # Check project health
+ddx doctor               # Check project health
 ddx update                 # Get latest improvements
 ddx prompts show <name>    # View a prompt
 ddx templates apply <name> # Apply a template

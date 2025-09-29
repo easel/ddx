@@ -8,10 +8,10 @@
 
 *Command-line interface contracts for DDx utility commands*
 
-## Command: diagnose
+## Command: doctor
 
 **Purpose**: Analyze project health, identify issues, and suggest improvements based on DDx best practices
-**Usage**: `ddx diagnose [checks] [options]`
+**Usage**: `ddx doctor [checks] [options]`
 
 ### Arguments
 - `checks` (optional): Specific checks to run (comma-separated) or "all" (default: all)
@@ -111,7 +111,7 @@ Info: 12
 Recommended Actions:
 1. Run 'npm audit fix' to resolve vulnerability
 2. Remove API key from .env.example
-3. Run 'ddx diagnose --fix' to auto-fix 4 issues
+3. Run 'ddx doctor --fix' to auto-fix 4 issues
 
 Health Score: 78/100 (Good)
 ```
@@ -171,18 +171,18 @@ Health Score: 78/100 (Good)
 ### Examples
 ```bash
 # Full diagnostic
-$ ddx diagnose
+$ ddx doctor
 Running full project diagnostics...
 [output as above]
 
 # Specific checks only
-$ ddx diagnose config,security
+$ ddx doctor config,security
 Running diagnostics: configuration, security
 ✓ Configuration valid
 ✗ Security issue: exposed secret
 
 # Auto-fix issues
-$ ddx diagnose --fix
+$ ddx doctor --fix
 Found 4 fixable issues:
   ✓ Fixed: Updated .gitignore
   ✓ Fixed: Corrected file permissions
@@ -190,11 +190,11 @@ Found 4 fixable issues:
   ✗ Manual fix required: Remove hardcoded secret
 
 # Generate report
-$ ddx diagnose --format markdown --report health-report.md
+$ ddx doctor --format markdown --report health-report.md
 Diagnostic report saved to health-report.md
 
 # Compare with baseline
-$ ddx diagnose --baseline last-report.json
+$ ddx doctor --baseline last-report.json
 Comparing with baseline from 2025-01-10...
 Improvements:
   - Reduced warnings from 12 to 7
@@ -475,24 +475,24 @@ Available Commands:
   apply       Apply resources to project
   update      Update from master repository
   contribute  Share improvements back
-  diagnose    Analyze project health
+  doctor    Analyze project health
   config      Manage configuration
   version     Show version information
 
 # Command-specific help
-$ ddx help diagnose
+$ ddx help doctor
 Analyze project health and identify issues...
 [detailed help]
 
 # Quick help
-$ ddx diagnose -h
+$ ddx doctor -h
 [concise help]
 ```
 
 ### Debug Mode
 All commands support debug output:
 ```bash
-$ DDX_DEBUG=1 ddx diagnose
+$ DDX_DEBUG=1 ddx doctor
 [DEBUG] Loading configuration from .ddx.yml
 [DEBUG] Parsing YAML...
 [DEBUG] Running check: configuration
@@ -502,7 +502,7 @@ $ DDX_DEBUG=1 ddx diagnose
 ### Quiet Mode
 Suppress non-essential output:
 ```bash
-$ ddx diagnose -q
+$ ddx doctor -q
 ✗ 2 errors found
 ```
 

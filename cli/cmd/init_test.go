@@ -344,6 +344,72 @@ repository:
 			},
 			expectError: false,
 		},
+		{
+			name: "commits_config_file_to_git",
+			args: []string{"init"},
+			setup: func(t *testing.T, dir string) {
+				// Don't set DDX_TEST_MODE - we want real git behavior
+			},
+			validateOutput: func(t *testing.T, dir, output string, err error) {
+				// Config file should be created
+				configPath := filepath.Join(dir, ".ddx", "config.yaml")
+				assert.FileExists(t, configPath, "Config file should exist")
+
+				// Check git log for config commit
+				gitLog := exec.Command("git", "log", "--oneline", "--all")
+				gitLog.Dir = dir
+				logOutput, err := gitLog.CombinedOutput()
+				require.NoError(t, err, "Should be able to read git log")
+
+				logStr := string(logOutput)
+				assert.Contains(t, logStr, "chore: initialize DDx configuration", "Should have config commit")
+			},
+			expectError: false,
+		},
+		{
+			name: "skips_commit_in_test_mode",
+			args: []string{"init"},
+			setup: func(t *testing.T, dir string) {
+				t.Setenv("DDX_TEST_MODE", "1")
+			},
+			validateOutput: func(t *testing.T, dir, output string, err error) {
+				// Config file should be created
+				configPath := filepath.Join(dir, ".ddx", "config.yaml")
+				assert.FileExists(t, configPath, "Config file should exist")
+
+				// Git log should not have config commit (test mode skips commits)
+				gitLog := exec.Command("git", "log", "--oneline", "--all")
+				gitLog.Dir = dir
+				logOutput, _ := gitLog.CombinedOutput()
+				logStr := string(logOutput)
+
+				// In test mode, no commits should be made at all
+				assert.Empty(t, logStr, "Should have no commits in test mode")
+			},
+			expectError: false,
+		},
+		{
+			name: "skips_commit_with_no_git_flag",
+			args: []string{"init", "--no-git"},
+			setup: func(t *testing.T, dir string) {
+				// Don't set test mode, but use --no-git flag
+			},
+			validateOutput: func(t *testing.T, dir, output string, err error) {
+				// Config file should be created
+				configPath := filepath.Join(dir, ".ddx", "config.yaml")
+				assert.FileExists(t, configPath, "Config file should exist")
+
+				// Git log should not have config commit (--no-git skips commits)
+				gitLog := exec.Command("git", "log", "--oneline", "--all")
+				gitLog.Dir = dir
+				logOutput, _ := gitLog.CombinedOutput()
+				logStr := string(logOutput)
+
+				// With --no-git, no commits should be made
+				assert.Empty(t, logStr, "Should have no commits with --no-git flag")
+			},
+			expectError: false,
+		},
 	}
 
 	for _, tt := range tests {

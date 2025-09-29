@@ -32,13 +32,16 @@
 ### Output Format
 ```
 ✓ Initialized DDx in [path]
-✓ Created .ddx.yml configuration
-✓ Set up git subtree at .ddx/
+✓ Created .ddx/config.yaml configuration
+✓ Committed .ddx/config.yaml to git
+✓ Set up git subtree at .ddx/library
 ✓ Applied template: [template-name] (if specified)
 
 Project ready for document-driven development!
 Run 'ddx prompts list' or 'ddx templates list' to see available resources.
 ```
+
+**Note**: The config commit is skipped when using `--no-git` flag or in test mode.
 
 ### Exit Codes
 - `0`: Success
@@ -53,34 +56,49 @@ Run 'ddx prompts list' or 'ddx templates list' to see available resources.
 # Basic initialization
 $ ddx init
 ✓ Initialized DDx in /current/directory
-✓ Created .ddx.yml configuration
-✓ Set up git subtree at .ddx/
+✓ Created .ddx/config.yaml configuration
+✓ Committed .ddx/config.yaml to git
+✓ Set up git subtree at .ddx/library
 
 # Initialize with template
 $ ddx init nextjs
 ✓ Initialized DDx in /current/directory
-✓ Created .ddx.yml configuration
-✓ Set up git subtree at .ddx/
+✓ Created .ddx/config.yaml configuration
+✓ Committed .ddx/config.yaml to git
+✓ Set up git subtree at .ddx/library
 ✓ Applied template: nextjs
 
 # Custom repository
 $ ddx init --repo https://github.com/myorg/ddx-custom --branch develop
 ✓ Initialized DDx with custom repository
+
+# Skip git operations (no commits made)
+$ ddx init --no-git
+✓ Initialized DDx in /current/directory
+✓ Created .ddx/config.yaml configuration
+Note: Config file left unstaged (--no-git mode)
 ```
 
 ### Error Handling
 ```bash
 # Already initialized
 $ ddx init
-Error: .ddx.yml already exists. Use --force to overwrite.
+Error: .ddx/config.yaml already exists. Use --force to overwrite.
 
 # Not a git repository
 $ ddx init
-Error: Current directory is not a git repository. Initialize git first or use --no-git option.
+Error: ddx init must be run inside a git repository. Please run 'git init' first.
 
 # Template not found
 $ ddx init unknown-template
 Error: Template 'unknown-template' not found. Run 'ddx list templates' to see available templates.
+
+# Git commit fails (warning, not error)
+$ ddx init
+✓ Initialized DDx in /current/directory
+✓ Created .ddx/config.yaml configuration
+⚠ Warning: Could not commit config file (git error)
+✓ Set up git subtree at .ddx/library
 ```
 
 ---

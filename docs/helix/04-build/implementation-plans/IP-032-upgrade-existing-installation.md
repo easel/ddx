@@ -246,7 +246,7 @@ func (su *SelfUpdater) performUpdate(currentVersion, targetVersion string, opts 
 	fmt.Fprintln(su.out, "✅ Verifying installation...")
 	if err := su.verifyInstallation(targetVersion); err != nil {
 		fmt.Fprintf(su.out, "⚠️  Installation verification failed: %v\n", err)
-		fmt.Fprintln(su.out, "You may need to run 'ddx doctor' to diagnose issues")
+		fmt.Fprintln(su.out, "You may need to run 'ddx doctor' to doctor issues")
 	}
 
 	fmt.Fprintln(su.out)

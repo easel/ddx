@@ -203,11 +203,11 @@ pre-commit:
 
         # Check for DDx command availability
         if command -v ddx >/dev/null 2>&1; then
-          ddx diagnose >/dev/null 2>&1
+          ddx doctor >/dev/null 2>&1
         elif [ -x "./cli/ddx" ]; then
-          ./cli/ddx diagnose >/dev/null 2>&1
+          ./cli/ddx doctor >/dev/null 2>&1
         fi
-      fail_text: "DDx validation failed. Run 'ddx diagnose' for details"
+      fail_text: "DDx validation failed. Run 'ddx doctor' for details"
 
 # ====================
 # CI/CD - Full validation (all files)

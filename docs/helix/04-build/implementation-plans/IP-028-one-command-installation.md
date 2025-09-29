@@ -368,7 +368,7 @@ jobs:
 ### Related Components
 - **US-029**: Installation scripts will set up PATH (EnvironmentConfigurer)
 - **US-030**: Installation will be verified by doctor command (InstallationValidator)
-- **US-035**: Installation failures will be diagnosed (InstallationManager)
+- **US-035**: Installation failures will be doctord (InstallationManager)
 
 ### File Dependencies
 - Requires GitHub releases to be set up and populated

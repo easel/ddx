@@ -105,9 +105,9 @@ mcp-status: build
 	./$(ROOT_BINARY) mcp status
 
 # Diagnose project
-diagnose: build
+doctor: build
 	@echo "Running DDx diagnostics..."
-	./$(ROOT_BINARY) diagnose
+	./$(ROOT_BINARY) doctor
 
 # Update from master repository
 update: build
@@ -129,7 +129,7 @@ help:
 	@echo ""
 	@echo "Development:"
 	@echo "  dev          - Run DDx with arguments (set ARGS='...')"
-	@echo "  diagnose     - Run DDx project diagnostics"
+	@echo "  doctor       - Run DDx project diagnostics"
 	@echo "  update       - Update from master repository"
 	@echo ""
 	@echo "CLI Targets:"

@@ -177,8 +177,13 @@ Critical domain logic to implement:
   - Handle subtree add/pull/push
   - Manage merge conflicts
   - Create commits and PRs
+  - Auto-commit configuration files during initialization
 - **Requirements Addressed**: US-001, US-004, US-005
 - **Interfaces**: GitClient interface with methods for subtree operations
+- **Technical Notes**:
+  - Init command creates two commits: one for `.ddx/config.yaml` (via `commitConfigFile()`), and one for `.ddx/library` (via git subtree)
+  - Config commit uses message: "chore: initialize DDx configuration"
+  - Config commit skipped in test mode (`DDX_TEST_MODE=1`) or with `--no-git` flag
 
 #### Component 3: Asset Management (internal/assets/)
 - **Purpose**: Discover and manage DDX resources
@@ -318,7 +323,7 @@ Ensure all requirements are addressed:
 
 | Requirement ID | Requirement | Component | Design Element | Test Strategy |
 |---------------|-------------|-----------|----------------|---------------|
-| US-001 | Initialize DDX | cmd/init, internal/git | Git subtree add, config creation | Integration test full init flow |
+| US-001 | Initialize DDX | cmd/init, internal/git | Git subtree add, config creation and commit | Integration test full init flow, verify commits |
 | US-002 | List assets | cmd/list, internal/assets | Asset discovery, filtering | Unit test filters, integration test |
 | US-003 | Apply asset | cmd/apply, internal/template | Template processing, file ops | Unit test substitution, E2E test |
 | US-004 | Update assets | cmd/update, internal/git | Git subtree pull | Integration test with test repo |

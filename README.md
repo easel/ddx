@@ -43,7 +43,7 @@ ddx init
 **Discover what's available:**
 ```bash
 ddx list              # See all available resources
-ddx diagnose          # Analyze your project health
+ddx doctor            # Check installation and diagnose issues
 ddx prompts list      # Browse AI prompts
 ddx templates list    # View project templates
 ```
@@ -111,7 +111,7 @@ DDX uses an intuitive noun-verb structure for clear, discoverable commands:
 | Command | Description |
 |---------|-------------|
 | `ddx init` | Initialize DDX in your project |
-| `ddx diagnose` | Analyze project health and suggest improvements |
+| `ddx doctor` | Check installation health and diagnose issues |
 | `ddx update` | Pull latest improvements from master repository |
 | `ddx contribute` | Share your improvements back to community |
 
@@ -237,16 +237,17 @@ This ensures reproducible AI tool configurations across your team.
 
 ### Project Diagnosis
 
-DDX can analyze your project and suggest improvements:
+DDX can check your installation and analyze your project:
 
 ```bash
-ddx diagnose
+ddx doctor
 
 # Output:
-✓ Git repository initialized
-✓ README.md present
-⚠ No testing framework detected
-  → Consider: ddx templates apply jest-setup
+✓ DDx Binary Executable
+✓ PATH Configuration
+✓ Configuration Valid
+✓ Git Available
+⚠ Network Issues (optional)
 ⚠ No CI/CD configuration found
   → Consider: ddx templates apply github-actions
 ✓ TypeScript configured

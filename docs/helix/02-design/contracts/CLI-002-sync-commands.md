@@ -59,7 +59,7 @@ Update complete:
 Review conflicts in:
   - patterns/auth/jwt.js.conflict
 
-Run 'ddx diagnose' to verify project health.
+Run 'ddx doctor' to verify project health.
 ```
 
 ### Exit Codes
