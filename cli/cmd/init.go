@@ -15,9 +15,8 @@ import (
 
 // InitOptions contains all configuration options for project initialization
 type InitOptions struct {
-	Force    bool   // Force initialization even if config exists
-	NoGit    bool   // Skip git-related operations
-	Template string // Template to use for initialization
+	Force bool // Force initialization even if config exists
+	NoGit bool // Skip git-related operations
 }
 
 // Command registration is now handled by command_factory.go
@@ -37,13 +36,11 @@ func (f *CommandFactory) runInit(cmd *cobra.Command, args []string) error {
 	// Extract flags from cobra.Command
 	initForce, _ := cmd.Flags().GetBool("force")
 	initNoGit, _ := cmd.Flags().GetBool("no-git")
-	template, _ := cmd.Flags().GetString("template")
 
 	// Create options struct for business logic
 	opts := InitOptions{
-		Force:    initForce,
-		NoGit:    initNoGit,
-		Template: template,
+		Force: initForce,
+		NoGit: initNoGit,
 	}
 
 	// Handle user output
@@ -66,14 +63,7 @@ func (f *CommandFactory) runInit(cmd *cobra.Command, args []string) error {
 		fmt.Fprint(cmd.OutOrStdout(), "📚 Detected DDx repository - configuring library_path to use ../library\n")
 	}
 
-	// Initialize synchronization if config was created
-	if result.Config != nil {
-		fmt.Fprintln(cmd.OutOrStdout())
-		if err := initializeSynchronization(result.Config, cmd); err != nil {
-			cmd.SilenceUsage = true
-			return err
-		}
-	}
+	// Configuration created successfully
 
 	fmt.Fprint(cmd.OutOrStdout(), "✅ DDx initialized successfully!\n")
 	fmt.Fprint(cmd.OutOrStdout(), "Initialized DDx in current project.\n")
@@ -105,9 +95,7 @@ func initProject(workingDir string, opts InitOptions) (*InitResult, error) {
 
 	// Check if config already exists and handle backup
 	configPath := filepath.Join(workingDir, ".ddx", "config.yaml")
-	configExists := false
 	if _, err := os.Stat(configPath); err == nil {
-		configExists = true
 		if !opts.Force {
 			// Config exists and --force not used - exit code 2 per contract
 			return nil, NewExitError(2, ".ddx/config.yaml already exists. Use --force to overwrite.")
@@ -137,15 +125,13 @@ func initProject(workingDir string, opts InitOptions) (*InitResult, error) {
 	projectName := filepath.Base(workingDir)
 	projectType := detectProjectType(workingDir)
 
-	// Interactive prompts for configuration (skip in test mode or if not interactive)
-	if !configExists && os.Getenv("DDX_TEST_MODE") != "1" && isInteractive() {
-		if confirmedProjectName := promptForProjectNamePure(projectName); confirmedProjectName != "" {
-			projectName = confirmedProjectName
-		}
-	}
+	// Use directory name as project name (no interactive prompts)
 
 	// Create configuration with project-specific settings
 	localConfig := createProjectConfig(projectName, projectType)
+
+	// Apply default values (including repository settings)
+	localConfig.ApplyDefaults()
 
 	// Add validation during creation
 	if err := validateConfiguration(localConfig); err != nil {
@@ -163,13 +149,19 @@ func initProject(workingDir string, opts InitOptions) (*InitResult, error) {
 	if libraryExists {
 		if cfg, err := config.LoadWithWorkingDir(workingDir); err == nil {
 			localConfig.Version = cfg.Version
-			localConfig.Repository = cfg.Repository
+			// Copy variables except project_name which we set based on directory
 			for k, v := range cfg.Variables {
-				if k != "project_name" { // Keep project-specific name
+				if k != "project_name" {
 					localConfig.Variables[k] = v
 				}
 			}
 		}
+	}
+
+	// Create .ddx directory first
+	localDDxPath := filepath.Join(workingDir, ".ddx")
+	if err := os.MkdirAll(localDDxPath, 0755); err != nil {
+		return nil, NewExitError(1, fmt.Sprintf("Failed to create .ddx directory: %v", err))
 	}
 
 	// Save local configuration using ConfigLoader
@@ -182,21 +174,15 @@ func initProject(workingDir string, opts InitOptions) (*InitResult, error) {
 	}
 	result.ConfigCreated = true
 
-	// Store config for CLI layer to use for sync setup
-	result.Config = localConfig
-
-	// Always create .ddx directory (required for isInitialized check)
-	localDDxPath := filepath.Join(workingDir, ".ddx")
-	if err := os.MkdirAll(localDDxPath, 0755); err != nil {
-		return nil, NewExitError(1, fmt.Sprintf("Failed to create .ddx directory: %v", err))
-	}
-
-	// Set up git-subtree for library synchronization if not using --no-git and in git repo
-	if !opts.NoGit && libraryExists {
+	// Set up git subtree for library synchronization (adds .ddx/library)
+	if !opts.NoGit {
 		if err := setupGitSubtreeLibraryPure(localConfig, workingDir); err != nil {
-			return nil, NewExitError(1, fmt.Sprintf("Failed to setup git-subtree library: %v", err))
+			return nil, NewExitError(1, fmt.Sprintf("Failed to setup library: %v", err))
 		}
 	}
+
+	// Store config for CLI layer to use for sync setup
+	result.Config = localConfig
 
 	// Configuration already saved above
 
@@ -408,16 +394,9 @@ func promptForProjectName(defaultName string, cmd *cobra.Command) string {
 // createProjectConfig creates a configuration tailored to the project type
 func createProjectConfig(projectName, projectType string) *config.Config {
 	cfg := &config.Config{
-		Version:         "1.0",
-		LibraryBasePath: "./library",
-		Repository: &config.Repository{
-			URL:           "https://github.com/easel/ddx",
-			Branch:        "main",
-			SubtreePrefix: "library",
-		},
+		Version: "1.0",
 		Variables: map[string]string{
 			"project_name": projectName,
-			"ai_model":     "claude-3-opus",
 			"project_type": projectType,
 		},
 	}
@@ -433,14 +412,6 @@ func validateConfiguration(cfg *config.Config) error {
 
 	if cfg.Version == "" {
 		return fmt.Errorf("version is required")
-	}
-
-	if cfg.Repository == nil || cfg.Repository.URL == "" {
-		return fmt.Errorf("repository URL is required")
-	}
-
-	if !isValidRepositoryURL(cfg.Repository.URL) {
-		return fmt.Errorf("invalid repository URL: %s", cfg.Repository.URL)
 	}
 
 	if cfg.Variables == nil {
@@ -489,22 +460,25 @@ func setupGitSubtreeLibraryPure(cfg *config.Config, workingDir string) error {
 		return nil
 	}
 
-	// In test mode, simulate git-subtree setup
+	// In test mode, simulate git-subtree setup by creating library structure
 	if os.Getenv("DDX_TEST_MODE") == "1" {
-		if err := os.MkdirAll(libraryPath, 0755); err != nil {
-			return fmt.Errorf("failed to create library directory: %v", err)
+		testDirs := []string{"prompts", "templates", "patterns", "personas", "mcp-servers", "configs", "workflows"}
+		for _, dir := range testDirs {
+			if err := os.MkdirAll(filepath.Join(libraryPath, dir), 0755); err != nil {
+				return fmt.Errorf("failed to create test directory %s: %v", dir, err)
+			}
 		}
 		return nil
 	}
 
-	// Execute git subtree add command
+	// Execute git subtree add command for the entire ddx-library repository
 	repoURL := cfg.Repository.URL
 	branch := cfg.Repository.Branch
 	if branch == "" {
 		branch = "main"
 	}
 
-	gitCmd := exec.Command("git", "subtree", "add", fmt.Sprintf("--prefix=%s", libraryPath), repoURL, branch, "--squash")
+	gitCmd := exec.Command("git", "subtree", "add", "--prefix=.ddx/library", repoURL, branch, "--squash")
 	gitCmd.Dir = workingDir
 	gitCmd.Stdout = nil // Suppress verbose git output
 	gitCmd.Stderr = nil
@@ -523,7 +497,7 @@ func setupGitSubtreeLibrary(cfg *config.Config, cmd *cobra.Command, workingDir s
 	// Check if .ddx/library already exists
 	libraryPath := filepath.Join(workingDir, ".ddx/library")
 	if _, err := os.Stat(libraryPath); err == nil {
-		fmt.Fprintf(cmd.OutOrStdout(), "  ℹ️  Library directory already exists at %s\n", libraryPath)
+		fmt.Fprintf(cmd.OutOrStdout(), "  ℹ️  Library already exists at %s\n", libraryPath)
 		return nil
 	}
 
@@ -542,6 +516,7 @@ func setupGitSubtreeLibrary(cfg *config.Config, cmd *cobra.Command, workingDir s
 		}
 		fmt.Fprint(cmd.OutOrStdout(), "  ✓ Library synchronized via git-subtree\n")
 		fmt.Fprintf(cmd.OutOrStdout(), "  ℹ️  To update library: git subtree pull --prefix=.ddx/library %s %s --squash\n", repoURL, branch)
+		fmt.Fprintf(cmd.OutOrStdout(), "  ℹ️  To contribute changes: git subtree push --prefix=.ddx/library %s %s\n", repoURL, branch)
 	}
 
 	return nil

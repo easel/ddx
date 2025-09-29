@@ -116,7 +116,7 @@ func TestAcceptance_US006_GetCommandHelp(t *testing.T) {
 		// Should list flags
 		assert.Contains(t, output, "Flags:", "Should have flags section")
 		assert.Contains(t, output, "--force", "Should list force flag")
-		assert.Contains(t, output, "--template", "Should list template flag")
+		assert.Contains(t, output, "--no-git", "Should list no-git flag")
 		assert.Contains(t, output, "--help", "Should list help flag")
 
 		// Should show flag descriptions

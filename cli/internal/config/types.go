@@ -21,11 +21,11 @@ type NewRepositoryConfig struct {
 func DefaultNewConfig() *NewConfig {
 	return &NewConfig{
 		Version:         "1.0",
-		LibraryBasePath: "./library",
+		LibraryBasePath: ".ddx/library",
 		Repository: &NewRepositoryConfig{
-			URL:           "https://github.com/easel/ddx",
+			URL:           "https://github.com/easel/ddx-library",
 			Branch:        "main",
-			SubtreePrefix: "library",
+			SubtreePrefix: "",
 		},
 		Variables:       make(map[string]string),
 		PersonaBindings: make(map[string]string),
@@ -41,23 +41,23 @@ func (c *NewConfig) ApplyDefaults() {
 		c.Version = "1.0"
 	}
 	if c.LibraryBasePath == "" {
-		c.LibraryBasePath = "./library"
+		c.LibraryBasePath = ".ddx/library"
 	}
 	if c.Repository == nil {
 		c.Repository = &NewRepositoryConfig{
-			URL:           "https://github.com/easel/ddx",
+			URL:           "https://github.com/easel/ddx-library",
 			Branch:        "main",
-			SubtreePrefix: "library",
+			SubtreePrefix: "",
 		}
 	} else {
 		if c.Repository.URL == "" {
-			c.Repository.URL = "https://github.com/easel/ddx"
+			c.Repository.URL = "https://github.com/easel/ddx-library"
 		}
 		if c.Repository.Branch == "" {
 			c.Repository.Branch = "main"
 		}
 		if c.Repository.SubtreePrefix == "" {
-			c.Repository.SubtreePrefix = "library"
+			c.Repository.SubtreePrefix = ""
 		}
 	}
 	if c.Variables == nil {

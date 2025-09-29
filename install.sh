@@ -48,7 +48,31 @@ check_prerequisites() {
     if ! command -v curl &> /dev/null && ! command -v wget &> /dev/null; then
         error "curl or wget is required but neither is installed."
     fi
-    
+
+    # Check for git-subtree (required for sync features)
+    if ! git subtree --help &>/dev/null; then
+        warn "git-subtree not found. Some DDx features will be limited."
+        echo ""
+        case "$(uname -s)" in
+            Linux)
+                if command -v dnf &>/dev/null; then
+                    warn "Install with: sudo dnf install git-subtree"
+                elif command -v apt &>/dev/null; then
+                    warn "Usually included with git. Try: sudo apt update && sudo apt install git"
+                else
+                    warn "Install git-subtree using your package manager"
+                fi
+                ;;
+            Darwin)
+                warn "Install with: brew install git"
+                ;;
+            *)
+                warn "Install git-subtree for your operating system"
+                ;;
+        esac
+        echo ""
+    fi
+
     success "Prerequisites check passed"
 }
 

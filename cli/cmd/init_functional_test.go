@@ -22,9 +22,8 @@ func TestInitProject_FunctionalDesign(t *testing.T) {
 
 	// Test 1: Test with git validation (should fail in non-git directory)
 	opts := InitOptions{
-		Force:    false,
-		NoGit:    false, // Enable git validation for test
-		Template: "",
+		Force: false,
+		NoGit: false, // Enable git validation for test
 	}
 
 	result, err := initProject(tempDir, opts)
@@ -68,9 +67,8 @@ func TestValidateGitRepo_Pure(t *testing.T) {
 // Test InitOptions struct
 func TestInitOptions_Structure(t *testing.T) {
 	opts := InitOptions{
-		Force:    true,
-		NoGit:    false,
-		Template: "nextjs",
+		Force: true,
+		NoGit: false,
 	}
 
 	// Verify all fields are accessible
@@ -79,9 +77,6 @@ func TestInitOptions_Structure(t *testing.T) {
 	}
 	if opts.NoGit {
 		t.Error("NoGit field not set correctly")
-	}
-	if opts.Template != "nextjs" {
-		t.Error("Template field not set correctly")
 	}
 }
 

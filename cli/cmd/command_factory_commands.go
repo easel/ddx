@@ -12,20 +12,19 @@ func (f *CommandFactory) newInitCommand() *cobra.Command {
 		Long: `Initialize DDx in the current project.
 
 This command:
-• Creates a .ddx.yml configuration file
-• Sets up git subtree for the DDx toolkit
+• Creates a .ddx/config.yaml configuration file
+• Sets up git subtree to sync the DDx library
 • Downloads essential resources (prompts, templates, patterns)
 • Configures project-specific settings
 
 Examples:
-  ddx init                  # Interactive setup
-  ddx init -t nextjs        # Initialize with Next.js template
-  ddx init --force          # Reinitialize existing project`,
+  ddx init                  # Initialize DDx in current project
+  ddx init --force          # Reinitialize existing project
+  ddx init --no-git         # Skip git subtree setup`,
 		Args: cobra.NoArgs,
 		RunE: f.runInit,
 	}
 
-	cmd.Flags().StringP("template", "t", "", "Use specific template")
 	cmd.Flags().BoolP("force", "f", false, "Force initialization even if DDx already exists")
 	cmd.Flags().Bool("no-git", false, "Skip git subtree setup")
 

@@ -172,38 +172,6 @@ variables: {}
 	}
 }
 
-// TestInitCommand_Template tests init with template flag
-func TestInitCommand_Template(t *testing.T) {
-	_, cleanup := setupTestDir(t)
-	defer cleanup()
-
-	// Create a mock template directory
-	homeDir := t.TempDir()
-	t.Setenv("HOME", homeDir)
-
-	templateDir := filepath.Join(homeDir, ".ddx", "templates", "test-template")
-	require.NoError(t, os.MkdirAll(templateDir, 0755))
-
-	// Add template files
-	templateFile := filepath.Join(templateDir, "README.md")
-	require.NoError(t, os.WriteFile(templateFile, []byte("# {{project_name}}"), 0644))
-
-	// Execute init with template
-	factory := NewCommandFactory(homeDir)
-	rootCmd := factory.NewRootCommand()
-
-	output, err := executeCommand(rootCmd, "init", "--template", "test-template", "--no-git")
-
-	// Note: This will likely fail because the actual init command
-	// has dependencies on git and other systems
-	// In a real test, we'd need to mock these or run full integration tests
-	_ = output
-	_ = err
-
-	// For now, just verify the test runs without panic
-	assert.True(t, true)
-}
-
 // TestInitCommand_Help tests the help output
 func TestInitCommand_Help(t *testing.T) {
 	factory := NewCommandFactory("/tmp")
@@ -214,7 +182,7 @@ func TestInitCommand_Help(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Contains(t, output, "Initialize DDx")
 	assert.Contains(t, output, "--force")
-	assert.Contains(t, output, "--template")
+	assert.Contains(t, output, "--no-git")
 }
 
 // TestInitCommand_US017_InitializeConfiguration tests US-017 Initialize Configuration
@@ -343,18 +311,17 @@ repository:
 			expectError: false,
 		},
 		{
-			name: "template_flag_functionality",
-			args: []string{"init", "--template", "nonexistent"},
+			name: "no_git_flag_functionality",
+			args: []string{"init", "--no-git"},
 			setup: func(t *testing.T, dir string) {
 				t.Setenv("DDX_TEST_MODE", "1")
 			},
 			validateOutput: func(t *testing.T, dir, output string, err error) {
-				// Template application will likely fail if template doesn't exist
-				// But basic config creation should still work
+				// Should create config successfully without git operations
 				configPath := filepath.Join(dir, ".ddx", "config.yaml")
-				assert.FileExists(t, configPath, "Should create config even if template fails")
+				assert.FileExists(t, configPath, "Should create config with --no-git flag")
 			},
-			expectError: false, // The basic init succeeds even if template fails
+			expectError: false,
 		},
 		{
 			name: "includes_example_variable_definitions",
@@ -373,8 +340,8 @@ repository:
 
 				variables := config["variables"].(map[string]interface{})
 				assert.Contains(t, variables, "project_name")
-				assert.Contains(t, variables, "ai_model")
 				assert.Contains(t, variables, "project_type")
+				// ai_model was removed with template functionality
 			},
 			expectError: false,
 		},
@@ -424,11 +391,12 @@ func TestInitCommand_US014_SynchronizationSetup(t *testing.T) {
 				t.Setenv("DDX_TEST_MODE", "1")
 			},
 			validateOutput: func(t *testing.T, dir, output string, err error) {
-				// Should show sync setup progress
-				assert.Contains(t, output, "Setting up synchronization")
-				assert.Contains(t, output, "Upstream repository connection verified")
-				assert.Contains(t, output, "Synchronization configuration validated")
-				assert.Contains(t, output, "Change tracking initialized")
+				// Should show DDx initialization progress
+				assert.Contains(t, output, "Initializing DDx")
+				assert.Contains(t, output, "DDx initialized successfully")
+				// Verify config is created
+				configPath := filepath.Join(dir, ".ddx", "config.yaml")
+				assert.FileExists(t, configPath, "Should create config file")
 			},
 			expectError: false,
 		},
@@ -449,9 +417,9 @@ repository:
 				require.NoError(t, os.WriteFile(configPath, []byte(existingConfig), 0644))
 			},
 			validateOutput: func(t *testing.T, dir, output string, err error) {
-				// Should validate custom repository
-				assert.Contains(t, output, "Setting up synchronization")
-				assert.Contains(t, output, "Upstream repository connection verified")
+				// Should handle custom repository with backup
+				assert.Contains(t, output, "backup")
+				assert.Contains(t, output, "DDx initialized successfully")
 			},
 			expectError: false,
 		},
@@ -464,10 +432,10 @@ repository:
 			},
 			validateOutput: func(t *testing.T, dir, output string, err error) {
 				// Should work with new projects
-				assert.Contains(t, output, "Setting up synchronization")
-				assert.Contains(t, output, "Change tracking initialized")
+				assert.Contains(t, output, "Initializing DDx")
+				assert.Contains(t, output, "DDx initialized successfully")
 
-				// Check .ddx.yml was created with sync config
+				// Check .ddx/config.yaml was created with sync config
 				configPath := filepath.Join(dir, ".ddx", "config.yaml")
 				assert.FileExists(t, configPath)
 
@@ -496,8 +464,8 @@ repository:
 			},
 			validateOutput: func(t *testing.T, dir, output string, err error) {
 				// Should handle existing project files appropriately
-				assert.Contains(t, output, "Setting up synchronization")
-				assert.Contains(t, output, "Synchronization configuration validated")
+				assert.Contains(t, output, "Initializing DDx")
+				assert.Contains(t, output, "DDx initialized successfully")
 
 				// Existing files should remain untouched
 				assert.FileExists(t, filepath.Join(dir, "README.md"))
@@ -513,9 +481,11 @@ repository:
 			},
 			validateOutput: func(t *testing.T, dir, output string, err error) {
 				// Should validate all sync settings
-				assert.Contains(t, output, "Validating upstream repository connection")
-				assert.Contains(t, output, "Synchronization configuration validated")
+				assert.Contains(t, output, "Initializing DDx")
 				assert.Contains(t, output, "DDx initialized successfully")
+				// Verify config file exists with proper structure
+				configPath := filepath.Join(dir, ".ddx", "config.yaml")
+				assert.FileExists(t, configPath, "Should create config file")
 			},
 			expectError: false,
 		},

@@ -372,6 +372,11 @@ make install
 
 ### System Requirements
 - Git 2.0 or higher
+- git-subtree (for sync features)
+  - **Fedora/RHEL**: `sudo dnf install git-subtree`
+  - **Ubuntu/Debian**: Usually included with git
+  - **macOS (Homebrew)**: Included with `brew install git`
+  - **Windows**: Included with Git for Windows
 - 50MB disk space
 - Any OS: macOS, Linux, Windows
 
