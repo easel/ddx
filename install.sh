@@ -50,7 +50,7 @@ check_prerequisites() {
     fi
 
     # Check for git-subtree (required for sync features)
-    if ! git subtree --help &>/dev/null; then
+    if ! git subtree 2>&1 | grep -q "git subtree"; then
         warn "git-subtree not found. Some DDx features will be limited."
         echo ""
         case "$(uname -s)" in
