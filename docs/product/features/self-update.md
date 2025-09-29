@@ -55,15 +55,18 @@ As DDx evolves rapidly with new features, bug fixes, and pattern improvements, u
 - [ ] No changes are made to the system
 
 #### Automated Update Checks
-**As a** regular DDx user  
-**I want** to be notified when updates are available  
+**As a** regular DDx user
+**I want** to be notified when updates are available
 **So that** I don't miss important improvements
 
+**User Story**: US-043 - Automatic Update Notifications
+
 **Acceptance Criteria:**
-- [ ] `ddx version` shows if newer version is available
-- [ ] Update check is performed periodically (configurable)
-- [ ] Notifications are non-intrusive
-- [ ] Can disable automatic checks via configuration
+- [ ] Update check runs automatically once per 24 hours maximum
+- [ ] Notification displays after command completion (non-intrusive)
+- [ ] Cache stores last check to avoid excessive API calls
+- [ ] Can disable via environment variable `DDX_DISABLE_UPDATE_CHECK=1`
+- [ ] Can disable via configuration `update_check.enabled: false`
 
 #### CI/CD Integration
 **As a** DevOps engineer  
@@ -503,10 +506,10 @@ Successfully updated to v1.1.0
 
 ### C. Configuration Example
 ```yaml
-# .ddx.yml
-update:
-  check_frequency: daily
-  include_prereleases: false
-  auto_update: false
-  channel: stable
+# .ddx/config.yaml
+update_check:
+  enabled: true
+  frequency: 24h  # Check frequency (Go duration format)
 ```
+
+**Note**: The automatic update check (US-043) uses a cache stored at `~/.cache/ddx/last-update-check.json` to avoid excessive API calls.

@@ -1,10 +1,13 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
 
+	"github.com/easel/ddx/internal/config"
+	"github.com/easel/ddx/internal/update"
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -22,6 +25,9 @@ type CommandFactory struct {
 
 	// Custom viper instance for isolation
 	viperInstance *viper.Viper
+
+	// Update checker instance (stores check result for PostRunE)
+	updateChecker *update.Checker
 }
 
 // NewCommandFactory creates a new command factory with default settings
@@ -90,11 +96,19 @@ More information:
 		// Initialize config with the local viper instance
 		f.initConfig(cfgFile, libraryPath)
 
+		// Check for updates (synchronous, once per 24h)
+		f.checkForUpdates(cmd)
+
 		// Call the original PersistentPreRun if it exists
 		if rootCmd.PersistentPreRun != nil {
 			rootCmd.PersistentPreRun(cmd, args)
 		}
 		return nil
+	}
+
+	// Display update notification after command completes
+	rootCmd.PersistentPostRunE = func(cmd *cobra.Command, args []string) error {
+		return f.displayUpdateNotification(cmd)
 	}
 
 	// Add all subcommands
@@ -133,6 +147,60 @@ func (f *CommandFactory) initConfig(cfgFile, libPath string) {
 			fmt.Fprintln(os.Stderr, "Using config file:", f.viperInstance.ConfigFileUsed())
 		}
 	}
+}
+
+// checkForUpdates performs automatic update check (synchronous, once per 24h)
+func (f *CommandFactory) checkForUpdates(cmd *cobra.Command) {
+	// Check if disabled via env var
+	if os.Getenv("DDX_DISABLE_UPDATE_CHECK") == "1" {
+		return
+	}
+
+	// Load config
+	cfg, err := config.Load()
+	if err != nil {
+		// Silent failure - use defaults
+		cfg = config.DefaultNewConfig()
+	}
+
+	// Check if disabled via config
+	if cfg.UpdateCheck != nil && !cfg.UpdateCheck.Enabled {
+		return
+	}
+
+	// Create checker and perform check (synchronous)
+	checker := update.NewChecker(f.Version, cfg)
+	ctx := context.Background()
+
+	// Fast when cache valid (just reads file)
+	// Slow once per 24h when cache expired (network call ~200-500ms)
+	_, err = checker.CheckForUpdate(ctx)
+
+	// Log errors to stderr (don't let users get stranded on old versions)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: Could not check for updates: %v\n", err)
+	}
+
+	// Store in factory for PostRunE
+	f.updateChecker = checker
+}
+
+// displayUpdateNotification shows update notification if available
+func (f *CommandFactory) displayUpdateNotification(cmd *cobra.Command) error {
+	if f.updateChecker == nil {
+		return nil
+	}
+
+	available, version, err := f.updateChecker.IsUpdateAvailable()
+	if err != nil || !available {
+		return nil
+	}
+
+	fmt.Fprintf(cmd.OutOrStdout(),
+		"\n⬆️  Update available: %s (run 'ddx upgrade' to install)\n",
+		version)
+
+	return nil
 }
 
 // registerSubcommands adds all subcommands to the root command

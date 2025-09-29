@@ -19,6 +19,7 @@ import (
 // These tests follow the Given/When/Then pattern from user stories
 
 // Helper function to create a fresh root command for tests
+// DEPRECATED: Use NewTestRootCommand(t) instead for proper test isolation
 func getTestRootCommand() *cobra.Command {
 	factory := NewCommandFactory("/tmp")
 	return factory.NewRootCommand()
@@ -196,7 +197,8 @@ func TestAcceptance_US002_ListAvailableAssets(t *testing.T) {
 			},
 			when: func(t *testing.T) (string, error) {
 				// When: I run `ddx list`
-				rootCmd := getTestRootCommand()
+				factory := NewTestRootCommand(t)
+				rootCmd := factory.NewRootCommand()
 				return executeCommand(rootCmd, "list")
 			},
 			then: func(t *testing.T, output string, err error) {
@@ -226,7 +228,8 @@ func TestAcceptance_US002_ListAvailableAssets(t *testing.T) {
 			},
 			when: func(t *testing.T) (string, error) {
 				// When: I run `ddx list workflows`
-				rootCmd := getTestRootCommand()
+				factory := NewTestRootCommand(t)
+				rootCmd := factory.NewRootCommand()
 				return executeCommand(rootCmd, "list", "workflows")
 			},
 			then: func(t *testing.T, output string, err error) {
@@ -260,7 +263,8 @@ func TestAcceptance_US002_ListAvailableAssets(t *testing.T) {
 			},
 			when: func(t *testing.T) (string, error) {
 				// When: I run `ddx list --json`
-				rootCmd := getTestRootCommand()
+				factory := NewTestRootCommand(t)
+				rootCmd := factory.NewRootCommand()
 				return executeCommand(rootCmd, "list", "--json")
 			},
 			then: func(t *testing.T, output string, err error) {
@@ -300,7 +304,8 @@ func TestAcceptance_US002_ListAvailableAssets(t *testing.T) {
 			},
 			when: func(t *testing.T) (string, error) {
 				// When: I run `ddx list --filter react`
-				rootCmd := getTestRootCommand()
+				factory := NewTestRootCommand(t)
+				rootCmd := factory.NewRootCommand()
 				return executeCommand(rootCmd, "list", "--filter", "react")
 			},
 			then: func(t *testing.T, output string, err error) {
@@ -339,7 +344,8 @@ func TestAcceptance_US002_ListAvailableAssets(t *testing.T) {
 			},
 			when: func(t *testing.T) (string, error) {
 				// When: I run `ddx list`
-				rootCmd := getTestRootCommand()
+				factory := NewTestRootCommand(t)
+				rootCmd := factory.NewRootCommand()
 				return executeCommand(rootCmd, "list")
 			},
 			then: func(t *testing.T, output string, err error) {
@@ -366,7 +372,8 @@ func TestAcceptance_US002_ListAvailableAssets(t *testing.T) {
 			},
 			when: func(t *testing.T) (string, error) {
 				// When: I run `ddx list --filter nonexistent`
-				rootCmd := getTestRootCommand()
+				factory := NewTestRootCommand(t)
+				rootCmd := factory.NewRootCommand()
 				return executeCommand(rootCmd, "list", "--filter", "nonexistent")
 			},
 			then: func(t *testing.T, output string, err error) {
@@ -629,7 +636,8 @@ Continue work on current story...`
 			},
 			when: func(t *testing.T, workDir string) (string, error) {
 				// When: I run `ddx workflow helix commands`
-				rootCmd := getTestRootCommand()
+				factory := NewTestRootCommandWithDir(workDir)
+				rootCmd := factory.NewRootCommand()
 				buf := new(bytes.Buffer)
 				rootCmd.SetOut(buf)
 				rootCmd.SetErr(buf)
@@ -671,7 +679,8 @@ You will receive a user story ID as an argument (e.g., US-001, US-042, etc.).`
 			},
 			when: func(t *testing.T, workDir string) (string, error) {
 				// When: I run `ddx workflow helix execute build-story US-001`
-				rootCmd := getTestRootCommand()
+				factory := NewTestRootCommandWithDir(workDir)
+				rootCmd := factory.NewRootCommand()
 				buf := new(bytes.Buffer)
 				rootCmd.SetOut(buf)
 				rootCmd.SetErr(buf)
@@ -698,7 +707,8 @@ You will receive a user story ID as an argument (e.g., US-001, US-042, etc.).`
 			},
 			when: func(t *testing.T, workDir string) (string, error) {
 				// When: I run `ddx workflow invalid commands`
-				rootCmd := getTestRootCommand()
+				factory := NewTestRootCommandWithDir(workDir)
+				rootCmd := factory.NewRootCommand()
 				buf := new(bytes.Buffer)
 				rootCmd.SetOut(buf)
 				rootCmd.SetErr(buf)
@@ -727,7 +737,8 @@ You will receive a user story ID as an argument (e.g., US-001, US-042, etc.).`
 			},
 			when: func(t *testing.T, workDir string) (string, error) {
 				// When: I run `ddx workflow helix execute invalid-command`
-				rootCmd := getTestRootCommand()
+				factory := NewTestRootCommandWithDir(workDir)
+				rootCmd := factory.NewRootCommand()
 				buf := new(bytes.Buffer)
 				rootCmd.SetOut(buf)
 				rootCmd.SetErr(buf)
@@ -763,7 +774,8 @@ Command accepts arguments for user story processing.`
 			},
 			when: func(t *testing.T, workDir string) (string, error) {
 				// When: I execute it with arguments
-				rootCmd := getTestRootCommand()
+				factory := NewTestRootCommandWithDir(workDir)
+				rootCmd := factory.NewRootCommand()
 				buf := new(bytes.Buffer)
 				rootCmd.SetOut(buf)
 				rootCmd.SetErr(buf)

@@ -5,7 +5,7 @@
 **Priority**: P1
 **Status**: Draft
 **Created**: 2025-01-14
-**Updated**: 2025-01-14
+**Updated**: 2025-09-29
 
 ## Story
 
@@ -42,7 +42,7 @@
 - Version should be embedded at build time
 - Use semantic versioning (major.minor.patch)
 - Check for updates against GitHub releases API
-- Cache update check results (check once per day)
+- Cache update check results (check once per day) - **Note**: Automatic checking is implemented in US-043
 - Include git commit hash in build info
 - Support pre-release versions (alpha, beta, rc)
 
@@ -99,6 +99,7 @@
 
 - US-004: Update Assets from Master (natural next step after finding update)
 - US-006: Get Command Help (often checked together)
+- US-043: Automatic Update Notifications (implements automatic update checking mentioned in AC)
 
 ---
 *This user story is part of FEAT-001: Core CLI Framework*

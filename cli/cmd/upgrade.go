@@ -1,32 +1,20 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"os/exec"
-	"regexp"
-	"strconv"
-	"strings"
 
+	"github.com/easel/ddx/internal/update"
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 )
 
 const (
-	githubAPIURL     = "https://api.github.com/repos/easel/ddx/releases/latest"
 	installScriptURL = "https://raw.githubusercontent.com/easel/ddx/main/install.sh"
 )
-
-// GitHubRelease represents the GitHub API response for a release
-type GitHubRelease struct {
-	TagName string `json:"tag_name"`
-	Name    string `json:"name"`
-	Body    string `json:"body"`
-	HTMLURL string `json:"html_url"`
-}
 
 func (f *CommandFactory) runUpgrade(cmd *cobra.Command, args []string) error {
 	checkOnly, _ := cmd.Flags().GetBool("check")
@@ -48,7 +36,7 @@ func (f *CommandFactory) runUpgrade(cmd *cobra.Command, args []string) error {
 	}
 
 	// Fetch latest release from GitHub
-	latestRelease, err := fetchLatestRelease()
+	latestRelease, err := update.FetchLatestRelease()
 	if err != nil {
 		return fmt.Errorf("failed to check for updates: %w", err)
 	}
@@ -61,7 +49,7 @@ func (f *CommandFactory) runUpgrade(cmd *cobra.Command, args []string) error {
 	fmt.Fprintln(out)
 
 	// Compare versions
-	needsUpgrade, err := needsUpgrade(currentVersion, latestVersion)
+	needsUpgrade, err := update.NeedsUpgrade(currentVersion, latestVersion)
 	if err != nil && !force {
 		return fmt.Errorf("failed to compare versions: %w", err)
 	}
@@ -100,88 +88,6 @@ func (f *CommandFactory) runUpgrade(cmd *cobra.Command, args []string) error {
 	fmt.Fprintln(out, "Run 'ddx version' to verify the new version.")
 
 	return nil
-}
-
-// fetchLatestRelease fetches the latest release information from GitHub
-func fetchLatestRelease() (*GitHubRelease, error) {
-	resp, err := http.Get(githubAPIURL)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch release info: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("GitHub API returned status %d", resp.StatusCode)
-	}
-
-	var release GitHubRelease
-	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
-		return nil, fmt.Errorf("failed to parse release info: %w", err)
-	}
-
-	return &release, nil
-}
-
-// needsUpgrade compares two version strings and returns true if an upgrade is needed
-func needsUpgrade(current, latest string) (bool, error) {
-	// Normalize versions (remove 'v' prefix)
-	current = strings.TrimPrefix(current, "v")
-	latest = strings.TrimPrefix(latest, "v")
-
-	// Handle dev versions
-	if strings.Contains(current, "dev") {
-		// Dev versions should always allow upgrade
-		return true, nil
-	}
-
-	// Parse semantic versions
-	currentParts, err := parseVersion(current)
-	if err != nil {
-		return false, err
-	}
-
-	latestParts, err := parseVersion(latest)
-	if err != nil {
-		return false, err
-	}
-
-	// Compare major.minor.patch
-	for i := 0; i < 3; i++ {
-		if latestParts[i] > currentParts[i] {
-			return true, nil
-		}
-		if latestParts[i] < currentParts[i] {
-			return false, nil
-		}
-	}
-
-	// Versions are equal
-	return false, nil
-}
-
-// parseVersion parses a semantic version string into [major, minor, patch]
-func parseVersion(version string) ([3]int, error) {
-	var parts [3]int
-
-	// Remove any suffixes like -dev, -beta, etc.
-	version = regexp.MustCompile(`[+-].*`).ReplaceAllString(version, "")
-
-	// Split by dots
-	components := strings.Split(version, ".")
-	if len(components) < 1 || len(components) > 3 {
-		return parts, fmt.Errorf("invalid version format: %s", version)
-	}
-
-	// Parse each component
-	for i := 0; i < len(components) && i < 3; i++ {
-		num, err := strconv.Atoi(components[i])
-		if err != nil {
-			return parts, fmt.Errorf("invalid version number: %s", components[i])
-		}
-		parts[i] = num
-	}
-
-	return parts, nil
 }
 
 // executeUpgrade downloads and executes the install script

@@ -66,6 +66,37 @@
           "test-engineer": "tdd-engineer"
         }
       ]
+    },
+    "system": {
+      "type": "object",
+      "description": "System-level configuration settings",
+      "properties": {
+        "meta_prompt": {
+          "type": ["string", "null"],
+          "description": "Path to meta-prompt file (null to disable)",
+          "examples": ["claude/system-prompts/focused.md", null]
+        }
+      },
+      "additionalProperties": false
+    },
+    "update_check": {
+      "type": "object",
+      "description": "Automatic update check configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable automatic update checks"
+        },
+        "frequency": {
+          "type": "string",
+          "default": "24h",
+          "pattern": "^\\d+[hdwmy]$",
+          "description": "Check frequency (Go duration format: h=hours, d=days, w=weeks, m=months, y=years)",
+          "examples": ["24h", "12h", "7d", "1w"]
+        }
+      },
+      "additionalProperties": false
     }
   },
   "additionalProperties": false,

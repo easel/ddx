@@ -72,3 +72,17 @@ func (te *TestEnvironment) CreateFile(relativePath, content string) {
 	require.NoError(te.t, os.MkdirAll(dir, 0755))
 	require.NoError(te.t, os.WriteFile(fullPath, []byte(content), 0644))
 }
+
+// NewTestRootCommand creates a fresh root command for tests using isolated temp directory
+// This is the preferred way to create test commands - it ensures test isolation.
+func NewTestRootCommand(t *testing.T) *CommandFactory {
+	t.Helper()
+	tempDir := t.TempDir()
+	return NewCommandFactory(tempDir)
+}
+
+// NewTestRootCommandWithDir creates a test command with a specific working directory
+// Use this when your test needs to operate in a specific directory.
+func NewTestRootCommandWithDir(dir string) *CommandFactory {
+	return NewCommandFactory(dir)
+}

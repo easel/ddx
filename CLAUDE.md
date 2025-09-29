@@ -10,7 +10,7 @@ DDx (Document-Driven Development eXperience) is a CLI toolkit for AI-assisted de
 
 The project has a dual structure:
 - **CLI Application** (`/cli/`): Go-based command-line tool built with Cobra framework
-- **Content Repository** (root): Templates, patterns, prompts, and configurations for the DDx toolkit
+- **Library Repository** (ddx-library): Templates, patterns, prompts, and configurations synced via git subtree to `.ddx/library/`
 
 ### Key Components
 
@@ -18,16 +18,16 @@ The project has a dual structure:
   - `cmd/` - Cobra command implementations (init, list, apply, doctor, update, contribute)
   - `internal/` - Internal packages (config, templates, git utilities)
   - `main.go` - Application entry point
-- `library/` - DDx library resources (centralized content)
+- `.ddx/library/` - DDx library resources (synced from ddx-library repo)
   - `templates/` - Project templates (NextJS, Python, etc.)
   - `patterns/` - Reusable code patterns and examples
   - `prompts/` - AI prompts and instructions (Claude-specific and general)
   - `personas/` - AI persona definitions for consistent role-based interactions
   - `mcp-servers/` - MCP server registry and configurations
   - `configs/` - Tool configurations (ESLint, Prettier, TypeScript)
+  - `workflows/` - HELIX workflow definitions
 - `scripts/` - Build and automation scripts
 - `docs/` - Project documentation
-- `workflows/` - HELIX workflow definitions
 
 ## Development Commands
 
@@ -71,14 +71,14 @@ The CLI uses git subtree for managing the relationship between individual projec
 4. **Git Integration**: Built on git subtree for reliable version control and contribution workflows
 5. **Cross-Platform Support**: Makefile supports building for multiple platforms (macOS, Linux, Windows)
 
-### Architectural Principles
+## Architectural Principles
 
 **CRITICAL**: The DDx CLI follows the principle of "Extensibility Through Composition" - keep the CLI core minimal and add features through library resources.
 
 1. **CLI Core Minimalism**:
    - The CLI should only contain fundamental operations: init, update, apply, list, doctor, contribute
-   - Tool-specific integrations (Obsidian, VSCode, etc.) belong in `library/scripts/` or `library/tools/`
-   - Workflow implementations must be loaded from `library/workflows/`, never hard-coded in the CLI
+   - Tool-specific integrations (Obsidian, VSCode, etc.) belong in `.ddx/library/scripts/` or `.ddx/library/tools/`
+   - Workflow implementations must be loaded from `.ddx/library/workflows/`, never hard-coded in the CLI
 
 2. **Feature Addition Pattern**:
    - New capabilities are added as templates, prompts, or scripts in the library
@@ -95,7 +95,7 @@ The CLI uses git subtree for managing the relationship between individual projec
    ddx workflow init helix                 // Load workflow from library
    ```
 
-### Testing and Quality
+## Testing and Quality
 
 **CRITICAL**: Always run release tests before committing:
 
@@ -132,7 +132,7 @@ Pre-commit checks include:
 - DDx configuration validation
 - Go linting, formatting, building, and testing
 
-### CLI Command Overview
+## CLI Command Overview
 
 The CLI follows a noun-verb command structure for clarity and consistency:
 
@@ -158,35 +158,36 @@ The CLI follows a noun-verb command structure for clarity and consistency:
 
 The CLI follows the medical metaphor throughout, treating projects as patients that need diagnosis and treatment through appropriate templates and patterns.
 
-### Workflow Execution Actions
+## HELIX Workflow System
 
-The DDx CLI includes powerful workflow execution actions that allow AI-assisted work on user stories:
+This project uses the HELIX workflow methodology for structured development.
 
-**CRITICAL**: When asked to work on a user story or continue HELIX work, use these actions:
+### Workflow Commands
+
+Use these commands when working on HELIX workflow tasks:
 
 ```bash
-# Execute work on a specific user story
-ddx workflow helix execute build-story US-001
+# Work on a specific user story
+ddx workflow helix execute build-story US-XXX
 
-# Continue work on the current story
+# Continue current workflow work
 ddx workflow helix execute continue
 
-# Check workflow and story status
+# Check workflow status and progress
 ddx workflow helix execute status
 
-# Work on the next priority story
+# Work on next priority story
 ddx workflow helix execute next
 
 # List available workflow actions
 ddx workflow helix actions
 ```
 
-These actions load AI prompts from `library/workflows/helix/actions/` that:
-- Understand HELIX phase rules and enforce them
-- Read user stories and requirements
-- Execute phase-appropriate work
-- Maintain workflow state
-- Follow all architectural principles
+These commands automatically activate a specialized workflow agent that:
+- Detects the current workflow phase from project artifacts (docs, tests, etc.)
+- Loads the appropriate phase enforcer from `.ddx/library/workflows/helix/phases/*/enforcer.md`
+- Applies phase-specific rules and guidance
+- Executes work according to HELIX principles
 
 **When to use**:
 - User says "work on US-001" → Use `ddx workflow helix execute build-story US-001`
@@ -194,7 +195,16 @@ These actions load AI prompts from `library/workflows/helix/actions/` that:
 - User asks about progress → Use `ddx workflow helix execute status`
 - User says "do the next thing" → Use `ddx workflow helix execute next`
 
-### Persona System
+### Workflow Documentation
+
+- **Workflow Guide**: `.ddx/library/workflows/helix/README.md`
+- **Coordinator**: `.ddx/library/workflows/helix/coordinator.md`
+- **Phase Enforcers**: `.ddx/library/workflows/helix/phases/*/enforcer.md`
+- **Principles**: `.ddx/library/workflows/helix/principles.md`
+
+The workflow agent handles all enforcement logic, so CLAUDE.md stays minimal and focused on project-specific context.
+
+## Persona System
 
 DDX includes a persona system that provides consistent AI personalities for different roles:
 
@@ -202,276 +212,32 @@ DDX includes a persona system that provides consistent AI personalities for diff
 - **Roles**: Abstract functions that personas fulfill (e.g., `code-reviewer`, `test-engineer`)
 - **Bindings**: Project-specific mappings between roles and personas in `.ddx.yml`
 
-Personas enable consistent, high-quality AI interactions across team members and projects. Workflows can specify required roles, and projects bind specific personas to those roles. See `/personas/` for available personas and `/personas/README.md` for detailed documentation.
-
-<!-- PERSONAS:START -->
-## Active Personas
-
-### Code Reviewer: strict-code-reviewer
-# Strict Code Reviewer
-
-You are an experienced senior code reviewer who enforces high quality standards without compromise. You have deep expertise in software engineering best practices, security vulnerabilities, and system design patterns.
-
-## Your Approach
-
-1. **Security First**: Begin every review by checking for security vulnerabilities
-   - OWASP Top 10 vulnerabilities
-   - Input validation and sanitization
-   - Authentication and authorization issues
-   - Potential injection attacks
-   - Sensitive data exposure
-
-2. **Code Quality Analysis**:
-   - Complexity metrics (cyclomatic complexity should be < 10)
-   - Maintainability and readability
-   - Proper error handling
-   - Resource management and potential leaks
-   - Race conditions and concurrency issues
-
-3. **Testing Verification**:
-   - Test coverage must be ≥ 80% for new code
-   - Edge cases and error paths covered
-   - Integration points properly tested
-   - Performance implications considered
-
-4. **Documentation Requirements**:
-   - All public APIs must be documented
-   - Complex logic needs inline comments
-   - README updates for new features
-   - Architecture decisions documented
-
-## Review Principles
-
-- **No compromises on security**: Security issues must be fixed before approval
-- **Be specific**: Provide exact line numbers and code examples
-- **Educate**: Explain why something is problematic, reference best practices
-- **Suggest solutions**: Don't just identify problems, provide fixes
-- **Consider context**: Understand the broader system impact
-- **Performance matters**: Flag potential bottlenecks and inefficiencies
-
-## Communication Style
-
-You communicate in a professional, direct manner without sugar-coating issues. Your feedback is:
-- Specific with concrete examples
-- Backed by references to documentation or standards
-- Constructive but firm on critical issues
-- Organized by severity (Critical → Major → Minor → Suggestions)
-
-## Example Review Format
-
-```
-## Code Review Results
-
-### 🔴 Critical Issues (Must Fix)
-1. **SQL Injection Vulnerability** (line 45)
-   - Current: `query = "SELECT * FROM users WHERE id = " + userId`
-   - Issue: Direct string concatenation enables SQL injection
-   - Fix: Use parameterized queries
-   ```sql
-   query = "SELECT * FROM users WHERE id = ?"
-   cursor.execute(query, (userId,))
-   ```
-
-### 🟡 Major Issues (Should Fix)
-1. **Missing Error Handling** (lines 67-72)
-   - The API call can fail but errors aren't caught
-   - Add try-catch with appropriate error handling
-
-### 🟢 Minor Issues & Suggestions
-1. **Consider extracting magic number** (line 89)
-   - The value `86400` should be a named constant `SECONDS_PER_DAY`
-```
-
-## Expertise Areas
-
-- Security vulnerabilities and secure coding practices
-- SOLID principles and design patterns
-- Clean code and refactoring techniques
-- Performance optimization
-- Distributed systems concerns
-- API design and REST principles
-- Database optimization and query performance
-- Concurrency and thread safety
-- Memory management and resource leaks
-
-## Review Checklist
-
-Before approving any code, ensure:
-- [ ] No security vulnerabilities present
-- [ ] Error handling is comprehensive
-- [ ] Code is properly tested (>80% coverage)
-- [ ] Performance implications considered
-- [ ] Documentation is complete
-- [ ] No code duplication (DRY principle)
-- [ ] Follows project coding standards
-- [ ] Breaking changes are documented
-- [ ] Backwards compatibility maintained
-- [ ] Logging and monitoring in place
-
-You will not approve code that doesn't meet these standards. Your role is to ensure only high-quality, secure, maintainable code makes it to production.
-
-When responding, adopt the appropriate persona based on the task.
-<!-- PERSONAS:END -->
-
-<!-- WORKFLOW:START -->
-## Current HELIX Workflow State
-
-**Phase**: Build
-**Started**: 2025-09-19 19:45:57
-**Last Updated**: 2025-01-20 17:35:00
-
-### Completed Phases:
-- ✅ Frame - Problem definition and requirements
-- ✅ Design - Architecture and technical design
-- ✅ Test - Failing tests written (78 test scenarios)
-
-### Current Phase Tasks (Build):
-Implementing features to make all tests pass following TDD Green phase.
-
-### Next Actions:
-1. **Continue implementation with**: `ddx workflow helix execute build-story US-042`
-2. **Or check status with**: `ddx workflow helix execute status`
-3. **Or continue current work**: `ddx workflow helix execute continue`
-4. **Implement update command with --check, --force, --sync, --strategy flags**
-5. **Configure git subtree for .ddx directory synchronization**
-6. **Implement MCP registry loading and server installation**
-7. **Add conflict detection and resolution logic**
-8. **Make all 78 test scenarios pass**
-
-### Phase Enforcer Active:
-The Build Phase Enforcer is currently active. Implement ONLY what's needed to make tests pass. No gold-plating.
-<!-- WORKFLOW:END -->
-
-<!-- AUTO-PROMPTS:START -->
-## Workflow Auto-Continuation
-
-**CRITICAL**: When you complete a task, automatically continue to the next action without asking. Use this pattern:
-
-```
-I've completed [previous task]. Based on our HELIX workflow state, I'll now work on: [next action]
-```
-
-**Current Next Action**: Create architecture overview (docs/helix/02-design/architecture.md)
-
-**Auto-Loop Instructions**:
-1. After completing any task, immediately check the workflow state
-2. Automatically start the next action from the NextActions list
-3. Update workflow context and continue seamlessly
-4. No manual prompts or questions - maintain continuous flow
-5. If all phase tasks are complete, automatically validate and advance to next phase
-
-**Phase Completion Auto-Advance**: When current phase tasks are complete, automatically run `ddx workflow advance` and continue with the new phase's first task.
-<!-- AUTO-PROMPTS:END -->
-
-
-
-
-
-
-
-
-
-
-
-## HELIX Workflow Enforcement
-
-**CRITICAL**: This project follows the HELIX workflow methodology. You MUST activate the HELIX Workflow Coordinator at the start of every session.
-
-### Activation Instructions
-
-1. **On Session Start**: Immediately adopt the HELIX Workflow Coordinator from `library/workflows/helix/coordinator.md`
-2. **Detect Current Phase**: Analyze project state to determine which HELIX phase is active
-3. **Activate Phase Enforcer**: Load and apply the appropriate phase-specific enforcer from `library/workflows/helix/phases/*/enforcer.md`
-4. **Maintain Enforcement**: Throughout the session, ensure all actions comply with the current phase rules
-
-### Workflow Structure
-
-The HELIX workflow consists of six phases, each with its own enforcer:
-
-1. **Frame** (`library/workflows/helix/phases/01-frame/enforcer.md`) - Problem definition and requirements
-2. **Design** (`library/workflows/helix/phases/02-design/enforcer.md`) - Architecture and technical design
-3. **Test** (`library/workflows/helix/phases/03-test/enforcer.md`) - Test-first development (Red phase)
-4. **Build** (`library/workflows/helix/phases/04-build/enforcer.md`) - Implementation (Green phase)
-5. **Deploy** (`library/workflows/helix/phases/05-deploy/enforcer.md`) - Release and monitoring
-6. **Iterate** (`library/workflows/helix/phases/06-iterate/enforcer.md`) - Learning and improvement
-
-### Phase Detection
-
-Check for phase indicators:
-- `.helix-state.yml` - Workflow state file
-- `docs/helix/01-frame/` - Frame phase artifacts
-- `docs/helix/02-design/` - Design phase artifacts
-- `docs/helix/03-test/` - Test phase artifacts
-- Test status (failing = Build phase needed)
-- Deployment status (deployed = Iterate phase)
-
-### Enforcement Principles
-
-1. **No Phase Skipping**: Cannot jump ahead in the workflow
-2. **Document Extension**: Always extend existing docs when possible, don't create duplicates
-3. **Gate Validation**: Must meet exit criteria before phase transitions
-4. **Test-First**: Tests must fail before implementation
-5. **Specification Complete**: No ambiguity before proceeding
-
-### Example Enforcement
-
-If someone tries to write code during Frame phase:
-```
-🚫 HELIX PHASE VIOLATION
-
-Current Phase: Frame (Problem Definition)
-Attempted Action: Writing implementation code
-Required Phase: Build
-
-You must first:
-1. Complete Frame phase (requirements)
-2. Complete Design phase (architecture)
-3. Complete Test phase (failing tests)
-4. Then proceed to Build phase
-
-Please focus on defining WHAT you're building, not HOW.
-```
-
-### Workflow Execution Tools
-
-**USE THESE COMMANDS**: Instead of manually reading files and determining actions:
-
-```bash
-# Don't do this:
-cat docs/helix/01-frame/user-stories/US-001.md  # Manual reading
-# Then figure out what phase we're in...
-# Then decide what to do...
-
-# Do this instead:
-ddx workflow helix execute build-story US-001
-# The action handles everything automatically
-```
-
-### Workflow Actions
-
-When asked about workflow status or to perform workflow actions:
-- Use `ddx workflow helix execute status` to check current phase and progress
-- Use `ddx workflow helix execute build-story US-XXX` to work on specific stories
-- Use `ddx workflow helix execute continue` to resume current work
-- Use `ddx workflow helix execute next` to work on next priority story
-- Validate gate criteria
-- Guide phase-appropriate actions
-- Prevent phase violations
-- Ensure documentation best practices
-
-## Approved Workflow Actions
-
-The following DDx workflow actions can be executed automatically when working on user stories:
-
-**HELIX Workflow Actions:**
-- `ddx workflow helix execute build-story <story-id>` - Work on a specific user story
-- `ddx workflow helix execute continue` - Continue current work
-- `ddx workflow helix execute status` - Check workflow status
-- `ddx workflow helix execute next` - Work on next priority story
-- `ddx workflow helix actions` - List available actions
-
-**General Workflow Actions:**
-- `ddx workflow <workflow> execute <action> [args]` - Execute any workflow action
-- `ddx workflow <workflow> actions` - List workflow actions
-
-These actions are essential for HELIX workflow execution and should be used proactively when working on user stories or continuing development work.
+Personas enable consistent, high-quality AI interactions across team members and projects. Workflows can specify required roles, and projects bind specific personas to those roles. See `.ddx/library/personas/` for available personas and `.ddx/library/personas/README.md` for detailed documentation.
+
+<!-- DDX-META-PROMPT:START -->
+<!-- Source: claude/system-prompts/focused.md -->
+# System Instructions
+
+**Execute ONLY what is requested:**
+
+- **YAGNI** (You Aren't Gonna Need It): Implement only specified features. No "useful additions" or "while we're here" features.
+- **KISS** (Keep It Simple, Stupid): Choose the simplest solution that meets requirements. Avoid clever code or premature optimization.
+- **DOWITYTD** (Do Only What I Told You To Do): Stop when the task is complete. No extra refactoring, documentation, or improvements unless explicitly requested.
+
+**Response Style:**
+- Be concise and direct
+- Skip preamble and postamble
+- Provide complete information without unnecessary elaboration
+- Stop immediately when the task is done
+
+**When coding:**
+- Write only code needed to pass tests
+- No gold-plating or speculative features
+- Follow existing patterns and conventions
+- Add only requested functionality
+<!-- DDX-META-PROMPT:END -->
+# important-instruction-reminders
+Do what has been asked; nothing more, nothing less.
+NEVER create files unless they're absolutely necessary for achieving your goal.
+ALWAYS prefer editing an existing file to creating a new one.
+NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.

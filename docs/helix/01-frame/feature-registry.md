@@ -21,6 +21,7 @@ This registry tracks all features in the system, their status, dependencies, and
 | FEAT-011 | AI Persona System | Comprehensive persona management enabling teams to define, share, and bind AI personalities to specific roles within workflows | Specified | P1 | Core Team | 2025-01-15 | 2025-01-15 |
 | FEAT-012 | Library Management System | Centralized, flexible approach to managing DDx resources with hierarchical path resolution and project customization support | In Development | P0 | Core Team | 2025-01-16 | 2025-01-16 |
 | FEAT-013 | Development Environment Assets | System for managing and sharing development environment configurations (Docker, Brew, Vagrant) for consistent AI development setups | Specified | P1 | Core Team | 2025-01-18 | 2025-01-18 |
+| FEAT-014 | Agent-Based Workflow Enforcement | Refactor HELIX workflow enforcement from passive CLAUDE.md instructions to reactive agent system, reducing token usage by 45% | Specified | P1 | Core Team | 2025-01-20 | 2025-01-20 |
 
 ## Feature Status Definitions
 
@@ -51,6 +52,8 @@ Document which features depend on others:
 | FEAT-013 | FEAT-001 | Internal | Environment commands through CLI |
 | FEAT-013 | FEAT-003 | Internal | Environment settings in configuration |
 | FEAT-013 | FEAT-012 | Internal | Environments stored in library |
+| FEAT-014 | FEAT-005 | Internal | Workflow enforcement for execution engine |
+| FEAT-014 | FEAT-012 | Internal | Agent prompts stored in library |
 
 ## Feature Categories
 
@@ -69,6 +72,7 @@ Group features by type or domain:
 
 ### Developer Experience
 - FEAT-013: Development Environment Assets
+- FEAT-014: Agent-Based Workflow Enforcement
 
 ### Authentication & Security
 - [Future features]

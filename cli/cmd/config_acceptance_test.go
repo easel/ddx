@@ -12,6 +12,7 @@ import (
 )
 
 // Helper function to create a fresh root command for tests
+// DEPRECATED: Use NewTestRootCommand(t) instead for proper test isolation
 func getConfigTestRootCommand() *cobra.Command {
 	factory := NewCommandFactory("/tmp")
 	return factory.NewRootCommand()
@@ -301,8 +302,6 @@ library:
 	t.Run("configuration_validation_command", func(t *testing.T) {
 		// Test the --validate flag functionality
 
-		//	// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
-
 		// Create valid config
 		validConfig := `version: "2.0"
 library:
@@ -317,7 +316,8 @@ persona_bindings:
 		env := NewTestEnvironment(t)
 		env.CreateConfig(validConfig)
 
-		rootCmd := getConfigTestRootCommand()
+		factory := NewTestRootCommandWithDir(env.Dir)
+		rootCmd := factory.NewRootCommand()
 		output, err := executeCommand(rootCmd, "config", "--validate")
 
 		require.NoError(t, err, "Valid config should pass validation")

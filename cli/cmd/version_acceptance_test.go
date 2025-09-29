@@ -259,3 +259,114 @@ func TestAcceptance_US008_CheckDDxVersion(t *testing.T) {
 		assert.GreaterOrEqual(t, dotCount, 1, "Should have at least major.minor versioning")
 	})
 }
+
+// TestAcceptance_US043_AutomaticUpdateNotifications tests US-043: Automatic Update Notifications
+func TestAcceptance_US043_AutomaticUpdateNotifications(t *testing.T) {
+
+	t.Run("automatic_check_runs_once_per_24_hours", func(t *testing.T) {
+		// AC: Given I run any ddx command, when more than 24 hours have passed since last check,
+		//     then the system checks for updates in the background
+		t.Skip("US-043 not yet implemented - test documents requirement")
+
+		// Test implementation will:
+		// 1. Clear cache
+		// 2. Run command (check should happen)
+		// 3. Verify cache created with recent timestamp
+		// 4. Run command again immediately (check should NOT happen)
+		// 5. Modify cache timestamp to >24h ago
+		// 6. Run command (check should happen again)
+	})
+
+	t.Run("notification_displays_after_command", func(t *testing.T) {
+		// AC: Given an update is available, when my command completes,
+		//     then a notification displays
+		t.Skip("US-043 not yet implemented - test documents requirement")
+
+		// Test implementation will:
+		// 1. Mock scenario where update is available
+		// 2. Run any command
+		// 3. Verify output contains: "⬆️  Update available: vX.Y.Z (run 'ddx upgrade' to install)"
+	})
+
+	t.Run("silent_failure_on_network_error", func(t *testing.T) {
+		// AC: Given the update check fails, when network is unavailable,
+		//     then the failure is silent and doesn't disrupt my workflow
+		t.Skip("US-043 not yet implemented - test documents requirement")
+
+		// Test implementation will:
+		// 1. Mock network unavailable scenario
+		// 2. Run command
+		// 3. Verify command succeeds
+		// 4. Verify no error messages in output
+	})
+
+	t.Run("disable_via_env_var", func(t *testing.T) {
+		// AC: Given I set DDX_DISABLE_UPDATE_CHECK=1, when I run any command,
+		//     then no update check is performed
+		t.Skip("US-043 not yet implemented - test documents requirement")
+
+		// Test implementation will:
+		// 1. Set DDX_DISABLE_UPDATE_CHECK=1
+		// 2. Clear cache
+		// 3. Run command
+		// 4. Verify no cache file created
+		// 5. Verify no network request made (via mock)
+	})
+
+	t.Run("disable_via_config", func(t *testing.T) {
+		// AC: Given I configure update_check.enabled: false, when I run any command,
+		//     then no update check is performed
+		t.Skip("US-043 not yet implemented - test documents requirement")
+
+		// Test implementation will:
+		// 1. Create config with update_check.enabled: false
+		// 2. Clear cache
+		// 3. Run command
+		// 4. Verify no cache file created
+		// 5. Verify no network request made (via mock)
+	})
+
+	t.Run("cache_prevents_excessive_checks", func(t *testing.T) {
+		// AC: Given I checked for updates recently, when I run another command within 24 hours,
+		//     then the cached result is used (no network request)
+		t.Skip("US-043 not yet implemented - test documents requirement")
+
+		// Test implementation will:
+		// 1. Create cache file with recent timestamp
+		// 2. Run command with network mock that would fail if called
+		// 3. Verify command succeeds (cache was used, no network call)
+	})
+
+	t.Run("performance_overhead_acceptable", func(t *testing.T) {
+		// AC: Given an update check runs, when I measure command performance,
+		//     then overhead is less than 10ms
+		t.Skip("US-043 not yet implemented - test documents requirement")
+
+		// Test implementation will:
+		// 1. Benchmark command execution without update check
+		// 2. Benchmark command execution with update check (cached)
+		// 3. Verify difference is <10ms
+	})
+
+	t.Run("notification_format_correct", func(t *testing.T) {
+		// AC: Update notification should have specific format
+		t.Skip("US-043 not yet implemented - test documents requirement")
+
+		// Test implementation will:
+		// 1. Mock update available scenario
+		// 2. Run command
+		// 3. Verify output matches: "\n⬆️  Update available: vX.Y.Z (run 'ddx upgrade' to install)\n"
+		// 4. Verify emoji renders correctly
+	})
+
+	t.Run("cross_platform_cache_location", func(t *testing.T) {
+		// AC: Cache should be stored in platform-appropriate location
+		t.Skip("US-043 not yet implemented - test documents requirement")
+
+		// Test implementation will:
+		// 1. Run command
+		// 2. Verify cache created at correct location for OS
+		// 3. Linux/Mac: ~/.cache/ddx/
+		// 4. Windows: appropriate AppData location
+	})
+}
