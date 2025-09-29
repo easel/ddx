@@ -28,10 +28,13 @@ func TestAcceptance_US007_ConfigureDDxSettings(t *testing.T) {
 
 		// Create a basic .ddx/config.yaml config file using DDx structure
 		config := `version: "2.0"
-repository:
-  url: "https://github.com/test/repo"
-  branch: "main"
-variables:
+library:
+  path: "./library"
+  repository:
+    url: "https://github.com/test/repo"
+    branch: "main"
+    subtree: "library"
+persona_bindings:
   author: "Test User"
   email: "test@example.com"
 `
@@ -61,7 +64,7 @@ variables:
 
 		// Create initial config using DDx structure
 		config := `version: "2.0"
-variables:
+persona_bindings:
   author: "Old User"
 `
 		ddxDir := filepath.Join(tempDir, ".ddx")
@@ -72,17 +75,17 @@ variables:
 		factory := NewCommandFactory(tempDir)
 		rootCmd := factory.NewRootCommand()
 
-		// Set a new value using variables namespace
-		output, err := executeCommand(rootCmd, "config", "set", "variables.author", "New User")
+		// Set a new value using library namespace
+		output, err := executeCommand(rootCmd, "config", "set", "library.path", "./new-library")
 		require.NoError(t, err, "Config set should work")
-		assert.Contains(t, output, "New User", "Should confirm the new value")
-		assert.Contains(t, output, "author", "Should mention the key being set")
+		assert.Contains(t, output, "./new-library", "Should confirm the new value")
+		assert.Contains(t, output, "library.path", "Should mention the key being set")
 
 		// Verify the value was actually set
 		getCmd := factory.NewRootCommand()
-		getOutput, err := executeCommand(getCmd, "config", "get", "variables.author")
+		getOutput, err := executeCommand(getCmd, "config", "get", "library.path")
 		require.NoError(t, err, "Config get should work")
-		assert.Contains(t, getOutput, "New User", "Should retrieve the updated value")
+		assert.Contains(t, getOutput, "./new-library", "Should retrieve the updated value")
 	})
 
 	t.Run("get_specific_configuration_value", func(t *testing.T) {
@@ -91,9 +94,13 @@ variables:
 		tempDir := t.TempDir()
 
 		config := `version: "2.0"
-repository:
-  url: "https://github.com/specific/repo"
-variables:
+library:
+  path: "./library"
+  repository:
+    url: "https://github.com/specific/repo"
+    branch: "main"
+    subtree: "library"
+persona_bindings:
   author: "Specific User"
 `
 		ddxDir := filepath.Join(tempDir, ".ddx")
@@ -104,14 +111,14 @@ variables:
 		factory := NewCommandFactory(tempDir)
 		rootCmd := factory.NewRootCommand()
 
-		// Get author using variables namespace
-		output, err := executeCommand(rootCmd, "config", "get", "variables.author")
-		require.NoError(t, err, "Config get author should work")
-		assert.Contains(t, output, "Specific User", "Should show author value")
+		// Get repository URL using library namespace
+		output, err := executeCommand(rootCmd, "config", "get", "library.repository.url")
+		require.NoError(t, err, "Config get repository URL should work")
+		assert.Contains(t, output, "https://github.com/specific/repo", "Should show repository URL")
 
 		// Get nested value
 		repoCmd := factory.NewRootCommand()
-		repoOutput, err := executeCommand(repoCmd, "config", "get", "repository.url")
+		repoOutput, err := executeCommand(repoCmd, "config", "get", "library.repository.url")
 		require.NoError(t, err, "Config get nested value should work")
 		assert.Contains(t, repoOutput, "https://github.com/specific/repo", "Should show repository URL")
 	})
@@ -132,7 +139,7 @@ repository:
   url: "https://github.com/easel/ddx"
   branch: "main"
   subtree_prefix: "library"
-variables:
+persona_bindings:
   author: "Global User"
   email: "global@example.com"
 `
@@ -144,7 +151,7 @@ variables:
 		localConfig := `version: "2.0"
 repository:
   url: "https://github.com/project/repo"
-variables:
+persona_bindings:
   author: "Project User"
 `
 		localDdxDir := filepath.Join(projectDir, ".ddx")
@@ -169,7 +176,7 @@ variables:
 		//	// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
 
 		config := `version: "2.0"
-variables:
+persona_bindings:
   author: "Config User"
 `
 		env := NewTestEnvironment(t)
@@ -204,11 +211,11 @@ variables:
 		rootCmd := getConfigTestRootCommand()
 
 		// Try to set an invalid value for a type-checked field
-		output, err := executeCommand(rootCmd, "config", "set", "version", "invalid-version-format")
+		output, err := executeCommand(rootCmd, "config", "set", "library.repository.url", "invalid-url-format")
 
 		if err != nil {
 			// Validation is working
-			assert.Error(t, err, "Should reject invalid version format")
+			assert.Error(t, err, "Should reject invalid URL format")
 			assert.Contains(t, strings.ToLower(output), "invalid", "Should explain validation error")
 		} else {
 			// Test validates that some validation occurs
@@ -292,10 +299,14 @@ repository:
 
 		// Create valid config
 		validConfig := `version: "2.0"
-author: "Valid User"
-repository:
-  url: "https://github.com/valid/repo"
-  branch: "main"
+library:
+  path: "./library"
+  repository:
+    url: "https://github.com/valid/repo"
+    branch: "main"
+    subtree: "library"
+persona_bindings:
+  author: "Valid User"
 `
 		env := NewTestEnvironment(t)
 		env.CreateConfig(validConfig)

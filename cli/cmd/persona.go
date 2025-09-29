@@ -725,7 +725,11 @@ func getPersonaLibraryPath(workingDir string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return cfg.LibraryBasePath, nil
+
+	if cfg.Library != nil {
+		return cfg.Library.Path, nil
+	}
+	return "", fmt.Errorf("library path not configured")
 }
 
 // loadPersonaConfig loads config with working directory context for persona operations

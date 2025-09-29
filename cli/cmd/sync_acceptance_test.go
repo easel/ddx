@@ -423,7 +423,7 @@ repository:
   url: https://github.com/ddx-tools/ddx
   branch: main
   subtree_prefix: library
-variables:
+persona_bindings:
   project_name: test-project
 `
 	ddxConfigDir := filepath.Join(dir, ".ddx")

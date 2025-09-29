@@ -546,7 +546,7 @@ repository:
   url: "https://github.com/easel/ddx"
   branch: "main"
   subtree_prefix: "library"
-variables: {}
+persona_bindings: {}
 persona_bindings:
   code-reviewer: strict-reviewer
   test-engineer: tdd-engineer`
@@ -643,7 +643,7 @@ repository:
   url: "https://github.com/test/repo"
   branch: "main"
   subtree_prefix: "library"
-variables: {}
+persona_bindings: {}
 persona_bindings:
   code-reviewer: strict-reviewer`, strconv.Quote(libraryDir))
 				ddxDir := filepath.Join(workDir, ".ddx")
@@ -789,7 +789,7 @@ repository:
   url: "https://github.com/test/repo"
   branch: "main"
   subtree_prefix: "library"
-variables: {}
+persona_bindings: {}
 persona_bindings:
   code-reviewer: strict-reviewer
   test-engineer: tdd-engineer

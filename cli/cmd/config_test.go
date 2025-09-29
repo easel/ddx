@@ -31,7 +31,7 @@ func TestConfigCommand(t *testing.T) {
 repository:
   url: "https://github.com/test/repo"
   branch: "main"
-variables:
+persona_bindings:
   project_name: "test-project"
   port: "8080"
 `
@@ -58,7 +58,7 @@ repository:
   url: "https://github.com/test/repo"
   branch: "main"
   subtree_prefix: "library"
-variables:
+persona_bindings:
   author: "Test User"
 `
 				ddxDir := filepath.Join(workDir, ".ddx")
@@ -78,7 +78,7 @@ variables:
 				workDir := t.TempDir()
 
 				config := `version: "1.0"
-variables:
+persona_bindings:
   existing: "value"
 `
 				ddxDir := filepath.Join(workDir, ".ddx")
@@ -213,7 +213,7 @@ repository:
   url: "https://github.com/test/repo"
   branch: "main"
   subtree_prefix: "library"
-variables:
+persona_bindings:
   author: "Test User"
   email: "test@example.com"
   project_name: "test"

@@ -15,22 +15,22 @@ func TestDefaultConfig_Basic(t *testing.T) {
 	t.Parallel()
 	// Test the raw DefaultConfig, not a loaded one
 	config := &Config{
-		Version:         "2.0",
-		LibraryBasePath: "./library",
-		Repository: &NewRepositoryConfig{
-			URL:           "https://github.com/easel/ddx",
-			Branch:        "main",
-			SubtreePrefix: "library",
+		Version: "2.0",
+		Library: &LibraryConfig{
+			Path: ".ddx/library",
+			Repository: &RepositoryConfig{
+				URL:    "https://github.com/easel/ddx-library",
+				Branch: "main",
+			},
 		},
-		Variables: make(map[string]string),
+		PersonaBindings: make(map[string]string),
 	}
 
 	assert.Equal(t, "2.0", config.Version)
-	assert.Equal(t, "./library", config.LibraryBasePath)
-	assert.Equal(t, "https://github.com/easel/ddx", config.Repository.URL)
-	assert.Equal(t, "main", config.Repository.Branch)
-	assert.Equal(t, "library", config.Repository.SubtreePrefix)
-	assert.Empty(t, config.Variables)
+	assert.Equal(t, ".ddx/library", config.Library.Path)
+	assert.Equal(t, "https://github.com/easel/ddx-library", config.Library.Repository.URL)
+	assert.Equal(t, "main", config.Library.Repository.Branch)
+	assert.Empty(t, config.PersonaBindings)
 }
 
 // TestLoadConfig_DefaultOnly tests loading when no config files exist
@@ -48,9 +48,7 @@ func TestLoadConfig_DefaultOnly_Basic(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, config)
 	assert.Equal(t, DefaultConfig.Version, config.Version)
-	assert.Equal(t, DefaultConfig.Repository.URL, config.Repository.URL)
-	// Check that project_name was set from directory
-	assert.NotEmpty(t, config.Variables["project_name"])
+	assert.Equal(t, DefaultConfig.Library.Repository.URL, config.Library.Repository.URL)
 }
 
 // TestLoadConfig_LocalConfig tests loading with local .ddx.yml
@@ -59,15 +57,16 @@ func TestLoadConfig_LocalConfig_Basic(t *testing.T) {
 
 	// Create local config
 	localConfig := &Config{
-		Version:         "2.0",
-		LibraryBasePath: "./custom-library",
-		Repository: &NewRepositoryConfig{
-			URL:           "https://github.com/custom/repo",
-			Branch:        "develop",
-			SubtreePrefix: "library",
+		Version: "2.0",
+		Library: &LibraryConfig{
+			Path: "./custom-library",
+			Repository: &RepositoryConfig{
+				URL:    "https://github.com/custom/repo",
+				Branch: "develop",
+			},
 		},
-		Variables: map[string]string{
-			"project_name": "test-project",
+		PersonaBindings: map[string]string{
+			"test-role": "test-persona",
 		},
 	}
 
@@ -84,9 +83,9 @@ func TestLoadConfig_LocalConfig_Basic(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, "2.0", config.Version)
-	assert.Equal(t, "https://github.com/custom/repo", config.Repository.URL)
-	assert.Equal(t, "develop", config.Repository.Branch)
-	assert.Contains(t, config.Variables, "project_name")
+	assert.Equal(t, "https://github.com/custom/repo", config.Library.Repository.URL)
+	assert.Equal(t, "develop", config.Library.Repository.Branch)
+	assert.Contains(t, config.PersonaBindings, "test-role")
 }
 
 // TestLoadLocal tests LoadLocal function
@@ -95,14 +94,15 @@ func TestLoadLocal_Basic(t *testing.T) {
 
 	// Create local config
 	localConfig := &Config{
-		Version:         "1.5",
-		LibraryBasePath: "./library",
-		Repository: &NewRepositoryConfig{
-			URL:           "https://github.com/local/repo",
-			Branch:        "feature",
-			SubtreePrefix: "library",
+		Version: "1.5",
+		Library: &LibraryConfig{
+			Path: "./library",
+			Repository: &RepositoryConfig{
+				URL:    "https://github.com/local/repo",
+				Branch: "feature",
+			},
 		},
-		Variables: map[string]string{
+		PersonaBindings: map[string]string{
 			"test_var": "test_value",
 		},
 	}
@@ -120,8 +120,8 @@ func TestLoadLocal_Basic(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, "1.5", config.Version)
-	assert.Equal(t, "https://github.com/local/repo", config.Repository.URL)
-	assert.Equal(t, "test_value", config.Variables["test_var"])
+	assert.Equal(t, "https://github.com/local/repo", config.Library.Repository.URL)
+	assert.Equal(t, "test_value", config.PersonaBindings["test_var"])
 }
 
 // TestSaveLocal tests SaveLocal function
@@ -130,12 +130,13 @@ func TestSaveLocal_Basic(t *testing.T) {
 
 	config := &Config{
 		Version: "1.0",
-		Repository: &NewRepositoryConfig{
-			URL:           "https://github.com/test/repo",
-			Branch:        "main",
-			SubtreePrefix: "library",
+		Library: &LibraryConfig{
+			Repository: &RepositoryConfig{
+				URL:    "https://github.com/test/repo",
+				Branch: "main",
+			},
 		},
-		Variables: map[string]string{
+		PersonaBindings: map[string]string{
 			"key1": "value1",
 		},
 	}
@@ -157,8 +158,8 @@ func TestSaveLocal_Basic(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, config.Version, loadedConfig.Version)
-	assert.Equal(t, config.Repository.URL, loadedConfig.Repository.URL)
-	assert.Equal(t, "value1", loadedConfig.Variables["key1"])
+	assert.Equal(t, config.Library.Repository.URL, loadedConfig.Library.Repository.URL)
+	assert.Equal(t, "value1", loadedConfig.PersonaBindings["key1"])
 }
 
 // TestReplaceVariables tests the ReplaceVariables method

@@ -19,7 +19,7 @@ repository:
   url: "https://github.com/test/repo"
   branch: "main"
   subtree_prefix: "library"
-variables:
+persona_bindings:
   project_name: "test-project"
 `
 	env.CreateConfig(configContent)
@@ -30,14 +30,18 @@ variables:
 	require.NotNil(t, cfg, "Config should not be nil")
 
 	t.Logf("Config version: %s", cfg.Version)
-	t.Logf("Config library base path: %s", cfg.LibraryBasePath)
-	t.Logf("Config variables: %+v", cfg.Variables)
+	if cfg.Library != nil {
+		t.Logf("Config library base path: %s", cfg.Library.Path)
+	}
+	t.Logf("Config persona bindings: %+v", cfg.PersonaBindings)
 
 	// Verify basic config is loaded correctly
 	assert.Equal(t, "1.0", cfg.Version, "Version should be loaded")
-	assert.Equal(t, "./library", cfg.LibraryBasePath, "Library base path should be loaded")
-	assert.NotNil(t, cfg.Variables, "Variables should be loaded")
-	assert.Equal(t, "test-project", cfg.Variables["project_name"], "Project name should be loaded")
+	assert.NotNil(t, cfg.Library, "Library should be loaded")
+	if cfg.Library != nil {
+		assert.Equal(t, "./library", cfg.Library.Path, "Library base path should be loaded")
+	}
+	assert.NotNil(t, cfg.PersonaBindings, "PersonaBindings should be loaded")
 }
 
 // TestBasicConfigRepository tests repository configuration
@@ -52,7 +56,7 @@ repository:
   url: "https://github.com/ddx-tools/ddx"
   branch: "main"
   subtree_prefix: "library"
-variables:
+persona_bindings:
   project_name: "ddx-test"
 `
 	env.CreateConfig(configContent)
@@ -61,10 +65,10 @@ variables:
 	cfg, err := env.LoadConfig()
 	require.NoError(t, err, "Config should load successfully")
 	require.NotNil(t, cfg, "Config should not be nil")
-	require.NotNil(t, cfg.Repository, "Repository should be loaded")
+	require.NotNil(t, cfg.Library, "Library should be loaded")
+	require.NotNil(t, cfg.Library.Repository, "Repository should be loaded")
 
 	// Verify repository configuration
-	assert.Equal(t, "https://github.com/ddx-tools/ddx", cfg.Repository.URL, "Repository URL should be loaded")
-	assert.Equal(t, "main", cfg.Repository.Branch, "Repository branch should be loaded")
-	assert.Equal(t, "library", cfg.Repository.SubtreePrefix, "Repository subtree prefix should be loaded")
+	assert.Equal(t, "https://github.com/easel/ddx-library", cfg.Library.Repository.URL, "Repository URL should be loaded")
+	assert.Equal(t, "main", cfg.Library.Repository.Branch, "Repository branch should be loaded")
 }

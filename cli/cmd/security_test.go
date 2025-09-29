@@ -103,7 +103,7 @@ func TestSecurity_SensitiveDataHandling(t *testing.T) {
 
 				// Create config with potential sensitive data
 				config := `version: "1.0"
-variables:
+persona_bindings:
   api_key: "sk-1234567890abcdef"
   database_password: "supersecret123"`
 				require.NoError(t, os.WriteFile(

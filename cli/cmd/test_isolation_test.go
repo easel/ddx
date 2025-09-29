@@ -88,21 +88,25 @@ func TestNoContamination(t *testing.T) {
 
 		// Verify expected default values
 		assert.Equal(t, "1.0", cfg.Version, "Version should be set")
-		assert.Equal(t, "./library", cfg.LibraryBasePath, "Library base path should be set")
-		assert.NotNil(t, cfg.Repository, "Repository should be set")
-		assert.NotNil(t, cfg.Variables, "Variables should be set")
+		assert.NotNil(t, cfg.Library, "Library should be set")
+		if cfg.Library != nil {
+			assert.Equal(t, "./library", cfg.Library.Path, "Library base path should be set")
+			assert.NotNil(t, cfg.Library.Repository, "Repository should be set")
+		}
+		assert.NotNil(t, cfg.PersonaBindings, "PersonaBindings should be set")
 	})
 
 	t.Run("test_environment_supports_custom_config", func(t *testing.T) {
 		env := NewTestEnvironment(t)
 
 		customConfig := `version: "1.0"
-library_base_path: "./custom-library"
-repository:
-  url: "https://github.com/custom/repo"
-  branch: "develop"
-  subtree_prefix: "lib"
-variables:
+library:
+  path: "./custom-library"
+  repository:
+    url: "https://github.com/custom/repo"
+    branch: "develop"
+    subtree: "lib"
+persona_bindings:
   project_name: "custom-project"
   custom_var: "custom-value"
 `
@@ -112,10 +116,16 @@ variables:
 		cfg, err := env.LoadConfig()
 		require.NoError(t, err, "Should be able to load custom config")
 
-		assert.Equal(t, "./custom-library", cfg.LibraryBasePath, "Custom library path should be set")
-		assert.Equal(t, "develop", cfg.Repository.Branch, "Custom branch should be set")
-		assert.Equal(t, "custom-project", cfg.Variables["project_name"], "Custom variable should be set")
-		assert.Equal(t, "custom-value", cfg.Variables["custom_var"], "Custom variable should be set")
+		assert.NotNil(t, cfg.Library, "Library should be loaded")
+		if cfg.Library != nil {
+			assert.Equal(t, "./custom-library", cfg.Library.Path, "Custom library path should be set")
+			assert.NotNil(t, cfg.Library.Repository, "Repository should be loaded")
+			if cfg.Library.Repository != nil {
+				assert.Equal(t, "develop", cfg.Library.Repository.Branch, "Custom branch should be set")
+			}
+		}
+		assert.Equal(t, "custom-project", cfg.PersonaBindings["project_name"], "Custom binding should be set")
+		assert.Equal(t, "custom-value", cfg.PersonaBindings["custom_var"], "Custom binding should be set")
 	})
 }
 

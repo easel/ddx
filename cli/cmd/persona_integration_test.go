@@ -38,7 +38,7 @@ func TestPersonaIntegration_FullWorkflow(t *testing.T) {
 repository:
   url: "https://github.com/test/project"
   branch: "main"
-variables:
+persona_bindings:
   project_name: "test-project"`
 
 	ddxDir := filepath.Join(workDir, ".ddx")
@@ -461,7 +461,7 @@ repository:
   url: "https://github.com/easel/ddx"
   branch: "main"
   subtree_prefix: "library"
-variables:
+persona_bindings:
   project_name: "test"`
 				env.CreateConfig(config)
 			},

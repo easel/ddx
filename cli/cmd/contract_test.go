@@ -82,7 +82,7 @@ func TestInitCommand_Contract(t *testing.T) {
 				require.NoError(t, os.MkdirAll(ddxDir, 0755))
 				require.NoError(t, os.WriteFile(
 					filepath.Join(ddxDir, "config.yaml"),
-					[]byte("version: \"1.0\"\nlibrary_base_path: \"./library\"\nrepository:\n  url: \"https://github.com/easel/ddx\"\n  branch: \"main\"\n  subtree_prefix: \"library\"\nvariables: {}"),
+					[]byte("version: \"1.0\"\nlibrary_base_path: \"./library\"\nrepository:\n  url: \"https://github.com/easel/ddx\"\n  branch: \"main\"\n  subtree_prefix: \"library\"\npersona_bindings: {}"),
 					0644,
 				))
 				return workDir
@@ -115,7 +115,7 @@ func TestInitCommand_Contract(t *testing.T) {
 				require.NoError(t, os.MkdirAll(ddxDir, 0755))
 				require.NoError(t, os.WriteFile(
 					filepath.Join(ddxDir, "config.yaml"),
-					[]byte("version: \"0.9\"\nlibrary_base_path: \"./library\"\nrepository:\n  url: \"https://github.com/easel/ddx\"\n  branch: \"main\"\n  subtree_prefix: \"library\"\nvariables: {}"),
+					[]byte("version: \"0.9\"\nlibrary_base_path: \"./library\"\nrepository:\n  url: \"https://github.com/easel/ddx\"\n  branch: \"main\"\n  subtree_prefix: \"library\"\npersona_bindings: {}"),
 					0644,
 				))
 				return workDir
@@ -205,7 +205,7 @@ repository:
   url: "https://github.com/easel/ddx"
   branch: "main"
   subtree_prefix: "library"
-variables: {}`)
+persona_bindings: {}`)
 				ddxDir := filepath.Join(testDir, ".ddx")
 				require.NoError(t, os.MkdirAll(ddxDir, 0755))
 				require.NoError(t, os.WriteFile(filepath.Join(ddxDir, "config.yaml"), config, 0644))
@@ -242,7 +242,7 @@ repository:
   url: "https://github.com/easel/ddx"
   branch: "main"
   subtree_prefix: "library"
-variables: {}`)
+persona_bindings: {}`)
 				ddxDir := filepath.Join(testDir, ".ddx")
 				require.NoError(t, os.MkdirAll(ddxDir, 0755))
 				require.NoError(t, os.WriteFile(filepath.Join(ddxDir, "config.yaml"), config, 0644))
@@ -324,7 +324,7 @@ func TestConfigCommand_Contract(t *testing.T) {
 				config := `version: "1.0"
 repository:
   url: "https://github.com/test/repo"
-variables:
+persona_bindings:
   test: "value"`
 				ddxDir := filepath.Join(workDir, ".ddx")
 				require.NoError(t, os.MkdirAll(ddxDir, 0755))

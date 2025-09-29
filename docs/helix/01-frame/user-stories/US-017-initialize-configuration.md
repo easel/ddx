@@ -13,17 +13,16 @@
 **So that** I can customize DDX behavior for my specific needs
 
 ## Description
-This story covers the initial setup of DDX configuration in a project. When a developer starts using DDX, they need a way to create the foundational configuration file (`.ddx.yml`) that will control how DDX operates within their project. The initialization process should be user-friendly, intelligent about detecting project context, and create a well-documented configuration that serves as a starting point for further customization.
+This story covers the initial setup of DDX configuration in a project. When a developer starts using DDX, they need a way to create the foundational configuration file (`.ddx/config.yaml`) that will control how DDX operates within their project. The initialization process should be straightforward, create the new library structure, and establish git subtree synchronization with the DDX library.
 
 ## Acceptance Criteria
-- [ ] **Given** a project without DDX, **when** I run `ddx init`, **then** `.ddx.yml` is created with sensible defaults
-- [ ] **Given** initialization process, **when** prompted, **then** interactive prompts guide configuration setup
-- [ ] **Given** a project type, **when** detected, **then** appropriate configuration is suggested
-- [ ] **Given** configuration values, **when** entered, **then** validation occurs during creation
-- [ ] **Given** a new config, **when** created, **then** example variable definitions are included
-- [ ] **Given** configuration file, **when** generated, **then** available options are documented in comments
-- [ ] **Given** `--template` flag, **when** provided, **then** specified template is used for initialization
-- [ ] **Given** existing configuration, **when** present, **then** backup is created before overwriting
+- [ ] **Given** a project without DDX, **when** I run `ddx init`, **then** `.ddx/config.yaml` is created with default library configuration
+- [ ] **Given** initialization process, **when** executed, **then** no interactive prompts are required
+- [ ] **Given** configuration values, **when** created, **then** validation occurs using JSON schema
+- [ ] **Given** a new config, **when** created, **then** library structure is properly configured
+- [ ] **Given** configuration file, **when** generated, **then** it uses the new nested library structure
+- [ ] **Given** existing configuration, **when** present and `--force` used, **then** backup is created before overwriting
+- [ ] **Given** git repository, **when** initializing, **then** git subtree is set up for library synchronization
 
 ## Business Value
 - Reduces onboarding time for new DDX users

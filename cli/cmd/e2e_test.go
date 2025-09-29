@@ -170,7 +170,7 @@ repository:
   url: "https://github.com/easel/ddx"
   branch: "main"
   subtree_prefix: "library"
-variables:
+persona_bindings:
   project_name: "MyProject"
   version: "1.0.0"
   port: "8080"`
@@ -288,7 +288,7 @@ repository:
   url: "https://github.com/ddx-tools/ddx"
   branch: "main"
   subtree_prefix: "library"
-variables: {}`
+persona_bindings: {}`
 	ddxConfigDir := filepath.Join(workspace, ".ddx")
 	require.NoError(t, os.MkdirAll(ddxConfigDir, 0755))
 	require.NoError(t, os.WriteFile(filepath.Join(ddxConfigDir, "config.yaml"), []byte(config), 0644))
@@ -352,7 +352,7 @@ repository:
   url: "https://github.com/ddx-tools/ddx"
   branch: "main"
   subtree_prefix: "library"
-variables: {}
+persona_bindings: {}
 sync:
   last_update: "2024-01-01T00:00:00Z"
   upstream_commit: "abc123"`

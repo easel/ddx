@@ -22,12 +22,12 @@ func NewPersonaLoader(workingDir string) PersonaLoader {
 	// Use the config system to get the library path, then append personas
 	cfg, err := config.LoadWithWorkingDir(workingDir)
 	var personasDir string
-	if err != nil || cfg.LibraryBasePath == "" {
+	if err != nil || cfg.Library == nil || cfg.Library.Path == "" {
 		// Fallback to a reasonable default if there's an error
 		homeDir, _ := os.UserHomeDir()
 		personasDir = filepath.Join(homeDir, ".ddx", "library", "personas")
 	} else {
-		personasDir = filepath.Join(cfg.LibraryBasePath, "personas")
+		personasDir = filepath.Join(cfg.Library.Path, "personas")
 	}
 
 	return &PersonaLoaderImpl{

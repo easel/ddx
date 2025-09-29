@@ -119,9 +119,11 @@ func TestBusinessLogicIndependence(t *testing.T) {
 
 	// Test initializeSynchronizationPure - pure function
 	cfg := &config.Config{
-		Repository: &config.NewRepositoryConfig{
-			URL:    "",
-			Branch: "",
+		Library: &config.LibraryConfig{
+			Repository: &config.RepositoryConfig{
+				URL:    "",
+				Branch: "",
+			},
 		},
 	}
 	err = initializeSynchronizationPure(cfg)

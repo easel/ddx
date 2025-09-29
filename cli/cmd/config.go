@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/AlecAivazis/survey/v2"
 	"github.com/easel/ddx/internal/config"
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -198,14 +197,14 @@ func configSet(workingDir string, key, value string, global bool) error {
 			// If file doesn't exist in working dir, create a new config
 			if os.IsNotExist(err) {
 				cfg = &config.Config{
-					Version:         "1.0",
-					LibraryBasePath: "./library",
-					Repository: &config.NewRepositoryConfig{
-						URL:           "https://github.com/easel/ddx",
-						Branch:        "main",
-						SubtreePrefix: "library",
+					Version: "1.0",
+					Library: &config.LibraryConfig{
+						Path: ".ddx/library",
+						Repository: &config.RepositoryConfig{
+							URL:    "https://github.com/easel/ddx-library",
+							Branch: "main",
+						},
 					},
-					Variables: make(map[string]string),
 				}
 			} else {
 				return fmt.Errorf("failed to load configuration from %s: %w", workingDir, err)
@@ -257,32 +256,7 @@ func configWizard() (*config.Config, error) {
 	// Start with default config
 	cfg := *config.DefaultConfig
 
-	// Ask configuration questions
-	questions := []*survey.Question{
-		{
-			Name: "ai_model",
-			Prompt: &survey.Select{
-				Message: "Preferred AI model:",
-				Options: []string{"claude-3-opus", "claude-3-sonnet", "gpt-4", "gpt-3.5-turbo"},
-				Default: cfg.Variables["ai_model"],
-			},
-		},
-		// Note: Includes field removed in simplified config format
-	}
-
-	answers := struct {
-		AIModel  string   `survey:"ai_model"`
-		Includes []string `survey:"includes"`
-	}{}
-
-	if err := survey.Ask(questions, &answers); err != nil {
-		return nil, err
-	}
-
-	// Update config with answers
-	cfg.Variables["ai_model"] = answers.AIModel
-	// Note: Includes field removed in simplified config format
-
+	// Return the config without interactive prompts (Variables removed)
 	return &cfg, nil
 }
 
@@ -368,112 +342,57 @@ type ConfigFileInfo struct {
 
 // extractConfigValue extracts a value from config by key
 func extractConfigValue(cfg *config.Config, key string) (string, error) {
-	// Handle nested keys
-	if strings.HasPrefix(key, "variables.") {
-		// Extract the variable name after "variables."
-		varName := strings.TrimPrefix(key, "variables.")
-		if val, ok := cfg.Variables[varName]; ok {
-			return val, nil
-		} else {
-			return "", fmt.Errorf("key not found: %s", key)
+	// Handle library configuration keys
+	switch key {
+	case "version":
+		return cfg.Version, nil
+	case "library.path":
+		if cfg.Library == nil {
+			return "", nil
 		}
-	} else if strings.HasPrefix(key, "repositories.") {
-		// Handle repositories.name.field pattern
-		parts := strings.Split(key, ".")
-		if len(parts) >= 3 {
-			// repoName := parts[1] // Not used in simplified config
-			field := strings.Join(parts[2:], ".")
-
-			if cfg.Repository == nil || cfg.Repository.URL == "" {
-				return "", nil
-			}
-
-			repo := cfg.Repository
-			switch field {
-			case "url":
-				return repo.URL, nil
-			case "branch":
-				return repo.Branch, nil
-			case "subtree_prefix":
-				return repo.SubtreePrefix, nil
-			// Note: path, remote, protocol, priority fields removed in simplified config
-			default:
-				return "", fmt.Errorf("key not found: %s", key)
-			}
-		} else {
-			return "", fmt.Errorf("key not found: %s", key)
+		return cfg.Library.Path, nil
+	case "library.repository.url":
+		if cfg.Library == nil || cfg.Library.Repository == nil {
+			return "", nil
 		}
-	} else {
-		// Handle other known keys
-		switch key {
-		case "version":
-			return cfg.Version, nil
-		case "repository.url":
-			return cfg.Repository.URL, nil
-		case "repository.branch":
-			return cfg.Repository.Branch, nil
-		case "repository.subtree_prefix":
-			return cfg.Repository.SubtreePrefix, nil
-		// Note: repository.path, remote, protocol, sync fields removed in simplified config
-		// Note: sync, auth, and proxy fields removed in simplified config format
-		default:
-			if val, ok := cfg.Variables[key]; ok {
-				return val, nil
-			} else {
-				return "", fmt.Errorf("key not found: %s", key)
-			}
+		return cfg.Library.Repository.URL, nil
+	case "library.repository.branch":
+		if cfg.Library == nil || cfg.Library.Repository == nil {
+			return "", nil
 		}
+		return cfg.Library.Repository.Branch, nil
+	default:
+		return "", fmt.Errorf("unknown configuration key: %s\nValid keys: version, library.path, library.repository.url, library.repository.branch", key)
 	}
 }
 
 // setConfigValueInStruct sets a value in the config struct by key
 func setConfigValueInStruct(cfg *config.Config, key, value string) error {
-	// Handle nested keys
-	if strings.HasPrefix(key, "variables.") {
-		// Extract the variable name after "variables."
-		varName := strings.TrimPrefix(key, "variables.")
-		if cfg.Variables == nil {
-			cfg.Variables = make(map[string]string)
+	// Handle library configuration keys
+	switch key {
+	case "library.path":
+		if cfg.Library == nil {
+			cfg.Library = &config.LibraryConfig{}
 		}
-		cfg.Variables[varName] = value
-	} else if strings.HasPrefix(key, "repositories.") {
-		// Handle repositories.name.field pattern (legacy - not fully supported in simplified config)
-		parts := strings.Split(key, ".")
-		if len(parts) >= 3 {
-			// repoName := parts[1] // Not used in simplified config
-			field := strings.Join(parts[2:], ".")
-
-			if cfg.Repository == nil {
-				cfg.Repository = &config.NewRepositoryConfig{}
-			}
-
-			switch field {
-			case "url":
-				cfg.Repository.URL = value
-			case "branch":
-				cfg.Repository.Branch = value
-			case "subtree_prefix":
-				cfg.Repository.SubtreePrefix = value
-				// Note: path, remote, protocol, priority fields removed in simplified config
-			}
+		cfg.Library.Path = value
+	case "library.repository.url":
+		if cfg.Library == nil {
+			cfg.Library = &config.LibraryConfig{}
 		}
-	} else {
-		// Handle other known keys
-		switch key {
-		case "repository.url":
-			cfg.Repository.URL = value
-		case "repository.branch":
-			cfg.Repository.Branch = value
-		case "repository.subtree_prefix":
-			cfg.Repository.SubtreePrefix = value
-		// Note: repository.path, remote, protocol, sync, auth, proxy fields removed in simplified config format
-		default:
-			// If no prefix, assume it's a variable
-			if cfg.Variables == nil {
-				cfg.Variables = make(map[string]string)
-			}
-			cfg.Variables[key] = value
+		if cfg.Library.Repository == nil {
+			cfg.Library.Repository = &config.RepositoryConfig{}
 		}
+		cfg.Library.Repository.URL = value
+	case "library.repository.branch":
+		if cfg.Library == nil {
+			cfg.Library = &config.LibraryConfig{}
+		}
+		if cfg.Library.Repository == nil {
+			cfg.Library.Repository = &config.RepositoryConfig{}
+		}
+		cfg.Library.Repository.Branch = value
+	default:
+		return fmt.Errorf("unknown configuration key: %s\nValid keys: library.path, library.repository.url, library.repository.branch", key)
 	}
 	return nil
 }
@@ -663,12 +582,7 @@ func createProfile(cmd *cobra.Command, profileName string) error {
 	// Create new profile config with inheritance
 	profileCfg := *baseCfg
 
-	// Add profile-specific marker
-	if profileCfg.Variables == nil {
-		profileCfg.Variables = make(map[string]string)
-	}
-	profileCfg.Variables["DDX_PROFILE"] = profileName
-	profileCfg.Variables["DDX_ENV"] = profileName
+	// Profile configuration ready (removed Variables for profiles)
 
 	// Marshal to YAML
 	data, err := yaml.Marshal(&profileCfg)
@@ -803,12 +717,7 @@ func copyProfile(cmd *cobra.Command, sourceProfile, destProfile string) error {
 		return fmt.Errorf("failed to load source profile: %w", err)
 	}
 
-	// Update profile variables
-	if sourceCfg.Variables == nil {
-		sourceCfg.Variables = make(map[string]string)
-	}
-	sourceCfg.Variables["DDX_PROFILE"] = destProfile
-	sourceCfg.Variables["DDX_ENV"] = destProfile
+	// Profile copy ready (removed Variables for profiles)
 
 	// Marshal to YAML
 	data, err := yaml.Marshal(sourceCfg)
@@ -922,7 +831,6 @@ func diffProfiles(cmd *cobra.Command, profileA, profileB string) error {
 	// Compare major sections
 	red := color.New(color.FgRed)
 	green := color.New(color.FgGreen)
-	yellow := color.New(color.FgYellow)
 	cyan := color.New(color.FgCyan)
 
 	cyan.Println("🔍 Differences Found:")
@@ -930,69 +838,45 @@ func diffProfiles(cmd *cobra.Command, profileA, profileB string) error {
 
 	differences := 0
 
-	// Compare repository URLs
-	if cfgA.Repository.URL != cfgB.Repository.URL {
+	// Compare library repository URLs
+	urlA := ""
+	urlB := ""
+	if cfgA.Library != nil && cfgA.Library.Repository != nil {
+		urlA = cfgA.Library.Repository.URL
+	}
+	if cfgB.Library != nil && cfgB.Library.Repository != nil {
+		urlB = cfgB.Library.Repository.URL
+	}
+	if urlA != urlB {
 		differences++
-		fmt.Fprintln(cmd.OutOrStdout(), "Repository URL:")
-		red.Fprintf(cmd.OutOrStdout(), "  - %s: %s\n", profileA, cfgA.Repository.URL)
-		green.Fprintf(cmd.OutOrStdout(), "  + %s: %s\n", profileB, cfgB.Repository.URL)
+		fmt.Fprintln(cmd.OutOrStdout(), "Library Repository URL:")
+		red.Fprintf(cmd.OutOrStdout(), "  - %s: %s\n", profileA, urlA)
+		green.Fprintf(cmd.OutOrStdout(), "  + %s: %s\n", profileB, urlB)
 		fmt.Fprintln(cmd.OutOrStdout())
 	}
 
-	// Compare repository branches
-	if cfgA.Repository.Branch != cfgB.Repository.Branch {
+	// Compare library repository branches
+	branchA := ""
+	branchB := ""
+	if cfgA.Library != nil && cfgA.Library.Repository != nil {
+		branchA = cfgA.Library.Repository.Branch
+	}
+	if cfgB.Library != nil && cfgB.Library.Repository != nil {
+		branchB = cfgB.Library.Repository.Branch
+	}
+	if branchA != branchB {
 		differences++
-		fmt.Fprintln(cmd.OutOrStdout(), "Repository Branch:")
-		red.Fprintf(cmd.OutOrStdout(), "  - %s: %s\n", profileA, cfgA.Repository.Branch)
-		green.Fprintf(cmd.OutOrStdout(), "  + %s: %s\n", profileB, cfgB.Repository.Branch)
+		fmt.Fprintln(cmd.OutOrStdout(), "Library Repository Branch:")
+		red.Fprintf(cmd.OutOrStdout(), "  - %s: %s\n", profileA, branchA)
+		green.Fprintf(cmd.OutOrStdout(), "  + %s: %s\n", profileB, branchB)
 		fmt.Fprintln(cmd.OutOrStdout())
 	}
-
-	// Compare variables
-	allVarKeys := make(map[string]bool)
-	for key := range cfgA.Variables {
-		allVarKeys[key] = true
-	}
-	for key := range cfgB.Variables {
-		allVarKeys[key] = true
-	}
-
-	varDifferences := 0
-	for varKey := range allVarKeys {
-		valueA, existsA := cfgA.Variables[varKey]
-		valueB, existsB := cfgB.Variables[varKey]
-
-		if !existsA && existsB {
-			varDifferences++
-			fmt.Fprintf(cmd.OutOrStdout(), "Variable %s:\n", varKey)
-			yellow.Fprintf(cmd.OutOrStdout(), "  - %s: (not set)\n", profileA)
-			green.Fprintf(cmd.OutOrStdout(), "  + %s: %s\n", profileB, valueB)
-			fmt.Fprintln(cmd.OutOrStdout())
-		} else if existsA && !existsB {
-			varDifferences++
-			fmt.Fprintf(cmd.OutOrStdout(), "Variable %s:\n", varKey)
-			red.Fprintf(cmd.OutOrStdout(), "  - %s: %s\n", profileA, valueA)
-			yellow.Fprintf(cmd.OutOrStdout(), "  + %s: (not set)\n", profileB)
-			fmt.Fprintln(cmd.OutOrStdout())
-		} else if existsA && existsB && valueA != valueB {
-			varDifferences++
-			fmt.Fprintf(cmd.OutOrStdout(), "Variable %s:\n", varKey)
-			red.Fprintf(cmd.OutOrStdout(), "  - %s: %s\n", profileA, valueA)
-			green.Fprintf(cmd.OutOrStdout(), "  + %s: %s\n", profileB, valueB)
-			fmt.Fprintln(cmd.OutOrStdout())
-		}
-	}
-
-	differences += varDifferences
 
 	// Summary
 	if differences == 0 {
 		green.Println("✅ Profiles are identical")
 	} else {
 		fmt.Fprintf(cmd.OutOrStdout(), "📊 Summary: %d differences found\n", differences)
-		if varDifferences > 0 {
-			fmt.Fprintf(cmd.OutOrStdout(), "  - %d variable differences\n", varDifferences)
-		}
 	}
 
 	return nil

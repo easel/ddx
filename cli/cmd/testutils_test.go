@@ -44,12 +44,13 @@ func (te *TestEnvironment) CreateConfig(content string) {
 func (te *TestEnvironment) CreateDefaultConfig() {
 	te.t.Helper()
 	content := `version: "1.0"
-library_base_path: "./library"
-repository:
-  url: "https://github.com/easel/ddx"
-  branch: "main"
-  subtree_prefix: "library"
-variables: {}
+library:
+  path: "./library"
+  repository:
+    url: "https://github.com/easel/ddx"
+    branch: "main"
+    subtree: "library"
+persona_bindings: {}
 `
 	te.CreateConfig(content)
 }

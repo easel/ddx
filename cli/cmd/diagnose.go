@@ -126,8 +126,8 @@ func checkDDxSetup(result *DiagnosticResult, workingDir string) {
 	// Check if library path exists using working directory
 	cfg, err := config.LoadWithWorkingDir(workingDir)
 	var libPath string
-	if err == nil {
-		libPath = cfg.LibraryBasePath
+	if err == nil && cfg.Library != nil {
+		libPath = cfg.Library.Path
 	}
 	result.DDx.Installed = err == nil && libPath != "" && dirExists(libPath)
 	result.DDx.Initialized = isInitialized()

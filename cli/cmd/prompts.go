@@ -26,7 +26,11 @@ func runPromptsList(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to load config: %w", err)
 	}
-	libPath := cfg.LibraryBasePath
+
+	var libPath string
+	if cfg.Library != nil {
+		libPath = cfg.Library.Path
+	}
 
 	promptsDir := filepath.Join(libPath, "prompts")
 
@@ -108,7 +112,11 @@ func runPromptsShow(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to load config: %w", err)
 	}
-	libPath := cfg.LibraryBasePath
+
+	var libPath string
+	if cfg.Library != nil {
+		libPath = cfg.Library.Path
+	}
 
 	// Try different paths for the prompt
 	possiblePaths := []string{

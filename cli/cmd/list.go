@@ -70,7 +70,11 @@ func listResources(workingDir, resourceType, filter string) (*ListResponse, erro
 	if err != nil {
 		return nil, fmt.Errorf("failed to load config: %w", err)
 	}
-	libPath := cfg.LibraryBasePath
+
+	var libPath string
+	if cfg.Library != nil {
+		libPath = cfg.Library.Path
+	}
 
 	// Resolve library path relative to working directory if it's relative
 	if !filepath.IsAbs(libPath) {

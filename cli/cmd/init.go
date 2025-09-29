@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"os/exec"
@@ -114,21 +113,15 @@ func initProject(workingDir string, opts InitOptions) (*InitResult, error) {
 	// Check if library path exists using working directory
 	cfg, err := config.LoadWithWorkingDir(workingDir)
 	libraryExists := true
-	if err != nil || cfg.LibraryBasePath == "" {
+	if err != nil || cfg.Library == nil || cfg.Library.Path == "" {
 		libraryExists = false
-	} else if _, err := os.Stat(cfg.LibraryBasePath); os.IsNotExist(err) {
+	} else if _, err := os.Stat(filepath.Join(workingDir, cfg.Library.Path)); os.IsNotExist(err) {
 		libraryExists = false
 	}
 	result.LibraryExists = libraryExists
 
-	// Detect project type and gather configuration
-	projectName := filepath.Base(workingDir)
-	projectType := detectProjectType(workingDir)
-
-	// Use directory name as project name (no interactive prompts)
-
-	// Create configuration with project-specific settings
-	localConfig := createProjectConfig(projectName, projectType)
+	// Create configuration with defaults
+	localConfig := createProjectConfig()
 
 	// Apply default values (including repository settings)
 	localConfig.ApplyDefaults()
@@ -141,7 +134,7 @@ func initProject(workingDir string, opts InitOptions) (*InitResult, error) {
 	// Check if we're in the DDx repository itself
 	if isDDxRepository(workingDir) {
 		// For DDx repo, point directly to the library directory
-		localConfig.LibraryBasePath = "../library"
+		localConfig.Library.Path = "../library"
 		result.IsDDxRepo = true
 	}
 
@@ -149,10 +142,18 @@ func initProject(workingDir string, opts InitOptions) (*InitResult, error) {
 	if libraryExists {
 		if cfg, err := config.LoadWithWorkingDir(workingDir); err == nil {
 			localConfig.Version = cfg.Version
-			// Copy variables except project_name which we set based on directory
-			for k, v := range cfg.Variables {
-				if k != "project_name" {
-					localConfig.Variables[k] = v
+			// Copy library settings if they exist
+			if cfg.Library != nil && localConfig.Library != nil {
+				if cfg.Library.Path != "" {
+					localConfig.Library.Path = cfg.Library.Path
+				}
+				if cfg.Library.Repository != nil && localConfig.Library.Repository != nil {
+					if cfg.Library.Repository.URL != "" {
+						localConfig.Library.Repository.URL = cfg.Library.Repository.URL
+					}
+					if cfg.Library.Repository.Branch != "" {
+						localConfig.Library.Repository.Branch = cfg.Library.Repository.Branch
+					}
 				}
 			}
 		}
@@ -245,12 +246,12 @@ func copyDir(src, dst string) error {
 // initializeSynchronizationPure is the pure business logic for sync setup
 func initializeSynchronizationPure(cfg *config.Config) error {
 	// Validate repository configuration
-	if cfg.Repository.URL == "" {
+	if cfg.Library == nil || cfg.Library.Repository == nil || cfg.Library.Repository.URL == "" {
 		return fmt.Errorf("repository URL not configured")
 	}
 
-	if cfg.Repository.Branch == "" {
-		cfg.Repository.Branch = "main" // Default branch
+	if cfg.Library.Repository.Branch == "" {
+		cfg.Library.Repository.Branch = "main" // Default branch
 	}
 
 	// In test mode, skip actual network validation
@@ -261,8 +262,8 @@ func initializeSynchronizationPure(cfg *config.Config) error {
 	// In real mode, validate the repository URL accessibility
 	// For now, we'll do basic URL validation and assume the repository is accessible
 	// In a full implementation, we would make an HTTP request to validate
-	if !isValidRepositoryURL(cfg.Repository.URL) {
-		return fmt.Errorf("invalid repository URL: %s", cfg.Repository.URL)
+	if !isValidRepositoryURL(cfg.Library.Repository.URL) {
+		return fmt.Errorf("invalid repository URL: %s", cfg.Library.Repository.URL)
 	}
 
 	return nil
@@ -319,30 +320,6 @@ func isValidRepositoryURL(url string) bool {
 	return strings.HasPrefix(url, "https://")
 }
 
-// detectProjectType analyzes the given directory to determine project type
-func detectProjectType(workingDir string) string {
-	// Check for common project indicators
-	if _, err := os.Stat(filepath.Join(workingDir, "package.json")); err == nil {
-		return "javascript"
-	}
-	if _, err := os.Stat(filepath.Join(workingDir, "go.mod")); err == nil {
-		return "go"
-	}
-	if _, err := os.Stat(filepath.Join(workingDir, "requirements.txt")); err == nil || fileExistsInDir(workingDir, "pyproject.toml") {
-		return "python"
-	}
-	if _, err := os.Stat(filepath.Join(workingDir, "Cargo.toml")); err == nil {
-		return "rust"
-	}
-	if _, err := os.Stat(filepath.Join(workingDir, "pom.xml")); err == nil || fileExistsInDir(workingDir, "build.gradle") {
-		return "java"
-	}
-	if _, err := os.Stat(filepath.Join(workingDir, ".git")); err == nil {
-		return "git"
-	}
-	return "generic"
-}
-
 // fileExistsInDir checks if a file exists in a specific directory
 func fileExistsInDir(dir, filename string) bool {
 	_, err := os.Stat(filepath.Join(dir, filename))
@@ -351,54 +328,10 @@ func fileExistsInDir(dir, filename string) bool {
 
 // fileExists is already defined in diagnose.go
 
-// isInteractive checks if we're running in an interactive terminal
-func isInteractive() bool {
-	// Basic check - this could be enhanced with proper terminal detection
-	return os.Getenv("TERM") != "" && os.Getenv("CI") == ""
-}
-
-// promptForProjectNamePure is the pure business logic for project name prompting
-func promptForProjectNamePure(defaultName string) string {
-	fmt.Printf("📝 Project name [%s]: ", defaultName)
-
-	reader := bufio.NewReader(os.Stdin)
-	input, err := reader.ReadString('\n')
-	if err != nil {
-		return defaultName
-	}
-
-	input = strings.TrimSpace(input)
-	if input == "" {
-		return defaultName
-	}
-	return input
-}
-
-// promptForProjectName prompts user for project name confirmation (CLI wrapper)
-func promptForProjectName(defaultName string, cmd *cobra.Command) string {
-	fmt.Fprintf(cmd.OutOrStdout(), "📝 Project name [%s]: ", defaultName)
-
-	reader := bufio.NewReader(os.Stdin)
-	input, err := reader.ReadString('\n')
-	if err != nil {
-		return defaultName
-	}
-
-	input = strings.TrimSpace(input)
-	if input == "" {
-		return defaultName
-	}
-	return input
-}
-
-// createProjectConfig creates a configuration tailored to the project type
-func createProjectConfig(projectName, projectType string) *config.Config {
+// createProjectConfig creates a basic configuration with defaults
+func createProjectConfig() *config.Config {
 	cfg := &config.Config{
 		Version: "1.0",
-		Variables: map[string]string{
-			"project_name": projectName,
-			"project_type": projectType,
-		},
 	}
 
 	return cfg
@@ -412,14 +345,6 @@ func validateConfiguration(cfg *config.Config) error {
 
 	if cfg.Version == "" {
 		return fmt.Errorf("version is required")
-	}
-
-	if cfg.Variables == nil {
-		return fmt.Errorf("variables map is nil")
-	}
-
-	if cfg.Variables["project_name"] == "" {
-		return fmt.Errorf("project_name variable is required")
 	}
 
 	return nil
@@ -471,9 +396,9 @@ func setupGitSubtreeLibraryPure(cfg *config.Config, workingDir string) error {
 		return nil
 	}
 
-	// Execute git subtree add command for the entire ddx-library repository
-	repoURL := cfg.Repository.URL
-	branch := cfg.Repository.Branch
+	// Execute git subtree add command for the library repository
+	repoURL := cfg.Library.Repository.URL
+	branch := cfg.Library.Repository.Branch
 	if branch == "" {
 		branch = "main"
 	}
@@ -509,8 +434,8 @@ func setupGitSubtreeLibrary(cfg *config.Config, cmd *cobra.Command, workingDir s
 	if os.Getenv("DDX_TEST_MODE") == "1" {
 		fmt.Fprint(cmd.OutOrStdout(), "  ✓ Git-subtree library setup simulated (test mode)\n")
 	} else {
-		repoURL := cfg.Repository.URL
-		branch := cfg.Repository.Branch
+		repoURL := cfg.Library.Repository.URL
+		branch := cfg.Library.Repository.Branch
 		if branch == "" {
 			branch = "main"
 		}

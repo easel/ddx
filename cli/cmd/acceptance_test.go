@@ -62,7 +62,7 @@ func TestAcceptance_US001_InitializeProject(t *testing.T) {
 					require.NoError(t, yamlErr)
 
 					assert.Contains(t, config, "version", "Config should have version")
-					assert.Contains(t, config, "repository", "Config should have repository")
+					assert.Contains(t, config, "library", "Config should have library")
 				}
 			},
 		},
@@ -117,8 +117,12 @@ func TestAcceptance_US001_InitializeProject(t *testing.T) {
 
 				// Create existing config
 				config := `version: "1.0"
-repository:
-  url: "https://github.com/test/repo"`
+library:
+  path: "./library"
+  repository:
+    url: "https://github.com/test/repo"
+    branch: "main"
+    subtree: "library"`
 				ddxDir := filepath.Join(tempDir, ".ddx")
 				require.NoError(t, os.MkdirAll(ddxDir, 0755))
 				require.NoError(t, os.WriteFile(
@@ -396,9 +400,13 @@ func TestAcceptance_ConfigurationManagement(t *testing.T) {
 		tempDir := t.TempDir()
 
 		config := `version: "1.0"
-repository:
-  url: "https://github.com/test/repo"
-variables:
+library:
+  path: "./library"
+  repository:
+    url: "https://github.com/test/repo"
+    branch: "main"
+    subtree: "library"
+persona_bindings:
   environment: "development"`
 		ddxDir := filepath.Join(tempDir, ".ddx")
 		require.NoError(t, os.MkdirAll(ddxDir, 0755))
@@ -416,8 +424,8 @@ variables:
 		// Then: I see my current configuration clearly displayed
 		assert.NoError(t, err)
 		assert.Contains(t, output, "version", "Should show version")
-		assert.Contains(t, output, "repository", "Should show repository")
-		assert.Contains(t, output, "variables", "Should show variables")
+		assert.Contains(t, output, "library", "Should show library")
+		assert.Contains(t, output, "persona_bindings", "Should show persona_bindings")
 	})
 
 	t.Run("modify_configuration", func(t *testing.T) {
@@ -425,18 +433,19 @@ variables:
 		tempDir := t.TempDir()
 
 		config := `version: "1.0"
-library_base_path: "./library"
-variables:
+library:
+  path: "./library"
+persona_bindings:
   old_value: "original"`
 		ddxDir := filepath.Join(tempDir, ".ddx")
 		require.NoError(t, os.MkdirAll(ddxDir, 0755))
 		configPath := filepath.Join(ddxDir, "config.yaml")
 		require.NoError(t, os.WriteFile(configPath, []byte(config), 0644))
 
-		// When: I run `ddx config set variables.new_value "updated"`
+		// When: I run `ddx config set persona_bindings.new_value "updated"`
 		factory := NewCommandFactory(tempDir)
 		rootCmd := factory.NewRootCommand()
-		_, err := executeCommand(rootCmd, "config", "set", "variables.new_value", "updated")
+		_, err := executeCommand(rootCmd, "config", "set", "persona_bindings.new_value", "updated")
 
 		// Then: the configuration is updated with the new value
 		if err == nil {
@@ -445,7 +454,7 @@ variables:
 				var updatedConfig map[string]interface{}
 				yaml.Unmarshal(data, &updatedConfig)
 
-				if vars, ok := updatedConfig["variables"].(map[string]interface{}); ok {
+				if vars, ok := updatedConfig["persona_bindings"].(map[string]interface{}); ok {
 					assert.Equal(t, "updated", vars["new_value"],
 						"New value should be set")
 				}
@@ -479,12 +488,13 @@ func TestAcceptance_WorkflowIntegration(t *testing.T) {
 
 		// Create config pointing to library in new format
 		config := []byte(`version: "2.0"
-library_base_path: ./library
-repository:
-  url: "https://github.com/easel/ddx"
-  branch: "main"
-  subtree_prefix: "library"
-variables: {}`)
+library:
+  path: "./library"
+  repository:
+    url: "https://github.com/easel/ddx"
+    branch: "main"
+    subtree: "library"
+persona_bindings: {}`)
 		ddxDir := filepath.Join(tempDir, ".ddx")
 		require.NoError(t, os.MkdirAll(ddxDir, 0755))
 		require.NoError(t, os.WriteFile(filepath.Join(ddxDir, "config.yaml"), config, 0644))
@@ -542,12 +552,13 @@ func TestAcceptance_ErrorScenarios(t *testing.T) {
 					gitConfigName.Run()
 
 					config := `version: "1.0"
-library_base_path: "./library"
-repository:
-  url: "https://github.com/easel/ddx"
-  branch: "main"
-  subtree_prefix: "library"
-variables: {}`
+library:
+  path: "./library"
+  repository:
+    url: "https://github.com/easel/ddx"
+    branch: "main"
+    subtree: "library"
+persona_bindings: {}`
 					ddxDir := filepath.Join(tempDir, ".ddx")
 					os.MkdirAll(ddxDir, 0755)
 					os.WriteFile(filepath.Join(ddxDir, "config.yaml"), []byte(config), 0644)

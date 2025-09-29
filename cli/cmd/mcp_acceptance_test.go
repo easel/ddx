@@ -330,7 +330,7 @@ repository:
   url: "https://github.com/easel/ddx"
   branch: "main"
   subtree_prefix: "library"
-variables:
+persona_bindings:
   project_name: "test-project"
   package_manager: "npm"
 `

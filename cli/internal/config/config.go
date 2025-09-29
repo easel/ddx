@@ -9,7 +9,7 @@ import (
 
 // Type aliases for smooth transition
 type Config = NewConfig
-type Repository = NewRepositoryConfig
+type Repository = RepositoryConfig
 
 // ConfigError represents a single configuration error
 type ConfigError struct {
@@ -70,20 +70,12 @@ func LoadWithWorkingDir(workingDir string) (*Config, error) {
 		}
 	}
 
-	// Ensure variables map exists and set project name
-	if config.Variables == nil {
-		config.Variables = make(map[string]string)
-	}
-	if config.Variables["project_name"] == "" {
-		config.Variables["project_name"] = filepath.Base(workingDir)
-	}
-
 	// Apply defaults to ensure complete configuration
 	config.ApplyDefaults()
 
 	// Override library path with environment variable if set
 	if envLibraryPath := os.Getenv("DDX_LIBRARY_BASE_PATH"); envLibraryPath != "" {
-		config.LibraryBasePath = envLibraryPath
+		config.Library.Path = envLibraryPath
 	}
 
 	// Validate the final configuration
@@ -107,45 +99,22 @@ func (c *Config) Validate() error {
 		})
 	}
 
-	// Validate repository
-	if c.Repository != nil {
-		if c.Repository.URL == "" {
+	// Validate library configuration
+	if c.Library != nil && c.Library.Repository != nil {
+		if c.Library.Repository.URL == "" {
 			errors = append(errors, &ConfigError{
-				Field:      "repository.url",
-				Message:    "repository URL is required",
+				Field:      "library.repository.url",
+				Message:    "library repository URL is required",
 				Suggestion: "add a valid Git repository URL",
 			})
 		}
 
-		if c.Repository.Branch == "" {
+		if c.Library.Repository.Branch == "" {
 			errors = append(errors, &ConfigError{
-				Field:      "repository.branch",
-				Message:    "repository branch is required",
+				Field:      "library.repository.branch",
+				Message:    "library repository branch is required",
 				Suggestion: "add 'branch: \"main\"' or another valid branch name",
 			})
-		}
-	}
-
-	// Validate variables
-	if c.Variables != nil {
-		for key, value := range c.Variables {
-			if err := validateVariableKey(key); err != nil {
-				errors = append(errors, &ConfigError{
-					Field:      fmt.Sprintf("variables.%s", key),
-					Value:      key,
-					Message:    err.Error(),
-					Suggestion: "use only alphanumeric characters, hyphens, and underscores",
-				})
-			}
-
-			if err := validateVariableValue(value); err != nil {
-				errors = append(errors, &ConfigError{
-					Field:      fmt.Sprintf("variables.%s", key),
-					Value:      value,
-					Message:    err.Error(),
-					Suggestion: "avoid control characters and extremely long values",
-				})
-			}
 		}
 	}
 
@@ -159,68 +128,62 @@ func (c *Config) Validate() error {
 // Merge combines this config with another, with the other taking precedence
 func (c *Config) Merge(other *Config) *Config {
 	result := &Config{
-		Version:         c.Version,
-		LibraryBasePath: c.LibraryBasePath,
-		Repository:      c.Repository,
-		Variables:       make(map[string]string),
+		Version: c.Version,
 	}
 
-	// Copy variables from base
-	for k, v := range c.Variables {
-		result.Variables[k] = v
+	// Copy library configuration from base
+	if c.Library != nil {
+		result.Library = &LibraryConfig{
+			Path: c.Library.Path,
+		}
+		if c.Library.Repository != nil {
+			result.Library.Repository = &RepositoryConfig{
+				URL:    c.Library.Repository.URL,
+				Branch: c.Library.Repository.Branch,
+			}
+		}
 	}
 
 	// Override with other's values
 	if other.Version != "" {
 		result.Version = other.Version
 	}
-	if other.LibraryBasePath != "" {
-		result.LibraryBasePath = other.LibraryBasePath
-	}
-	if other.Repository != nil {
-		result.Repository = other.Repository
-	}
-	if other.Variables != nil {
-		for k, v := range other.Variables {
-			result.Variables[k] = v
+	if other.Library != nil {
+		if result.Library == nil {
+			result.Library = &LibraryConfig{}
+		}
+		if other.Library.Path != "" {
+			result.Library.Path = other.Library.Path
+		}
+		if other.Library.Repository != nil {
+			if result.Library.Repository == nil {
+				result.Library.Repository = &RepositoryConfig{}
+			}
+			if other.Library.Repository.URL != "" {
+				result.Library.Repository.URL = other.Library.Repository.URL
+			}
+			if other.Library.Repository.Branch != "" {
+				result.Library.Repository.Branch = other.Library.Repository.Branch
+			}
 		}
 	}
 
 	return result
 }
 
-// validateVariableKey validates a variable key
-func validateVariableKey(key string) error {
-	if key == "" {
-		return fmt.Errorf("variable key cannot be empty")
-	}
-	if len(key) > 100 {
-		return fmt.Errorf("variable key too long (max 100 characters)")
-	}
-	return nil
-}
-
-// validateVariableValue validates a variable value
-func validateVariableValue(value string) error {
-	if len(value) > 10000 {
-		return fmt.Errorf("variable value too long (max 10000 characters)")
-	}
-	return nil
-}
-
 // ResolveLibraryResource resolves a library resource path
-// NOTE: This function is now legacy. New code should load config and use cfg.LibraryBasePath directly.
+// NOTE: This function is now legacy. New code should load config and use cfg.Library.Path directly.
 func ResolveLibraryResource(resourcePath, configPath, workingDir string) (string, error) {
 	// Load config to get the authoritative library path (which includes env var override)
 	cfg, err := LoadWithWorkingDir(workingDir)
-	if err == nil && cfg.LibraryBasePath != "" {
+	if err == nil && cfg.Library != nil && cfg.Library.Path != "" {
 		// Check if it's an absolute path
 		if filepath.IsAbs(resourcePath) {
 			return resourcePath, nil
 		}
 
 		// Try relative to library path from config
-		configPath := filepath.Join(cfg.LibraryBasePath, resourcePath)
+		configPath := filepath.Join(cfg.Library.Path, resourcePath)
 		if _, err := os.Stat(configPath); err == nil {
 			return configPath, nil
 		}

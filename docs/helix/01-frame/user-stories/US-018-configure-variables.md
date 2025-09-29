@@ -1,116 +1,97 @@
-# User Story: Configure Variables
+# User Story: Configure Persona Bindings
 
 **Story ID**: US-018
 **Feature**: FEAT-003 (Configuration Management)
-**Priority**: P0
+**Priority**: P1
 **Status**: Draft
 **Created**: 2025-01-14
-**Updated**: 2025-01-14
+**Updated**: 2025-01-29
 
 ## Story
 **As a** developer
-**I want to** define variables for substitution
-**So that** I can customize templates for my project without manual editing
+**I want to** configure persona bindings for different roles
+**So that** I can assign specific AI personalities to workflow roles
 
 ## Description
-This story enables developers to define variables in their DDX configuration that will be automatically substituted in templates and patterns. This eliminates the need for manual find-and-replace operations and ensures consistency across all generated files. Variables can be simple values, reference environment variables, or be complex nested structures, providing flexibility for various customization needs.
+This story enables developers to bind specific persona names to abstract roles in their DDX configuration. This allows workflows to specify required roles (like "code-reviewer" or "test-engineer") while projects can bind their preferred personas to those roles. This provides flexibility and team customization while maintaining workflow portability.
 
 ## Acceptance Criteria
-- [ ] **Given** `.ddx.yml`, **when** variables defined, **then** string, number, boolean types are supported
-- [ ] **Given** variable definition, **when** referencing environment, **then** environment variables are accessible
-- [ ] **Given** templates, **when** processed, **then** variables are substituted using `${VAR_NAME}` syntax
-- [ ] **Given** undefined variables, **when** referenced, **then** default values are used
-- [ ] **Given** variable values, **when** provided, **then** validation rules are applied
-- [ ] **Given** complex data, **when** needed, **then** nested variable structures are supported
-- [ ] **Given** collections, **when** required, **then** array and map variables work correctly
+- [ ] **Given** `.ddx/config.yaml`, **when** persona_bindings defined, **then** role-to-persona mappings are supported
+- [ ] **Given** persona bindings, **when** workflows execute, **then** correct personas are loaded for each role
+- [ ] **Given** missing persona bindings, **when** roles required, **then** clear error messages indicate which bindings are needed
+- [ ] **Given** invalid persona names, **when** bindings specified, **then** validation ensures personas exist in library
+- [ ] **Given** configuration changes, **when** persona bindings updated, **then** new bindings take effect immediately
 
 ## Business Value
-- Eliminates repetitive manual customization work
-- Ensures consistency across all project files
-- Reduces errors from manual find-and-replace
-- Enables team-wide standardization through shared variables
-- Speeds up project setup and template application
+- Enables team customization of AI interactions
+- Maintains workflow portability across projects
+- Provides clear role-based abstraction
+- Supports consistent AI behavior patterns
+- Facilitates sharing of proven persona configurations
 
 ## Definition of Done
-- [ ] Variable definition syntax is implemented in configuration
-- [ ] Variable substitution engine is functional
-- [ ] Support for all specified data types is working
-- [ ] Environment variable resolution is implemented
-- [ ] Default value mechanism is functional
-- [ ] Validation rules are enforced
-- [ ] Nested structures are properly handled
-- [ ] Arrays and maps work as expected
-- [ ] Unit tests cover all variable types and edge cases
-- [ ] Integration tests verify substitution in real templates
-- [ ] Documentation includes variable syntax guide
+- [ ] Persona binding configuration format is implemented
+- [ ] Persona validation ensures referenced personas exist
+- [ ] Configuration loading includes persona_bindings section
+- [ ] Workflows can resolve bound personas by role
+- [ ] Error messages clearly indicate missing or invalid bindings
+- [ ] Unit tests cover all persona binding scenarios
+- [ ] Integration tests verify persona loading in workflows
+- [ ] Documentation includes persona binding examples
 - [ ] All acceptance criteria are met and verified
 
 ## Technical Considerations
 To be defined in technical design
-- Variable substitution syntax and escaping
-- Resolution order for nested variables
-- Circular reference detection
-- Performance with large variable sets
+- Persona existence validation at configuration load time
+- Performance of persona lookup during workflow execution
+- Caching of persona content for repeated access
 
 ## Dependencies
 - **Prerequisite**: US-017 (Initialize Configuration) must be completed
-- **Related**: Used by template and pattern application features
+- **Related**: Used by workflow execution features (US-042)
 
 ## Assumptions
-- Variables follow a consistent naming convention
-- Environment variables are accessible to the DDX process
-- DDX_ prefix is reserved for system variables
-- Maximum depth for nested variables is 10 levels
+- Persona names follow consistent naming conventions
+- Personas exist in the library before being referenced
+- Role names are defined by workflows, not arbitrary
 
 ## Edge Cases
-- Circular variable references (A references B, B references A)
-- Undefined variables without defaults
-- Invalid variable names or syntax
-- Extremely deep nesting
-- Large arrays or maps
-- Special characters in variable values
-- Variables referencing non-existent environment variables
+- Missing persona files referenced in bindings
+- Invalid YAML in persona binding configuration
+- Role names with special characters
+- Empty or null persona bindings
 
 ## Examples
 
-### Simple Variables
+### Basic Persona Bindings
 ```yaml
-variables:
-  project_name: "my-app"
-  version: "1.0.0"
-  port: 3000
-  debug: true
+version: "1.0"
+library:
+  path: "./library"
+  repository:
+    url: "https://github.com/easel/ddx"
+    branch: "main"
+    subtree: "library"
+persona_bindings:
+  code-reviewer: "strict-code-reviewer"
+  test-engineer: "tdd-test-engineer"
+  documentation-writer: "technical-writer"
 ```
 
-### Environment References
+### Minimal Configuration
 ```yaml
-variables:
-  author: "${GIT_AUTHOR_NAME}"
-  home: "${HOME}"
-  api_key: "${API_KEY:-default-key}"
-```
-
-### Nested Structures
-```yaml
-variables:
-  database:
-    host: "localhost"
-    port: 5432
-    name: "${PROJECT_NAME}_db"
-  api:
-    endpoints:
-      - "/users"
-      - "/products"
+version: "1.0"
+persona_bindings:
+  code-reviewer: "basic-reviewer"
 ```
 
 ## User Feedback
 *To be collected during implementation and testing*
 
 ## Notes
-- Variable substitution is a core feature that many other features depend on
-- Should support common use cases without overwhelming complexity
-- Consider providing variable validation and type checking
-- May need special handling for sensitive values
+- Persona bindings provide team customization while maintaining workflow portability
+- Should validate persona existence to prevent runtime errors
+- Consider providing helpful suggestions when personas are not found
 
 ---
 *Story is part of FEAT-003 (Configuration Management)*

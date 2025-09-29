@@ -16,7 +16,6 @@ Map each functional requirement to technical capabilities:
 |------------|---------------------|-----------|----------|
 | Load and parse YAML configuration | YAML parsing with validation | ConfigLoader | P0 |
 | Support hierarchical configuration | Configuration merging and precedence | ConfigMerger | P0 |
-| Perform variable substitution | Template engine with context | VariableProcessor | P0 |
 | Integrate with environment variables | Environment variable expansion | EnvVarResolver | P0 |
 | Validate configuration against schema | JSON Schema validation | ConfigValidator | P0 |
 | Support default values and overrides | Layered configuration system | ConfigStack | P0 |
@@ -33,7 +32,6 @@ How NFRs shape the architecture:
 | NFR Category | Requirement | Architectural Impact | Design Decision |
 |--------------|------------|---------------------|-----------------|
 | Performance | Config loading < 100ms | Efficient parsing and caching | Lazy loading, config caching |
-| Performance | Variable substitution < 10ms per file | Fast template processing | Compiled templates, variable caching |
 | Reliability | Graceful handling of malformed YAML | Robust error handling | YAML validation, clear error messages |
 | Security | No plaintext passwords | Secure value handling | Environment variable references, masking |
 | Usability | Clear validation error messages | User-friendly diagnostics | Structured error reporting with suggestions |

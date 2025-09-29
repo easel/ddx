@@ -458,7 +458,7 @@ repository:
   url: "https://github.com/ddx-tools/ddx"
   branch: "main"
   path: ".ddx/"
-variables:
+persona_bindings:
   project_name: "7thsense"
   ai_model: "claude-3-opus"
   author: ""
@@ -581,7 +581,7 @@ repository:
   url: "https://github.com/ddx-tools/ddx"
   branch: "main"
   path: ".ddx/"
-variables:
+persona_bindings:
   project_name: "7thsense"
   ai_model: "claude-3-opus"
   author: ""
@@ -594,7 +594,7 @@ includes:
 		env.CreateConfig(configContent)
 
 		// Create local override
-		os.WriteFile(filepath.Join(tempDir, ".ddx.local.yml"), []byte("variables:\n  override: local"), 0644)
+		os.WriteFile(filepath.Join(tempDir, ".ddx.local.yml"), []byte("persona_bindings:\n  override: local"), 0644)
 
 		// When: Showing effective config using CommandFactory with injected working directory
 		factory := NewCommandFactory(tempDir)

@@ -433,7 +433,7 @@ func executeContributionInDir(workingDir string, cfg *config.Config, opts *Contr
 
 	if opts.CreatePR {
 		result.PRInfo = &PRInfo{
-			URL:         fmt.Sprintf("%s/compare/%s...%s", strings.TrimSuffix(cfg.Repository.URL, ".git"), cfg.Repository.Branch, opts.Branch),
+			URL:         fmt.Sprintf("%s/compare/%s...%s", strings.TrimSuffix(cfg.Library.Repository.URL, ".git"), cfg.Library.Repository.Branch, opts.Branch),
 			Title:       opts.Message,
 			Branch:      opts.Branch,
 			Description: "Ready to create pull request",

@@ -35,7 +35,7 @@ repository:
   url: "https://github.com/easel/ddx"
   branch: "main"
   subtree_prefix: "library"
-variables: {}`
+persona_bindings: {}`
 		os.WriteFile(filepath.Join(ddxDir, "config.yaml"), []byte(configContent), 0644)
 
 		// When: Running update successfully
@@ -87,7 +87,7 @@ repository:
   url: "https://invalid-host-that-does-not-exist.example.com"
   branch: "main"
   subtree_prefix: "library"
-variables:
+persona_bindings:
   project_name: "test"`
 		os.WriteFile(filepath.Join(ddxDir, "config.yaml"), []byte(configContent), 0644)
 
@@ -120,7 +120,7 @@ repository:
   url: "https://github.com/easel/ddx"
   branch: "main"
   subtree_prefix: "library"
-variables: {}`
+persona_bindings: {}`
 		os.WriteFile(filepath.Join(ddxDir, "config.yaml"), []byte(configContent), 0644)
 
 		// When: Running with --check flag
@@ -604,7 +604,7 @@ repository:
   url: "https://github.com/easel/ddx"
   branch: "main"
   subtree_prefix: "library"
-variables:
+persona_bindings:
   project_name: "test-project"`
 	os.WriteFile(filepath.Join(ddxDir, "config.yaml"), []byte(configContent), 0644)
 }

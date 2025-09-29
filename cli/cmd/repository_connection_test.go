@@ -197,7 +197,7 @@ repository:
   url: "https://github.com/test/repo"
   branch: "main"
   subtree_prefix: "library"
-variables:
+persona_bindings:
   project_name: "test"
 `
 		env.CreateConfig(config)
@@ -227,7 +227,7 @@ repository:
   url: "https://github.com/test/repo"
   branch: "main"
   subtree_prefix: "library"
-variables:
+persona_bindings:
   project_name: "test"
 `
 		env.CreateConfig(config)
@@ -284,7 +284,7 @@ repository:
   url: "git@github.com:company/ddx-private.git"
   branch: "development"
   subtree_prefix: "library"
-variables:
+persona_bindings:
   project_name: "test"
 `
 		env.CreateConfig(simpleConfig)
@@ -367,7 +367,7 @@ repository:
   url: "https://github.com/test/repo"
   branch: "main"
   subtree_prefix: "library"
-variables:
+persona_bindings:
   project_name: "test"
 `
 		env.CreateConfig(config)
@@ -401,7 +401,7 @@ repository:
   url: "https://github.com/test/repo"
   branch: "main"
   subtree_prefix: "library"
-variables:
+persona_bindings:
   project_name: "test"
 `
 		env.CreateConfig(config)

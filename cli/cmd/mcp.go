@@ -235,7 +235,11 @@ func mcpList(workingDir string, opts MCPListOptions) ([]MCPServerInfo, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to load config: %w", err)
 	}
-	libPath := cfg.LibraryBasePath
+
+	var libPath string
+	if cfg.Library != nil {
+		libPath = cfg.Library.Path
+	}
 
 	// Load registry with explicit library path
 	registry, err := mcp.LoadRegistryWithLibraryPath("", workingDir, libPath)
@@ -314,7 +318,11 @@ func mcpInstall(workingDir string, opts MCPInstallOptions) error {
 		ConfigPath:  opts.ConfigPath,
 	}
 
-	return installer.InstallWithLibraryPath(opts.ServerName, mcpOpts, cfg.LibraryBasePath)
+	var libPath string
+	if cfg.Library != nil {
+		libPath = cfg.Library.Path
+	}
+	return installer.InstallWithLibraryPath(opts.ServerName, mcpOpts, libPath)
 }
 
 // mcpStatus returns the current status of MCP servers

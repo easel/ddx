@@ -84,7 +84,10 @@ func TestInitCommand(t *testing.T) {
 				require.NoError(t, err)
 
 				assert.Contains(t, config, "version")
-				assert.Contains(t, config, "repository")
+				assert.Contains(t, config, "library")
+				if library, ok := config["library"].(map[string]interface{}); ok {
+					assert.Contains(t, library, "repository")
+				}
 			},
 			expectError: false,
 		},
@@ -95,12 +98,13 @@ func TestInitCommand(t *testing.T) {
 				t.Setenv("DDX_TEST_MODE", "1")
 				// Create existing config in new format
 				existingConfig := `version: "0.9"
-library_base_path: "./library"
-repository:
-  url: "https://old.repo"
-  branch: "main"
-  subtree_prefix: "library"
-variables: {}
+library:
+  path: "./library"
+  repository:
+    url: "https://old.repo"
+    branch: "main"
+    subtree: "library"
+persona_bindings: {}
 `
 				ddxDir := filepath.Join(dir, ".ddx")
 				require.NoError(t, os.MkdirAll(ddxDir, 0755))
@@ -117,8 +121,8 @@ variables: {}
 				err = yaml.Unmarshal(data, &config)
 				require.NoError(t, err)
 
-				// With --force flag, preserves existing version from existing config
-				assert.Equal(t, "0.9", config["version"])
+				// With --force flag, creates new config with default version
+				assert.Equal(t, "1.0", config["version"])
 			},
 			expectError: false,
 		},
@@ -213,10 +217,12 @@ func TestInitCommand_US017_InitializeConfiguration(t *testing.T) {
 				require.NoError(t, err)
 
 				assert.Contains(t, config, "version")
-				assert.Contains(t, config, "repository")
-				assert.Contains(t, config, "variables")
-				// New config format doesn't have includes field
-				assert.Contains(t, config, "library_base_path")
+				assert.Contains(t, config, "library")
+				if library, ok := config["library"].(map[string]interface{}); ok {
+					assert.Contains(t, library, "repository")
+				}
+				// New config format uses persona_bindings instead of variables
+				// Library path is nested under library object, not at root
 			},
 			expectError: false,
 		},
@@ -237,12 +243,9 @@ func TestInitCommand_US017_InitializeConfiguration(t *testing.T) {
 				err = yaml.Unmarshal(data, &config)
 				require.NoError(t, err)
 
-				variables := config["variables"].(map[string]interface{})
-				assert.Equal(t, "javascript", variables["project_type"])
-
-				// New config format doesn't have includes field
-				// Project type detection should still work through variables
-				assert.Equal(t, "javascript", variables["project_type"])
+				// Project type detection has been removed - init just creates basic config
+				assert.Contains(t, config, "version")
+				assert.Contains(t, config, "library")
 			},
 			expectError: false,
 		},
@@ -263,12 +266,9 @@ func TestInitCommand_US017_InitializeConfiguration(t *testing.T) {
 				err = yaml.Unmarshal(data, &config)
 				require.NoError(t, err)
 
-				variables := config["variables"].(map[string]interface{})
-				assert.Equal(t, "go", variables["project_type"])
-
-				// New config format doesn't have includes field
-				// Project type detection should still work through variables
-				assert.Equal(t, "go", variables["project_type"])
+				// Project type detection has been removed - init just creates basic config
+				assert.Contains(t, config, "version")
+				assert.Contains(t, config, "library")
 			},
 			expectError: false,
 		},
@@ -338,10 +338,9 @@ repository:
 				err = yaml.Unmarshal(data, &config)
 				require.NoError(t, err)
 
-				variables := config["variables"].(map[string]interface{})
-				assert.Contains(t, variables, "project_name")
-				assert.Contains(t, variables, "project_type")
-				// ai_model was removed with template functionality
+				// Variable definitions have been removed - init creates minimal config
+				assert.Contains(t, config, "version")
+				assert.Contains(t, config, "library")
 			},
 			expectError: false,
 		},
@@ -446,10 +445,14 @@ repository:
 				err = yaml.Unmarshal(data, &config)
 				require.NoError(t, err)
 
-				assert.Contains(t, config, "repository")
-				repo := config["repository"].(map[string]interface{})
-				assert.Contains(t, repo, "url")
-				assert.Contains(t, repo, "branch")
+				assert.Contains(t, config, "library")
+				if library, ok := config["library"].(map[string]interface{}); ok {
+					assert.Contains(t, library, "repository")
+					if repo, ok := library["repository"].(map[string]interface{}); ok {
+						assert.Contains(t, repo, "url")
+						assert.Contains(t, repo, "branch")
+					}
+				}
 			},
 			expectError: false,
 		},

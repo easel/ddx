@@ -236,12 +236,12 @@ func checkLibraryPathFromWorkingDir(workingDir string) bool {
 		return false
 	}
 
-	if cfg.LibraryBasePath == "" {
+	if cfg.Library == nil || cfg.Library.Path == "" {
 		return false
 	}
 
 	// Resolve library path relative to working directory
-	libPath := cfg.LibraryBasePath
+	libPath := cfg.Library.Path
 	if !filepath.IsAbs(libPath) {
 		libPath = filepath.Join(workingDir, libPath)
 	}
@@ -331,8 +331,8 @@ func getDirectoryPermissions(workingDir string) string {
 
 // getLibraryPathInfo returns information about the DDX library path
 func getLibraryPathInfo(workingDir string) string {
-	if cfg, err := config.LoadWithWorkingDir(workingDir); err == nil && cfg.LibraryBasePath != "" {
-		libPath := cfg.LibraryBasePath
+	if cfg, err := config.LoadWithWorkingDir(workingDir); err == nil && cfg.Library != nil && cfg.Library.Path != "" {
+		libPath := cfg.Library.Path
 		if !filepath.IsAbs(libPath) {
 			libPath = filepath.Join(workingDir, libPath)
 		}

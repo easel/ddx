@@ -326,7 +326,7 @@ func TestAcceptance_US031_BindPersonasToRoles(t *testing.T) {
 repository:
   url: "https://github.com/team/project"
   branch: "main"
-variables:
+persona_bindings:
   project_name: "team-project"`
 
 				require.NoError(t, os.MkdirAll(filepath.Join(workDir, ".ddx"), 0755))

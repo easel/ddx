@@ -106,21 +106,13 @@ project/
 # .ddx/config.yaml schema version 1.0
 version: "1.0"                      # Required: Configuration schema version
 
-# Library location (top-level with explicit default)
-library_base_path: "./library"      # Path to DDX library relative to config.yaml
-
-# Repository configuration (optional - for advanced users)
-repository:
-  url: string                       # DDX repository URL (default: github.com/easel/ddx)
-  branch: string                    # Branch to sync (default: main)
-  subtree_prefix: string            # What to sync from upstream (default: library)
-
-# Project variables for template substitution
-variables:
-  project_name: string              # Project identifier
-  author: string                    # Author name
-  email: string                     # Author email
-  # Additional custom variables as needed
+# Library configuration
+library:
+  path: "./library"                 # Path to DDX library relative to config.yaml (optional, default)
+  repository:
+    url: string                     # DDX repository URL (default: github.com/easel/ddx)
+    branch: string                  # Branch to sync (default: main)
+    subtree: string                 # What to sync from upstream (default: library)
 ```
 
 **Rationale for Simplification**:
@@ -129,6 +121,7 @@ variables:
 - Simpler schema is easier to understand and validate
 - Advanced users can still customize via repository settings
 - Reduces cognitive load for new users
+- Library configuration is grouped logically under single namespace
 
 ### Migration Path
 **Decision**: Provide backwards compatibility and automatic migration
