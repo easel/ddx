@@ -26,8 +26,8 @@ func TestListCommand(t *testing.T) {
 				// Setup test directory with library
 				testDir := t.TempDir()
 
-				// Create library structure
-				libraryDir := filepath.Join(testDir, "library")
+				// Create library structure in .ddx/library
+				libraryDir := filepath.Join(testDir, ".ddx", "library")
 
 				// Create workflow directories
 				workflowsDir := filepath.Join(libraryDir, "workflows")
@@ -44,13 +44,13 @@ func TestListCommand(t *testing.T) {
 				require.NoError(t, os.MkdirAll(filepath.Join(promptsDir, "claude"), 0755))
 				require.NoError(t, os.WriteFile(filepath.Join(promptsDir, "claude", "prompt.md"), []byte("# Prompt"), 0644))
 
-				// Create .ddx.yml config pointing to library
-				config := []byte(`version: "2.0"
-library_path: ./library
+				// Create .ddx/config.yaml config pointing to library
+				config := []byte(`version: "1.0"
+library_base_path: .ddx/library
 repository:
-  url: https://github.com/easel/ddx
+  url: https://github.com/easel/ddx-library
   branch: main`)
-				require.NoError(t, os.WriteFile(filepath.Join(testDir, ".ddx.yml"), config, 0644))
+				require.NoError(t, os.WriteFile(filepath.Join(testDir, ".ddx", "config.yaml"), config, 0644))
 
 				return testDir
 			},
@@ -66,17 +66,17 @@ repository:
 			setup: func(t *testing.T) string {
 				testDir := t.TempDir()
 
-				libraryDir := filepath.Join(testDir, "library")
+				libraryDir := filepath.Join(testDir, ".ddx", "library")
 				workflowsDir := filepath.Join(libraryDir, "workflows")
 				require.NoError(t, os.MkdirAll(filepath.Join(workflowsDir, "helix"), 0755))
 				require.NoError(t, os.WriteFile(filepath.Join(workflowsDir, "helix", "workflow.yml"), []byte("name: helix"), 0644))
 				require.NoError(t, os.MkdirAll(filepath.Join(workflowsDir, "kanban"), 0755))
 				require.NoError(t, os.WriteFile(filepath.Join(workflowsDir, "kanban", "workflow.yml"), []byte("name: kanban"), 0644))
 
-				// Create .ddx.yml config
-				config := []byte(`version: "2.0"
-library_path: ./library`)
-				require.NoError(t, os.WriteFile(filepath.Join(testDir, ".ddx.yml"), config, 0644))
+				// Create .ddx/config.yaml config
+				config := []byte(`version: "1.0"
+library_base_path: .ddx/library`)
+				require.NoError(t, os.WriteFile(filepath.Join(testDir, ".ddx", "config.yaml"), config, 0644))
 
 				return testDir
 			},

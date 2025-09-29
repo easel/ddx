@@ -276,6 +276,8 @@ func (env *InstallationTestEnvironment) RunCommand(command string) InstallationR
 
 		// Execute the doctor command with flags
 		cmd := exec.Command(binaryPath, args...)
+		// Set working directory to HomeDir so doctor can find .ddx directory
+		cmd.Dir = env.HomeDir
 		output, err := cmd.CombinedOutput()
 		if err != nil {
 			return InstallationResult{
@@ -1045,6 +1047,13 @@ func (env *InstallationTestEnvironment) setupInstallationState(state string) err
 		// Create some sample resources so library appears valid
 		os.MkdirAll(filepath.Join(libDir, "workflows"), 0755)
 		os.WriteFile(filepath.Join(libDir, "workflows", "README.md"), []byte("# Workflows"), 0644)
+		// Create configuration file
+		configContent := []byte(`version: "1.0"
+library_base_path: .ddx/library
+repository:
+  url: https://github.com/easel/ddx-library
+  branch: main`)
+		os.WriteFile(filepath.Join(env.HomeDir, ".ddx", "config.yaml"), configContent, 0644)
 		return nil
 	case "broken_path":
 		// Install DDX but without PATH configuration
@@ -1055,6 +1064,13 @@ func (env *InstallationTestEnvironment) setupInstallationState(state string) err
 		// Create some sample resources so library appears valid
 		os.MkdirAll(filepath.Join(libDir, "workflows"), 0755)
 		os.WriteFile(filepath.Join(libDir, "workflows", "README.md"), []byte("# Workflows"), 0644)
+		// Create configuration file
+		configContent := []byte(`version: "1.0"
+library_base_path: .ddx/library
+repository:
+  url: https://github.com/easel/ddx-library
+  branch: main`)
+		os.WriteFile(filepath.Join(env.HomeDir, ".ddx", "config.yaml"), configContent, 0644)
 		// Remove PATH configuration from shell profiles
 		profileFiles := []string{"~/.bashrc", "~/.zshrc", "~/.profile"}
 		for _, profileFile := range profileFiles {
