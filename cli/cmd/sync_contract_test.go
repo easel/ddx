@@ -30,11 +30,11 @@ func TestUpdateCommand_Contract(t *testing.T) {
 		ddxDir := filepath.Join(tempDir, ".ddx")
 		os.MkdirAll(ddxDir, 0755)
 		configContent := `version: "1.0"
-library_base_path: "./library"
-repository:
-  url: "https://github.com/easel/ddx"
-  branch: "main"
-  subtree_prefix: "library"
+library:
+  path: .ddx/library
+  repository:
+    url: https://github.com/easel/ddx-library
+    branch: main
 persona_bindings: {}`
 		os.WriteFile(filepath.Join(ddxDir, "config.yaml"), []byte(configContent), 0644)
 
@@ -82,11 +82,11 @@ persona_bindings: {}`
 		ddxDir := filepath.Join(tempDir, ".ddx")
 		os.MkdirAll(ddxDir, 0755)
 		configContent := `version: "1.0"
-library_base_path: "./library"
-repository:
-  url: "https://invalid-host-that-does-not-exist.example.com"
-  branch: "main"
-  subtree_prefix: "library"
+library:
+  path: .ddx/library
+  repository:
+    url: https://invalid-host-that-does-not-exist.example.com
+    branch: main
 persona_bindings:
   project_name: "test"`
 		os.WriteFile(filepath.Join(ddxDir, "config.yaml"), []byte(configContent), 0644)
@@ -115,11 +115,11 @@ persona_bindings:
 		ddxDir := filepath.Join(tempDir, ".ddx")
 		os.MkdirAll(ddxDir, 0755)
 		configContent := `version: "1.0"
-library_base_path: "./library"
-repository:
-  url: "https://github.com/easel/ddx"
-  branch: "main"
-  subtree_prefix: "library"
+library:
+  path: .ddx/library
+  repository:
+    url: https://github.com/easel/ddx-library
+    branch: main
 persona_bindings: {}`
 		os.WriteFile(filepath.Join(ddxDir, "config.yaml"), []byte(configContent), 0644)
 
@@ -599,11 +599,11 @@ func createTestConfig(t *testing.T, workingDir string) {
 	ddxDir := filepath.Join(workingDir, ".ddx")
 	os.MkdirAll(ddxDir, 0755)
 	configContent := `version: "1.0"
-library_base_path: "./library"
-repository:
-  url: "https://github.com/easel/ddx"
-  branch: "main"
-  subtree_prefix: "library"
+library:
+  path: .ddx/library
+  repository:
+    url: https://github.com/easel/ddx-library
+    branch: main
 persona_bindings:
   project_name: "test-project"`
 	os.WriteFile(filepath.Join(ddxDir, "config.yaml"), []byte(configContent), 0644)

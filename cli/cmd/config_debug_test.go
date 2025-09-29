@@ -14,11 +14,11 @@ func TestConfigResourcesDebug(t *testing.T) {
 
 	// Create simple config (without resources since we don't support them in new format)
 	configContent := `version: "1.0"
-library_base_path: "./library"
-repository:
-  url: "https://github.com/test/repo"
-  branch: "main"
-  subtree_prefix: "library"
+library:
+  path: .ddx/library
+  repository:
+    url: https://github.com/easel/ddx-library
+    branch: main
 persona_bindings:
   project_name: "test-project"
 `
@@ -39,7 +39,7 @@ persona_bindings:
 	assert.Equal(t, "1.0", cfg.Version, "Version should be loaded")
 	assert.NotNil(t, cfg.Library, "Library should be loaded")
 	if cfg.Library != nil {
-		assert.Equal(t, "./library", cfg.Library.Path, "Library base path should be loaded")
+		assert.Equal(t, ".ddx/library", cfg.Library.Path, "Library base path should be loaded")
 	}
 	assert.NotNil(t, cfg.PersonaBindings, "PersonaBindings should be loaded")
 }
@@ -51,11 +51,11 @@ func TestBasicConfigRepository(t *testing.T) {
 
 	// Create config with repository settings
 	configContent := `version: "1.0"
-library_base_path: "./library"
-repository:
-  url: "https://github.com/ddx-tools/ddx"
-  branch: "main"
-  subtree_prefix: "library"
+library:
+  path: .ddx/library
+  repository:
+    url: https://github.com/easel/ddx-library
+    branch: main
 persona_bindings:
   project_name: "ddx-test"
 `

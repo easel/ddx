@@ -82,7 +82,7 @@ func TestInitCommand_Contract(t *testing.T) {
 				require.NoError(t, os.MkdirAll(ddxDir, 0755))
 				require.NoError(t, os.WriteFile(
 					filepath.Join(ddxDir, "config.yaml"),
-					[]byte("version: \"1.0\"\nlibrary_base_path: \"./library\"\nrepository:\n  url: \"https://github.com/easel/ddx\"\n  branch: \"main\"\n  subtree_prefix: \"library\"\npersona_bindings: {}"),
+					[]byte("version: \"1.0\"\nlibrary:\n  path: \".ddx/library\"\n  repository:\n    url: \"https://github.com/easel/ddx-library\"\n    branch: \"main\"\npersona_bindings: {}"),
 					0644,
 				))
 				return workDir
@@ -115,7 +115,7 @@ func TestInitCommand_Contract(t *testing.T) {
 				require.NoError(t, os.MkdirAll(ddxDir, 0755))
 				require.NoError(t, os.WriteFile(
 					filepath.Join(ddxDir, "config.yaml"),
-					[]byte("version: \"0.9\"\nlibrary_base_path: \"./library\"\nrepository:\n  url: \"https://github.com/easel/ddx\"\n  branch: \"main\"\n  subtree_prefix: \"library\"\npersona_bindings: {}"),
+					[]byte("version: \"0.9\"\nlibrary:\n  path: \".ddx/library\"\n  repository:\n    url: \"https://github.com/easel/ddx-library\"\n    branch: \"main\"\npersona_bindings: {}"),
 					0644,
 				))
 				return workDir
@@ -200,11 +200,11 @@ func TestListCommand_Contract(t *testing.T) {
 
 				// Create config in the test directory
 				config := []byte(`version: "1.0"
-library_base_path: ./library
-repository:
-  url: "https://github.com/easel/ddx"
-  branch: "main"
-  subtree_prefix: "library"
+library:
+  path: .ddx/library
+  repository:
+    url: https://github.com/easel/ddx-library
+    branch: main
 persona_bindings: {}`)
 				ddxDir := filepath.Join(testDir, ".ddx")
 				require.NoError(t, os.MkdirAll(ddxDir, 0755))
@@ -237,11 +237,11 @@ persona_bindings: {}`)
 
 				// Create config in the test directory
 				config := []byte(`version: "1.0"
-library_base_path: ./library
-repository:
-  url: "https://github.com/easel/ddx"
-  branch: "main"
-  subtree_prefix: "library"
+library:
+  path: .ddx/library
+  repository:
+    url: https://github.com/easel/ddx-library
+    branch: main
 persona_bindings: {}`)
 				ddxDir := filepath.Join(testDir, ".ddx")
 				require.NoError(t, os.MkdirAll(ddxDir, 0755))

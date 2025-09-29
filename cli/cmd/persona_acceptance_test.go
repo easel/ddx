@@ -40,11 +40,11 @@ func TestAcceptance_US030_LoadPersonasForSession(t *testing.T) {
 				ddxDir := filepath.Join(workDir, ".ddx")
 				require.NoError(t, os.MkdirAll(ddxDir, 0755))
 				config := `version: "1.0"
-library_base_path: "./library"
-repository:
-  url: "https://github.com/test/project"
-  branch: "main"
-  subtree_prefix: "library"
+library:
+  path: .ddx/library
+  repository:
+    url: https://github.com/test/project
+    branch: main
 persona_bindings:
   code-reviewer: "strict-code-reviewer"
   test-engineer: "test-engineer-tdd"

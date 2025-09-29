@@ -1,10 +1,8 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -384,11 +382,11 @@ func TestPersonaBindCommand_Contract(t *testing.T) {
 				ddxDir := filepath.Join(workDir, ".ddx")
 				require.NoError(t, os.MkdirAll(ddxDir, 0755))
 				config := `version: "1.0"
-library_base_path: "./library"
-repository:
-  url: "https://github.com/test/repo"
-  branch: "main"
-  subtree_prefix: "library"`
+library:
+  path: .ddx/library
+  repository:
+    url: https://github.com/easel/ddx-library
+    branch: main`
 				require.NoError(t, os.WriteFile(
 					filepath.Join(ddxDir, "config.yaml"),
 					[]byte(config),
@@ -541,11 +539,11 @@ func TestPersonaLoadCommand_Contract(t *testing.T) {
 
 				// Create .ddx/config.yaml with persona bindings (new format)
 				config := `version: "1.0"
-library_base_path: "./library"
-repository:
-  url: "https://github.com/easel/ddx"
-  branch: "main"
-  subtree_prefix: "library"
+library:
+  path: .ddx/library
+  repository:
+    url: https://github.com/easel/ddx-library
+    branch: main
 persona_bindings: {}
 persona_bindings:
   code-reviewer: strict-reviewer
@@ -636,16 +634,14 @@ You follow TDD practices.`
 				workDir := t.TempDir()
 
 				// Create .ddx/config.yaml configuration (new format)
-				libraryDir := filepath.Join(workDir, "library")
-				config := fmt.Sprintf(`version: "1.0"
-library_base_path: %s
-repository:
-  url: "https://github.com/test/repo"
-  branch: "main"
-  subtree_prefix: "library"
-persona_bindings: {}
+				config := `version: "1.0"
+library:
+  path: .ddx/library
+  repository:
+    url: https://github.com/easel/ddx-library
+    branch: main
 persona_bindings:
-  code-reviewer: strict-reviewer`, strconv.Quote(libraryDir))
+  code-reviewer: strict-reviewer`
 				ddxDir := filepath.Join(workDir, ".ddx")
 				require.NoError(t, os.MkdirAll(ddxDir, 0755))
 				require.NoError(t, os.WriteFile(
@@ -667,6 +663,8 @@ This is the project guidance.`
 				// Create persona
 				homeDir := t.TempDir()
 				t.Setenv("HOME", homeDir)
+				libraryDir := filepath.Join(workDir, ".ddx", "library")
+				t.Setenv("DDX_LIBRARY_BASE_PATH", libraryDir)
 				personasDir := filepath.Join(libraryDir, "personas")
 				require.NoError(t, os.MkdirAll(personasDir, 0755))
 
@@ -784,11 +782,11 @@ func TestPersonaBindingsCommand_Contract(t *testing.T) {
 
 				// Create .ddx/config.yaml with persona bindings (new format)
 				config := `version: "1.0"
-library_base_path: "./library"
-repository:
-  url: "https://github.com/test/repo"
-  branch: "main"
-  subtree_prefix: "library"
+library:
+  path: .ddx/library
+  repository:
+    url: https://github.com/easel/ddx-library
+    branch: main
 persona_bindings: {}
 persona_bindings:
   code-reviewer: strict-reviewer

@@ -418,11 +418,11 @@ func setupTestProject(t *testing.T, workingDir ...string) {
 
 	// Create .ddx/config.yaml configuration (new format)
 	config := `version: "1.0"
-library_base_path: "./library"
-repository:
-  url: https://github.com/ddx-tools/ddx
-  branch: main
-  subtree_prefix: library
+library:
+  path: .ddx/library
+  repository:
+    url: https://github.com/easel/ddx-library
+    branch: main
 persona_bindings:
   project_name: test-project
 `

@@ -456,11 +456,11 @@ func TestPersonaIntegration_ErrorHandling(t *testing.T) {
 				// Create valid .ddx/config.yaml but no personas
 				env := NewTestEnvironment(t)
 				config := `version: "1.0"
-library_base_path: "./library"
-repository:
-  url: "https://github.com/easel/ddx"
-  branch: "main"
-  subtree_prefix: "library"
+library:
+  path: .ddx/library
+  repository:
+    url: https://github.com/easel/ddx-library
+    branch: main
 persona_bindings:
   project_name: "test"`
 				env.CreateConfig(config)

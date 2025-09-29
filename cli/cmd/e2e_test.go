@@ -165,11 +165,11 @@ func TestE2E_TemplateWithVariables(t *testing.T) {
 
 	// Initialize project with new config format
 	config := `version: "1.0"
-library_base_path: "./library"
-repository:
-  url: "https://github.com/easel/ddx"
-  branch: "main"
-  subtree_prefix: "library"
+library:
+  path: .ddx/library
+  repository:
+    url: https://github.com/easel/ddx-library
+    branch: main
 persona_bindings:
   project_name: "MyProject"
   version: "1.0.0"
@@ -283,11 +283,11 @@ func TestE2E_ContributionWorkflow(t *testing.T) {
 
 	// Initialize project with new config format
 	config := `version: "1.0"
-library_base_path: "./library"
-repository:
-  url: "https://github.com/ddx-tools/ddx"
-  branch: "main"
-  subtree_prefix: "library"
+library:
+  path: .ddx/library
+  repository:
+    url: https://github.com/easel/ddx-library
+    branch: main
 persona_bindings: {}`
 	ddxConfigDir := filepath.Join(workspace, ".ddx")
 	require.NoError(t, os.MkdirAll(ddxConfigDir, 0755))
@@ -347,11 +347,11 @@ func TestE2E_UpdateWorkflow(t *testing.T) {
 
 	// Create initial config in new format
 	config := `version: "1.0"
-library_base_path: "./library"
-repository:
-  url: "https://github.com/ddx-tools/ddx"
-  branch: "main"
-  subtree_prefix: "library"
+library:
+  path: .ddx/library
+  repository:
+    url: https://github.com/easel/ddx-library
+    branch: main
 persona_bindings: {}
 sync:
   last_update: "2024-01-01T00:00:00Z"

@@ -121,8 +121,7 @@ library:
   path: "./library"
   repository:
     url: "https://github.com/test/repo"
-    branch: "main"
-    subtree: "library"`
+    branch: "main"`
 				ddxDir := filepath.Join(tempDir, ".ddx")
 				require.NoError(t, os.MkdirAll(ddxDir, 0755))
 				require.NoError(t, os.WriteFile(
@@ -405,7 +404,6 @@ library:
   repository:
     url: "https://github.com/test/repo"
     branch: "main"
-    subtree: "library"
 persona_bindings:
   environment: "development"`
 		ddxDir := filepath.Join(tempDir, ".ddx")
@@ -491,9 +489,8 @@ func TestAcceptance_WorkflowIntegration(t *testing.T) {
 library:
   path: "./library"
   repository:
-    url: "https://github.com/easel/ddx"
+    url: "https://github.com/easel/ddx-library"
     branch: "main"
-    subtree: "library"
 persona_bindings: {}`)
 		ddxDir := filepath.Join(tempDir, ".ddx")
 		require.NoError(t, os.MkdirAll(ddxDir, 0755))
@@ -555,9 +552,8 @@ func TestAcceptance_ErrorScenarios(t *testing.T) {
 library:
   path: "./library"
   repository:
-    url: "https://github.com/easel/ddx"
+    url: "https://github.com/easel/ddx-library"
     branch: "main"
-    subtree: "library"
 persona_bindings: {}`
 					ddxDir := filepath.Join(tempDir, ".ddx")
 					os.MkdirAll(ddxDir, 0755)

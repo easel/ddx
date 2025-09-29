@@ -134,11 +134,11 @@ persona_bindings:
 		globalConfigDir := filepath.Join(homeDir, ".ddx")
 		require.NoError(t, os.MkdirAll(globalConfigDir, 0755))
 		globalConfig := `version: "1.0"
-library_base_path: "./library"
-repository:
-  url: "https://github.com/easel/ddx"
-  branch: "main"
-  subtree_prefix: "library"
+library:
+  path: .ddx/library
+  repository:
+    url: https://github.com/easel/ddx-library
+    branch: main
 persona_bindings:
   author: "Global User"
   email: "global@example.com"
@@ -149,8 +149,11 @@ persona_bindings:
 		projectDir := t.TempDir()
 
 		localConfig := `version: "2.0"
-repository:
-  url: "https://github.com/project/repo"
+library:
+  path: .ddx/library
+  repository:
+    url: "https://github.com/project/repo"
+    branch: main
 persona_bindings:
   author: "Project User"
 `
@@ -240,8 +243,11 @@ persona_bindings:
 		sourceConfig := `version: "2.0"
 author: "Export User"
 email: "export@example.com"
-repository:
-  url: "https://github.com/export/repo"
+library:
+  path: .ddx/library
+  repository:
+    url: "https://github.com/export/repo"
+    branch: main
 `
 		env := NewTestEnvironment(t)
 		env.CreateConfig(sourceConfig)

@@ -192,11 +192,11 @@ func TestAcceptance_US021_ConfigureRepositoryConnection(t *testing.T) {
 		// Create basic config first
 		env := NewTestEnvironment(t)
 		config := `version: "1.0"
-library_base_path: "./library"
-repository:
-  url: "https://github.com/test/repo"
-  branch: "main"
-  subtree_prefix: "library"
+library:
+  path: .ddx/library
+  repository:
+    url: https://github.com/easel/ddx-library
+    branch: main
 persona_bindings:
   project_name: "test"
 `
@@ -222,11 +222,11 @@ persona_bindings:
 		// Create basic config
 		env := NewTestEnvironment(t)
 		config := `version: "1.0"
-library_base_path: "./library"
-repository:
-  url: "https://github.com/test/repo"
-  branch: "main"
-  subtree_prefix: "library"
+library:
+  path: .ddx/library
+  repository:
+    url: https://github.com/easel/ddx-library
+    branch: main
 persona_bindings:
   project_name: "test"
 `
@@ -279,11 +279,11 @@ repositories:
 		env := NewTestEnvironment(t)
 		// Convert advanced config to new format (simplified)
 		simpleConfig := `version: "1.0"
-library_base_path: "./library"
-repository:
-  url: "git@github.com:company/ddx-private.git"
-  branch: "development"
-  subtree_prefix: "library"
+library:
+  path: .ddx/library
+  repository:
+    url: git@github.com:company/ddx-private.git
+    branch: development
 persona_bindings:
   project_name: "test"
 `
@@ -362,11 +362,11 @@ func TestRepositoryConfigurationCommands_Contract(t *testing.T) {
 		// Create config with repository settings
 		env := NewTestEnvironment(t)
 		config := `version: "1.0"
-library_base_path: "./library"
-repository:
-  url: "https://github.com/test/repo"
-  branch: "main"
-  subtree_prefix: "library"
+library:
+  path: .ddx/library
+  repository:
+    url: https://github.com/easel/ddx-library
+    branch: main
 persona_bindings:
   project_name: "test"
 `
@@ -396,11 +396,11 @@ persona_bindings:
 
 		env := NewTestEnvironment(t)
 		config := `version: "1.0"
-library_base_path: "./library"
-repository:
-  url: "https://github.com/test/repo"
-  branch: "main"
-  subtree_prefix: "library"
+library:
+  path: .ddx/library
+  repository:
+    url: https://github.com/easel/ddx-library
+    branch: main
 persona_bindings:
   project_name: "test"
 `

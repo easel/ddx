@@ -46,10 +46,11 @@ func TestListCommand(t *testing.T) {
 
 				// Create .ddx/config.yaml config pointing to library
 				config := []byte(`version: "1.0"
-library_base_path: .ddx/library
-repository:
-  url: https://github.com/easel/ddx-library
-  branch: main`)
+library:
+  path: .ddx/library
+  repository:
+    url: https://github.com/easel/ddx-library
+    branch: main`)
 				require.NoError(t, os.WriteFile(filepath.Join(testDir, ".ddx", "config.yaml"), config, 0644))
 
 				return testDir
@@ -75,7 +76,11 @@ repository:
 
 				// Create .ddx/config.yaml config
 				config := []byte(`version: "1.0"
-library_base_path: .ddx/library`)
+library:
+  path: .ddx/library
+  repository:
+    url: https://github.com/easel/ddx-library
+    branch: main`)
 				require.NoError(t, os.WriteFile(filepath.Join(testDir, ".ddx", "config.yaml"), config, 0644))
 
 				return testDir

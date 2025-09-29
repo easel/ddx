@@ -51,11 +51,11 @@ func TestPromptsCommand(t *testing.T) {
 				// Create .ddx/config.yaml pointing to library
 				env := NewTestEnvironment(t)
 				configContent := `version: "1.0"
-library_base_path: ./library
-repository:
-  url: https://github.com/easel/ddx
-  branch: main
-  subtree_prefix: library
+library:
+  path: .ddx/library
+  repository:
+    url: https://github.com/easel/ddx-library
+    branch: main
 persona_bindings:
   project_name: test`
 				env.CreateConfig(configContent)

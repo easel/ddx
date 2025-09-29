@@ -48,16 +48,16 @@ persona_bindings:
 		},
 		{
 			name: "get specific config value",
-			args: []string{"config", "get", "repository.url"},
+			args: []string{"config", "get", "library.repository.url"},
 			setup: func(t *testing.T) string {
 				workDir := t.TempDir()
 
 				config := `version: "1.0"
-library_base_path: "./library"
-repository:
-  url: "https://github.com/test/repo"
-  branch: "main"
-  subtree_prefix: "library"
+library:
+  path: ".ddx/library"
+  repository:
+    url: "https://github.com/test/repo"
+    branch: "main"
 persona_bindings:
   author: "Test User"
 `
@@ -208,11 +208,11 @@ func TestConfigCommand_Global(t *testing.T) {
 	require.NoError(t, os.MkdirAll(globalConfigDir, 0755))
 
 	globalConfig := `version: "1.0"
-library_base_path: "./library"
-repository:
-  url: "https://github.com/test/repo"
-  branch: "main"
-  subtree_prefix: "library"
+library:
+  path: ".ddx/library"
+  repository:
+    url: "https://github.com/test/repo"
+    branch: "main"
 persona_bindings:
   author: "Test User"
   email: "test@example.com"

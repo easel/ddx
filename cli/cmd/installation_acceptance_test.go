@@ -1049,10 +1049,11 @@ func (env *InstallationTestEnvironment) setupInstallationState(state string) err
 		os.WriteFile(filepath.Join(libDir, "workflows", "README.md"), []byte("# Workflows"), 0644)
 		// Create configuration file
 		configContent := []byte(`version: "1.0"
-library_base_path: .ddx/library
-repository:
-  url: https://github.com/easel/ddx-library
-  branch: main`)
+library:
+  path: .ddx/library
+  repository:
+    url: https://github.com/easel/ddx-library
+    branch: main`)
 		os.WriteFile(filepath.Join(env.HomeDir, ".ddx", "config.yaml"), configContent, 0644)
 		return nil
 	case "broken_path":
@@ -1066,10 +1067,11 @@ repository:
 		os.WriteFile(filepath.Join(libDir, "workflows", "README.md"), []byte("# Workflows"), 0644)
 		// Create configuration file
 		configContent := []byte(`version: "1.0"
-library_base_path: .ddx/library
-repository:
-  url: https://github.com/easel/ddx-library
-  branch: main`)
+library:
+  path: .ddx/library
+  repository:
+    url: https://github.com/easel/ddx-library
+    branch: main`)
 		os.WriteFile(filepath.Join(env.HomeDir, ".ddx", "config.yaml"), configContent, 0644)
 		// Remove PATH configuration from shell profiles
 		profileFiles := []string{"~/.bashrc", "~/.zshrc", "~/.profile"}
