@@ -38,8 +38,14 @@ func LoadRegistry(path, workingDir string) (*Registry, error) {
 
 // LoadRegistryWithLibraryPath loads the MCP server registry with explicit library path
 func LoadRegistryWithLibraryPath(path, workingDir, libraryPath string) (*Registry, error) {
+	// Resolve library path to absolute if provided and relative
+	absLibraryPath := libraryPath
+	if libraryPath != "" && !filepath.IsAbs(libraryPath) {
+		absLibraryPath = filepath.Join(workingDir, libraryPath)
+	}
+
 	if path == "" && libraryPath != "" {
-		path = filepath.Join(libraryPath, "mcp-servers", "registry.yml")
+		path = filepath.Join(absLibraryPath, "mcp-servers", "registry.yml")
 	} else if path == "" {
 		// Fall back to old resolution method
 		resolvedPath, err := config.ResolveLibraryResource(DefaultRegistryPath, "", workingDir)
@@ -49,7 +55,7 @@ func LoadRegistryWithLibraryPath(path, workingDir, libraryPath string) (*Registr
 		path = resolvedPath
 	}
 
-	return loadRegistryFromPath(path, workingDir, libraryPath)
+	return loadRegistryFromPath(path, workingDir, absLibraryPath)
 }
 
 // loadRegistryFromPath is the common implementation for loading registry

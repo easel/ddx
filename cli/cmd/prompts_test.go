@@ -11,8 +11,11 @@ import (
 )
 
 // getPromptsTestRootCommand creates a root command for testing
-func getPromptsTestRootCommand() *cobra.Command {
-	factory := NewCommandFactory("/tmp")
+func getPromptsTestRootCommand(workingDir string) *cobra.Command {
+	if workingDir == "" {
+		workingDir = "/tmp"
+	}
+	factory := NewCommandFactory(workingDir)
 	return factory.NewRootCommand()
 }
 
@@ -93,10 +96,13 @@ persona_bindings:
 				))
 
 				// Create config
-				configContent := `version: "2.0"
-library_base_path: ./library
-repository:
-  url: https://github.com/easel/ddx`
+				configContent := `version: "1.0"
+library:
+  path: "./library"
+  repository:
+    url: "https://github.com/easel/ddx-library"
+    branch: "main"
+persona_bindings: {}`
 				ddxDir := ".ddx"
 				require.NoError(t, os.MkdirAll(ddxDir, 0755))
 				require.NoError(t, os.WriteFile(filepath.Join(ddxDir, "config.yaml"), []byte(configContent), 0644))
@@ -134,8 +140,13 @@ You are a senior code reviewer. Focus on:
 				))
 
 				// Create config
-				configContent := `version: "2.0"
-library_base_path: ./library`
+				configContent := `version: "1.0"
+library:
+  path: "./library"
+  repository:
+    url: "https://github.com/easel/ddx-library"
+    branch: "main"
+persona_bindings: {}`
 				ddxDir := ".ddx"
 				require.NoError(t, os.MkdirAll(ddxDir, 0755))
 				require.NoError(t, os.WriteFile(filepath.Join(ddxDir, "config.yaml"), []byte(configContent), 0644))
@@ -157,8 +168,13 @@ library_base_path: ./library`
 				// Create library but no prompts
 				require.NoError(t, os.MkdirAll(filepath.Join(testDir, "library", "prompts"), 0755))
 
-				configContent := `version: "2.0"
-library_base_path: ./library`
+				configContent := `version: "1.0"
+library:
+  path: "./library"
+  repository:
+    url: "https://github.com/easel/ddx-library"
+    branch: "main"
+persona_bindings: {}`
 				ddxDir := ".ddx"
 				require.NoError(t, os.MkdirAll(ddxDir, 0755))
 				require.NoError(t, os.WriteFile(filepath.Join(ddxDir, "config.yaml"), []byte(configContent), 0644))
@@ -200,8 +216,13 @@ library_base_path: ./library`
 					0644,
 				))
 
-				configContent := `version: "2.0"
-library_base_path: ./library`
+				configContent := `version: "1.0"
+library:
+  path: "./library"
+  repository:
+    url: "https://github.com/easel/ddx-library"
+    branch: "main"
+persona_bindings: {}`
 				ddxDir := ".ddx"
 				require.NoError(t, os.MkdirAll(ddxDir, 0755))
 				require.NoError(t, os.WriteFile(filepath.Join(ddxDir, "config.yaml"), []byte(configContent), 0644))
@@ -260,7 +281,7 @@ library_base_path: ./library`
 			// The actual implementation will be done after tests are written
 
 			// Execute the command
-			rootCmd := getPromptsTestRootCommand()
+			rootCmd := getPromptsTestRootCommand("")
 			output, err := executeCommand(rootCmd, tt.args...)
 
 			// Validate results
@@ -280,7 +301,7 @@ library_base_path: ./library`
 func TestPromptsCommand_Help(t *testing.T) {
 	// This test specifies that prompts command should have help text
 	// with list and show subcommands
-	rootCmd := getPromptsTestRootCommand()
+	rootCmd := getPromptsTestRootCommand("")
 	output, err := executeCommand(rootCmd, "prompts", "--help")
 
 	assert.NoError(t, err)

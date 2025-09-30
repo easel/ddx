@@ -20,6 +20,83 @@ func getPersonaTestRootCommand(workingDir string) *cobra.Command {
 	return factory.NewRootCommand()
 }
 
+// setupPersonaTestProject initializes a DDx project for persona testing
+func setupPersonaTestProject(t *testing.T) *TestEnvironment {
+	env := NewTestEnvironment(t)
+	env.InitWithDDx()
+	return env
+}
+
+// setupMockPersonas creates mock persona files in the test environment's library
+func setupMockPersonas(t *testing.T, env *TestEnvironment) {
+	t.Helper()
+
+	libPath := filepath.Join(env.Dir, ".ddx", "library")
+	personasDir := filepath.Join(libPath, "personas")
+	require.NoError(t, os.MkdirAll(personasDir, 0755))
+
+	// Create strict-code-reviewer persona
+	strictReviewerContent := `---
+name: strict-code-reviewer
+roles: [code-reviewer, security-analyst]
+description: Uncompromising code quality enforcer
+tags: [strict, security, production, quality]
+---
+
+# Strict Code Reviewer
+
+You are an experienced senior code reviewer who enforces high quality standards.
+Your reviews are thorough, security-focused, and aimed at maintaining production quality.
+
+## Review Principles
+- Security vulnerabilities are non-negotiable
+- Performance implications must be considered
+- Code readability and maintainability are essential
+- Test coverage requirements must be met`
+
+	require.NoError(t, os.WriteFile(
+		filepath.Join(personasDir, "strict-code-reviewer.md"),
+		[]byte(strictReviewerContent),
+		0644,
+	))
+
+	// Create test-engineer-tdd persona
+	testEngineerContent := `---
+name: test-engineer-tdd
+roles: [test-engineer, qa]
+description: Test-driven development advocate
+tags: [tdd, testing, quality]
+---
+
+# Test Engineer (TDD)
+
+You are a test engineer who champions test-driven development practices.`
+
+	require.NoError(t, os.WriteFile(
+		filepath.Join(personasDir, "test-engineer-tdd.md"),
+		[]byte(testEngineerContent),
+		0644,
+	))
+
+	// Create architect-systems persona
+	architectContent := `---
+name: architect-systems
+roles: [architect, systems-design]
+description: Systems architecture expert
+tags: [architecture, design, systems]
+---
+
+# Systems Architect
+
+You are a systems architect with deep expertise in distributed systems.`
+
+	require.NoError(t, os.WriteFile(
+		filepath.Join(personasDir, "architect-systems.md"),
+		[]byte(architectContent),
+		0644,
+	))
+}
+
 // TestAcceptance_US030_LoadPersonasForSession tests US-030: Developer Loading Personas for Session
 func TestAcceptance_US030_LoadPersonasForSession(t *testing.T) {
 	tests := []struct {
@@ -76,7 +153,6 @@ This is a test project for validating persona functionality.`
 				t.Setenv("HOME", homeDir)
 				// Set library path to project-local library
 				libraryDir := filepath.Join(workDir, ".ddx", "library")
-				t.Setenv("DDX_LIBRARY_BASE_PATH", libraryDir)
 				personasDir := filepath.Join(libraryDir, "personas")
 				require.NoError(t, os.MkdirAll(personasDir, 0755))
 
@@ -217,11 +293,14 @@ Project guidance for my application.`
 					0644,
 				))
 
-				// Create .ddx.yml to make this a valid DDx project
+				// Create .ddx/config.yaml to make this a valid DDx project
 				config := `version: "1.0"
-repository:
-  url: "https://github.com/test/project"
-  branch: "main"`
+library:
+  path: ".ddx/library"
+  repository:
+    url: "https://github.com/easel/ddx-library"
+    branch: "main"
+persona_bindings: {}`
 
 				require.NoError(t, os.MkdirAll(filepath.Join(workDir, ".ddx"), 0755))
 				require.NoError(t, os.WriteFile(
@@ -235,7 +314,6 @@ repository:
 				t.Setenv("HOME", homeDir)
 				// Set library path to project-local library
 				libraryDir := filepath.Join(workDir, ".ddx", "library")
-				t.Setenv("DDX_LIBRARY_BASE_PATH", libraryDir)
 				personasDir := filepath.Join(libraryDir, "personas")
 				require.NoError(t, os.MkdirAll(personasDir, 0755))
 
@@ -341,7 +419,6 @@ persona_bindings:
 				t.Setenv("HOME", homeDir)
 				// Set library path to project-local library
 				libraryDir := filepath.Join(workDir, ".ddx", "library")
-				t.Setenv("DDX_LIBRARY_BASE_PATH", libraryDir)
 				personasDir := filepath.Join(libraryDir, "personas")
 				require.NoError(t, os.MkdirAll(personasDir, 0755))
 
@@ -426,7 +503,6 @@ persona_bindings:
 				t.Setenv("HOME", homeDir)
 				// Set library path to project-local library
 				libraryDir := filepath.Join(workDir, ".ddx", "library")
-				t.Setenv("DDX_LIBRARY_BASE_PATH", libraryDir)
 				personasDir := filepath.Join(libraryDir, "personas")
 				require.NoError(t, os.MkdirAll(personasDir, 0755))
 
@@ -789,7 +865,6 @@ func TestAcceptance_US034_DeveloperDiscoveringPersonas(t *testing.T) {
 				t.Setenv("HOME", homeDir)
 				// Set library path to project-local library
 				libraryDir := filepath.Join(workDir, ".ddx", "library")
-				t.Setenv("DDX_LIBRARY_BASE_PATH", libraryDir)
 				personasDir := filepath.Join(libraryDir, "personas")
 				require.NoError(t, os.MkdirAll(personasDir, 0755))
 
@@ -876,7 +951,6 @@ tags: [security, vulnerability]
 				t.Setenv("HOME", homeDir)
 				// Set library path to project-local library
 				libraryDir := filepath.Join(workDir, ".ddx", "library")
-				t.Setenv("DDX_LIBRARY_BASE_PATH", libraryDir)
 				personasDir := filepath.Join(libraryDir, "personas")
 				require.NoError(t, os.MkdirAll(personasDir, 0755))
 

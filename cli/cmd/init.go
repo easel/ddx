@@ -14,8 +14,9 @@ import (
 
 // InitOptions contains all configuration options for project initialization
 type InitOptions struct {
-	Force bool // Force initialization even if config exists
-	NoGit bool // Skip git-related operations
+	Force  bool // Force initialization even if config exists
+	NoGit  bool // Skip git-related operations
+	Silent bool // Suppress all output except errors
 }
 
 // Command registration is now handled by command_factory.go
@@ -35,16 +36,20 @@ func (f *CommandFactory) runInit(cmd *cobra.Command, args []string) error {
 	// Extract flags from cobra.Command
 	initForce, _ := cmd.Flags().GetBool("force")
 	initNoGit, _ := cmd.Flags().GetBool("no-git")
+	initSilent, _ := cmd.Flags().GetBool("silent")
 
 	// Create options struct for business logic
 	opts := InitOptions{
-		Force: initForce,
-		NoGit: initNoGit,
+		Force:  initForce,
+		NoGit:  initNoGit,
+		Silent: initSilent,
 	}
 
 	// Handle user output
-	fmt.Fprint(cmd.OutOrStdout(), "🚀 Initializing DDx in current project...\n")
-	fmt.Fprintln(cmd.OutOrStdout())
+	if !opts.Silent {
+		fmt.Fprint(cmd.OutOrStdout(), "🚀 Initializing DDx in current project...\n")
+		fmt.Fprintln(cmd.OutOrStdout())
+	}
 
 	// Call pure business logic function
 	result, err := initProject(f.WorkingDir, opts)
@@ -54,28 +59,30 @@ func (f *CommandFactory) runInit(cmd *cobra.Command, args []string) error {
 	}
 
 	// Handle user output based on results
-	if result.BackupPath != "" {
-		fmt.Fprintf(cmd.OutOrStdout(), "💾 Created backup of existing config: %s\n", result.BackupPath)
-	}
+	if !opts.Silent {
+		if result.BackupPath != "" {
+			fmt.Fprintf(cmd.OutOrStdout(), "💾 Created backup of existing config: %s\n", result.BackupPath)
+		}
 
-	if result.IsDDxRepo {
-		fmt.Fprint(cmd.OutOrStdout(), "📚 Detected DDx repository - configuring library_path to use ../library\n")
-	}
+		if result.IsDDxRepo {
+			fmt.Fprint(cmd.OutOrStdout(), "📚 Detected DDx repository - configuring library_path to use ../library\n")
+		}
 
-	// Configuration created successfully
+		// Configuration created successfully
 
-	fmt.Fprint(cmd.OutOrStdout(), "✅ DDx initialized successfully!\n")
-	fmt.Fprint(cmd.OutOrStdout(), "Initialized DDx in current project.\n")
-	fmt.Fprintln(cmd.OutOrStdout())
-
-	// Show next steps only if library exists
-	if result.LibraryExists {
-		fmt.Fprint(cmd.OutOrStdout(), "Next steps:\n")
-		fmt.Fprint(cmd.OutOrStdout(), "  ddx list          - See available resources\n")
-		fmt.Fprint(cmd.OutOrStdout(), "  ddx apply <name>  - Apply templates or patterns\n")
-		fmt.Fprint(cmd.OutOrStdout(), "  ddx diagnose      - Analyze your project\n")
-		fmt.Fprint(cmd.OutOrStdout(), "  ddx update        - Update toolkit\n")
+		fmt.Fprint(cmd.OutOrStdout(), "✅ DDx initialized successfully!\n")
+		fmt.Fprint(cmd.OutOrStdout(), "Initialized DDx in current project.\n")
 		fmt.Fprintln(cmd.OutOrStdout())
+
+		// Show next steps only if library exists
+		if result.LibraryExists {
+			fmt.Fprint(cmd.OutOrStdout(), "Next steps:\n")
+			fmt.Fprint(cmd.OutOrStdout(), "  ddx list          - See available resources\n")
+			fmt.Fprint(cmd.OutOrStdout(), "  ddx apply <name>  - Apply templates or patterns\n")
+			fmt.Fprint(cmd.OutOrStdout(), "  ddx diagnose      - Analyze your project\n")
+			fmt.Fprint(cmd.OutOrStdout(), "  ddx update        - Update toolkit\n")
+			fmt.Fprintln(cmd.OutOrStdout())
+		}
 	}
 
 	return nil
@@ -206,17 +213,17 @@ func isDDxRepository(workingDir string) bool {
 	// Check if we're in the cli directory of DDx repo
 	if filepath.Base(workingDir) == "cli" {
 		// Check for main.go
-		if _, err := os.Stat("main.go"); err == nil {
+		if _, err := os.Stat(filepath.Join(workingDir, "main.go")); err == nil {
 			// Check for ../library directory
-			if _, err := os.Stat("../library"); err == nil {
+			if _, err := os.Stat(filepath.Join(workingDir, "..", "library")); err == nil {
 				return true
 			}
 		}
 	}
 
 	// Check if we're at the root of DDx repo
-	if _, err := os.Stat("cli/main.go"); err == nil {
-		if _, err := os.Stat("library"); err == nil {
+	if _, err := os.Stat(filepath.Join(workingDir, "cli", "main.go")); err == nil {
+		if _, err := os.Stat(filepath.Join(workingDir, "library")); err == nil {
 			return true
 		}
 	}

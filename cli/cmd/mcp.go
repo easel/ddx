@@ -322,7 +322,7 @@ func mcpInstall(workingDir string, opts MCPInstallOptions) error {
 	if cfg.Library != nil {
 		libPath = cfg.Library.Path
 	}
-	return installer.InstallWithLibraryPath(opts.ServerName, mcpOpts, libPath)
+	return installer.InstallWithLibraryPath(opts.ServerName, mcpOpts, libPath, workingDir)
 }
 
 // mcpStatus returns the current status of MCP servers

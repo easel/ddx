@@ -183,32 +183,24 @@ func TestListCommand_Contract(t *testing.T) {
 			setup: func(t *testing.T) string {
 				testDir := t.TempDir()
 
-				// Create library structure as per contract
-				libraryDir := filepath.Join(testDir, "library")
+				// Initialize DDx properly
+				factory := NewCommandFactory(testDir)
+				initCmd := factory.NewRootCommand()
+				initCmd.SetArgs([]string{"init", "--no-git", "--silent"})
+				var initOut bytes.Buffer
+				initCmd.SetOut(&initOut)
+				initCmd.SetErr(&initOut)
+				require.NoError(t, initCmd.Execute())
 
-				// Explicitly create workflows directory structure
+				// Create test resources in the library
+				libraryDir := filepath.Join(testDir, ".ddx", "library")
 				workflowsDir := filepath.Join(libraryDir, "workflows")
-				require.NoError(t, os.MkdirAll(workflowsDir, 0755))
 				require.NoError(t, os.MkdirAll(filepath.Join(workflowsDir, "helix"), 0755))
 				require.NoError(t, os.WriteFile(filepath.Join(workflowsDir, "helix", "workflow.yml"), []byte("name: helix"), 0644))
 
-				// Explicitly create prompts directory structure
 				promptsDir := filepath.Join(libraryDir, "prompts")
-				require.NoError(t, os.MkdirAll(promptsDir, 0755))
 				require.NoError(t, os.MkdirAll(filepath.Join(promptsDir, "claude"), 0755))
 				require.NoError(t, os.WriteFile(filepath.Join(promptsDir, "claude", "prompt.md"), []byte("# Prompt"), 0644))
-
-				// Create config in the test directory
-				config := []byte(`version: "1.0"
-library:
-  path: .ddx/library
-  repository:
-    url: https://github.com/easel/ddx-library
-    branch: main
-persona_bindings: {}`)
-				ddxDir := filepath.Join(testDir, ".ddx")
-				require.NoError(t, os.MkdirAll(ddxDir, 0755))
-				require.NoError(t, os.WriteFile(filepath.Join(ddxDir, "config.yaml"), config, 0644))
 
 				return testDir
 			},
@@ -226,7 +218,17 @@ persona_bindings: {}`)
 			setup: func(t *testing.T) string {
 				testDir := t.TempDir()
 
-				libraryDir := filepath.Join(testDir, "library")
+				// Initialize DDx properly
+				factory := NewCommandFactory(testDir)
+				initCmd := factory.NewRootCommand()
+				initCmd.SetArgs([]string{"init", "--no-git", "--silent"})
+				var initOut bytes.Buffer
+				initCmd.SetOut(&initOut)
+				initCmd.SetErr(&initOut)
+				require.NoError(t, initCmd.Execute())
+
+				// Create test resources in the library
+				libraryDir := filepath.Join(testDir, ".ddx", "library")
 				workflowsDir := filepath.Join(libraryDir, "workflows")
 				require.NoError(t, os.MkdirAll(filepath.Join(workflowsDir, "helix"), 0755))
 				require.NoError(t, os.WriteFile(filepath.Join(workflowsDir, "helix", "workflow.yml"), []byte("name: helix"), 0644))
@@ -234,18 +236,6 @@ persona_bindings: {}`)
 				promptsDir := filepath.Join(libraryDir, "prompts")
 				require.NoError(t, os.MkdirAll(filepath.Join(promptsDir, "claude"), 0755))
 				require.NoError(t, os.WriteFile(filepath.Join(promptsDir, "claude", "prompt.md"), []byte("# Prompt"), 0644))
-
-				// Create config in the test directory
-				config := []byte(`version: "1.0"
-library:
-  path: .ddx/library
-  repository:
-    url: https://github.com/easel/ddx-library
-    branch: main
-persona_bindings: {}`)
-				ddxDir := filepath.Join(testDir, ".ddx")
-				require.NoError(t, os.MkdirAll(ddxDir, 0755))
-				require.NoError(t, os.WriteFile(filepath.Join(ddxDir, "config.yaml"), config, 0644))
 
 				return testDir
 			},

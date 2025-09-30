@@ -191,6 +191,23 @@ func (f *CommandFactory) displayUpdateNotification(cmd *cobra.Command) error {
 		return nil
 	}
 
+	// Skip update notification for help commands
+	if cmd.Name() == "help" || cmd.Parent() != nil && cmd.Parent().Name() == "help" {
+		return nil
+	}
+
+	// Skip update notification for machine-readable output formats
+	jsonFlag, _ := cmd.Flags().GetBool("json")
+	if jsonFlag {
+		return nil
+	}
+
+	// Skip update notification if silent flag is set
+	silentFlag, _ := cmd.Flags().GetBool("silent")
+	if silentFlag {
+		return nil
+	}
+
 	available, version, err := f.updateChecker.IsUpdateAvailable()
 	if err != nil || !available {
 		return nil

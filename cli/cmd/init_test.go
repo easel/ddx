@@ -14,8 +14,11 @@ import (
 )
 
 // Helper function to create a fresh root command for tests
-func getInitTestRootCommand() *cobra.Command {
-	factory := NewCommandFactory("/tmp") // Tests don't rely on working directory
+func getInitTestRootCommand(workingDir string) *cobra.Command {
+	if workingDir == "" {
+		workingDir = "/tmp"
+	}
+	factory := NewCommandFactory(workingDir)
 	return factory.NewRootCommand()
 }
 
@@ -348,7 +351,20 @@ repository:
 			name: "commits_config_file_to_git",
 			args: []string{"init"},
 			setup: func(t *testing.T, dir string) {
-				// Don't set DDX_TEST_MODE - we want real git behavior
+				// Unset DDX_TEST_MODE - we want real git behavior
+				os.Unsetenv("DDX_TEST_MODE")
+
+				// Create initial commit (required for git subtree)
+				readmePath := filepath.Join(dir, "README.md")
+				require.NoError(t, os.WriteFile(readmePath, []byte("# Test Project"), 0644))
+
+				gitAdd := exec.Command("git", "add", "README.md")
+				gitAdd.Dir = dir
+				require.NoError(t, gitAdd.Run())
+
+				gitCommit := exec.Command("git", "commit", "-m", "Initial commit")
+				gitCommit.Dir = dir
+				require.NoError(t, gitCommit.Run())
 			},
 			validateOutput: func(t *testing.T, dir, output string, err error) {
 				// Config file should be created

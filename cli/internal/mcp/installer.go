@@ -34,18 +34,21 @@ func NewInstallerWithWriter(w io.Writer) *Installer {
 
 // Install installs an MCP server
 func (i *Installer) Install(serverName string, opts InstallOptions) error {
-	return i.InstallWithLibraryPath(serverName, opts, "")
+	wd, _ := os.Getwd()
+	return i.InstallWithLibraryPath(serverName, opts, "", wd)
 }
 
 // InstallWithLibraryPath installs an MCP server with a specific library path
-func (i *Installer) InstallWithLibraryPath(serverName string, opts InstallOptions, libraryPath string) error {
+func (i *Installer) InstallWithLibraryPath(serverName string, opts InstallOptions, libraryPath string, workingDir string) error {
 	// Show installation start message
 	fmt.Fprintf(i.out, "🔧 Installing %s MCP Server...\n\n", serverName)
 
 	// Load registry
 	if i.registry == nil {
-		wd, _ := os.Getwd()
-		registry, err := LoadRegistryWithLibraryPath("", wd, libraryPath)
+		if workingDir == "" {
+			workingDir, _ = os.Getwd()
+		}
+		registry, err := LoadRegistryWithLibraryPath("", workingDir, libraryPath)
 		if err != nil {
 			return fmt.Errorf("loading registry: %w", err)
 		}

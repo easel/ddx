@@ -181,23 +181,25 @@ func TestAcceptance_US002_ListAvailableAssets(t *testing.T) {
 			scenario: "List all available DDX resources",
 			given: func(t *testing.T) string {
 				// Given: DDX is initialized with available resources
-				testLibDir := t.TempDir()
-				t.Setenv("DDX_LIBRARY_BASE_PATH", testLibDir)
+				env := NewTestEnvironment(t)
+				env.InitWithDDx()
 
 				// Create various resources in library directory
-				workflowsDir := filepath.Join(testLibDir, "workflows")
+				libDir := filepath.Join(env.Dir, ".ddx", "library")
+				workflowsDir := filepath.Join(libDir, "workflows")
 				require.NoError(t, os.MkdirAll(filepath.Join(workflowsDir, "helix"), 0755))
 				require.NoError(t, os.WriteFile(filepath.Join(workflowsDir, "helix", "workflow.yml"), []byte("name: helix"), 0644))
 
-				promptsDir := filepath.Join(testLibDir, "prompts")
+				promptsDir := filepath.Join(libDir, "prompts")
 				require.NoError(t, os.MkdirAll(filepath.Join(promptsDir, "claude"), 0755))
 				require.NoError(t, os.WriteFile(filepath.Join(promptsDir, "claude", "prompt.md"), []byte("# Prompt"), 0644))
 
-				return testLibDir
+				return env.Dir
 			},
 			when: func(t *testing.T) (string, error) {
 				// When: I run `ddx list`
-				factory := NewTestRootCommand(t)
+				testDir := os.Getenv("TEST_DIR")
+				factory := NewCommandFactory(testDir)
 				rootCmd := factory.NewRootCommand()
 				return executeCommand(rootCmd, "list")
 			},
@@ -213,22 +215,24 @@ func TestAcceptance_US002_ListAvailableAssets(t *testing.T) {
 			scenario: "Filter resources by type",
 			given: func(t *testing.T) string {
 				// Given: I want to see only workflows
-				testLibDir := t.TempDir()
-				t.Setenv("DDX_LIBRARY_BASE_PATH", testLibDir)
+				env := NewTestEnvironment(t)
+				env.InitWithDDx()
 
-				workflowsDir := filepath.Join(testLibDir, "workflows")
+				libDir := filepath.Join(env.Dir, ".ddx", "library")
+				workflowsDir := filepath.Join(libDir, "workflows")
 				require.NoError(t, os.MkdirAll(filepath.Join(workflowsDir, "helix"), 0755))
 				require.NoError(t, os.WriteFile(filepath.Join(workflowsDir, "helix", "workflow.yml"), []byte("name: helix"), 0644))
 
-				promptsDir := filepath.Join(testLibDir, "prompts")
+				promptsDir := filepath.Join(libDir, "prompts")
 				require.NoError(t, os.MkdirAll(filepath.Join(promptsDir, "claude"), 0755))
 				require.NoError(t, os.WriteFile(filepath.Join(promptsDir, "claude", "prompt.md"), []byte("# Prompt"), 0644))
 
-				return testLibDir
+				return env.Dir
 			},
 			when: func(t *testing.T) (string, error) {
 				// When: I run `ddx list workflows`
-				factory := NewTestRootCommand(t)
+				testDir := os.Getenv("TEST_DIR")
+				factory := NewCommandFactory(testDir)
 				rootCmd := factory.NewRootCommand()
 				return executeCommand(rootCmd, "list", "workflows")
 			},
@@ -243,27 +247,38 @@ func TestAcceptance_US002_ListAvailableAssets(t *testing.T) {
 			name:     "json_output",
 			scenario: "Output resources as JSON",
 			given: func(t *testing.T) string {
-				// Given: DDx has resources available
-				testLibDir := t.TempDir()
-				t.Setenv("DDX_LIBRARY_BASE_PATH", testLibDir)
+				// Given: DDx project with resources
+				testDir := t.TempDir()
 
-				// Create workflows with files
-				workflowsDir := filepath.Join(testLibDir, "workflows")
+				// Initialize DDx properly
+				factory := NewCommandFactory(testDir)
+				initCmd := factory.NewRootCommand()
+				initCmd.SetArgs([]string{"init", "--no-git", "--silent"})
+				var initOut bytes.Buffer
+				initCmd.SetOut(&initOut)
+				initCmd.SetErr(&initOut)
+				require.NoError(t, initCmd.Execute())
+
+				// Create test resources in the library
+				libraryDir := filepath.Join(testDir, ".ddx", "library")
+				workflowsDir := filepath.Join(libraryDir, "workflows")
 				helixDir := filepath.Join(workflowsDir, "helix")
 				require.NoError(t, os.MkdirAll(helixDir, 0755))
 				require.NoError(t, os.WriteFile(filepath.Join(helixDir, "workflow.yml"), []byte("name: helix"), 0644))
 
-				// Create prompts with files
-				promptsDir := filepath.Join(testLibDir, "prompts")
+				promptsDir := filepath.Join(libraryDir, "prompts")
 				claudeDir := filepath.Join(promptsDir, "claude")
 				require.NoError(t, os.MkdirAll(claudeDir, 0755))
 				require.NoError(t, os.WriteFile(filepath.Join(claudeDir, "prompt.md"), []byte("# Claude Prompt"), 0644))
 
-				return testLibDir
+				// Store testDir for when() to use
+				t.Setenv("TEST_DIR", testDir)
+				return testDir
 			},
 			when: func(t *testing.T) (string, error) {
 				// When: I run `ddx list --json`
-				factory := NewTestRootCommand(t)
+				testDir := os.Getenv("TEST_DIR")
+				factory := NewTestRootCommandWithDir(testDir)
 				rootCmd := factory.NewRootCommand()
 				return executeCommand(rootCmd, "list", "--json")
 			},
@@ -288,10 +303,11 @@ func TestAcceptance_US002_ListAvailableAssets(t *testing.T) {
 			scenario: "Filter resources by name",
 			given: func(t *testing.T) string {
 				// Given: DDx has resources with different names
-				testLibDir := t.TempDir()
-				t.Setenv("DDX_LIBRARY_BASE_PATH", testLibDir)
+				env := NewTestEnvironment(t)
+				env.InitWithDDx()
 
-				workflowsDir := filepath.Join(testLibDir, "workflows")
+				libDir := filepath.Join(env.Dir, ".ddx", "library")
+				workflowsDir := filepath.Join(libDir, "workflows")
 				reactDir := filepath.Join(workflowsDir, "react-workflow")
 				require.NoError(t, os.MkdirAll(reactDir, 0755))
 				require.NoError(t, os.WriteFile(filepath.Join(reactDir, "workflow.yml"), []byte("name: react-workflow"), 0644))
@@ -300,11 +316,12 @@ func TestAcceptance_US002_ListAvailableAssets(t *testing.T) {
 				require.NoError(t, os.MkdirAll(pythonDir, 0755))
 				require.NoError(t, os.WriteFile(filepath.Join(pythonDir, "workflow.yml"), []byte("name: python-workflow"), 0644))
 
-				return testLibDir
+				return env.Dir
 			},
 			when: func(t *testing.T) (string, error) {
 				// When: I run `ddx list --filter react`
-				factory := NewTestRootCommand(t)
+				testDir := os.Getenv("TEST_DIR")
+				factory := NewCommandFactory(testDir)
 				rootCmd := factory.NewRootCommand()
 				return executeCommand(rootCmd, "list", "--filter", "react")
 			},
@@ -321,11 +338,12 @@ func TestAcceptance_US002_ListAvailableAssets(t *testing.T) {
 			scenario: "Show category counts in summary",
 			given: func(t *testing.T) string {
 				// Given: DDx has multiple categories with resources
-				testLibDir := t.TempDir()
-				t.Setenv("DDX_LIBRARY_BASE_PATH", testLibDir)
+				env := NewTestEnvironment(t)
+				env.InitWithDDx()
 
+				libDir := filepath.Join(env.Dir, ".ddx", "library")
 				// Create multiple workflows
-				workflowsDir := filepath.Join(testLibDir, "workflows")
+				workflowsDir := filepath.Join(libDir, "workflows")
 				helixDir := filepath.Join(workflowsDir, "helix")
 				require.NoError(t, os.MkdirAll(helixDir, 0755))
 				require.NoError(t, os.WriteFile(filepath.Join(helixDir, "workflow.yml"), []byte("name: helix"), 0644))
@@ -335,16 +353,17 @@ func TestAcceptance_US002_ListAvailableAssets(t *testing.T) {
 				require.NoError(t, os.WriteFile(filepath.Join(kanbanDir, "workflow.yml"), []byte("name: kanban"), 0644))
 
 				// Create prompts
-				promptsDir := filepath.Join(testLibDir, "prompts")
+				promptsDir := filepath.Join(libDir, "prompts")
 				claudeDir := filepath.Join(promptsDir, "claude")
 				require.NoError(t, os.MkdirAll(claudeDir, 0755))
 				require.NoError(t, os.WriteFile(filepath.Join(claudeDir, "prompt.md"), []byte("# Claude Prompt"), 0644))
 
-				return testLibDir
+				return env.Dir
 			},
 			when: func(t *testing.T) (string, error) {
 				// When: I run `ddx list`
-				factory := NewTestRootCommand(t)
+				testDir := os.Getenv("TEST_DIR")
+				factory := NewCommandFactory(testDir)
 				rootCmd := factory.NewRootCommand()
 				return executeCommand(rootCmd, "list")
 			},
@@ -361,18 +380,20 @@ func TestAcceptance_US002_ListAvailableAssets(t *testing.T) {
 			scenario: "Handle empty filter results gracefully",
 			given: func(t *testing.T) string {
 				// Given: DDx has resources but none match filter
-				testLibDir := t.TempDir()
-				t.Setenv("DDX_LIBRARY_BASE_PATH", testLibDir)
+				env := NewTestEnvironment(t)
+				env.InitWithDDx()
 
-				workflowsDir := filepath.Join(testLibDir, "workflows")
+				libDir := filepath.Join(env.Dir, ".ddx", "library")
+				workflowsDir := filepath.Join(libDir, "workflows")
 				require.NoError(t, os.MkdirAll(filepath.Join(workflowsDir, "helix"), 0755))
 				require.NoError(t, os.WriteFile(filepath.Join(workflowsDir, "helix", "workflow.yml"), []byte("name: helix"), 0644))
 
-				return testLibDir
+				return env.Dir
 			},
 			when: func(t *testing.T) (string, error) {
 				// When: I run `ddx list --filter nonexistent`
-				factory := NewTestRootCommand(t)
+				testDir := os.Getenv("TEST_DIR")
+				factory := NewCommandFactory(testDir)
 				rootCmd := factory.NewRootCommand()
 				return executeCommand(rootCmd, "list", "--filter", "nonexistent")
 			},
@@ -388,7 +409,8 @@ func TestAcceptance_US002_ListAvailableAssets(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Given
-			tt.given(t)
+			testDir := tt.given(t)
+			t.Setenv("TEST_DIR", testDir)
 
 			// When
 			output, err := tt.when(t)
