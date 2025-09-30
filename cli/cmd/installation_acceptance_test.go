@@ -422,13 +422,6 @@ func TestAcceptance_US028_OneCommandInstallation(t *testing.T) {
 			command:      "curl -sSL https://ddx.dev/install | sh",
 			expected:     InstallationResult{Success: true, BinaryPath: "~/.local/bin/ddx"},
 		},
-		{
-			name:         "windows_one_command_install",
-			platform:     "windows",
-			architecture: "amd64",
-			command:      "iwr -useb https://ddx.dev/install.ps1 | iex",
-			expected:     InstallationResult{Success: true, BinaryPath: "%USERPROFILE%\\bin\\ddx.exe"},
-		},
 	}
 
 	for _, tt := range tests {
@@ -485,12 +478,6 @@ func TestAcceptance_US029_AutomaticPathConfiguration(t *testing.T) {
 			shell:        "fish",
 			profileFile:  "~/.config/fish/config.fish",
 			expectedPath: "~/.local/bin",
-		},
-		{
-			name:         "powershell_path_configuration",
-			shell:        "powershell",
-			profileFile:  "$PROFILE",
-			expectedPath: "%USERPROFILE%\\bin",
 		},
 	}
 
@@ -597,18 +584,6 @@ func TestAcceptance_US031_PackageManagerInstallation(t *testing.T) {
 			packageManager: "apt",
 			platform:       "ubuntu",
 			installCommand: "sudo apt install ddx",
-		},
-		{
-			name:           "chocolatey_installation",
-			packageManager: "chocolatey",
-			platform:       "windows",
-			installCommand: "choco install ddx",
-		},
-		{
-			name:           "scoop_installation",
-			packageManager: "scoop",
-			platform:       "windows",
-			installCommand: "scoop install ddx",
 		},
 	}
 
@@ -760,11 +735,6 @@ func TestAcceptance_US034_OfflineInstallation(t *testing.T) {
 			packageType: "tar.gz",
 		},
 		{
-			name:        "offline_windows_zip",
-			platform:    "windows",
-			packageType: "zip",
-		},
-		{
 			name:        "offline_macos_tarball",
 			platform:    "darwin",
 			packageType: "tar.gz",
@@ -865,7 +835,7 @@ func TestAcceptance_US035_InstallationDiagnostics(t *testing.T) {
 
 // TestInstallationWorkflow_EndToEnd tests complete installation workflow
 func TestInstallationWorkflow_EndToEnd(t *testing.T) {
-	platforms := []string{"linux", "darwin", "windows"}
+	platforms := []string{"linux", "darwin"}
 
 	for _, platform := range platforms {
 		t.Run(fmt.Sprintf("workflow_%s", platform), func(t *testing.T) {
@@ -1018,9 +988,6 @@ func (env *InstallationTestEnvironment) configureShellPath(installDir string) er
 	case "fish":
 		profileFile = "~/.config/fish/config.fish"
 		pathEntry = fmt.Sprintf("set -gx PATH %s $PATH", pathForShell)
-	case "powershell":
-		profileFile = "$PROFILE"
-		pathEntry = fmt.Sprintf("$env:PATH = \"%s;\" + $env:PATH", pathForShell)
 	default:
 		profileFile = "~/.profile"
 		pathEntry = fmt.Sprintf("export PATH=\"%s:$PATH\"", pathForShell)

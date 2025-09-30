@@ -309,6 +309,7 @@ PowerShell:
 	rootCmd.AddCommand(f.newContributeCommand())
 	rootCmd.AddCommand(f.newConfigCommand())
 	rootCmd.AddCommand(f.newWorkflowCommand())
+	rootCmd.AddCommand(f.newAgentCommand())
 	rootCmd.AddCommand(f.newPersonaCommand())
 	rootCmd.AddCommand(f.newMCPCommand())
 	rootCmd.AddCommand(f.newInstallCommand())
