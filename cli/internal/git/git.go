@@ -110,10 +110,11 @@ func SubtreeAdd(prefix, repoURL, branch string) error {
 		sanitizedBranch,
 		"--squash")
 
-	_, err = cmd.CombinedOutput()
+	output, err := cmd.CombinedOutput()
 	if err != nil {
-		// Don't expose potentially sensitive command output in error messages
-		return fmt.Errorf("git subtree add failed for prefix %s", sanitizedPrefix)
+		// Include error output for debugging, but sanitize it
+		errOutput := strings.TrimSpace(string(output))
+		return fmt.Errorf("git subtree add failed for prefix %s: %w\nOutput: %s", sanitizedPrefix, err, errOutput)
 	}
 
 	return nil
