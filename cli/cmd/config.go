@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/easel/ddx/internal/config"
+	"github.com/easel/ddx/internal/metaprompt"
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
@@ -453,6 +454,15 @@ func setConfigValueWithWorkingDir(cmd *cobra.Command, key, value string, global 
 		return err
 	}
 	fmt.Fprintf(cmd.OutOrStdout(), "✅ Set %s = %s\n", key, value)
+
+	// If system.meta_prompt was changed, re-sync meta-prompt
+	if key == "system.meta_prompt" {
+		if err := resyncMetaPromptAfterConfigChange(workingDir); err != nil {
+			// Warn but don't fail
+			fmt.Fprintf(os.Stderr, "Warning: Failed to re-sync meta-prompt: %v\n", err)
+		}
+	}
+
 	return nil
 }
 
@@ -556,6 +566,39 @@ func handleProfileSubcommand(cmd *cobra.Command, args []string) error {
 	default:
 		return fmt.Errorf("unknown profile action: %s", action)
 	}
+}
+
+// resyncMetaPromptAfterConfigChange re-syncs meta-prompt after config change
+func resyncMetaPromptAfterConfigChange(workingDir string) error {
+	cfg, err := config.LoadWithWorkingDir(workingDir)
+	if err != nil {
+		return fmt.Errorf("failed to load config: %w", err)
+	}
+
+	return syncMetaPromptWithConfig(cfg, workingDir)
+}
+
+// syncMetaPromptWithConfig syncs meta-prompt based on config
+func syncMetaPromptWithConfig(cfg *config.Config, workingDir string) error {
+	promptPath := cfg.GetMetaPrompt()
+	if promptPath == "" {
+		// Disabled - remove meta-prompt section if exists
+		injector := metaprompt.NewMetaPromptInjectorWithPaths(
+			"CLAUDE.md",
+			cfg.Library.Path,
+			workingDir,
+		)
+		return injector.RemoveMetaPrompt()
+	}
+
+	// Create injector and sync
+	injector := metaprompt.NewMetaPromptInjectorWithPaths(
+		"CLAUDE.md",
+		cfg.Library.Path,
+		workingDir,
+	)
+
+	return injector.InjectMetaPrompt(promptPath)
 }
 
 // createProfile creates a new environment profile

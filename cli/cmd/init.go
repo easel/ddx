@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/easel/ddx/internal/config"
+	"github.com/easel/ddx/internal/metaprompt"
 	"github.com/spf13/cobra"
 )
 
@@ -176,6 +177,12 @@ func initProject(workingDir string, opts InitOptions) (*InitResult, error) {
 
 		if err := setupGitSubtreeLibraryPure(localConfig, workingDir); err != nil {
 			return nil, NewExitError(1, fmt.Sprintf("Failed to setup library: %v", err))
+		}
+
+		// Inject initial meta-prompt after library is set up
+		if err := injectInitialMetaPrompt(localConfig, workingDir); err != nil {
+			// Warn but don't fail - meta-prompt is optional enhancement
+			fmt.Fprintf(os.Stderr, "Warning: Failed to inject meta-prompt: %v\n", err)
 		}
 	}
 
@@ -389,6 +396,30 @@ func setupGitSubtreeLibraryPure(cfg *config.Config, workingDir string) error {
 
 	if err := gitCmd.Run(); err != nil {
 		return fmt.Errorf("git subtree command failed: %v. You may need to run 'git subtree add --prefix=.ddx/library %s %s --squash' manually", err, repoURL, branch)
+	}
+
+	return nil
+}
+
+// injectInitialMetaPrompt injects the configured meta-prompt into CLAUDE.md
+func injectInitialMetaPrompt(cfg *config.Config, workingDir string) error {
+	// Get meta-prompt path from config (with default)
+	promptPath := cfg.GetMetaPrompt()
+	if promptPath == "" {
+		// Empty means disabled
+		return nil
+	}
+
+	// Create injector
+	injector := metaprompt.NewMetaPromptInjectorWithPaths(
+		"CLAUDE.md",
+		cfg.Library.Path,
+		workingDir,
+	)
+
+	// Inject prompt
+	if err := injector.InjectMetaPrompt(promptPath); err != nil {
+		return fmt.Errorf("failed to inject meta-prompt: %w", err)
 	}
 
 	return nil

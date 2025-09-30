@@ -8,6 +8,7 @@ import (
 	"runtime"
 
 	"github.com/easel/ddx/internal/config"
+	"github.com/easel/ddx/internal/metaprompt"
 	"github.com/spf13/cobra"
 )
 
@@ -167,6 +168,26 @@ func (f *CommandFactory) runDoctor(cmd *cobra.Command, args []string) error {
 					"library_path": getLibraryPathInfo(f.WorkingDir),
 					"config_file":  getConfigFileInfo(),
 					"env_override": os.Getenv("DDX_LIBRARY_BASE_PATH"),
+				},
+			})
+		}
+	}
+
+	// Check 8: Meta-Prompt Sync Status
+	fmt.Print("✓ Checking Meta-Prompt Sync... ")
+	if metaPromptCheck := checkMetaPromptSync(f.WorkingDir); metaPromptCheck == nil {
+		fmt.Println("✅ Meta-Prompt In Sync")
+	} else {
+		fmt.Println("⚠️  Meta-Prompt Out of Sync")
+		if verbose {
+			issues = append(issues, DiagnosticIssue{
+				Type:        "meta_prompt_sync",
+				Description: metaPromptCheck.Error(),
+				Remediation: []string{
+					"Run 'ddx update' to sync meta-prompt",
+				},
+				SystemInfo: map[string]string{
+					"claude_file": filepath.Join(f.WorkingDir, "CLAUDE.md"),
 				},
 			})
 		}
@@ -355,4 +376,37 @@ func getConfigFileInfo() string {
 	}
 
 	return "not found"
+}
+
+// checkMetaPromptSync checks if the meta-prompt in CLAUDE.md is in sync with library
+func checkMetaPromptSync(workingDir string) error {
+	cfg, err := config.LoadWithWorkingDir(workingDir)
+	if err != nil {
+		// Can't load config - skip check
+		return nil
+	}
+
+	promptPath := cfg.GetMetaPrompt()
+	if promptPath == "" {
+		// Meta-prompt disabled - not an issue
+		return nil
+	}
+
+	injector := metaprompt.NewMetaPromptInjectorWithPaths(
+		"CLAUDE.md",
+		cfg.Library.Path,
+		workingDir,
+	)
+
+	inSync, err := injector.IsInSync()
+	if err != nil {
+		// Could not check (file missing, etc) - not a critical issue
+		return nil
+	}
+
+	if !inSync {
+		return fmt.Errorf("meta-prompt is out of sync with library")
+	}
+
+	return nil
 }

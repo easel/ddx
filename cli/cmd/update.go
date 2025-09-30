@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/easel/ddx/internal/config"
+	"github.com/easel/ddx/internal/metaprompt"
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 )
@@ -116,7 +117,18 @@ func performUpdate(workingDir string, opts *UpdateOptions) (*UpdateResult, error
 	}
 
 	// Perform the actual update
-	return executeUpdateInDir(workingDir, cfg, opts)
+	updateResult, err := executeUpdateInDir(workingDir, cfg, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	// Always sync meta-prompt after update (even if no library changes)
+	if err := syncMetaPrompt(cfg, workingDir); err != nil {
+		// Warn but don't fail
+		fmt.Fprintf(os.Stderr, "Warning: Failed to sync meta-prompt: %v\n", err)
+	}
+
+	return updateResult, nil
 }
 
 // Helper functions for working directory-based operations
@@ -676,4 +688,28 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 
 	// Handle output formatting
 	return displayUpdateResult(cmd, result, opts)
+}
+
+// syncMetaPrompt syncs the meta-prompt from library to CLAUDE.md
+func syncMetaPrompt(cfg *config.Config, workingDir string) error {
+	// Get meta-prompt path from config
+	promptPath := cfg.GetMetaPrompt()
+	if promptPath == "" {
+		// Disabled - remove meta-prompt section if exists
+		injector := metaprompt.NewMetaPromptInjectorWithPaths(
+			"CLAUDE.md",
+			cfg.Library.Path,
+			workingDir,
+		)
+		return injector.RemoveMetaPrompt()
+	}
+
+	// Create injector and sync
+	injector := metaprompt.NewMetaPromptInjectorWithPaths(
+		"CLAUDE.md",
+		cfg.Library.Path,
+		workingDir,
+	)
+
+	return injector.InjectMetaPrompt(promptPath)
 }
