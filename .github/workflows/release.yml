@@ -91,7 +91,6 @@ jobs:
     - name: Run tests
       working-directory: cli
       env:
-        DDX_TEST_MODE: "1"
         DDX_LIBRARY_BASE_PATH: "${{ github.workspace }}/library"
         DDX_CLI_ROOT: "${{ github.workspace }}/cli"
       run: |
