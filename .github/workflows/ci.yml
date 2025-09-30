@@ -43,6 +43,7 @@ jobs:
       run: lefthook run ci
       env:
         LEFTHOOK_QUIET: meta,execution
+        DDX_TEST_LIBRARY_PATH: ${{ github.workspace }}/.test-library
 
   # Separate build job for matrix builds
   build:
