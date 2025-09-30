@@ -35,9 +35,11 @@ func TestPersonaIntegration_FullWorkflow(t *testing.T) {
 
 	// Create initial .ddx/config.yaml configuration
 	initialConfig := `version: "1.0"
-repository:
-  url: "https://github.com/test/project"
-  branch: "main"
+library:
+  path: .ddx/library
+  repository:
+    url: https://github.com/test/project
+    branch: main
 persona_bindings:
   project_name: "test-project"`
 
@@ -59,7 +61,6 @@ This is a test project for validating persona workflows.`
 
 	// Set library path to project-local library
 	libraryDir := filepath.Join(workDir, ".ddx", "library")
-	t.Setenv("DDX_LIBRARY_BASE_PATH", libraryDir)
 
 	// Create personas directory with test personas
 	personasDir := filepath.Join(libraryDir, "personas")
@@ -492,7 +493,6 @@ persona_bindings:
 				// Create persona with invalid YAML
 				workSubDir := filepath.Join(workDir, "load_persona_with_invalid_content")
 				libraryDir := filepath.Join(workSubDir, ".ddx", "library")
-				t.Setenv("DDX_LIBRARY_BASE_PATH", libraryDir)
 				personasDir := filepath.Join(libraryDir, "personas")
 				require.NoError(t, os.MkdirAll(personasDir, 0755))
 
@@ -527,7 +527,6 @@ persona_bindings:
 				// Create empty personas directory
 				tempDir := t.TempDir()
 				libraryDir := filepath.Join(tempDir, ".ddx", "library")
-				t.Setenv("DDX_LIBRARY_BASE_PATH", libraryDir)
 				personasDir := filepath.Join(libraryDir, "personas")
 				require.NoError(t, os.MkdirAll(personasDir, 0755))
 			},

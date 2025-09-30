@@ -727,7 +727,12 @@ func getPersonaLibraryPath(workingDir string) (string, error) {
 	}
 
 	if cfg.Library != nil {
-		return cfg.Library.Path, nil
+		libPath := cfg.Library.Path
+		// If path is relative, resolve it relative to working directory
+		if !filepath.IsAbs(libPath) {
+			libPath = filepath.Join(workingDir, libPath)
+		}
+		return libPath, nil
 	}
 	return "", fmt.Errorf("library path not configured")
 }

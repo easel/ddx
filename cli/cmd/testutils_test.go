@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"testing"
@@ -45,14 +46,25 @@ func (te *TestEnvironment) CreateDefaultConfig() {
 	te.t.Helper()
 	content := `version: "1.0"
 library:
-  path: "./library"
+  path: .ddx/library
   repository:
-    url: "https://github.com/easel/ddx"
-    branch: "main"
-    subtree: "library"
+    url: https://github.com/easel/ddx-library
+    branch: main
 persona_bindings: {}
 `
 	te.CreateConfig(content)
+}
+
+// InitWithDDx properly initializes DDx in the test environment using ddx init
+func (te *TestEnvironment) InitWithDDx() {
+	te.t.Helper()
+	factory := NewCommandFactory(te.Dir)
+	initCmd := factory.NewRootCommand()
+	initCmd.SetArgs([]string{"init", "--no-git", "--silent"})
+	var out bytes.Buffer
+	initCmd.SetOut(&out)
+	initCmd.SetErr(&out)
+	require.NoError(te.t, initCmd.Execute(), "init should succeed: %s", out.String())
 }
 
 // LoadConfig loads the config using ConfigLoader

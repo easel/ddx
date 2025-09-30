@@ -401,9 +401,11 @@ func TestAcceptance_US031_BindPersonasToRoles(t *testing.T) {
 
 				// Create initial .ddx.yml configuration
 				config := `version: "1.0"
-repository:
-  url: "https://github.com/team/project"
-  branch: "main"
+library:
+  path: .ddx/library
+  repository:
+    url: https://github.com/team/project
+    branch: main
 persona_bindings:
   project_name: "team-project"`
 
@@ -475,7 +477,8 @@ You provide constructive, balanced code reviews that consider both quality and t
 
 				// Should preserve existing configuration
 				assert.Equal(t, "1.0", config["version"])
-				repo := config["repository"].(map[string]interface{})
+				library := config["library"].(map[string]interface{})
+				repo := library["repository"].(map[string]interface{})
 				assert.Equal(t, "https://github.com/team/project", repo["url"])
 			},
 		},

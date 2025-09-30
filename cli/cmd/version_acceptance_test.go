@@ -10,8 +10,11 @@ import (
 )
 
 // Helper function to create a fresh root command for tests
-func getVersionTestRootCommand() *cobra.Command {
-	factory := NewCommandFactory("/tmp")
+func getVersionTestRootCommand(workingDir string) *cobra.Command {
+	if workingDir == "" {
+		workingDir = "/tmp"
+	}
+	factory := NewCommandFactory(workingDir)
 	return factory.NewRootCommand()
 }
 
@@ -20,7 +23,7 @@ func TestAcceptance_US008_CheckDDxVersion(t *testing.T) {
 
 	t.Run("display_current_version", func(t *testing.T) {
 		// AC: Given I want version info, when I run `ddx version`, then the current DDX version number is displayed
-		rootCmd := getVersionTestRootCommand()
+		rootCmd := getVersionTestRootCommand("")
 		output, err := executeCommand(rootCmd, "version")
 
 		require.NoError(t, err, "Version command should execute successfully")
@@ -44,7 +47,7 @@ func TestAcceptance_US008_CheckDDxVersion(t *testing.T) {
 
 	t.Run("include_build_information", func(t *testing.T) {
 		// AC: Given version is displayed, when I view the output, then build information (commit hash, build date) is included
-		rootCmd := getVersionTestRootCommand()
+		rootCmd := getVersionTestRootCommand("")
 		output, err := executeCommand(rootCmd, "version")
 
 		require.NoError(t, err, "Version command should work")
@@ -92,7 +95,7 @@ func TestAcceptance_US008_CheckDDxVersion(t *testing.T) {
 
 	t.Run("automatic_update_check", func(t *testing.T) {
 		// AC: Given I'm online, when I check version, then the system checks for available updates automatically
-		rootCmd := getVersionTestRootCommand()
+		rootCmd := getVersionTestRootCommand("")
 		output, err := executeCommand(rootCmd, "version")
 
 		require.NoError(t, err, "Version command should work")
@@ -109,7 +112,7 @@ func TestAcceptance_US008_CheckDDxVersion(t *testing.T) {
 
 	t.Run("changelog_highlights_for_updates", func(t *testing.T) {
 		// AC: Given updates are available, when version is displayed, then changelog highlights for newer versions are shown
-		rootCmd := getVersionTestRootCommand()
+		rootCmd := getVersionTestRootCommand("")
 		output, err := executeCommand(rootCmd, "version")
 
 		require.NoError(t, err, "Version command should work")
@@ -126,7 +129,7 @@ func TestAcceptance_US008_CheckDDxVersion(t *testing.T) {
 
 	t.Run("suppress_update_check_flag", func(t *testing.T) {
 		// AC: Given I don't want update checks, when I run `ddx version --no-check`, then update checking is suppressed
-		rootCmd := getVersionTestRootCommand()
+		rootCmd := getVersionTestRootCommand("")
 		output, err := executeCommand(rootCmd, "version", "--no-check")
 
 		if err == nil {
@@ -146,7 +149,7 @@ func TestAcceptance_US008_CheckDDxVersion(t *testing.T) {
 
 	t.Run("outdated_version_indication", func(t *testing.T) {
 		// AC: Given my version is outdated, when I check version, then a clear indication that the version is outdated is shown
-		rootCmd := getVersionTestRootCommand()
+		rootCmd := getVersionTestRootCommand("")
 		output, err := executeCommand(rootCmd, "version")
 
 		require.NoError(t, err, "Version command should work")
@@ -163,7 +166,7 @@ func TestAcceptance_US008_CheckDDxVersion(t *testing.T) {
 
 	t.Run("compatibility_warnings", func(t *testing.T) {
 		// AC: Given version changes may affect compatibility, when updates are available, then compatibility warnings are displayed
-		rootCmd := getVersionTestRootCommand()
+		rootCmd := getVersionTestRootCommand("")
 		output, err := executeCommand(rootCmd, "version")
 
 		require.NoError(t, err, "Version command should work")
@@ -180,7 +183,7 @@ func TestAcceptance_US008_CheckDDxVersion(t *testing.T) {
 
 	t.Run("version_command_error_handling", func(t *testing.T) {
 		// Test that version command handles various error scenarios gracefully
-		rootCmd := getVersionTestRootCommand()
+		rootCmd := getVersionTestRootCommand("")
 		output, err := executeCommand(rootCmd, "version")
 
 		// Version command should never fail for basic version display
@@ -194,7 +197,7 @@ func TestAcceptance_US008_CheckDDxVersion(t *testing.T) {
 
 	t.Run("version_format_validation", func(t *testing.T) {
 		// Test that version follows expected format patterns
-		rootCmd := getVersionTestRootCommand()
+		rootCmd := getVersionTestRootCommand("")
 		output, err := executeCommand(rootCmd, "version")
 
 		require.NoError(t, err, "Version command should work")
@@ -217,7 +220,7 @@ func TestAcceptance_US008_CheckDDxVersion(t *testing.T) {
 
 	t.Run("semantic_versioning_compliance", func(t *testing.T) {
 		// Test that version follows semantic versioning
-		rootCmd := getVersionTestRootCommand()
+		rootCmd := getVersionTestRootCommand("")
 		output, err := executeCommand(rootCmd, "version")
 
 		require.NoError(t, err, "Version command should work")

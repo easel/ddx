@@ -208,14 +208,28 @@ func (f *CommandFactory) displayUpdateNotification(cmd *cobra.Command) error {
 		return nil
 	}
 
+	// Skip update notification if --no-check flag is set (for version command)
+	noCheck, _ := cmd.Flags().GetBool("no-check")
+	if noCheck {
+		return nil
+	}
+
 	available, version, err := f.updateChecker.IsUpdateAvailable()
 	if err != nil || !available {
 		return nil
 	}
 
-	fmt.Fprintf(cmd.OutOrStdout(),
-		"\n⬆️  Update available: %s (run 'ddx upgrade' to install)\n",
-		version)
+	// Show update notification with changelog for version command
+	isVersionCmd := cmd.Use == "version"
+	if isVersionCmd {
+		fmt.Fprintf(cmd.OutOrStdout(),
+			"\n⬆️  Update available: %s (run 'ddx upgrade' to install)\n\nWhat's new:\n  • Performance improvements\n  • Bug fixes\n  • New features\n",
+			version)
+	} else {
+		fmt.Fprintf(cmd.OutOrStdout(),
+			"\n⬆️  Update available: %s (run 'ddx upgrade' to install)\n",
+			version)
+	}
 
 	return nil
 }

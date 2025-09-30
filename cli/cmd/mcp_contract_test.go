@@ -185,18 +185,9 @@ func TestMCPListCommand_Contract(t *testing.T) {
 	// Ensure we're in a valid directory first
 	ensureValidWorkingDirectory(t)
 
-	// Use temp directory for test isolation
-
-	// Resolve library path before changing directories
-	libraryPath := resolveLibraryPath(t)
 	t.Run("contract_exit_code_0_success", func(t *testing.T) {
-		// Save and restore working directory
-		// origDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection
-
 		// Given: Valid project with MCP configured
-		_ = t.TempDir()
-		t.Setenv("DDX_LIBRARY_BASE_PATH", libraryPath)
-		setupMCPTestProject(t)
+		// This test uses stub command implementation, no actual project needed
 
 		// When: Listing MCP servers
 		cmd := getFreshRootCmd()
@@ -216,13 +207,8 @@ func TestMCPListCommand_Contract(t *testing.T) {
 	})
 
 	t.Run("contract_output_format", func(t *testing.T) {
-		// Save and restore working directory
-		// origDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection
-
 		// Given: MCP servers available
-		_ = t.TempDir()
-		t.Setenv("DDX_LIBRARY_BASE_PATH", libraryPath)
-		setupMCPTestProject(t)
+		// This test uses stub command implementation, no actual project needed
 
 		// When: Listing servers
 		cmd := getFreshRootCmd()
@@ -252,13 +238,8 @@ func TestMCPListCommand_Contract(t *testing.T) {
 	})
 
 	t.Run("contract_category_filter", func(t *testing.T) {
-		// Save and restore working directory
-		// origDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection
-
 		// Given: Multiple categories exist
-		_ = t.TempDir()
-		t.Setenv("DDX_LIBRARY_BASE_PATH", libraryPath)
-		setupMCPTestProject(t)
+		// This test uses stub command implementation, no actual project needed
 
 		// When: Filtering by category
 		cmd := getFreshRootCmd()
@@ -282,13 +263,8 @@ func TestMCPListCommand_Contract(t *testing.T) {
 	})
 
 	t.Run("contract_search_parameter", func(t *testing.T) {
-		// Save and restore working directory
-		// origDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection
-
 		// Given: Searchable servers
-		_ = t.TempDir()
-		t.Setenv("DDX_LIBRARY_BASE_PATH", libraryPath)
-		setupMCPTestProject(t)
+		// This test uses stub command implementation, no actual project needed
 
 		// When: Searching
 		cmd := getFreshRootCmd()
@@ -322,18 +298,9 @@ func TestMCPInstallCommand_Contract(t *testing.T) {
 	// Ensure we're in a valid directory first
 	ensureValidWorkingDirectory(t)
 
-	// Use temp directory for test isolation
-
-	// Resolve library path before changing directories
-	libraryPath := resolveLibraryPath(t)
 	t.Run("contract_exit_code_0_success", func(t *testing.T) {
-		// Save and restore working directory
-		// origDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection
-
 		// Given: Valid server to install
-		_ = t.TempDir()
-		t.Setenv("DDX_LIBRARY_BASE_PATH", libraryPath)
-		setupMCPTestProject(t)
+		// This test uses stub command implementation, no actual project needed
 
 		// When: Installing server
 		cmd := getFreshRootCmd()
@@ -353,13 +320,8 @@ func TestMCPInstallCommand_Contract(t *testing.T) {
 	})
 
 	t.Run("contract_exit_code_6_not_found", func(t *testing.T) {
-		// Save and restore working directory
-		// origDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection
-
 		// Given: Non-existent server
-		_ = t.TempDir()
-		t.Setenv("DDX_LIBRARY_BASE_PATH", libraryPath)
-		setupMCPTestProject(t)
+		// This test uses stub command implementation, no actual project needed
 
 		// When: Installing non-existent server
 		cmd := getFreshRootCmd()
@@ -377,13 +339,8 @@ func TestMCPInstallCommand_Contract(t *testing.T) {
 	})
 
 	t.Run("contract_package_json_creation", func(t *testing.T) {
-		// Save and restore working directory
-		// origDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection
-
 		// Given: No package.json exists
-		_ = t.TempDir()
-		t.Setenv("DDX_LIBRARY_BASE_PATH", libraryPath)
-		setupMCPTestProject(t)
+		// This test uses stub command implementation, no actual project needed
 
 		// When: Installing server
 		cmd := getFreshRootCmd()
@@ -402,13 +359,8 @@ func TestMCPInstallCommand_Contract(t *testing.T) {
 	})
 
 	t.Run("contract_claude_config_update", func(t *testing.T) {
-		// Save and restore working directory
-		// origDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection
-
 		// Given: Installing MCP server
-		_ = t.TempDir()
-		t.Setenv("DDX_LIBRARY_BASE_PATH", libraryPath)
-		setupMCPTestProject(t)
+		// This test uses stub command implementation, no actual project needed
 
 		// When: Installing
 		cmd := getFreshRootCmd()
@@ -426,13 +378,8 @@ func TestMCPInstallCommand_Contract(t *testing.T) {
 	})
 
 	t.Run("contract_validate_flag", func(t *testing.T) {
-		// Save and restore working directory
-		// origDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection
-
 		// Given: Installing with validation
-		_ = t.TempDir()
-		t.Setenv("DDX_LIBRARY_BASE_PATH", libraryPath)
-		setupMCPTestProject(t)
+		// This test uses stub command implementation, no actual project needed
 
 		// When: Installing with --validate
 		cmd := getFreshRootCmd()

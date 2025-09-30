@@ -11,16 +11,12 @@ import (
 )
 
 // Helper function to create a fresh root command for tests
-func getMCPTestRootCommand() *cobra.Command {
-	factory := NewCommandFactory("/tmp")
+func getMCPTestRootCommand(workingDir string) *cobra.Command {
+	if workingDir == "" {
+		workingDir = "/tmp"
+	}
+	factory := NewCommandFactory(workingDir)
 	return factory.NewRootCommand()
-}
-
-// setupMockLibrary creates a mock library path with MCP registry for testing
-func setupMockLibrary(t *testing.T, tempDir string) string {
-	mockLibPath := filepath.Join(tempDir, "mock-library")
-	t.Setenv("DDX_LIBRARY_BASE_PATH", mockLibPath)
-	return mockLibPath
 }
 
 // TestAcceptance_US036_ListMCPServers tests US-036: List Available MCP Servers
@@ -33,18 +29,12 @@ func TestAcceptance_US036_ListMCPServers(t *testing.T) {
 	// Library path will be mocked in each test
 
 	t.Run("display_all_available_servers", func(t *testing.T) {
-		// Save and restore working directory
-		// origDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection
-
 		// Given: MCP server registry is available
-		tempDir := t.TempDir()
-
-		// Create a mock library in temp directory for testing
-		setupMockLibrary(t, tempDir)
-		setupMCPTestProject(t)
+		env := setupMCPTestProject(t)
+		setupMockMCPRegistry(t, env)
 
 		// When: Running ddx mcp list
-		rootCmd := getMCPTestRootCommand()
+		rootCmd := getMCPTestRootCommand(env.Dir)
 		output, err := executeCommand(rootCmd, "mcp", "list")
 
 		// Then: Should display all available servers
@@ -57,16 +47,12 @@ func TestAcceptance_US036_ListMCPServers(t *testing.T) {
 	})
 
 	t.Run("filter_by_category", func(t *testing.T) {
-		// Save and restore working directory
-		// origDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection
-
 		// Given: Multiple categories of MCP servers exist
-		tempDir := t.TempDir()
-		setupMockLibrary(t, tempDir)
-		setupMCPTestProject(t)
+		env := setupMCPTestProject(t)
+		setupMockMCPRegistry(t, env)
 
 		// When: Filtering by category
-		rootCmd := getMCPTestRootCommand()
+		rootCmd := getMCPTestRootCommand(env.Dir)
 		output, err := executeCommand(rootCmd, "mcp", "list", "--category", "development")
 
 		// Then: Should only show servers in that category
@@ -77,16 +63,12 @@ func TestAcceptance_US036_ListMCPServers(t *testing.T) {
 	})
 
 	t.Run("search_functionality", func(t *testing.T) {
-		// Save and restore working directory
-		// origDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection
-
 		// Given: Want to find servers related to "git"
-		tempDir := t.TempDir()
-		setupMockLibrary(t, tempDir)
-		setupMCPTestProject(t)
+		env := setupMCPTestProject(t)
+		setupMockMCPRegistry(t, env)
 
 		// When: Searching for "git"
-		rootCmd := getMCPTestRootCommand()
+		rootCmd := getMCPTestRootCommand(env.Dir)
 		output, err := executeCommand(rootCmd, "mcp", "list", "--search", "git")
 
 		// Then: Should show matching servers
@@ -104,17 +86,13 @@ func TestAcceptance_US036_ListMCPServers(t *testing.T) {
 	})
 
 	t.Run("show_installation_status", func(t *testing.T) {
-		// Save and restore working directory
-		// origDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection
-
 		// Given: Some MCP servers are installed
-		tempDir := t.TempDir()
-		setupMockLibrary(t, tempDir)
-		setupMCPTestProject(t)
+		env := setupMCPTestProject(t)
+		setupMockMCPRegistry(t, env)
 
 		// Install a server first
-		configPath := filepath.Join(tempDir, ".claude", "settings.local.json")
-		rootCmd := getMCPTestRootCommand()
+		configPath := filepath.Join(env.Dir, ".claude", "settings.local.json")
+		rootCmd := getMCPTestRootCommand(env.Dir)
 		_, _ = executeCommand(rootCmd, "mcp", "install", "filesystem", "--config-path", configPath)
 
 		// When: Listing servers
@@ -132,16 +110,12 @@ func TestAcceptance_US036_ListMCPServers(t *testing.T) {
 	})
 
 	t.Run("detailed_verbose_view", func(t *testing.T) {
-		// Save and restore working directory
-		// origDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection
-
 		// Given: Want more information
-		tempDir := t.TempDir()
-		setupMockLibrary(t, tempDir)
-		setupMCPTestProject(t)
+		env := setupMCPTestProject(t)
+		setupMockMCPRegistry(t, env)
 
 		// When: Running with --verbose
-		rootCmd := getMCPTestRootCommand()
+		rootCmd := getMCPTestRootCommand(env.Dir)
 		output, err := executeCommand(rootCmd, "mcp", "list", "--verbose")
 
 		// Then: Should show additional details
@@ -163,17 +137,13 @@ func TestAcceptance_US037_InstallMCPServer(t *testing.T) {
 	// Library path will be mocked in each test
 
 	t.Run("install_server_locally", func(t *testing.T) {
-		// Save and restore working directory
-		// origDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection
-
 		// Given: MCP server not installed
-		tempDir := t.TempDir()
-		setupMockLibrary(t, tempDir)
-		setupMCPTestProject(t)
+		env := setupMCPTestProject(t)
+		setupMockMCPRegistry(t, env)
 
 		// When: Installing a server
-		configPath := filepath.Join(tempDir, ".claude", "settings.local.json")
-		rootCmd := getMCPTestRootCommand()
+		configPath := filepath.Join(env.Dir, ".claude", "settings.local.json")
+		rootCmd := getMCPTestRootCommand(env.Dir)
 		output, err := executeCommand(rootCmd, "mcp", "install", "filesystem", "--config-path", configPath)
 
 		// Then: Should install server locally
@@ -186,20 +156,16 @@ func TestAcceptance_US037_InstallMCPServer(t *testing.T) {
 	})
 
 	t.Run("detect_package_manager", func(t *testing.T) {
-		// Save and restore working directory
-		// origDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection
-
 		// Given: Different package managers available
-		tempDir := t.TempDir()
-		setupMockLibrary(t, tempDir)
-		setupMCPTestProject(t)
+		env := setupMCPTestProject(t)
+		setupMockMCPRegistry(t, env)
 
 		// Create pnpm-lock.yaml to trigger pnpm detection
-		os.WriteFile("pnpm-lock.yaml", []byte("lockfileVersion: 5.4"), 0644)
+		os.WriteFile(filepath.Join(env.Dir, "pnpm-lock.yaml"), []byte("lockfileVersion: 5.4"), 0644)
 
 		// When: Installing
-		configPath := filepath.Join(tempDir, ".claude", "settings.local.json")
-		rootCmd := getMCPTestRootCommand()
+		configPath := filepath.Join(env.Dir, ".claude", "settings.local.json")
+		rootCmd := getMCPTestRootCommand(env.Dir)
 		output, err := executeCommand(rootCmd, "mcp", "install", "github", "--env", "GITHUB_PERSONAL_ACCESS_TOKEN=ghp_012345678901234567890123456789012345", "--config-path", configPath)
 
 		// Then: Should detect and use pnpm
@@ -208,17 +174,13 @@ func TestAcceptance_US037_InstallMCPServer(t *testing.T) {
 	})
 
 	t.Run("configure_server_environment", func(t *testing.T) {
-		// Save and restore working directory
-		// origDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection
-
 		// Given: Server needs configuration
-		tempDir := t.TempDir()
-		setupMockLibrary(t, tempDir)
-		setupMCPTestProject(t)
+		env := setupMCPTestProject(t)
+		setupMockMCPRegistry(t, env)
 
 		// When: Installing with configuration
-		configPath := filepath.Join(tempDir, ".claude", "settings.local.json")
-		rootCmd := getMCPTestRootCommand()
+		configPath := filepath.Join(env.Dir, ".claude", "settings.local.json")
+		rootCmd := getMCPTestRootCommand(env.Dir)
 		output, err := executeCommand(rootCmd, "mcp", "install", "github", "--env", "GITHUB_PERSONAL_ACCESS_TOKEN=ghp_012345678901234567890123456789012345", "--config-path", configPath)
 
 		// Then: Should configure the server
@@ -233,17 +195,13 @@ func TestAcceptance_US037_InstallMCPServer(t *testing.T) {
 	})
 
 	t.Run("handle_already_installed", func(t *testing.T) {
-		// Save and restore working directory
-		// origDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection
-
 		// Given: Server already installed
-		tempDir := t.TempDir()
-		setupMockLibrary(t, tempDir)
-		setupMCPTestProject(t)
+		env := setupMCPTestProject(t)
+		setupMockMCPRegistry(t, env)
 
 		// Install once
-		configPath := filepath.Join(tempDir, ".claude", "settings.local.json")
-		rootCmd := getMCPTestRootCommand()
+		configPath := filepath.Join(env.Dir, ".claude", "settings.local.json")
+		rootCmd := getMCPTestRootCommand(env.Dir)
 		_, _ = executeCommand(rootCmd, "mcp", "install", "filesystem", "--config-path", configPath)
 
 		// When: Installing again
@@ -254,17 +212,13 @@ func TestAcceptance_US037_InstallMCPServer(t *testing.T) {
 	})
 
 	t.Run("validate_installation", func(t *testing.T) {
-		// Save and restore working directory
-		// origDir, _ := os.Getwd() // REMOVED: Using CommandFactory injection
-
 		// Given: Server installed
-		tempDir := t.TempDir()
-		setupMockLibrary(t, tempDir)
-		setupMCPTestProject(t)
+		env := setupMCPTestProject(t)
+		setupMockMCPRegistry(t, env)
 
 		// When: Installing
-		configPath := filepath.Join(tempDir, ".claude", "settings.local.json")
-		rootCmd := getMCPTestRootCommand()
+		configPath := filepath.Join(env.Dir, ".claude", "settings.local.json")
+		rootCmd := getMCPTestRootCommand(env.Dir)
 		output, err := executeCommand(rootCmd, "mcp", "install", "filesystem", "--config-path", configPath)
 
 		// Then: Should install successfully
@@ -274,78 +228,23 @@ func TestAcceptance_US037_InstallMCPServer(t *testing.T) {
 	})
 }
 
-// resolveLibraryPath finds the library path from the test location
-func resolveLibraryPath(t *testing.T) string {
-	t.Helper()
-
-	// Try to use the environment variable if set
-	if envPath := os.Getenv("DDX_LIBRARY_BASE_PATH"); envPath != "" {
-		if _, err := os.Stat(envPath); err == nil {
-			return envPath
-		}
-	}
-
-	// Use a fixed path relative to the test binary location
-	// The test binary runs from the cli directory
-	// So we need to go up to the project root to find library
-	libraryPath := filepath.Join("..", "..", "library")
-
-	// Convert to absolute path
-	absPath, err := filepath.Abs(libraryPath)
-	if err == nil {
-		if _, err := os.Stat(absPath); err == nil {
-			return absPath
-		}
-	}
-
-	// Fallback: try common test paths
-	testPaths := []string{
-		"/host-home/erik/Projects/ddx/library",
-		"../../library",
-		"../library",
-		"./library",
-	}
-
-	for _, path := range testPaths {
-		absPath, err := filepath.Abs(path)
-		if err == nil {
-			if _, err := os.Stat(absPath); err == nil {
-				return absPath
-			}
-		}
-	}
-
-	// If we still can't find it, skip the test rather than fail
-	t.Skip("Cannot locate library directory - skipping test")
-	return ""
+// Helper function to setup MCP test environment
+func setupMCPTestProject(t *testing.T) *TestEnvironment {
+	// Create .ddx/config.yaml configuration using init
+	env := NewTestEnvironment(t)
+	env.InitWithDDx()
+	return env
 }
 
-// Helper function to setup MCP test environment
-func setupMCPTestProject(t *testing.T) {
-	// Create .ddx/config.yaml configuration
-	env := NewTestEnvironment(t)
-	config := `version: "1.0"
-library:
-  path: .ddx/library
-  repository:
-    url: https://github.com/easel/ddx-library
-    branch: main
-persona_bindings:
-  project_name: "test-project"
-  package_manager: "npm"
-`
-	env.CreateConfig(config)
+// Helper function to create mock MCP registry in test environment
+func setupMockMCPRegistry(t *testing.T, env *TestEnvironment) {
+	// Create mock MCP server registry in the test environment's library
+	libPath := filepath.Join(env.Dir, ".ddx", "library")
+	mcpDir := filepath.Join(libPath, "mcp-servers")
+	os.MkdirAll(mcpDir, 0755)
 
-	// Create a mock MCP server registry if DDX_LIBRARY_BASE_PATH is set
-	if libPath := os.Getenv("DDX_LIBRARY_BASE_PATH"); libPath != "" {
-		// Always create the mock for tests
-		if strings.Contains(libPath, "mock-library") || strings.Contains(libPath, os.TempDir()) {
-			// Create mock MCP server registry
-			mcpDir := filepath.Join(libPath, "mcp-servers")
-			os.MkdirAll(mcpDir, 0755)
-
-			// Create a simple registry.yml
-			registry := `version: 1.0.0
+	// Create a simple registry.yml
+	registry := `version: 1.0.0
 updated: 2025-01-15T00:00:00Z
 servers:
   - name: filesystem
@@ -357,14 +256,14 @@ servers:
     category: development
     description: Access GitHub repositories
 `
-			os.WriteFile(filepath.Join(mcpDir, "registry.yml"), []byte(registry), 0644)
+	os.WriteFile(filepath.Join(mcpDir, "registry.yml"), []byte(registry), 0644)
 
-			// Create the server files referenced in the registry
-			serversDir := filepath.Join(mcpDir, "servers")
-			os.MkdirAll(serversDir, 0755)
+	// Create the server files referenced in the registry
+	serversDir := filepath.Join(mcpDir, "servers")
+	os.MkdirAll(serversDir, 0755)
 
-			// Create filesystem.yml
-			filesystemYaml := `name: filesystem
+	// Create filesystem.yml
+	filesystemYaml := `name: filesystem
 description: Access local files
 category: core
 author: DDx Team
@@ -385,10 +284,10 @@ compatibility:
   platforms: ["linux", "macos", "windows"]
   claude_versions: ["*"]
 `
-			os.WriteFile(filepath.Join(serversDir, "filesystem.yml"), []byte(filesystemYaml), 0644)
+	os.WriteFile(filepath.Join(serversDir, "filesystem.yml"), []byte(filesystemYaml), 0644)
 
-			// Create github.yml
-			githubYaml := `name: github
+	// Create github.yml
+	githubYaml := `name: github
 description: Access GitHub repositories
 category: development
 author: DDx Team
@@ -412,9 +311,7 @@ compatibility:
   platforms: ["linux", "macos", "windows"]
   claude_versions: ["*"]
 `
-			os.WriteFile(filepath.Join(serversDir, "github.yml"), []byte(githubYaml), 0644)
-		}
-	}
+	os.WriteFile(filepath.Join(serversDir, "github.yml"), []byte(githubYaml), 0644)
 }
 
 // ensureValidWorkingDirectory ensures we're in a valid directory before tests

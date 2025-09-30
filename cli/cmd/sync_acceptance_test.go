@@ -65,10 +65,11 @@ func TestAcceptance_US004_UpdateAssetsFromMaster(t *testing.T) {
 	t.Run("display_changelog", func(t *testing.T) {
 		withTempDir(t, func(tempDir string) {
 			// Given: Updates are available
-			setupTestProject(t)
+			setupTestProject(t, tempDir)
 
 			// When: Running update command
-			updateCmd := newRootCommand()
+			factory := NewCommandFactory(tempDir)
+			updateCmd := factory.NewRootCommand()
 			updateBuf := new(bytes.Buffer)
 			updateCmd.SetOut(updateBuf)
 			updateCmd.SetErr(updateBuf)
@@ -87,14 +88,15 @@ func TestAcceptance_US004_UpdateAssetsFromMaster(t *testing.T) {
 	t.Run("preserve_local_changes", func(t *testing.T) {
 		withTempDir(t, func(tempDir string) {
 			// Given: Local modifications exist
-			setupTestProject(t)
+			setupTestProject(t, tempDir)
 
-			localFile := filepath.Join(".ddx", "custom.md")
+			localFile := filepath.Join(tempDir, ".ddx", "custom.md")
 			localContent := "my local customization"
 			os.WriteFile(localFile, []byte(localContent), 0644)
 
 			// When: Running update
-			updateCmd := newRootCommand()
+			factory := NewCommandFactory(tempDir)
+			updateCmd := factory.NewRootCommand()
 			updateBuf := new(bytes.Buffer)
 			updateCmd.SetOut(updateBuf)
 			updateCmd.SetErr(updateBuf)
@@ -116,10 +118,11 @@ func TestAcceptance_US009_PullUpdatesFromUpstream(t *testing.T) {
 	t.Run("sync_with_upstream", func(t *testing.T) {
 		withTempDir(t, func(tempDir string) {
 			// Given: Upstream has new commits
-			setupTestProject(t)
+			setupTestProject(t, tempDir)
 
 			// When: Pulling updates
-			updateCmd := newRootCommand()
+			factory := NewCommandFactory(tempDir)
+			updateCmd := factory.NewRootCommand()
 			updateBuf := new(bytes.Buffer)
 			updateCmd.SetOut(updateBuf)
 			updateCmd.SetErr(updateBuf)
@@ -138,7 +141,7 @@ func TestAcceptance_US009_PullUpdatesFromUpstream(t *testing.T) {
 	t.Run("handle_diverged_branches", func(t *testing.T) {
 		withTempDir(t, func(tempDir string) {
 			// Given: Local and upstream have diverged
-			setupTestProject(t)
+			setupTestProject(t, tempDir)
 
 			// Simulate divergence
 			// This would normally require git operations
@@ -147,7 +150,8 @@ func TestAcceptance_US009_PullUpdatesFromUpstream(t *testing.T) {
 			os.WriteFile(".ddx/.diverged", []byte("diverged"), 0644)
 
 			// When: Attempting to sync
-			updateCmd := newRootCommand()
+			factory := NewCommandFactory(tempDir)
+			updateCmd := factory.NewRootCommand()
 			updateBuf := new(bytes.Buffer)
 			updateCmd.SetOut(updateBuf)
 			updateCmd.SetErr(updateBuf)
@@ -167,14 +171,15 @@ func TestAcceptance_US010_HandleUpdateConflicts(t *testing.T) {
 	t.Run("detect_conflicts", func(t *testing.T) {
 		withTempDir(t, func(tempDir string) {
 			// Given: Conflicting changes exist
-			setupTestProject(t)
+			setupTestProject(t, tempDir)
 
 			// Create conflicting file
 			conflictFile := filepath.Join(".ddx", "conflict.txt")
 			os.WriteFile(conflictFile, []byte("local version"), 0644)
 
 			// When: Updating
-			updateCmd := newRootCommand()
+			factory := NewCommandFactory(tempDir)
+			updateCmd := factory.NewRootCommand()
 			updateBuf := new(bytes.Buffer)
 			updateCmd.SetOut(updateBuf)
 			updateCmd.SetErr(updateBuf)
@@ -191,14 +196,15 @@ func TestAcceptance_US010_HandleUpdateConflicts(t *testing.T) {
 	t.Run("interactive_resolution", func(t *testing.T) {
 		withTempDir(t, func(tempDir string) {
 			// Given: Conflicts need resolution
-			setupTestProject(t)
+			setupTestProject(t, tempDir)
 
 			// Create conflict file
 			os.MkdirAll(".ddx", 0755)
 			os.WriteFile(".ddx/conflict.txt", []byte("conflict"), 0644)
 
 			// When: Using interactive resolution
-			updateCmd := newRootCommand()
+			factory := NewCommandFactory(tempDir)
+			updateCmd := factory.NewRootCommand()
 			updateBuf := new(bytes.Buffer)
 			updateCmd.SetOut(updateBuf)
 			updateCmd.SetErr(updateBuf)
@@ -218,10 +224,11 @@ func TestAcceptance_US010_HandleUpdateConflicts(t *testing.T) {
 	t.Run("automatic_resolution_strategy", func(t *testing.T) {
 		withTempDir(t, func(tempDir string) {
 			// Given: User wants automatic resolution
-			setupTestProject(t)
+			setupTestProject(t, tempDir)
 
 			// When: Using automatic strategy
-			updateCmd := newRootCommand()
+			factory := NewCommandFactory(tempDir)
+			updateCmd := factory.NewRootCommand()
 			updateBuf := new(bytes.Buffer)
 			updateCmd.SetOut(updateBuf)
 			updateCmd.SetErr(updateBuf)
@@ -239,10 +246,11 @@ func TestAcceptance_US010_HandleUpdateConflicts(t *testing.T) {
 	t.Run("abort_update_operation", func(t *testing.T) {
 		withTempDir(t, func(tempDir string) {
 			// Given: User wants to abort update
-			setupTestProject(t)
+			setupTestProject(t, tempDir)
 
 			// When: Using --abort flag
-			updateCmd := newRootCommand()
+			factory := NewCommandFactory(tempDir)
+			updateCmd := factory.NewRootCommand()
 			updateBuf := new(bytes.Buffer)
 			updateCmd.SetOut(updateBuf)
 			updateCmd.SetErr(updateBuf)
@@ -263,10 +271,11 @@ func TestAcceptance_US010_HandleUpdateConflicts(t *testing.T) {
 	t.Run("mine_flag_resolution", func(t *testing.T) {
 		withTempDir(t, func(tempDir string) {
 			// Given: User prefers local changes
-			setupTestProject(t)
+			setupTestProject(t, tempDir)
 
 			// When: Using --mine flag
-			updateCmd := newRootCommand()
+			factory := NewCommandFactory(tempDir)
+			updateCmd := factory.NewRootCommand()
 			updateBuf := new(bytes.Buffer)
 			updateCmd.SetOut(updateBuf)
 			updateCmd.SetErr(updateBuf)
@@ -284,10 +293,11 @@ func TestAcceptance_US010_HandleUpdateConflicts(t *testing.T) {
 	t.Run("theirs_flag_resolution", func(t *testing.T) {
 		withTempDir(t, func(tempDir string) {
 			// Given: User prefers upstream changes
-			setupTestProject(t)
+			setupTestProject(t, tempDir)
 
 			// When: Using --theirs flag
-			updateCmd := newRootCommand()
+			factory := NewCommandFactory(tempDir)
+			updateCmd := factory.NewRootCommand()
 			updateBuf := new(bytes.Buffer)
 			updateCmd.SetOut(updateBuf)
 			updateCmd.SetErr(updateBuf)
@@ -305,10 +315,11 @@ func TestAcceptance_US010_HandleUpdateConflicts(t *testing.T) {
 	t.Run("conflicting_flags_error", func(t *testing.T) {
 		withTempDir(t, func(tempDir string) {
 			// Given: User provides conflicting flags
-			setupTestProject(t)
+			setupTestProject(t, tempDir)
 
 			// When: Using both --mine and --theirs
-			updateCmd := newRootCommand()
+			factory := NewCommandFactory(tempDir)
+			updateCmd := factory.NewRootCommand()
 			updateBuf := new(bytes.Buffer)
 			updateCmd.SetOut(updateBuf)
 			updateCmd.SetErr(updateBuf)

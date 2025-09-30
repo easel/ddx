@@ -13,8 +13,11 @@ import (
 
 // Helper function to create a fresh root command for tests
 // DEPRECATED: Use NewTestRootCommand(t) instead for proper test isolation
-func getConfigTestRootCommand() *cobra.Command {
-	factory := NewCommandFactory("/tmp")
+func getConfigTestRootCommand(workingDir string) *cobra.Command {
+	if workingDir == "" {
+		workingDir = "/tmp"
+	}
+	factory := NewCommandFactory(workingDir)
 	return factory.NewRootCommand()
 }
 
@@ -189,7 +192,7 @@ persona_bindings:
 		// Set environment variable
 		t.Setenv("DDX_AUTHOR", "Env User")
 
-		rootCmd := getConfigTestRootCommand()
+		rootCmd := getConfigTestRootCommand(env.Dir)
 		output, err := executeCommand(rootCmd, "config", "get", "variables.author")
 
 		// This test documents expected behavior - may need implementation
@@ -212,7 +215,7 @@ persona_bindings:
 		env := NewTestEnvironment(t)
 		env.CreateConfig(config)
 
-		rootCmd := getConfigTestRootCommand()
+		rootCmd := getConfigTestRootCommand(env.Dir)
 
 		// Try to set an invalid value for a type-checked field
 		output, err := executeCommand(rootCmd, "config", "set", "library.repository.url", "invalid-url-format")
@@ -223,7 +226,7 @@ persona_bindings:
 			assert.Contains(t, strings.ToLower(output), "invalid", "Should explain validation error")
 		} else {
 			// Test validates that some validation occurs
-			testCmd := getConfigTestRootCommand()
+			testCmd := getConfigTestRootCommand(env.Dir)
 			validateOutput, validateErr := executeCommand(testCmd, "config", "--validate")
 			if validateErr != nil {
 				assert.Error(t, validateErr, "Validate command should catch issues")
@@ -253,7 +256,7 @@ library:
 		env := NewTestEnvironment(t)
 		env.CreateConfig(sourceConfig)
 
-		rootCmd := getConfigTestRootCommand()
+		rootCmd := getConfigTestRootCommand(env.Dir)
 
 		// Try to export config
 		exportOutput, exportErr := executeCommand(rootCmd, "config", "export")
@@ -262,12 +265,12 @@ library:
 			// Export is working, test import
 			// targetDir := t.TempDir() // REMOVED: Using CommandFactory injection
 
-			importCmd := getConfigTestRootCommand()
+			importCmd := getConfigTestRootCommand(env.Dir)
 			_, importErr := executeCommand(importCmd, "config", "import", exportOutput)
 
 			if importErr == nil {
 				// Verify import worked
-				checkCmd := getConfigTestRootCommand()
+				checkCmd := getConfigTestRootCommand(env.Dir)
 				checkOutput, checkErr := executeCommand(checkCmd, "config", "get", "author")
 				require.NoError(t, checkErr)
 				assert.Contains(t, checkOutput, "Export User", "Import should restore exported values")
@@ -283,9 +286,11 @@ library:
 	t.Run("show_config_file_locations", func(t *testing.T) {
 		// AC: Given I'm troubleshooting, when I run `ddx config --show-files`, then all config file locations are displayed
 
-		//	// tempDir := t.TempDir() // REMOVED: Using CommandFactory injection // REMOVED: Using CommandFactory injection
+		env := NewTestEnvironment(t)
+		config := `version: "2.0"`
+		env.CreateConfig(config)
 
-		rootCmd := getConfigTestRootCommand()
+		rootCmd := getConfigTestRootCommand(env.Dir)
 		output, err := executeCommand(rootCmd, "config", "--show-files")
 
 		if err == nil {
@@ -339,7 +344,7 @@ author: "Test
 		require.NoError(t, os.MkdirAll(filepath.Join(env.Dir, ".ddx"), 0755))
 		require.NoError(t, os.WriteFile(env.ConfigPath, []byte(invalidYaml), 0644))
 
-		rootCmd := getConfigTestRootCommand()
+		rootCmd := getConfigTestRootCommand(env.Dir)
 		output, err := executeCommand(rootCmd, "config", "export")
 
 		// Should handle invalid YAML gracefully
@@ -349,7 +354,7 @@ author: "Test
 		}
 
 		// Test getting non-existent key
-		testCmd := getConfigTestRootCommand()
+		testCmd := getConfigTestRootCommand(env.Dir)
 		nonExistentOutput, nonExistentErr := executeCommand(testCmd, "config", "get", "non.existent.key")
 
 		// Should handle gracefully (may return empty or error)
