@@ -9,7 +9,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
@@ -17,13 +16,6 @@ import (
 
 // Acceptance tests validate user stories and business requirements
 // These tests follow the Given/When/Then pattern from user stories
-
-// Helper function to create a fresh root command for tests
-// DEPRECATED: Use NewTestRootCommand(t) instead for proper test isolation
-func getTestRootCommand() *cobra.Command {
-	factory := NewCommandFactory("/tmp")
-	return factory.NewRootCommand()
-}
 
 // TestAcceptance_US001_InitializeProject tests US-001: Initialize DDX in Project
 func TestAcceptance_US001_InitializeProject(t *testing.T) {

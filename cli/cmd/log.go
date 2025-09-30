@@ -36,22 +36,6 @@ type LogOptions struct {
 	Export     string
 }
 
-var logCmd = &cobra.Command{
-	Use:   "log",
-	Short: "Show DDX asset history",
-	Long: `Show commit history for DDX assets and resources.
-
-This command displays the git log for your DDX resources, helping you
-track changes, updates, and the evolution of your project setup.
-
-Examples:
-  ddx log                    # Show recent commit history
-  ddx log -n 10              # Show last 10 commits
-  ddx log --oneline          # Show compact format
-  ddx log --since="1 week ago" # Show commits from last week`,
-	RunE: runLog,
-}
-
 // Flag variables are now handled locally in command functions
 
 // Remove init function - commands are now registered via command factory

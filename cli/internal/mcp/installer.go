@@ -280,56 +280,6 @@ func (i *Installer) detectPackageManager() string {
 	return "npm"
 }
 
-// ensurePackageJSON creates a basic package.json if it doesn't exist
-func (i *Installer) ensurePackageJSON() error {
-	// Check if package.json already exists
-	if _, err := os.Stat("package.json"); err == nil {
-		return nil // Already exists
-	}
-
-	// Create a basic package.json
-	packageJSON := map[string]interface{}{
-		"name":         "mcp-servers",
-		"version":      "1.0.0",
-		"description":  "MCP server dependencies for DDx",
-		"private":      true,
-		"dependencies": make(map[string]string),
-	}
-
-	data, err := json.MarshalIndent(packageJSON, "", "  ")
-	if err != nil {
-		return fmt.Errorf("marshaling package.json: %w", err)
-	}
-
-	if err := os.WriteFile("package.json", data, 0644); err != nil {
-		return fmt.Errorf("writing package.json: %w", err)
-	}
-
-	return nil
-}
-
-// validateEnvironment validates required environment variables (legacy method)
-func (i *Installer) validateEnvironment(server *Server, env map[string]string) error {
-	for _, envVar := range server.GetRequiredEnvironment() {
-		value, exists := env[envVar.Name]
-		if !exists || value == "" {
-			return fmt.Errorf("%w: %s", ErrMissingRequired, envVar.Name)
-		}
-
-		// Validate against regex if provided
-		if envVar.Validation != "" {
-			matched, err := regexp.MatchString(envVar.Validation, value)
-			if err != nil {
-				return fmt.Errorf("invalid validation regex for %s: %w", envVar.Name, err)
-			}
-			if !matched {
-				return fmt.Errorf("%w: %s does not match pattern %s", ErrValidationFailed, envVar.Name, envVar.Validation)
-			}
-		}
-	}
-	return nil
-}
-
 // Validator provides input validation
 type Validator struct {
 	patterns map[string]*regexp.Regexp

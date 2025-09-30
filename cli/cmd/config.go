@@ -146,22 +146,6 @@ func runConfig(cmd *cobra.Command, args []string) error {
 }
 
 // Legacy functions - replaced by pure business logic functions above
-func editConfig(cmd *cobra.Command, global bool) error {
-	f := &CommandFactory{WorkingDir: ""}
-	configPath := configGetPath(f.WorkingDir, global)
-	return f.editConfigFile(cmd, configPath)
-}
-
-func resetConfig(cmd *cobra.Command, global bool) error {
-	f := &CommandFactory{WorkingDir: ""}
-	if err := configReset(f.WorkingDir, global); err != nil {
-		return err
-	}
-	configPath := configGetPath(f.WorkingDir, global)
-	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "✅ Configuration reset to defaults: %s\n", configPath)
-	return nil
-}
-
 // Business Logic Layer - Pure Functions
 
 // configGet retrieves a configuration value
@@ -400,10 +384,6 @@ func setConfigValueInStruct(cfg *config.Config, key, value string) error {
 
 // CLI Interface Layer Functions
 
-func getConfigValue(cmd *cobra.Command, key string, global bool) error {
-	return getConfigValueWithWorkingDir(cmd, key, global, "")
-}
-
 func getConfigValueWithWorkingDir(cmd *cobra.Command, key string, global bool, workingDir string) error {
 	value, err := configGet(workingDir, key, global)
 	if err != nil {
@@ -447,46 +427,6 @@ func (f *CommandFactory) editConfigFile(cmd *cobra.Command, configPath string) e
 // handleProfileSubcommand handles profile-specific operations
 func (f *CommandFactory) handleProfileSubcommand(cmd *cobra.Command, args []string) error {
 	return handleProfileSubcommand(cmd, args)
-}
-
-func setConfigValueWithWorkingDir(cmd *cobra.Command, key, value string, global bool, workingDir string) error {
-	if err := configSet(workingDir, key, value, global); err != nil {
-		return err
-	}
-	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "✅ Set %s = %s\n", key, value)
-
-	// If system.meta_prompt was changed, re-sync meta-prompt
-	if key == "system.meta_prompt" {
-		if err := resyncMetaPromptAfterConfigChange(workingDir); err != nil {
-			// Warn but don't fail
-			_, _ = fmt.Fprintf(os.Stderr, "Warning: Failed to re-sync meta-prompt: %v\n", err)
-		}
-	}
-
-	return nil
-}
-
-func validateConfig(cmd *cobra.Command) error {
-	if err := configValidate(""); err != nil {
-		return fmt.Errorf("configuration validation failed: %w", err)
-	}
-	_, _ = fmt.Fprintln(cmd.OutOrStdout(), "✅ Configuration is valid")
-	return nil
-}
-
-func initConfigWizard() error {
-	cfg, err := configWizard()
-	if err != nil {
-		return err
-	}
-
-	if err := configSave("", cfg, false); err != nil {
-		return err
-	}
-
-	cyan := color.New(color.FgCyan)
-	_, _ = cyan.Println("✅ Configuration saved to .ddx.yml")
-	return nil
 }
 
 // copyFile copies a file from src to dst

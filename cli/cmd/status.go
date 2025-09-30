@@ -509,31 +509,3 @@ func runStatusWithWorkingDir(cmd *cobra.Command, args []string, workingDir strin
 	displayStatus(cmd, status, showChanges, showDiff)
 	return nil
 }
-
-func collectStatusInfo(checkUpstream, showChanges, showDiff bool) (*StatusInfo, error) {
-	return checkStatus("", checkUpstream, showChanges, showDiff)
-}
-
-func getVersionInfo() (version, hash string, err error) {
-	return getVersionInfoFromDir("")
-}
-
-func getLastUpdatedTime() (time.Time, error) {
-	return getLastUpdatedTimeFromDir("")
-}
-
-func getLocalModifications() ([]ModifiedFile, error) {
-	return getLocalModificationsFromDir("")
-}
-
-func scanForModifications(ddxDir string) ([]ModifiedFile, error) {
-	return scanForModificationsInDir(ddxDir)
-}
-
-func checkUpstreamUpdates() (*UpstreamInfo, error) {
-	return checkUpstreamUpdatesFromDir("")
-}
-
-func getStatusResources() ([]StatusResourceInfo, error) {
-	return getStatusResourcesFromDir("")
-}

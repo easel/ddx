@@ -142,13 +142,6 @@ func (s *KeychainStore) makeKey(platform Platform, repository string) string {
 }
 
 // Platform-specific keychain implementations would go here
-func (s *KeychainStore) hasLinuxKeychain() bool {
-	// Check for libsecret or gnome-keyring
-	if _, err := os.Stat("/usr/lib/x86_64-linux-gnu/libsecret-1.so"); err == nil {
-		return true
-	}
-	return false
-}
 
 func (s *KeychainStore) getFromKeychain(key string) ([]byte, error) {
 	// Keychain access not fully implemented yet - fail gracefully

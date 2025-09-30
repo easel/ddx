@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
@@ -13,12 +12,6 @@ import (
 
 // Acceptance tests validate persona system user stories and business requirements
 // These tests follow the Given/When/Then pattern from user stories US-030 through US-035
-
-// Helper function to create a fresh root command for tests
-func getPersonaTestRootCommand(workingDir string) *cobra.Command {
-	factory := NewCommandFactory(workingDir)
-	return factory.NewRootCommand()
-}
 
 // setupPersonaTestProject initializes a DDx project for persona testing
 func setupPersonaTestProject(t *testing.T) *TestEnvironment {

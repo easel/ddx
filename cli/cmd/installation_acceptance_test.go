@@ -11,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -55,15 +54,6 @@ type InstallationTestEnvironment struct {
 	HomeDir      string
 	ShellType    string
 	t            *testing.T
-}
-
-// Helper function to create a fresh root command for tests
-func getInstallationTestRootCommand(workingDir string) *cobra.Command {
-	if workingDir == "" {
-		workingDir = "/tmp"
-	}
-	factory := NewCommandFactory(workingDir)
-	return factory.NewRootCommand()
 }
 
 // setupTestEnvironment creates a mock environment for installation testing
