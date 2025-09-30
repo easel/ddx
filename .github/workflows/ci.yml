@@ -124,7 +124,7 @@ jobs:
         mkdir -p test-project
         cd test-project
         ../bin/ddx init --no-git  # Skip git subtree in CI
-        test -f .ddx.yml
+        test -f .ddx/config.yaml
     
     - name: Test list command
       run: |
