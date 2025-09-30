@@ -126,7 +126,7 @@ persona_bindings: {}`
 		cmd.SetErr(buf)
 		cmd.SetArgs([]string{"update", "--check"})
 
-		err := cmd.Execute()
+		_ = cmd.Execute()
 
 		// Then: Should only check, not apply
 		output := buf.String()
@@ -135,7 +135,7 @@ persona_bindings: {}`
 
 		// No files should be modified
 		backupPath := filepath.Join(tempDir, ".ddx.backup")
-		_, err = os.Stat(backupPath)
+		_, err := os.Stat(backupPath)
 		assert.True(t, os.IsNotExist(err), "Should not create backup in check mode")
 	})
 
@@ -341,7 +341,7 @@ func TestContributeCommand_Contract(t *testing.T) {
 		cmd.SetErr(buf)
 		cmd.SetArgs([]string{"contribute", "patterns/test.md", "--dry-run"})
 
-		err := cmd.Execute()
+		_ = cmd.Execute()
 
 		// Then: Should preview without making changes
 		output := buf.String()
@@ -349,7 +349,7 @@ func TestContributeCommand_Contract(t *testing.T) {
 		assert.Contains(t, output, "would", "Should use conditional language")
 
 		// No git operations should occur
-		_, err = os.Stat(".git/refs/heads/contribute")
+		_, err := os.Stat(".git/refs/heads/contribute")
 		assert.True(t, os.IsNotExist(err), "Should not create branch in dry-run")
 	})
 

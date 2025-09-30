@@ -22,10 +22,9 @@ func IsRepository(path string) bool {
 		strings.Contains(path, "/var/folders/") || path == "." {
 		// Use relaxed validation for test paths and current directory
 		cleanPath := filepath.Clean(path)
-		cmd := exec.Command("git", "-C", cleanPath, "rev-parse", "--git-dir")
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		cmd = exec.CommandContext(ctx, "git", "-C", cleanPath, "rev-parse", "--git-dir")
+		cmd := exec.CommandContext(ctx, "git", "-C", cleanPath, "rev-parse", "--git-dir")
 		return cmd.Run() == nil
 	}
 
@@ -37,11 +36,10 @@ func IsRepository(path string) bool {
 	// Clean the path to prevent path traversal
 	cleanPath := filepath.Clean(path)
 
-	cmd := exec.Command("git", "-C", cleanPath, "rev-parse", "--git-dir")
 	// Set timeout to prevent hanging
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	cmd = exec.CommandContext(ctx, "git", "-C", cleanPath, "rev-parse", "--git-dir")
+	cmd := exec.CommandContext(ctx, "git", "-C", cleanPath, "rev-parse", "--git-dir")
 	return cmd.Run() == nil
 }
 

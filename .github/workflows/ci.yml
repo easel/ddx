@@ -27,12 +27,15 @@ jobs:
       with:
         go-version: '1.21'
         cache-dependency-path: cli/go.sum
-    
-    - name: Install golangci-lint
-      run: |
-        curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.64.8
-        echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
-    
+
+    - name: golangci-lint
+      uses: golangci/golangci-lint-action@v8
+      with:
+        version: v2.5.0
+        working-directory: cli
+        args: --version  # Just verify installation for lefthook to use
+        skip-cache: false
+
     - name: Install lefthook
       run: |
         # Install using Go for better reliability in CI
