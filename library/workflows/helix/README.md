@@ -64,6 +64,59 @@ Throughout the workflow, responsibilities are shared:
 - Test case generation
 - Documentation and analysis
 
+## Phase-Specific Personas
+
+HELIX supports binding specific AI personas to individual workflow phases, allowing the AI to adopt different mindsets and priorities as the project progresses through the workflow. This ensures the right focus and expertise at each stage.
+
+### Configuring Phase Personas
+
+In your `.ddx.yml`, define phase-specific personas under `workflow_phase_personas`:
+
+```yaml
+workflow_phase_personas:
+  helix:
+    design: product-manager-minimalist  # Focus on user value and simplicity
+    test: test-engineer-tdd             # Focus on comprehensive test coverage
+    build: developer-senior-golang      # Focus on implementation quality
+```
+
+### How Phase Personas Work
+
+When the HELIX coordinator activates a phase:
+1. The phase enforcer (e.g., `phases/02-design/enforcer.md`) references the phase-specific persona
+2. The AI adopts that persona's mindset, principles, and communication style
+3. Phase-specific guidance combines with persona characteristics for optimal results
+
+### Example: Design Phase with Product Manager Persona
+
+During the Design phase, adopting the `product-manager-minimalist` persona ensures:
+- **User Value Focus**: Every design element serves validated user needs
+- **Ruthless Simplification**: Challenge complexity before it's implemented
+- **Scope Protection**: Say NO to features that don't serve core problems
+- **UX Obsession**: Design for clarity, speed, and user delight
+
+This product-focused mindset prevents over-engineering during design, when architectural decisions have the most impact on system simplicity.
+
+### Available Personas by Phase
+
+| Phase | Recommended Persona | Focus |
+|-------|-------------------|-------|
+| Frame | `product-manager-minimalist` | User needs, problem clarity |
+| Design | `product-manager-minimalist` | Simplicity, user value |
+| Test | `test-engineer-tdd` | Test coverage, edge cases |
+| Build | `developer-senior-golang` | Clean code, patterns |
+| Deploy | `devops-engineer-kubernetes` | Reliability, operations |
+| Iterate | `analyst-feedback` | Metrics, learning |
+
+### Creating Custom Phase Personas
+
+You can create project-specific personas by:
+1. Creating a persona file in `library/personas/your-persona.md`
+2. Defining the persona's focus for specific phases
+3. Binding it in `.ddx.yml` under `workflow_phase_personas`
+
+See [Persona System Documentation](../../personas/README.md) for details on creating personas.
+
 ## Security Integration
 
 HELIX integrates security practices throughout every phase, following DevSecOps principles to ensure security is built-in rather than bolted-on:
