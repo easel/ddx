@@ -33,7 +33,6 @@ jobs:
       with:
         version: v2.5.0
         working-directory: cli
-        args: --version  # Just verify installation for lefthook to use
         skip-cache: false
 
     - name: Install lefthook
