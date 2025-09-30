@@ -33,11 +33,6 @@ func withTempDir(t *testing.T, fn func(tempDir string)) {
 
 // TestAcceptance_US004_UpdateAssetsFromMaster tests US-004: Update Assets from Master
 func TestAcceptance_US004_UpdateAssetsFromMaster(t *testing.T) {
-	// Skip in CI - requires git subtree which is unreliable in CI
-	if os.Getenv("CI") != "" {
-		t.Skip("Skipping git subtree tests in CI - unreliable environment")
-	}
-
 	t.Run("pull_latest_changes", func(t *testing.T) {
 		// Create test harness with complete isolation
 		harness := NewTestHarness(t)
@@ -110,11 +105,6 @@ func TestAcceptance_US004_UpdateAssetsFromMaster(t *testing.T) {
 
 // TestAcceptance_US009_PullUpdatesFromUpstream tests US-009: Pull Updates from Upstream
 func TestAcceptance_US009_PullUpdatesFromUpstream(t *testing.T) {
-	// Skip in CI - requires git subtree which is unreliable in CI
-	if os.Getenv("CI") != "" {
-		t.Skip("Skipping git subtree tests in CI - unreliable environment")
-	}
-
 	t.Run("sync_with_upstream", func(t *testing.T) {
 		withTempDir(t, func(tempDir string) {
 			// Given: Upstream has new commits
@@ -168,11 +158,6 @@ func TestAcceptance_US009_PullUpdatesFromUpstream(t *testing.T) {
 
 // TestAcceptance_US010_HandleUpdateConflicts tests US-010: Handle Update Conflicts
 func TestAcceptance_US010_HandleUpdateConflicts(t *testing.T) {
-	// Skip in CI - requires git subtree which is unreliable in CI
-	if os.Getenv("CI") != "" {
-		t.Skip("Skipping git subtree tests in CI - unreliable environment")
-	}
-
 	t.Run("detect_conflicts", func(t *testing.T) {
 		withTempDir(t, func(tempDir string) {
 			// Given: Conflicting changes exist
@@ -341,11 +326,6 @@ func TestAcceptance_US010_HandleUpdateConflicts(t *testing.T) {
 
 // TestAcceptance_US005_ContributeImprovements tests US-005: Contribute Improvements
 func TestAcceptance_US005_ContributeImprovements(t *testing.T) {
-	// Skip in CI - requires git subtree which is unreliable in CI
-	if os.Getenv("CI") != "" {
-		t.Skip("Skipping git subtree tests in CI - unreliable environment")
-	}
-
 	t.Run("validate_contribution_standards", func(t *testing.T) {
 		// Given: Project with DDx initialized
 		env := NewTestEnvironment(t)

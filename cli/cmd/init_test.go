@@ -217,32 +217,16 @@ func TestInitCommand_US017_InitializeConfiguration(t *testing.T) {
 		},
 		{
 			name: "force_overwrites_without_backup",
-			args: func() []string {
-				// In CI, skip git integration due to subtree limitations
-				if os.Getenv("CI") != "" {
-					return []string{"init", "--force", "--no-git"}
-				}
-				return []string{"init", "--force"}
-			}(),
+			args: []string{"init", "--force"},
 			setup: func(t *testing.T, te *TestEnvironment) {
-				// Create existing config
-				var existingConfig string
-				if os.Getenv("CI") != "" {
-					// In CI, use simple config without repository
-					existingConfig = `version: "0.9"
-library:
-  path: .ddx/library
-`
-				} else {
-					// Locally, test with repository URL
-					existingConfig = fmt.Sprintf(`version: "0.9"
+				// Create existing config with repository URL
+				existingConfig := fmt.Sprintf(`version: "0.9"
 library:
   path: .ddx/library
   repository:
     url: %s
     branch: master
 `, te.TestLibraryURL)
-				}
 				te.CreateConfig(existingConfig)
 				te.CreateFile("README.md", "# Test Project")
 
@@ -410,32 +394,16 @@ func TestInitCommand_US014_SynchronizationSetup(t *testing.T) {
 		},
 		{
 			name: "sync_initialization_with_custom_repository",
-			args: func() []string {
-				// In CI, skip git integration due to subtree limitations
-				if os.Getenv("CI") != "" {
-					return []string{"init", "--force", "--silent", "--no-git"}
-				}
-				return []string{"init", "--force", "--silent"}
-			}(),
+			args: []string{"init", "--force", "--silent"},
 			setup: func(t *testing.T, te *TestEnvironment) {
-				// Create existing config
-				var existingConfig string
-				if os.Getenv("CI") != "" {
-					// In CI, use simple config without repository
-					existingConfig = `version: "1.0"
-library:
-  path: .ddx/library
-`
-				} else {
-					// Locally, test with repository URL
-					existingConfig = fmt.Sprintf(`version: "1.0"
+				// Create existing config with repository URL
+				existingConfig := fmt.Sprintf(`version: "1.0"
 library:
   path: .ddx/library
   repository:
     url: %s
     branch: master
 `, te.TestLibraryURL)
-				}
 				te.CreateConfig(existingConfig)
 				te.CreateFile("README.md", "# Test")
 				gitAdd := exec.Command("git", "add", ".")

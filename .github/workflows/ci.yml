@@ -123,7 +123,10 @@ jobs:
       run: |
         mkdir -p test-project
         cd test-project
-        ../bin/ddx init --no-git  # Skip git subtree in CI
+        git init
+        git config user.email "test@example.com"
+        git config user.name "Test User"
+        ../bin/ddx init
         test -f .ddx/config.yaml
     
     - name: Test list command
