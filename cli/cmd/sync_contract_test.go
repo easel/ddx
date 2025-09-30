@@ -398,9 +398,9 @@ func TestContributeCommand_Contract(t *testing.T) {
 		// Flags are now local to commands - no reset needed
 
 		// Initialize git repo in tempDir
-		execCommandInDir(tempDir, "git", "init")
-		execCommandInDir(tempDir, "git", "config", "user.email", "test@example.com")
-		execCommandInDir(tempDir, "git", "config", "user.name", "Test User")
+		_ = execCommandInDir(tempDir, "git", "init")
+		_ = execCommandInDir(tempDir, "git", "config", "user.email", "test@example.com")
+		_ = execCommandInDir(tempDir, "git", "config", "user.name", "Test User")
 
 		createTestConfig(t, tempDir)
 

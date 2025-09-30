@@ -127,7 +127,12 @@ func handleMCPList(output io.Writer, workingDir string, opts MCPListOptions) err
 
 	// Show category filter if specified
 	if opts.Category != "" {
-		_, _ = fmt.Fprintf(output, "Filtered by category: %s\n", strings.Title(opts.Category))
+		// Capitalize first letter manually (strings.Title is deprecated)
+		categoryDisplay := opts.Category
+		if len(categoryDisplay) > 0 {
+			categoryDisplay = strings.ToUpper(categoryDisplay[:1]) + categoryDisplay[1:]
+		}
+		_, _ = fmt.Fprintf(output, "Filtered by category: %s\n", categoryDisplay)
 		_, _ = fmt.Fprintln(output)
 	}
 
