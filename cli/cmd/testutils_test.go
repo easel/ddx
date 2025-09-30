@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/easel/ddx/internal/config"
+	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/require"
 )
 
@@ -196,15 +197,22 @@ func (te *TestEnvironment) RunCommand(args ...string) (string, error) {
 }
 
 // InitWithDDx properly initializes DDx in the test environment using ddx init
-// Note: Always uses --no-git for now until DDX_TEST_MODE is removed from production code
+// If git is initialized, uses real git subtree with file:// URL to test library
+// Otherwise uses --no-git flag
 func (te *TestEnvironment) InitWithDDx(flags ...string) {
 	te.t.Helper()
 
 	// Default flags if none provided
 	if len(flags) == 0 {
-		// Always use --no-git until DDX_TEST_MODE is removed from production code
-		// After Phase 2, we can use real git with file:// URLs
-		flags = []string{"--no-git", "--silent"}
+		if te.GitInitialized {
+			// Use real git with file:// URL - DDX_TEST_MODE removed!
+			flags = []string{"--silent"}
+			// Create config with test library URL so init uses it
+			te.CreateDefaultConfig()
+		} else {
+			// No git repo, use --no-git
+			flags = []string{"--no-git", "--silent"}
+		}
 	}
 
 	args := append([]string{"init"}, flags...)
@@ -242,4 +250,16 @@ func NewTestRootCommand(t *testing.T) *CommandFactory {
 // Use this when your test needs to operate in a specific directory.
 func NewTestRootCommandWithDir(dir string) *CommandFactory {
 	return NewCommandFactory(dir)
+}
+
+// executeCommand is a helper to execute commands with captured output (legacy compatibility)
+// New tests should use TestEnvironment.RunCommand() instead
+func executeCommand(root *cobra.Command, args ...string) (output string, err error) {
+	buf := new(bytes.Buffer)
+	root.SetOut(buf)
+	root.SetErr(buf)
+	root.SetArgs(args)
+
+	err = root.Execute()
+	return buf.String(), err
 }
