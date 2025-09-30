@@ -13,10 +13,6 @@ persona_bindings:
     devops-engineer: devops-engineer-kubernetes
     test-engineer: test-engineer-tdd
     workflow-coordinator: helix-workflow-enforcer
-workflow_phase_personas:
-    helix:
-        design: product-manager-minimalist
-        test: test-engineer-tdd
 preferences:
     auto_apply_hooks: true
     backup_before_update: true
