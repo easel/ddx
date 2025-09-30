@@ -28,6 +28,7 @@ Examples:
 	cmd.Flags().BoolP("force", "f", false, "Force initialization even if DDx already exists")
 	cmd.Flags().Bool("no-git", false, "Skip git subtree setup")
 	cmd.Flags().Bool("silent", false, "Suppress all output except errors")
+	cmd.Flags().Bool("skip-claude-injection", false, "Skip injecting meta-prompts into CLAUDE.md")
 
 	return cmd
 }

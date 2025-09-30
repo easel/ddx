@@ -14,9 +14,10 @@ import (
 
 // InitOptions contains all configuration options for project initialization
 type InitOptions struct {
-	Force  bool // Force initialization even if config exists
-	NoGit  bool // Skip git-related operations
-	Silent bool // Suppress all output except errors
+	Force               bool // Force initialization even if config exists
+	NoGit               bool // Skip git-related operations
+	Silent              bool // Suppress all output except errors
+	SkipClaudeInjection bool // Skip injecting meta-prompts into CLAUDE.md
 }
 
 // Command registration is now handled by command_factory.go
@@ -36,12 +37,14 @@ func (f *CommandFactory) runInit(cmd *cobra.Command, args []string) error {
 	initForce, _ := cmd.Flags().GetBool("force")
 	initNoGit, _ := cmd.Flags().GetBool("no-git")
 	initSilent, _ := cmd.Flags().GetBool("silent")
+	initSkipClaude, _ := cmd.Flags().GetBool("skip-claude-injection")
 
 	// Create options struct for business logic
 	opts := InitOptions{
-		Force:  initForce,
-		NoGit:  initNoGit,
-		Silent: initSilent,
+		Force:               initForce,
+		NoGit:               initNoGit,
+		Silent:              initSilent,
+		SkipClaudeInjection: initSkipClaude,
 	}
 
 	// Handle user output
@@ -179,10 +182,15 @@ func initProject(workingDir string, opts InitOptions) (*InitResult, error) {
 			return nil, NewExitError(1, fmt.Sprintf("Failed to setup library: %v", err))
 		}
 
-		// Inject initial meta-prompt after library is set up
-		if err := injectInitialMetaPrompt(localConfig, workingDir); err != nil {
-			// Warn but don't fail - meta-prompt is optional enhancement
-			fmt.Fprintf(os.Stderr, "Warning: Failed to inject meta-prompt: %v\n", err)
+		// Inject initial meta-prompt after library is set up (unless explicitly skipped)
+		if !opts.SkipClaudeInjection {
+			if err := injectInitialMetaPrompt(localConfig, workingDir); err != nil {
+				// Don't fail - meta-prompt is optional enhancement
+				// Only warn if file actually exists but has issues
+				if _, statErr := os.Stat(filepath.Join(workingDir, localConfig.Library.Path, "prompts")); statErr == nil {
+					fmt.Fprintf(os.Stderr, "Warning: Failed to inject meta-prompt: %v\n", err)
+				}
+			}
 		}
 	}
 

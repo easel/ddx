@@ -335,8 +335,8 @@ func (te *TestEnvironment) InitWithDDx(flags ...string) {
 	if len(flags) == 0 {
 		// In CI environments or if git isn't initialized, use --no-git
 		if os.Getenv("CI") != "" || !te.GitInitialized {
-			// No git repo or CI environment, use --no-git
-			flags = []string{"--no-git", "--silent"}
+			// No git repo or CI environment, use --no-git and skip CLAUDE.md injection
+			flags = []string{"--no-git", "--silent", "--skip-claude-injection"}
 		} else {
 			// Local development with git
 			// Create initial commit (required for git subtree)
@@ -350,7 +350,7 @@ func (te *TestEnvironment) InitWithDDx(flags ...string) {
 
 			// Create config with test library URL first, then use --force to initialize
 			te.CreateDefaultConfig()
-			flags = []string{"--force", "--silent"}
+			flags = []string{"--force", "--silent", "--skip-claude-injection"}
 		}
 	}
 
