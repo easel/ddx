@@ -67,7 +67,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
@@ -80,11 +80,20 @@ jobs:
         repository: easel/ddx-library
         path: library
 
+    - name: Build test binary
+      working-directory: cli
+      run: |
+        mkdir -p build
+        go build -o build/ddx .
+        chmod +x build/ddx
+        echo "✅ Test binary built at $(pwd)/build/ddx"
+
     - name: Run tests
       working-directory: cli
       env:
         DDX_TEST_MODE: "1"
         DDX_LIBRARY_BASE_PATH: "${{ github.workspace }}/library"
+        DDX_CLI_ROOT: "${{ github.workspace }}/cli"
       run: |
         go test -v ./...
         echo "✅ All tests passed - release validated"

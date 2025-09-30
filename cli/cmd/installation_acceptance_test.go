@@ -16,6 +16,28 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// getProjectRoot returns the path to the CLI project root
+func getProjectRoot() string {
+	// Check for environment variable first (for CI)
+	if root := os.Getenv("DDX_CLI_ROOT"); root != "" {
+		return root
+	}
+
+	// Detect from test file location
+	_, filename, _, ok := runtime.Caller(0)
+	if !ok {
+		return "."
+	}
+
+	// installation_acceptance_test.go is in cli/cmd/, so go up two levels
+	return filepath.Join(filepath.Dir(filename), "..")
+}
+
+// getBuildDir returns the path to the build directory
+func getBuildDir() string {
+	return filepath.Join(getProjectRoot(), "build")
+}
+
 // InstallationResult represents the result of an installation operation
 type InstallationResult struct {
 	Success                   bool
@@ -67,11 +89,11 @@ func setupTestEnvironment(t *testing.T, platform, arch string) *InstallationTest
 	t.Setenv("DDX_TEST_ARCH", arch)
 
 	// Copy the built binary to the expected location for testing
-	// Use constant path to avoid working directory dependencies
-	testBinaryPath := "/host-home/erik/Projects/ddx/cli/build/ddx"
-	srcBinary := testBinaryPath
+	// Detect build directory dynamically
+	buildDir := getBuildDir()
+	srcBinary := filepath.Join(buildDir, "ddx")
 	if platform == "windows" {
-		srcBinary = testBinaryPath + ".exe"
+		srcBinary = filepath.Join(buildDir, "ddx.exe")
 	}
 
 	var destBinary string
@@ -138,11 +160,10 @@ func (env *InstallationTestEnvironment) ExecuteInstallCommand(command string) In
 	}
 
 	// For testing, we simulate the installation by copying our built binary
-	// Find the project root by looking for the build directory
-	projectRoot := "/host-home/erik/Projects/ddx/cli" // Absolute path to the project
-	builtBinary := filepath.Join(projectRoot, "build", "ddx")
+	buildDir := getBuildDir()
+	builtBinary := filepath.Join(buildDir, "ddx")
 	if env.Platform == "windows" {
-		builtBinary += ".exe"
+		builtBinary = filepath.Join(buildDir, "ddx.exe")
 	}
 
 	// Check if built binary exists
@@ -151,7 +172,7 @@ func (env *InstallationTestEnvironment) ExecuteInstallCommand(command string) In
 		// try to use the current platform's binary for simulation
 		if env.Platform == "windows" && runtime.GOOS != "windows" {
 			// Use Unix binary for Windows simulation in test environment
-			builtBinary = filepath.Join(projectRoot, "build", "ddx")
+			builtBinary = filepath.Join(buildDir, "ddx")
 		}
 
 		// Check again

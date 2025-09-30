@@ -64,6 +64,15 @@ persona_bindings:
 	t.Run("set_configuration_value", func(t *testing.T) {
 		// AC: Given I want to change a setting, when I run `ddx config set <key> <value>`, then the setting is updated and confirmed
 
+		// Unset environment variable that would override config file
+		originalLibPath := os.Getenv("DDX_LIBRARY_BASE_PATH")
+		os.Unsetenv("DDX_LIBRARY_BASE_PATH")
+		defer func() {
+			if originalLibPath != "" {
+				os.Setenv("DDX_LIBRARY_BASE_PATH", originalLibPath)
+			}
+		}()
+
 		tempDir := t.TempDir()
 
 		// Create initial config using DDx structure
