@@ -327,13 +327,18 @@ func (te *TestEnvironment) RunCommand(args ...string) (string, error) {
 
 // InitWithDDx properly initializes DDx in the test environment using ddx init
 // If git is initialized, uses real git subtree with file:// URL to test library
-// Otherwise uses --no-git flag
+// Otherwise uses --no-git flag. In CI environments, always uses --no-git.
 func (te *TestEnvironment) InitWithDDx(flags ...string) {
 	te.t.Helper()
 
 	// Default flags if none provided
 	if len(flags) == 0 {
-		if te.GitInitialized {
+		// In CI environments or if git isn't initialized, use --no-git
+		if os.Getenv("CI") != "" || !te.GitInitialized {
+			// No git repo or CI environment, use --no-git
+			flags = []string{"--no-git", "--silent"}
+		} else {
+			// Local development with git
 			// Create initial commit (required for git subtree)
 			te.CreateFile("README.md", "# Test Project")
 			gitAdd := exec.Command("git", "add", ".")
@@ -346,9 +351,6 @@ func (te *TestEnvironment) InitWithDDx(flags ...string) {
 			// Create config with test library URL first, then use --force to initialize
 			te.CreateDefaultConfig()
 			flags = []string{"--force", "--silent"}
-		} else {
-			// No git repo, use --no-git
-			flags = []string{"--no-git", "--silent"}
 		}
 	}
 
