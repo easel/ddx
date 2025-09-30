@@ -1,4 +1,4 @@
-# Specification Generation Prompt
+# Feature Specification Generation Prompt
 
 Create a complete feature specification with explicit uncertainty markers.
 
@@ -8,14 +8,12 @@ Store feature specifications at: `docs/helix/01-frame/features/FEAT-{number}-{ti
 
 ## Naming Convention
 
-Follow this consistent format:
+Follow this format:
 - **File Format**: `FEAT-{number}-{title-with-hyphens}.md`
 - **Number**: Zero-padded 3-digit sequence (001, 002, 003...)
 - **Title**: Descriptive, lowercase with hyphens
-- **Examples**:
-  - `FEAT-001-cli-template-management.md`
-  - `FEAT-002-ai-code-assistance.md`
-  - `FEAT-003-workflow-automation.md`
+
+Examples: `FEAT-001-cli-template-management.md`, `FEAT-002-ai-code-assistance.md`
 
 ## Critical Instructions
 
@@ -23,7 +21,7 @@ Follow this consistent format:
 **DO NOT GUESS OR ASSUME**. When information is not explicitly provided:
 - Mark it with `[NEEDS CLARIFICATION: specific question]`
 - Be specific about what needs clarification
-- It's better to have many clarification markers than hidden assumptions
+- Better to have many clarification markers than hidden assumptions
 
 ### 2. Focus on WHAT, not HOW
 - ✅ Describe user needs and business requirements
@@ -48,24 +46,25 @@ Every requirement must be:
 
 ## Quality Checklist
 
-Before completing the specification:
-- [ ] Every ambiguity is marked with [NEEDS CLARIFICATION]
-- [ ] All requirements are testable
-- [ ] Success metrics are measurable
-- [ ] User stories have clear acceptance criteria
-- [ ] Edge cases are identified
-- [ ] No implementation details included
+- Every ambiguity is marked with [NEEDS CLARIFICATION]
+- All requirements are testable
+- Success metrics are measurable
+- User stories have clear acceptance criteria
+- Edge cases are identified
+- No implementation details included
 
 ## Example Clarification Markers
 
-Good:
+✅ Good:
 - `[NEEDS CLARIFICATION: Maximum response time in milliseconds?]`
 - `[NEEDS CLARIFICATION: Which user roles need access?]`
 - `[NEEDS CLARIFICATION: Data retention period?]`
 
-Bad:
+❌ Bad:
 - `[NEEDS CLARIFICATION: Performance requirements?]` (too vague)
 - "The system should be fast" (missing clarification marker)
 - "Use PostgreSQL for data storage" (implementation detail)
+
+---
 
 Remember: The specification drives everything that follows. Ambiguity here cascades into problems throughout development.

@@ -8,21 +8,19 @@ Store user stories at: `docs/helix/01-frame/user-stories/US-{number}-{title-with
 
 ## Naming Convention
 
-Follow this consistent format:
+Follow this format:
 - **File Format**: `US-{number}-{title-with-hyphens}.md`
 - **Number**: Zero-padded 3-digit sequence (001, 002, 003...)
 - **Title**: Descriptive, lowercase with hyphens
-- **Examples**:
-  - `US-001-user-login-authentication.md`
-  - `US-002-project-template-selection.md`
-  - `US-003-ai-assisted-code-generation.md`
+
+Examples: `US-001-user-login-authentication.md`, `US-002-project-template-selection.md`
 
 ## Core Principles
 
 ### 1. User-Centric Focus
-- Start with WHO will use this (be specific about user types)
-- Identify WHAT they need to do (specific actions)
-- Explain WHY it matters (business value)
+- **WHO** will use this (be specific about user types)
+- **WHAT** they need to do (specific actions)
+- **WHY** it matters (business value)
 
 ### 2. Testable Acceptance Criteria
 Each criterion must follow the Given-When-Then format:
@@ -36,15 +34,15 @@ Each story should:
 - Be completable in one iteration
 - Not depend on unwritten stories
 
-## Required Elements for Each Story
+## Required Elements
 
-1. **Clear User Type**: Not just "user" but specific role
+1. **Clear User Type**: Specific role, not just "user"
 2. **Specific Functionality**: Concrete action, not vague desire
-3. **Business Value**: Why this matters to the organization
+3. **Business Value**: Why this matters
 4. **Acceptance Criteria**: 3-5 specific, testable criteria
 5. **Definition of Done**: Clear completion checklist
 
-## Anti-Patterns to Avoid
+## Anti-Patterns
 
 ❌ **Too Large**: "As a user, I want a complete system"
 ✅ **Right-Sized**: "As a user, I want to reset my password"
@@ -55,7 +53,7 @@ Each story should:
 ❌ **Technical Tasks**: "As a developer, I want to refactor the database"
 ✅ **User Value**: "As a user, I want faster search results"
 
-## Story Splitting Techniques
+## Story Splitting
 
 If a story is too large, split by:
 1. **Workflow Steps**: Each step becomes a story
@@ -65,9 +63,9 @@ If a story is too large, split by:
 
 ## Priority Guidelines
 
-**P0 - Must Have**: Core functionality, without this the product has no value
-**P1 - Should Have**: Important features that users expect
-**P2 - Nice to Have**: Enhancements that delight users
+- **P0 - Must Have**: Core functionality without which the product has no value
+- **P1 - Should Have**: Important features that users expect
+- **P2 - Nice to Have**: Enhancements that delight users
 
 ## Validation Questions
 
@@ -78,16 +76,6 @@ For each story, ask:
 4. Is this small enough to complete in one iteration?
 5. Are the acceptance criteria unambiguous?
 
-## Example Story
+---
 
-### Good Example:
-**As a** registered customer  
-**I want** to save items to a wishlist  
-**So that** I can purchase them later without searching again
-
-**Acceptance Criteria:**
-- [ ] Given I am logged in, when I click "Add to Wishlist" on a product, then the product appears in my wishlist
-- [ ] Given I have items in my wishlist, when I view my wishlist, then I see all saved items with current prices
-- [ ] Given an item is in my wishlist, when I click "Remove", then it is removed immediately
-
-This story is specific, testable, and delivers clear value.
+Remember: Good user stories enable teams to deliver value incrementally while maintaining clear traceability to user needs.
