@@ -243,12 +243,14 @@ persona_bindings: {}`
 				// Simulate DDx development environment
 				testDir := t.TempDir()
 
-				// Create git repo
-				require.NoError(t, os.MkdirAll(".git", 0755))
+				// Create git repo in testDir
+				gitDir := filepath.Join(testDir, ".git")
+				require.NoError(t, os.MkdirAll(gitDir, 0755))
 
 				// Create cli/main.go to identify as DDx repo
-				require.NoError(t, os.MkdirAll("cli", 0755))
-				require.NoError(t, os.WriteFile("cli/main.go", []byte("package main"), 0644))
+				cliDir := filepath.Join(testDir, "cli")
+				require.NoError(t, os.MkdirAll(cliDir, 0755))
+				require.NoError(t, os.WriteFile(filepath.Join(cliDir, "main.go"), []byte("package main"), 0644))
 
 				// Create library/prompts
 				promptsDir := filepath.Join(testDir, "library", "prompts", "ddx")
