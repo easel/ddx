@@ -157,10 +157,10 @@ func TestCache_Save_CreatesDirectory(t *testing.T) {
 func TestCache_GetCacheFilePath_XDGCompliance(t *testing.T) {
 	// Given: XDG_CACHE_HOME environment variable set
 	originalXDG := os.Getenv("XDG_CACHE_HOME")
-	defer os.Setenv("XDG_CACHE_HOME", originalXDG)
+	defer func() { _ = os.Setenv("XDG_CACHE_HOME", originalXDG) }()
 
 	testCacheDir := t.TempDir()
-	os.Setenv("XDG_CACHE_HOME", testCacheDir)
+	_ = os.Setenv("XDG_CACHE_HOME", testCacheDir)
 
 	// When: getCacheFilePath is called
 	cache := &Cache{}
@@ -176,8 +176,8 @@ func TestCache_GetCacheFilePath_XDGCompliance(t *testing.T) {
 func TestCache_GetCacheFilePath_FallbackToHome(t *testing.T) {
 	// Given: XDG_CACHE_HOME not set
 	originalXDG := os.Getenv("XDG_CACHE_HOME")
-	defer os.Setenv("XDG_CACHE_HOME", originalXDG)
-	os.Unsetenv("XDG_CACHE_HOME")
+	defer func() { _ = os.Setenv("XDG_CACHE_HOME", originalXDG) }()
+	_ = os.Unsetenv("XDG_CACHE_HOME")
 
 	// When: getCacheFilePath is called
 	cache := &Cache{}
@@ -232,7 +232,7 @@ func TestCache_Load_PermissionDenied(t *testing.T) {
 	// Remove read permissions
 	err = os.Chmod(cacheFile, 0000)
 	require.NoError(t, err)
-	defer os.Chmod(cacheFile, 0644) // Restore for cleanup
+	defer func() { _ = os.Chmod(cacheFile, 0644) }() // Restore for cleanup
 
 	cache := &Cache{
 		filePath: cacheFile,
@@ -262,7 +262,7 @@ func TestCache_Save_PermissionDenied(t *testing.T) {
 	// Remove write permissions
 	err = os.Chmod(cacheDir, 0555)
 	require.NoError(t, err)
-	defer os.Chmod(cacheDir, 0755) // Restore for cleanup
+	defer func() { _ = os.Chmod(cacheDir, 0755) }() // Restore for cleanup
 
 	cache := &Cache{
 		filePath: filepath.Join(cacheDir, "cache.json"),

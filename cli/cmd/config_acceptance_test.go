@@ -66,10 +66,10 @@ persona_bindings:
 
 		// Unset environment variable that would override config file
 		originalLibPath := os.Getenv("DDX_LIBRARY_BASE_PATH")
-		os.Unsetenv("DDX_LIBRARY_BASE_PATH")
+		_ = os.Unsetenv("DDX_LIBRARY_BASE_PATH")
 		defer func() {
 			if originalLibPath != "" {
-				os.Setenv("DDX_LIBRARY_BASE_PATH", originalLibPath)
+				_ = os.Setenv("DDX_LIBRARY_BASE_PATH", originalLibPath)
 			}
 		}()
 

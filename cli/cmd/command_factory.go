@@ -121,7 +121,7 @@ More information:
 func (f *CommandFactory) initConfig(cfgFile, libPath string) {
 	// Store library path override if provided
 	if libPath != "" {
-		os.Setenv("DDX_LIBRARY_BASE_PATH", libPath)
+		_ = os.Setenv("DDX_LIBRARY_BASE_PATH", libPath)
 	}
 
 	if cfgFile != "" {
@@ -144,7 +144,7 @@ func (f *CommandFactory) initConfig(cfgFile, libPath string) {
 	// If a config file is found, read it in
 	if err := f.viperInstance.ReadInConfig(); err == nil {
 		if verbose := f.viperInstance.GetBool("verbose"); verbose {
-			fmt.Fprintln(os.Stderr, "Using config file:", f.viperInstance.ConfigFileUsed())
+			_, _ = fmt.Fprintln(os.Stderr, "Using config file:", f.viperInstance.ConfigFileUsed())
 		}
 	}
 }
@@ -178,7 +178,7 @@ func (f *CommandFactory) checkForUpdates(cmd *cobra.Command) {
 
 	// Log errors to stderr (don't let users get stranded on old versions)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Warning: Could not check for updates: %v\n", err)
+		_, _ = fmt.Fprintf(os.Stderr, "Warning: Could not check for updates: %v\n", err)
 	}
 
 	// Store in factory for PostRunE
@@ -222,11 +222,11 @@ func (f *CommandFactory) displayUpdateNotification(cmd *cobra.Command) error {
 	// Show update notification with changelog for version command
 	isVersionCmd := cmd.Use == "version"
 	if isVersionCmd {
-		fmt.Fprintf(cmd.OutOrStdout(),
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(),
 			"\n⬆️  Update available: %s (run 'ddx upgrade' to install)\n\nWhat's new:\n  • Performance improvements\n  • Bug fixes\n  • New features\n",
 			version)
 	} else {
-		fmt.Fprintf(cmd.OutOrStdout(),
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(),
 			"\n⬆️  Update available: %s (run 'ddx upgrade' to install)\n",
 			version)
 	}
@@ -249,9 +249,9 @@ func (f *CommandFactory) registerSubcommands(rootCmd *cobra.Command) {
 				version = "v" + version
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "DDx %s\n", version)
-			fmt.Fprintf(cmd.OutOrStdout(), "Commit: %s\n", f.Commit)
-			fmt.Fprintf(cmd.OutOrStdout(), "Built: %s\n", f.Date)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "DDx %s\n", version)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Commit: %s\n", f.Commit)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Built: %s\n", f.Date)
 
 			// Check for --no-check flag
 			noCheck, _ := cmd.Flags().GetBool("no-check")
@@ -286,13 +286,13 @@ PowerShell:
 		Run: func(cmd *cobra.Command, args []string) {
 			switch args[0] {
 			case "bash":
-				rootCmd.GenBashCompletion(os.Stdout)
+				_ = rootCmd.GenBashCompletion(os.Stdout)
 			case "zsh":
-				rootCmd.GenZshCompletion(os.Stdout)
+				_ = rootCmd.GenZshCompletion(os.Stdout)
 			case "fish":
-				rootCmd.GenFishCompletion(os.Stdout, true)
+				_ = rootCmd.GenFishCompletion(os.Stdout, true)
 			case "powershell":
-				rootCmd.GenPowerShellCompletionWithDesc(os.Stdout)
+				_ = rootCmd.GenPowerShellCompletionWithDesc(os.Stdout)
 			}
 		},
 	}
@@ -348,7 +348,7 @@ Examples:
   ddx auth logout github.com              # Remove stored credentials
   ddx auth token github.com <token>       # Set personal access token`,
 		Run: func(cmd *cobra.Command, args []string) {
-			cmd.Help()
+			_ = cmd.Help()
 		},
 	}
 

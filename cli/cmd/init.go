@@ -49,8 +49,8 @@ func (f *CommandFactory) runInit(cmd *cobra.Command, args []string) error {
 
 	// Handle user output
 	if !opts.Silent {
-		fmt.Fprint(cmd.OutOrStdout(), "🚀 Initializing DDx in current project...\n")
-		fmt.Fprintln(cmd.OutOrStdout())
+		_, _ = fmt.Fprint(cmd.OutOrStdout(), "🚀 Initializing DDx in current project...\n")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout())
 	}
 
 	// Call pure business logic function
@@ -63,23 +63,23 @@ func (f *CommandFactory) runInit(cmd *cobra.Command, args []string) error {
 	// Handle user output based on results
 	if !opts.Silent {
 		if result.IsDDxRepo {
-			fmt.Fprint(cmd.OutOrStdout(), "📚 Detected DDx repository - configuring library_path to use ../library\n")
+			_, _ = fmt.Fprint(cmd.OutOrStdout(), "📚 Detected DDx repository - configuring library_path to use ../library\n")
 		}
 
 		// Configuration created successfully
 
-		fmt.Fprint(cmd.OutOrStdout(), "✅ DDx initialized successfully!\n")
-		fmt.Fprint(cmd.OutOrStdout(), "Initialized DDx in current project.\n")
-		fmt.Fprintln(cmd.OutOrStdout())
+		_, _ = fmt.Fprint(cmd.OutOrStdout(), "✅ DDx initialized successfully!\n")
+		_, _ = fmt.Fprint(cmd.OutOrStdout(), "Initialized DDx in current project.\n")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout())
 
 		// Show next steps only if library exists
 		if result.LibraryExists {
-			fmt.Fprint(cmd.OutOrStdout(), "Next steps:\n")
-			fmt.Fprint(cmd.OutOrStdout(), "  ddx list          - See available resources\n")
-			fmt.Fprint(cmd.OutOrStdout(), "  ddx apply <name>  - Apply templates or patterns\n")
-			fmt.Fprint(cmd.OutOrStdout(), "  ddx diagnose      - Analyze your project\n")
-			fmt.Fprint(cmd.OutOrStdout(), "  ddx update        - Update toolkit\n")
-			fmt.Fprintln(cmd.OutOrStdout())
+			_, _ = fmt.Fprint(cmd.OutOrStdout(), "Next steps:\n")
+			_, _ = fmt.Fprint(cmd.OutOrStdout(), "  ddx list          - See available resources\n")
+			_, _ = fmt.Fprint(cmd.OutOrStdout(), "  ddx apply <name>  - Apply templates or patterns\n")
+			_, _ = fmt.Fprint(cmd.OutOrStdout(), "  ddx diagnose      - Analyze your project\n")
+			_, _ = fmt.Fprint(cmd.OutOrStdout(), "  ddx update        - Update toolkit\n")
+			_, _ = fmt.Fprintln(cmd.OutOrStdout())
 		}
 	}
 
@@ -189,7 +189,7 @@ func initProject(workingDir string, opts InitOptions) (*InitResult, error) {
 				// Don't fail - meta-prompt is optional enhancement
 				// Only warn if file actually exists but has issues
 				if _, statErr := os.Stat(filepath.Join(workingDir, localConfig.Library.Path, "prompts")); statErr == nil {
-					fmt.Fprintf(os.Stderr, "Warning: Failed to inject meta-prompt: %v\n", err)
+					_, _ = fmt.Fprintf(os.Stderr, "Warning: Failed to inject meta-prompt: %v\n", err)
 				}
 			}
 		}
@@ -277,8 +277,8 @@ func initializeSynchronizationPure(cfg *config.Config) error {
 
 // initializeSynchronization sets up the sync configuration and validates upstream connection (CLI wrapper)
 func initializeSynchronization(cfg *config.Config, cmd *cobra.Command) error {
-	fmt.Fprint(cmd.OutOrStdout(), "Setting up synchronization...\n")
-	fmt.Fprint(cmd.OutOrStdout(), "  ✓ Validating upstream repository connection...\n")
+	_, _ = fmt.Fprint(cmd.OutOrStdout(), "Setting up synchronization...\n")
+	_, _ = fmt.Fprint(cmd.OutOrStdout(), "  ✓ Validating upstream repository connection...\n")
 
 	err := initializeSynchronizationPure(cfg)
 	if err != nil {
@@ -286,9 +286,9 @@ func initializeSynchronization(cfg *config.Config, cmd *cobra.Command) error {
 	}
 
 	// Show sync setup messages
-	fmt.Fprint(cmd.OutOrStdout(), "  ✓ Upstream repository connection verified\n")
-	fmt.Fprint(cmd.OutOrStdout(), "  ✓ Synchronization configuration validated\n")
-	fmt.Fprint(cmd.OutOrStdout(), "  ✓ Change tracking initialized\n")
+	_, _ = fmt.Fprint(cmd.OutOrStdout(), "  ✓ Upstream repository connection verified\n")
+	_, _ = fmt.Fprint(cmd.OutOrStdout(), "  ✓ Synchronization configuration validated\n")
+	_, _ = fmt.Fprint(cmd.OutOrStdout(), "  ✓ Change tracking initialized\n")
 
 	return nil
 }
@@ -370,14 +370,14 @@ func validateGitRepo(workingDir string) error {
 
 // validateGitRepository checks if the current directory is inside a git repository (CLI wrapper)
 func validateGitRepository(cmd *cobra.Command) error {
-	fmt.Fprint(cmd.OutOrStdout(), "🔍 Validating git repository...\n")
+	_, _ = fmt.Fprint(cmd.OutOrStdout(), "🔍 Validating git repository...\n")
 
 	err := validateGitRepo(".")
 	if err != nil {
 		return err
 	}
 
-	fmt.Fprint(cmd.OutOrStdout(), "  ✓ Git repository detected\n")
+	_, _ = fmt.Fprint(cmd.OutOrStdout(), "  ✓ Git repository detected\n")
 	return nil
 }
 
@@ -457,12 +457,12 @@ func commitConfigFile(workingDir string) error {
 
 // setupGitSubtreeLibrary sets up the library using git-subtree (CLI wrapper)
 func setupGitSubtreeLibrary(cfg *config.Config, cmd *cobra.Command, workingDir string) error {
-	fmt.Fprint(cmd.OutOrStdout(), "📚 Setting up library via git-subtree...\n")
+	_, _ = fmt.Fprint(cmd.OutOrStdout(), "📚 Setting up library via git-subtree...\n")
 
 	// Check if .ddx/library already exists
 	libraryPath := filepath.Join(workingDir, ".ddx/library")
 	if _, err := os.Stat(libraryPath); err == nil {
-		fmt.Fprintf(cmd.OutOrStdout(), "  ℹ️  Library already exists at %s\n", libraryPath)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  ℹ️  Library already exists at %s\n", libraryPath)
 		return nil
 	}
 
@@ -477,9 +477,9 @@ func setupGitSubtreeLibrary(cfg *config.Config, cmd *cobra.Command, workingDir s
 	if branch == "" {
 		branch = "main"
 	}
-	fmt.Fprint(cmd.OutOrStdout(), "  ✓ Library synchronized via git-subtree\n")
-	fmt.Fprintf(cmd.OutOrStdout(), "  ℹ️  To update library: git subtree pull --prefix=.ddx/library %s %s --squash\n", repoURL, branch)
-	fmt.Fprintf(cmd.OutOrStdout(), "  ℹ️  To contribute changes: git subtree push --prefix=.ddx/library %s %s\n", repoURL, branch)
+	_, _ = fmt.Fprint(cmd.OutOrStdout(), "  ✓ Library synchronized via git-subtree\n")
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  ℹ️  To update library: git subtree pull --prefix=.ddx/library %s %s --squash\n", repoURL, branch)
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  ℹ️  To contribute changes: git subtree push --prefix=.ddx/library %s %s\n", repoURL, branch)
 
 	return nil
 }

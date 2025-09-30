@@ -96,7 +96,7 @@ func runPersonaWithWorkingDir(cmd *cobra.Command, args []string, workingDir stri
 			if err != nil {
 				return err
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "✅ Bound role '%s' to persona '%s'\n", args[1], args[2])
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "✅ Bound role '%s' to persona '%s'\n", args[1], args[2])
 			return nil
 		case "load":
 			loadedPersonas, err := personaLoad(workingDir, args[1:]...)
@@ -141,7 +141,7 @@ func runPersonaWithWorkingDir(cmd *cobra.Command, args []string, workingDir stri
 		if err != nil {
 			return err
 		}
-		fmt.Fprintf(cmd.OutOrStdout(), "✅ Bound role '%s' to persona '%s'\n", roleFlag, bindFlag)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "✅ Bound role '%s' to persona '%s'\n", roleFlag, bindFlag)
 		return nil
 	}
 
@@ -152,27 +152,27 @@ func runPersonaWithWorkingDir(cmd *cobra.Command, args []string, workingDir stri
 // displayPersonaList displays the list of personas to the user
 func displayPersonaList(cmd *cobra.Command, personas []PersonaInfo) error {
 	if len(personas) == 0 {
-		fmt.Fprintln(cmd.OutOrStdout(), "No personas found")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "No personas found")
 		return nil
 	}
 
-	fmt.Fprintln(cmd.OutOrStdout(), "Available Personas:")
-	fmt.Fprintln(cmd.OutOrStdout())
+	_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Available Personas:")
+	_, _ = fmt.Fprintln(cmd.OutOrStdout())
 
 	// Create tabwriter for aligned output
 	w := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 0, 2, ' ', 0)
-	fmt.Fprintln(w, "PERSONA\tROLE\tDESCRIPTION")
-	fmt.Fprintln(w, "-------\t----\t-----------")
+	_, _ = fmt.Fprintln(w, "PERSONA\tROLE\tDESCRIPTION")
+	_, _ = fmt.Fprintln(w, "-------\t----\t-----------")
 
 	for _, persona := range personas {
 		roleStr := "general"
 		if len(persona.Roles) > 0 {
 			roleStr = persona.Roles[0]
 		}
-		fmt.Fprintf(w, "%s\t%s\t%s\n", persona.Name, roleStr, persona.Description)
+		_, _ = fmt.Fprintf(w, "%s\t%s\t%s\n", persona.Name, roleStr, persona.Description)
 	}
 
-	w.Flush()
+	_ = w.Flush()
 	return nil
 }
 
@@ -186,10 +186,10 @@ func displayPersona(cmd *cobra.Command, persona *PersonaInfo) error {
 	metadata := parsePersonaMetadata(persona.Content)
 	if metadata != nil {
 		// Display formatted metadata
-		fmt.Fprintf(cmd.OutOrStdout(), "Name: %s\n", metadata.Name)
-		fmt.Fprintf(cmd.OutOrStdout(), "Roles: %s\n", strings.Join(metadata.Roles, ", "))
-		fmt.Fprintf(cmd.OutOrStdout(), "Description: %s\n", metadata.Description)
-		fmt.Fprintf(cmd.OutOrStdout(), "Tags: %s\n", strings.Join(metadata.Tags, ", "))
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Name: %s\n", metadata.Name)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Roles: %s\n", strings.Join(metadata.Roles, ", "))
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Description: %s\n", metadata.Description)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Tags: %s\n", strings.Join(metadata.Tags, ", "))
 
 		// Display content after frontmatter
 		lines := strings.Split(persona.Content, "\n")
@@ -203,12 +203,12 @@ func displayPersona(cmd *cobra.Command, persona *PersonaInfo) error {
 			}
 		}
 		if foundEnd && contentStart < len(lines) {
-			fmt.Fprintln(cmd.OutOrStdout())
-			fmt.Fprint(cmd.OutOrStdout(), strings.Join(lines[contentStart:], "\n"))
+			_, _ = fmt.Fprintln(cmd.OutOrStdout())
+			_, _ = fmt.Fprint(cmd.OutOrStdout(), strings.Join(lines[contentStart:], "\n"))
 		}
 	} else {
 		// No frontmatter, display raw content
-		fmt.Fprint(cmd.OutOrStdout(), persona.Content)
+		_, _ = fmt.Fprint(cmd.OutOrStdout(), persona.Content)
 	}
 	return nil
 }
@@ -216,44 +216,44 @@ func displayPersona(cmd *cobra.Command, persona *PersonaInfo) error {
 // displayBindings displays persona bindings to the user
 func displayBindings(cmd *cobra.Command, bindings PersonaBindings) error {
 	if len(bindings) == 0 {
-		fmt.Fprintln(cmd.OutOrStdout(), "No persona bindings configured")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "No persona bindings configured")
 		return nil
 	}
 
-	fmt.Fprintln(cmd.OutOrStdout(), "Current Persona Bindings:")
-	fmt.Fprintln(cmd.OutOrStdout())
+	_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Current Persona Bindings:")
+	_, _ = fmt.Fprintln(cmd.OutOrStdout())
 
 	// Create tabwriter for aligned output
 	w := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 0, 2, ' ', 0)
-	fmt.Fprintln(w, "ROLE\tPERSONA")
-	fmt.Fprintln(w, "----\t-------")
+	_, _ = fmt.Fprintln(w, "ROLE\tPERSONA")
+	_, _ = fmt.Fprintln(w, "----\t-------")
 
 	for role, persona := range bindings {
-		fmt.Fprintf(w, "%s\t%s\n", role, persona)
+		_, _ = fmt.Fprintf(w, "%s\t%s\n", role, persona)
 	}
 
-	w.Flush()
+	_ = w.Flush()
 	return nil
 }
 
 // displayPersonaStatus displays persona status to the user
 func displayPersonaStatus(cmd *cobra.Command, status PersonaStatus) error {
 	if !status.HasCLAUDEFile {
-		fmt.Fprintln(cmd.OutOrStdout(), "No CLAUDE.md file found - no personas loaded")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "No CLAUDE.md file found - no personas loaded")
 		return nil
 	}
 
 	if len(status.LoadedPersonas) > 0 {
-		fmt.Fprintln(cmd.OutOrStdout(), "Loaded Personas:")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Loaded Personas:")
 		for i, persona := range status.LoadedPersonas {
-			fmt.Fprintf(cmd.OutOrStdout(), "  - %s (%s)\n", persona, status.LoadedRoles[i])
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  - %s (%s)\n", persona, status.LoadedRoles[i])
 		}
 	} else {
-		fmt.Fprintln(cmd.OutOrStdout(), "No personas currently loaded")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "No personas currently loaded")
 	}
 
 	if status.BindingsCount > 0 {
-		fmt.Fprintf(cmd.OutOrStdout(), "\n%d persona binding(s) configured\n", status.BindingsCount)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "\n%d persona binding(s) configured\n", status.BindingsCount)
 	}
 
 	return nil
@@ -264,17 +264,17 @@ func displayLoadResult(cmd *cobra.Command, requestedPersonas []string, loadedPer
 	if len(requestedPersonas) > 0 {
 		// Specific personas loaded
 		if len(loadedPersonas) == 1 {
-			fmt.Fprintf(cmd.OutOrStdout(), "✅ Loaded persona '%s' into CLAUDE.md\n", loadedPersonas[0])
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "✅ Loaded persona '%s' into CLAUDE.md\n", loadedPersonas[0])
 		} else {
-			fmt.Fprintf(cmd.OutOrStdout(), "✅ Loaded %d personas into CLAUDE.md\n", len(loadedPersonas))
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "✅ Loaded %d personas into CLAUDE.md\n", len(loadedPersonas))
 		}
 	} else {
 		// All bound personas loaded
 		if len(loadedPersonas) > 0 {
-			fmt.Fprintf(cmd.OutOrStdout(), "✅ Loaded %d personas (%s) into CLAUDE.md\n",
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "✅ Loaded %d personas (%s) into CLAUDE.md\n",
 				len(loadedPersonas), strings.Join(loadedPersonas, ", "))
 		} else {
-			fmt.Fprintln(cmd.OutOrStdout(), "No bound personas to load")
+			_, _ = fmt.Fprintln(cmd.OutOrStdout(), "No bound personas to load")
 		}
 	}
 	return nil

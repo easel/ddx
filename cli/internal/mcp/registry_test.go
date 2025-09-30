@@ -116,7 +116,7 @@ func TestLoadRegistry(t *testing.T) {
 
 	t.Run("invalid YAML", func(t *testing.T) {
 		invalidPath := filepath.Join(t.TempDir(), "invalid.yml")
-		os.WriteFile(invalidPath, []byte("invalid: yaml: content:"), 0644)
+		_ = os.WriteFile(invalidPath, []byte("invalid: yaml: content:"), 0644)
 		wd, _ := os.Getwd()
 		_, err := mcp.LoadRegistry(invalidPath, wd)
 		assert.Error(t, err)

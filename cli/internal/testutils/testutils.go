@@ -45,7 +45,7 @@ func NewTestEnvironment(t *testing.T) *TestEnvironment {
 func (env *TestEnvironment) Cleanup() {
 	// Restore original environment
 	if env.origHome != "" {
-		os.Setenv("HOME", env.origHome)
+		_ = os.Setenv("HOME", env.origHome)
 	}
 	// Working directory doesn't need restoration since we never changed it
 }

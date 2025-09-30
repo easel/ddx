@@ -16,7 +16,7 @@ func TestAcceptance_US015_ViewChangeHistory(t *testing.T) {
 		// AC: Given DDX resources with history, when I run `ddx log`, then I see a chronological list of changes
 		testDir, cleanup := setupStatusTestDir(t)
 		defer cleanup()
-		defer os.RemoveAll(testDir)
+		defer func() { _ = os.RemoveAll(testDir) }()
 
 		// Use CommandFactory with the test working directory
 		factory := NewCommandFactory(testDir)
@@ -32,13 +32,13 @@ func TestAcceptance_US015_ViewChangeHistory(t *testing.T) {
 		// AC: Given I want specific resource history, when I run `ddx log <path>`, then history is filtered by that path
 		testDir, cleanup := setupStatusTestDir(t)
 		defer cleanup()
-		defer os.RemoveAll(testDir)
+		defer func() { _ = os.RemoveAll(testDir) }()
 
 		// Create test resource at specific path
 		patternsDir := filepath.Join(testDir, ".ddx", "patterns")
-		os.MkdirAll(patternsDir, 0755)
+		_ = os.MkdirAll(patternsDir, 0755)
 		patternFile := filepath.Join(patternsDir, "auth-pattern.md")
-		os.WriteFile(patternFile, []byte("# Auth Pattern\nTest content"), 0644)
+		_ = os.WriteFile(patternFile, []byte("# Auth Pattern\nTest content"), 0644)
 
 		// Use CommandFactory with the test working directory
 		factory := NewCommandFactory(testDir)
@@ -54,7 +54,7 @@ func TestAcceptance_US015_ViewChangeHistory(t *testing.T) {
 		// AC: Given history exists, when viewing entries, then I see author and date for each change
 		testDir, cleanup := setupStatusTestDir(t)
 		defer cleanup()
-		defer os.RemoveAll(testDir)
+		defer func() { _ = os.RemoveAll(testDir) }()
 
 		// Use CommandFactory with the test working directory
 		factory := NewCommandFactory(testDir)
@@ -70,7 +70,7 @@ func TestAcceptance_US015_ViewChangeHistory(t *testing.T) {
 		// AC: Given changes have descriptions, when viewing log, then commit messages are displayed clearly
 		testDir, cleanup := setupStatusTestDir(t)
 		defer cleanup()
-		defer os.RemoveAll(testDir)
+		defer func() { _ = os.RemoveAll(testDir) }()
 
 		// Use CommandFactory with the test working directory
 		factory := NewCommandFactory(testDir)
@@ -85,7 +85,7 @@ func TestAcceptance_US015_ViewChangeHistory(t *testing.T) {
 		// AC: Given long history exists, when I use `--limit`, then I can control the number of entries shown
 		testDir, cleanup := setupStatusTestDir(t)
 		defer cleanup()
-		defer os.RemoveAll(testDir)
+		defer func() { _ = os.RemoveAll(testDir) }()
 
 		// Use CommandFactory with the test working directory
 		factory := NewCommandFactory(testDir)
@@ -104,7 +104,7 @@ func TestAcceptance_US015_ViewChangeHistory(t *testing.T) {
 		// AC: Given I want details, when I use `--diff`, then I see the actual changes for each commit
 		testDir, cleanup := setupStatusTestDir(t)
 		defer cleanup()
-		defer os.RemoveAll(testDir)
+		defer func() { _ = os.RemoveAll(testDir) }()
 
 		// Use CommandFactory with the test working directory
 		factory := NewCommandFactory(testDir)
@@ -123,7 +123,7 @@ func TestAcceptance_US015_ViewChangeHistory(t *testing.T) {
 		// AC: Given I need a report, when I use `--export`, then history is exported in a readable format
 		testDir, cleanup := setupStatusTestDir(t)
 		defer cleanup()
-		defer os.RemoveAll(testDir)
+		defer func() { _ = os.RemoveAll(testDir) }()
 
 		exportFile := filepath.Join(testDir, "history.md")
 
@@ -144,7 +144,7 @@ func TestAcceptance_US015_ViewChangeHistory(t *testing.T) {
 		// AC: Given I use version control, when viewing DDX history, then it integrates with underlying VCS log
 		testDir, cleanup := setupStatusTestDir(t)
 		defer cleanup()
-		defer os.RemoveAll(testDir)
+		defer func() { _ = os.RemoveAll(testDir) }()
 
 		// This test verifies that git integration is attempted
 		// Current implementation already does this
@@ -201,7 +201,7 @@ func TestLogCommand_US015_Features(t *testing.T) {
 		// Command should accept path arguments
 		testDir, cleanup := setupStatusTestDir(t)
 		defer cleanup()
-		defer os.RemoveAll(testDir)
+		defer func() { _ = os.RemoveAll(testDir) }()
 
 		// Use CommandFactory with the test working directory
 		factory := NewCommandFactory(testDir)
@@ -216,7 +216,7 @@ func TestLogCommand_US015_Features(t *testing.T) {
 		// Different export formats should be supported
 		testDir, cleanup := setupStatusTestDir(t)
 		defer cleanup()
-		defer os.RemoveAll(testDir)
+		defer func() { _ = os.RemoveAll(testDir) }()
 
 		formats := []string{"history.md", "history.json", "history.csv", "history.html"}
 
@@ -235,7 +235,7 @@ func TestLogCommand_US015_Features(t *testing.T) {
 					assert.FileExists(t, exportFile)
 
 					// Clean up for next iteration
-					os.Remove(exportFile)
+					_ = os.Remove(exportFile)
 				}
 			})
 		}
@@ -245,7 +245,7 @@ func TestLogCommand_US015_Features(t *testing.T) {
 		// History retrieval should be performant
 		testDir, cleanup := setupStatusTestDir(t)
 		defer cleanup()
-		defer os.RemoveAll(testDir)
+		defer func() { _ = os.RemoveAll(testDir) }()
 
 		start := time.Now()
 		// Use CommandFactory with the test working directory
@@ -267,14 +267,14 @@ func TestLogCommand_US015_ValidationScenarios(t *testing.T) {
 		// 3. Expected: See all changes chronologically
 		testDir, cleanup := setupStatusTestDir(t)
 		defer cleanup()
-		defer os.RemoveAll(testDir)
+		defer func() { _ = os.RemoveAll(testDir) }()
 
 		// Create multiple files to simulate updates
 		updateDirs := []string{"patterns", "templates", "prompts"}
 		for _, dir := range updateDirs {
 			fullDir := filepath.Join(testDir, ".ddx", dir)
-			os.MkdirAll(fullDir, 0755)
-			os.WriteFile(filepath.Join(fullDir, "test.md"), []byte("content"), 0644)
+			_ = os.MkdirAll(fullDir, 0755)
+			_ = os.WriteFile(filepath.Join(fullDir, "test.md"), []byte("content"), 0644)
 		}
 
 		// Use CommandFactory with the test working directory
@@ -292,11 +292,11 @@ func TestLogCommand_US015_ValidationScenarios(t *testing.T) {
 		// 2. Expected: Only auth pattern changes shown
 		testDir, cleanup := setupStatusTestDir(t)
 		defer cleanup()
-		defer os.RemoveAll(testDir)
+		defer func() { _ = os.RemoveAll(testDir) }()
 
 		authDir := filepath.Join(testDir, ".ddx", "patterns", "auth")
-		os.MkdirAll(authDir, 0755)
-		os.WriteFile(filepath.Join(authDir, "oauth.md"), []byte("OAuth pattern"), 0644)
+		_ = os.MkdirAll(authDir, 0755)
+		_ = os.WriteFile(filepath.Join(authDir, "oauth.md"), []byte("OAuth pattern"), 0644)
 
 		// Use CommandFactory with the test working directory
 		factory := NewCommandFactory(testDir)
@@ -312,7 +312,7 @@ func TestLogCommand_US015_ValidationScenarios(t *testing.T) {
 		// 2. Expected: Only 10 most recent entries
 		testDir, cleanup := setupStatusTestDir(t)
 		defer cleanup()
-		defer os.RemoveAll(testDir)
+		defer func() { _ = os.RemoveAll(testDir) }()
 
 		// Use CommandFactory with the test working directory
 		factory := NewCommandFactory(testDir)
@@ -330,7 +330,7 @@ func TestLogCommand_US015_ValidationScenarios(t *testing.T) {
 		// 2. Expected: Markdown file with formatted history
 		testDir, cleanup := setupStatusTestDir(t)
 		defer cleanup()
-		defer os.RemoveAll(testDir)
+		defer func() { _ = os.RemoveAll(testDir) }()
 
 		exportFile := filepath.Join(testDir, "history.md")
 

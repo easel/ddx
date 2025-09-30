@@ -47,14 +47,14 @@ func HandleError(err error) {
 	// Check if it's an ExitError
 	if exitErr, ok := err.(*ExitError); ok {
 		if exitErr.Message != "" {
-			fmt.Fprintln(os.Stderr, exitErr.Message)
+			_, _ = fmt.Fprintln(os.Stderr, exitErr.Message)
 		}
 		os.Exit(exitErr.Code)
 		return
 	}
 
 	// Default error handling
-	fmt.Fprintln(os.Stderr, err.Error())
+	_, _ = fmt.Fprintln(os.Stderr, err.Error())
 	os.Exit(ExitCodeGeneralError)
 }
 

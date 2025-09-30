@@ -39,13 +39,13 @@ func runUninstall(cmd *cobra.Command, args []string) error {
 			return err
 		}
 		if !confirm {
-			yellow.Fprintln(cmd.OutOrStdout(), "Uninstallation cancelled")
+			_, _ = yellow.Fprintln(cmd.OutOrStdout(), "Uninstallation cancelled")
 			return nil
 		}
 	}
 
-	red.Fprintln(cmd.OutOrStdout(), "🗑️  Uninstalling DDx...")
-	fmt.Fprintln(cmd.OutOrStdout())
+	_, _ = red.Fprintln(cmd.OutOrStdout(), "🗑️  Uninstalling DDx...")
+	_, _ = fmt.Fprintln(cmd.OutOrStdout())
 
 	// Remove binary
 	binaryPath, err := os.Executable()
@@ -53,9 +53,9 @@ func runUninstall(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to determine binary path: %w", err)
 	}
 
-	fmt.Fprintf(cmd.OutOrStdout(), "Removing binary: %s\n", binaryPath)
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Removing binary: %s\n", binaryPath)
 	if err := os.Remove(binaryPath); err != nil && !os.IsNotExist(err) {
-		yellow.Fprintf(cmd.OutOrStdout(), "⚠️  Failed to remove binary: %v\n", err)
+		_, _ = yellow.Fprintf(cmd.OutOrStdout(), "⚠️  Failed to remove binary: %v\n", err)
 	}
 
 	// Remove configuration files
@@ -64,14 +64,14 @@ func runUninstall(cmd *cobra.Command, args []string) error {
 		if err == nil {
 			configPath := filepath.Join(home, ".ddx.yml")
 			if _, err := os.Stat(configPath); err == nil {
-				fmt.Fprintf(cmd.OutOrStdout(), "Removing config: %s\n", configPath)
-				os.Remove(configPath)
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Removing config: %s\n", configPath)
+				_ = os.Remove(configPath)
 			}
 
 			ddxDir := filepath.Join(home, ".ddx")
 			if _, err := os.Stat(ddxDir); err == nil {
-				fmt.Fprintf(cmd.OutOrStdout(), "Removing directory: %s\n", ddxDir)
-				os.RemoveAll(ddxDir)
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Removing directory: %s\n", ddxDir)
+				_ = os.RemoveAll(ddxDir)
 			}
 		}
 	}
@@ -81,22 +81,22 @@ func runUninstall(cmd *cobra.Command, args []string) error {
 
 	// Clean up project directories if requested
 	if uninstallPurge && !keepProjects {
-		yellow.Fprintln(cmd.OutOrStdout(), "⚠️  Purge mode: removing .ddx directories from projects")
+		_, _ = yellow.Fprintln(cmd.OutOrStdout(), "⚠️  Purge mode: removing .ddx directories from projects")
 		// Note: This would need to scan for projects, which is risky
 		// For safety, we'll just inform the user
-		fmt.Fprintln(cmd.OutOrStdout(), "Please manually remove .ddx directories from your projects if needed")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Please manually remove .ddx directories from your projects if needed")
 	}
 
-	fmt.Fprintln(cmd.OutOrStdout())
-	green.Fprintln(cmd.OutOrStdout(), "✅ DDx has been uninstalled")
+	_, _ = fmt.Fprintln(cmd.OutOrStdout())
+	_, _ = green.Fprintln(cmd.OutOrStdout(), "✅ DDx has been uninstalled")
 
 	if keepConfig {
-		fmt.Fprintln(cmd.OutOrStdout(), "Configuration files were preserved")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Configuration files were preserved")
 	}
 
-	fmt.Fprintln(cmd.OutOrStdout())
-	fmt.Fprintln(cmd.OutOrStdout(), "Thank you for using DDx!")
-	fmt.Fprintln(cmd.OutOrStdout(), "You can reinstall anytime from: https://github.com/ddx-tools/ddx")
+	_, _ = fmt.Fprintln(cmd.OutOrStdout())
+	_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Thank you for using DDx!")
+	_, _ = fmt.Fprintln(cmd.OutOrStdout(), "You can reinstall anytime from: https://github.com/ddx-tools/ddx")
 
 	return nil
 }
@@ -133,8 +133,8 @@ func removeCompletions(cmd *cobra.Command) {
 		}
 		for _, path := range paths {
 			if _, err := os.Stat(path); err == nil {
-				fmt.Fprintf(cmd.OutOrStdout(), "Removing %s completion: %s\n", shellName, path)
-				os.Remove(path)
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Removing %s completion: %s\n", shellName, path)
+				_ = os.Remove(path)
 			}
 		}
 	}

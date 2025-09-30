@@ -48,7 +48,7 @@ func (f *CommandFactory) runConfig(cmd *cobra.Command, args []string) error {
 		if err := configReset(f.WorkingDir, globalFlag); err != nil {
 			return err
 		}
-		fmt.Fprintf(cmd.OutOrStdout(), "✅ Configuration reset to defaults: %s\n", configPath)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "✅ Configuration reset to defaults: %s\n", configPath)
 		return nil
 	}
 
@@ -60,7 +60,7 @@ func (f *CommandFactory) runConfig(cmd *cobra.Command, args []string) error {
 		if err := configSave(f.WorkingDir, cfg, false); err != nil {
 			return err
 		}
-		fmt.Fprintln(cmd.OutOrStdout(), "✅ Configuration saved to .ddx/config.yaml")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "✅ Configuration saved to .ddx/config.yaml")
 		return nil
 	}
 
@@ -68,7 +68,7 @@ func (f *CommandFactory) runConfig(cmd *cobra.Command, args []string) error {
 		if err := configValidate(f.WorkingDir); err != nil {
 			return err
 		}
-		fmt.Fprintln(cmd.OutOrStdout(), "✅ Configuration is valid")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "✅ Configuration is valid")
 		return nil
 	}
 
@@ -88,7 +88,7 @@ func (f *CommandFactory) runConfig(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
-		fmt.Fprintln(cmd.OutOrStdout(), value)
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), value)
 		return nil
 	case "set":
 		if len(args) < 3 {
@@ -97,13 +97,13 @@ func (f *CommandFactory) runConfig(cmd *cobra.Command, args []string) error {
 		if err := configSet(f.WorkingDir, args[1], args[2], globalFlag); err != nil {
 			return err
 		}
-		fmt.Fprintf(cmd.OutOrStdout(), "✅ Set %s = %s\n", args[1], args[2])
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "✅ Set %s = %s\n", args[1], args[2])
 		return nil
 	case "validate":
 		if err := configValidate(f.WorkingDir); err != nil {
 			return err
 		}
-		fmt.Fprintln(cmd.OutOrStdout(), "✅ Configuration is valid")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "✅ Configuration is valid")
 		return nil
 	case "export":
 		// Simply output the config file content
@@ -124,7 +124,7 @@ func (f *CommandFactory) runConfig(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return fmt.Errorf("failed to read config file: %w", err)
 		}
-		fmt.Fprint(cmd.OutOrStdout(), string(content))
+		_, _ = fmt.Fprint(cmd.OutOrStdout(), string(content))
 		return nil
 	case "import":
 		// For now, just read from stdin
@@ -158,7 +158,7 @@ func resetConfig(cmd *cobra.Command, global bool) error {
 		return err
 	}
 	configPath := configGetPath(f.WorkingDir, global)
-	fmt.Fprintf(cmd.OutOrStdout(), "✅ Configuration reset to defaults: %s\n", configPath)
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "✅ Configuration reset to defaults: %s\n", configPath)
 	return nil
 }
 
@@ -251,7 +251,7 @@ func configReset(workingDir string, global bool) error {
 // configWizard runs the configuration wizard
 func configWizard() (*config.Config, error) {
 	cyan := color.New(color.FgCyan)
-	cyan.Println("🧙 DDx Configuration Wizard")
+	_, _ = cyan.Println("🧙 DDx Configuration Wizard")
 	fmt.Println()
 
 	// Start with default config
@@ -409,25 +409,25 @@ func getConfigValueWithWorkingDir(cmd *cobra.Command, key string, global bool, w
 	if err != nil {
 		return err
 	}
-	fmt.Fprintln(cmd.OutOrStdout(), value)
+	_, _ = fmt.Fprintln(cmd.OutOrStdout(), value)
 	return nil
 }
 
 // outputConfigFiles handles outputting configuration file locations
 func (f *CommandFactory) outputConfigFiles(cmd *cobra.Command, files []ConfigFileInfo) error {
-	fmt.Fprintln(cmd.OutOrStdout(), "📋 DDx Configuration File Locations:")
-	fmt.Fprintln(cmd.OutOrStdout())
+	_, _ = fmt.Fprintln(cmd.OutOrStdout(), "📋 DDx Configuration File Locations:")
+	_, _ = fmt.Fprintln(cmd.OutOrStdout())
 
 	for _, file := range files {
 		if file.Exists {
-			fmt.Fprintf(cmd.OutOrStdout(), "✅ %s config: %s (exists)\n", file.Type, file.Path)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "✅ %s config: %s (exists)\n", file.Type, file.Path)
 		} else {
-			fmt.Fprintf(cmd.OutOrStdout(), "⬜ %s config: %s (not found)\n", file.Type, file.Path)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "⬜ %s config: %s (not found)\n", file.Type, file.Path)
 		}
 	}
 
-	fmt.Fprintln(cmd.OutOrStdout())
-	fmt.Fprintln(cmd.OutOrStdout(), "Priority order: Environment variables > Project config > Global config > Defaults")
+	_, _ = fmt.Fprintln(cmd.OutOrStdout())
+	_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Priority order: Environment variables > Project config > Global config > Defaults")
 	return nil
 }
 
@@ -439,7 +439,7 @@ func (f *CommandFactory) editConfigFile(cmd *cobra.Command, configPath string) e
 	}
 
 	// Open editor
-	fmt.Fprintf(cmd.OutOrStdout(), "Opening %s in %s...\n", configPath, editor)
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Opening %s in %s...\n", configPath, editor)
 	// In real implementation, would exec the editor
 	return nil
 }
@@ -453,13 +453,13 @@ func setConfigValueWithWorkingDir(cmd *cobra.Command, key, value string, global 
 	if err := configSet(workingDir, key, value, global); err != nil {
 		return err
 	}
-	fmt.Fprintf(cmd.OutOrStdout(), "✅ Set %s = %s\n", key, value)
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "✅ Set %s = %s\n", key, value)
 
 	// If system.meta_prompt was changed, re-sync meta-prompt
 	if key == "system.meta_prompt" {
 		if err := resyncMetaPromptAfterConfigChange(workingDir); err != nil {
 			// Warn but don't fail
-			fmt.Fprintf(os.Stderr, "Warning: Failed to re-sync meta-prompt: %v\n", err)
+			_, _ = fmt.Fprintf(os.Stderr, "Warning: Failed to re-sync meta-prompt: %v\n", err)
 		}
 	}
 
@@ -470,7 +470,7 @@ func validateConfig(cmd *cobra.Command) error {
 	if err := configValidate(""); err != nil {
 		return fmt.Errorf("configuration validation failed: %w", err)
 	}
-	fmt.Fprintln(cmd.OutOrStdout(), "✅ Configuration is valid")
+	_, _ = fmt.Fprintln(cmd.OutOrStdout(), "✅ Configuration is valid")
 	return nil
 }
 
@@ -485,7 +485,7 @@ func initConfigWizard() error {
 	}
 
 	cyan := color.New(color.FgCyan)
-	cyan.Println("✅ Configuration saved to .ddx.yml")
+	_, _ = cyan.Println("✅ Configuration saved to .ddx.yml")
 	return nil
 }
 
@@ -495,13 +495,13 @@ func copyFile(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	defer sourceFile.Close()
+	defer func() { _ = sourceFile.Close() }()
 
 	destFile, err := os.Create(dst)
 	if err != nil {
 		return err
 	}
-	defer destFile.Close()
+	defer func() { _ = destFile.Close() }()
 
 	_, err = io.Copy(destFile, sourceFile)
 	if err != nil {
@@ -638,17 +638,17 @@ func createProfile(cmd *cobra.Command, profileName string) error {
 		return fmt.Errorf("failed to write profile configuration: %w", err)
 	}
 
-	fmt.Fprintf(cmd.OutOrStdout(), "✅ Created profile '%s' at %s\n", profileName, profilePath)
-	fmt.Fprintf(cmd.OutOrStdout(), "💡 Edit the file to customize environment-specific settings\n")
-	fmt.Fprintf(cmd.OutOrStdout(), "💡 Activate with: ddx config profile activate %s\n", profileName)
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "✅ Created profile '%s' at %s\n", profileName, profilePath)
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "💡 Edit the file to customize environment-specific settings\n")
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "💡 Activate with: ddx config profile activate %s\n", profileName)
 
 	return nil
 }
 
 // listProfiles lists all available environment profiles
 func listProfiles(cmd *cobra.Command) error {
-	fmt.Fprintln(cmd.OutOrStdout(), "📋 Available Environment Profiles:")
-	fmt.Fprintln(cmd.OutOrStdout())
+	_, _ = fmt.Fprintln(cmd.OutOrStdout(), "📋 Available Environment Profiles:")
+	_, _ = fmt.Fprintln(cmd.OutOrStdout())
 
 	// Find all .ddx.*.yml files
 	profiles, err := filepath.Glob(".ddx.*.yml")
@@ -657,8 +657,8 @@ func listProfiles(cmd *cobra.Command) error {
 	}
 
 	if len(profiles) == 0 {
-		fmt.Fprintln(cmd.OutOrStdout(), "  No environment profiles found")
-		fmt.Fprintln(cmd.OutOrStdout(), "  Create one with: ddx config profile create <name>")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "  No environment profiles found")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "  Create one with: ddx config profile create <name>")
 		return nil
 	}
 
@@ -693,18 +693,18 @@ func listProfiles(cmd *cobra.Command) error {
 			validationStatus = "❌ invalid"
 		}
 
-		fmt.Fprintf(cmd.OutOrStdout(), "  %s %-15s (%s)\n", icon, profileName, status)
-		fmt.Fprintf(cmd.OutOrStdout(), "    File: %s\n", profilePath)
-		fmt.Fprintf(cmd.OutOrStdout(), "    Modified: %s\n", fileInfo.ModTime().Format("2006-01-02 15:04:05"))
-		fmt.Fprintf(cmd.OutOrStdout(), "    Status: %s\n", validationStatus)
-		fmt.Fprintln(cmd.OutOrStdout())
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  %s %-15s (%s)\n", icon, profileName, status)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "    File: %s\n", profilePath)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "    Modified: %s\n", fileInfo.ModTime().Format("2006-01-02 15:04:05"))
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "    Status: %s\n", validationStatus)
+		_, _ = fmt.Fprintln(cmd.OutOrStdout())
 	}
 
-	fmt.Fprintln(cmd.OutOrStdout(), "💡 Activate a profile with: ddx config profile activate <name>")
+	_, _ = fmt.Fprintln(cmd.OutOrStdout(), "💡 Activate a profile with: ddx config profile activate <name>")
 	if activeProfile != "" {
-		fmt.Fprintf(cmd.OutOrStdout(), "🟢 Currently active: %s\n", activeProfile)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🟢 Currently active: %s\n", activeProfile)
 	} else {
-		fmt.Fprintln(cmd.OutOrStdout(), "ℹ️  No profile currently active")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "ℹ️  No profile currently active")
 	}
 
 	return nil
@@ -726,15 +726,15 @@ func activateProfile(cmd *cobra.Command, profileName string) error {
 
 	// Note: In a real implementation, we would set the environment variable for the current shell
 	// For now, we provide instructions to the user
-	fmt.Fprintf(cmd.OutOrStdout(), "✅ Profile '%s' is ready for activation\n", profileName)
-	fmt.Fprintln(cmd.OutOrStdout())
-	fmt.Fprintln(cmd.OutOrStdout(), "To activate this profile, run:")
-	fmt.Fprintf(cmd.OutOrStdout(), "  export DDX_ENV=%s\n", profileName)
-	fmt.Fprintln(cmd.OutOrStdout())
-	fmt.Fprintln(cmd.OutOrStdout(), "Or add to your shell configuration:")
-	fmt.Fprintf(cmd.OutOrStdout(), "  echo 'export DDX_ENV=%s' >> ~/.bashrc\n", profileName)
-	fmt.Fprintln(cmd.OutOrStdout())
-	fmt.Fprintln(cmd.OutOrStdout(), "💡 All subsequent DDx commands will use this profile's configuration")
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "✅ Profile '%s' is ready for activation\n", profileName)
+	_, _ = fmt.Fprintln(cmd.OutOrStdout())
+	_, _ = fmt.Fprintln(cmd.OutOrStdout(), "To activate this profile, run:")
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  export DDX_ENV=%s\n", profileName)
+	_, _ = fmt.Fprintln(cmd.OutOrStdout())
+	_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Or add to your shell configuration:")
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  echo 'export DDX_ENV=%s' >> ~/.bashrc\n", profileName)
+	_, _ = fmt.Fprintln(cmd.OutOrStdout())
+	_, _ = fmt.Fprintln(cmd.OutOrStdout(), "💡 All subsequent DDx commands will use this profile's configuration")
 
 	return nil
 }
@@ -773,9 +773,9 @@ func copyProfile(cmd *cobra.Command, sourceProfile, destProfile string) error {
 		return fmt.Errorf("failed to write destination profile: %w", err)
 	}
 
-	fmt.Fprintf(cmd.OutOrStdout(), "✅ Copied profile '%s' to '%s'\n", sourceProfile, destProfile)
-	fmt.Fprintf(cmd.OutOrStdout(), "📁 Created: %s\n", destPath)
-	fmt.Fprintf(cmd.OutOrStdout(), "💡 You can now customize the new profile independently\n")
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "✅ Copied profile '%s' to '%s'\n", sourceProfile, destProfile)
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "📁 Created: %s\n", destPath)
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "💡 You can now customize the new profile independently\n")
 
 	return nil
 }
@@ -789,17 +789,17 @@ func validateProfile(cmd *cobra.Command, profileName string) error {
 		return fmt.Errorf("profile '%s' does not exist", profileName)
 	}
 
-	fmt.Fprintf(cmd.OutOrStdout(), "🔍 Validating profile '%s'...\n", profileName)
-	fmt.Fprintln(cmd.OutOrStdout())
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🔍 Validating profile '%s'...\n", profileName)
+	_, _ = fmt.Fprintln(cmd.OutOrStdout())
 
 	// Load and validate the profile configuration
 	_, err := config.LoadFromFile(profilePath)
 	if err != nil {
-		fmt.Fprintf(cmd.OutOrStdout(), "❌ Profile validation failed: %v\n", err)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "❌ Profile validation failed: %v\n", err)
 		return fmt.Errorf("profile '%s' is invalid: %w", profileName, err)
 	}
 
-	fmt.Fprintf(cmd.OutOrStdout(), "✅ Profile '%s' is valid\n", profileName)
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "✅ Profile '%s' is valid\n", profileName)
 	return nil
 }
 
@@ -818,8 +818,8 @@ func showProfile(cmd *cobra.Command, profileName string) error {
 		return fmt.Errorf("failed to load profile '%s': %w", profileName, err)
 	}
 
-	fmt.Fprintf(cmd.OutOrStdout(), "📋 Profile Configuration: %s\n", profileName)
-	fmt.Fprintln(cmd.OutOrStdout())
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "📋 Profile Configuration: %s\n", profileName)
+	_, _ = fmt.Fprintln(cmd.OutOrStdout())
 
 	// Show resolved configuration
 	cyan := color.New(color.FgCyan)
@@ -831,15 +831,15 @@ func showProfile(cmd *cobra.Command, profileName string) error {
 		return fmt.Errorf("failed to marshal profile configuration: %w", err)
 	}
 
-	cyan.Println("📄 Resolved Configuration:")
-	fmt.Fprint(cmd.OutOrStdout(), string(data))
+	_, _ = cyan.Println("📄 Resolved Configuration:")
+	_, _ = fmt.Fprint(cmd.OutOrStdout(), string(data))
 
 	// Show inheritance information
-	fmt.Fprintln(cmd.OutOrStdout())
-	yellow.Println("ℹ️  Inheritance Information:")
-	fmt.Fprintf(cmd.OutOrStdout(), "  Profile inherits from base configuration: %s\n", ".ddx.yml")
-	fmt.Fprintf(cmd.OutOrStdout(), "  Profile-specific values override base values\n")
-	fmt.Fprintf(cmd.OutOrStdout(), "  Environment variables take highest precedence\n")
+	_, _ = fmt.Fprintln(cmd.OutOrStdout())
+	_, _ = yellow.Println("ℹ️  Inheritance Information:")
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  Profile inherits from base configuration: %s\n", ".ddx.yml")
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  Profile-specific values override base values\n")
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  Environment variables take highest precedence\n")
 
 	return nil
 }
@@ -868,16 +868,16 @@ func diffProfiles(cmd *cobra.Command, profileA, profileB string) error {
 		return fmt.Errorf("failed to load profile '%s': %w", profileB, err)
 	}
 
-	fmt.Fprintf(cmd.OutOrStdout(), "📊 Profile Comparison: %s vs %s\n", profileA, profileB)
-	fmt.Fprintln(cmd.OutOrStdout())
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "📊 Profile Comparison: %s vs %s\n", profileA, profileB)
+	_, _ = fmt.Fprintln(cmd.OutOrStdout())
 
 	// Compare major sections
 	red := color.New(color.FgRed)
 	green := color.New(color.FgGreen)
 	cyan := color.New(color.FgCyan)
 
-	cyan.Println("🔍 Differences Found:")
-	fmt.Fprintln(cmd.OutOrStdout())
+	_, _ = cyan.Println("🔍 Differences Found:")
+	_, _ = fmt.Fprintln(cmd.OutOrStdout())
 
 	differences := 0
 
@@ -892,10 +892,10 @@ func diffProfiles(cmd *cobra.Command, profileA, profileB string) error {
 	}
 	if urlA != urlB {
 		differences++
-		fmt.Fprintln(cmd.OutOrStdout(), "Library Repository URL:")
-		red.Fprintf(cmd.OutOrStdout(), "  - %s: %s\n", profileA, urlA)
-		green.Fprintf(cmd.OutOrStdout(), "  + %s: %s\n", profileB, urlB)
-		fmt.Fprintln(cmd.OutOrStdout())
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Library Repository URL:")
+		_, _ = red.Fprintf(cmd.OutOrStdout(), "  - %s: %s\n", profileA, urlA)
+		_, _ = green.Fprintf(cmd.OutOrStdout(), "  + %s: %s\n", profileB, urlB)
+		_, _ = fmt.Fprintln(cmd.OutOrStdout())
 	}
 
 	// Compare library repository branches
@@ -909,17 +909,17 @@ func diffProfiles(cmd *cobra.Command, profileA, profileB string) error {
 	}
 	if branchA != branchB {
 		differences++
-		fmt.Fprintln(cmd.OutOrStdout(), "Library Repository Branch:")
-		red.Fprintf(cmd.OutOrStdout(), "  - %s: %s\n", profileA, branchA)
-		green.Fprintf(cmd.OutOrStdout(), "  + %s: %s\n", profileB, branchB)
-		fmt.Fprintln(cmd.OutOrStdout())
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Library Repository Branch:")
+		_, _ = red.Fprintf(cmd.OutOrStdout(), "  - %s: %s\n", profileA, branchA)
+		_, _ = green.Fprintf(cmd.OutOrStdout(), "  + %s: %s\n", profileB, branchB)
+		_, _ = fmt.Fprintln(cmd.OutOrStdout())
 	}
 
 	// Summary
 	if differences == 0 {
-		green.Println("✅ Profiles are identical")
+		_, _ = green.Println("✅ Profiles are identical")
 	} else {
-		fmt.Fprintf(cmd.OutOrStdout(), "📊 Summary: %d differences found\n", differences)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "📊 Summary: %d differences found\n", differences)
 	}
 
 	return nil
@@ -948,8 +948,8 @@ func deleteProfile(cmd *cobra.Command, profileName string) error {
 		return fmt.Errorf("failed to delete profile file: %w", err)
 	}
 
-	fmt.Fprintf(cmd.OutOrStdout(), "✅ Deleted profile '%s'\n", profileName)
-	fmt.Fprintf(cmd.OutOrStdout(), "📁 Removed: %s\n", profilePath)
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "✅ Deleted profile '%s'\n", profileName)
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "📁 Removed: %s\n", profilePath)
 
 	return nil
 }

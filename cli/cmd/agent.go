@@ -41,7 +41,7 @@ func handleAgentRequestWithDir(cmd *cobra.Command, args []string, workingDir str
 	cfg, err := loadConfigFrom(workingDir)
 	if err != nil || cfg == nil {
 		// No config found - return NO_HANDLER
-		fmt.Fprintln(cmd.OutOrStdout(), "NO_HANDLER")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "NO_HANDLER")
 		return nil
 	}
 
@@ -50,7 +50,7 @@ func handleAgentRequestWithDir(cmd *cobra.Command, args []string, workingDir str
 
 	// Check if there are active workflows
 	if len(cfg.Workflows.Active) == 0 {
-		fmt.Fprintln(cmd.OutOrStdout(), "NO_HANDLER")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "NO_HANDLER")
 		return nil
 	}
 
@@ -58,9 +58,9 @@ func handleAgentRequestWithDir(cmd *cobra.Command, args []string, workingDir str
 	if len(args) > 0 && isSafeWord(args[0], cfg.Workflows.SafeWord) {
 		// Remove safe word from message
 		remainingMessage := strings.Join(args[1:], " ")
-		fmt.Fprintln(cmd.OutOrStdout(), "NO_HANDLER")
-		fmt.Fprintf(cmd.OutOrStdout(), "SAFE_WORD: %s\n", cfg.Workflows.SafeWord)
-		fmt.Fprintf(cmd.OutOrStdout(), "MESSAGE: %s\n", remainingMessage)
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "NO_HANDLER")
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "SAFE_WORD: %s\n", cfg.Workflows.SafeWord)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "MESSAGE: %s\n", remainingMessage)
 		return nil
 	}
 
@@ -76,7 +76,7 @@ func handleAgentRequestWithDir(cmd *cobra.Command, args []string, workingDir str
 
 	// Filter out questions/discussions - messages starting with question words
 	if isQuestion(message) {
-		fmt.Fprintln(cmd.OutOrStdout(), "NO_HANDLER")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "NO_HANDLER")
 		return nil
 	}
 
@@ -105,7 +105,7 @@ func handleAgentRequestWithDir(cmd *cobra.Command, args []string, workingDir str
 	}
 
 	// No workflow matched
-	fmt.Fprintln(cmd.OutOrStdout(), "NO_HANDLER")
+	_, _ = fmt.Fprintln(cmd.OutOrStdout(), "NO_HANDLER")
 	return nil
 }
 
@@ -191,10 +191,10 @@ func outputWorkflowMatch(cmd *cobra.Command, workflowName string, def *workflow.
 		return fmt.Errorf("workflow %s missing request command", workflowName)
 	}
 
-	fmt.Fprintf(cmd.OutOrStdout(), "WORKFLOW: %s\n", workflowName)
-	fmt.Fprintf(cmd.OutOrStdout(), "SUBCOMMAND: request\n")
-	fmt.Fprintf(cmd.OutOrStdout(), "ACTION: %s\n", agentCmd.Action)
-	fmt.Fprintf(cmd.OutOrStdout(), "COMMAND: ddx workflow %s execute %s %s\n",
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "WORKFLOW: %s\n", workflowName)
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "SUBCOMMAND: request\n")
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "ACTION: %s\n", agentCmd.Action)
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "COMMAND: ddx workflow %s execute %s %s\n",
 		workflowName, agentCmd.Action, quoteMessage(message))
 	return nil
 }

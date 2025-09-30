@@ -36,7 +36,7 @@ func runPromptsList(cmd *cobra.Command, args []string) error {
 
 	// Check if prompts directory exists
 	if _, err := os.Stat(promptsDir); os.IsNotExist(err) {
-		fmt.Fprintln(cmd.OutOrStdout(), "No prompts directory found")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "No prompts directory found")
 		return nil
 	}
 
@@ -44,8 +44,8 @@ func runPromptsList(cmd *cobra.Command, args []string) error {
 	searchFilter, _ := cmd.Flags().GetString("search")
 	verbose, _ := cmd.Flags().GetBool("verbose")
 
-	fmt.Fprintln(cmd.OutOrStdout(), "Available prompts:")
-	fmt.Fprintln(cmd.OutOrStdout())
+	_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Available prompts:")
+	_, _ = fmt.Fprintln(cmd.OutOrStdout())
 
 	// Walk through prompts directory
 	err = filepath.Walk(promptsDir, func(path string, info os.FileInfo, err error) error {
@@ -79,15 +79,15 @@ func runPromptsList(cmd *cobra.Command, args []string) error {
 
 		// Print directories and markdown files
 		if info.IsDir() {
-			fmt.Fprintf(cmd.OutOrStdout(), "📁 %s/\n", relPath)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "📁 %s/\n", relPath)
 		} else if strings.HasSuffix(path, ".md") {
 			// Show full filename with extension in verbose mode
 			if verbose {
-				fmt.Fprintf(cmd.OutOrStdout(), "  📝 %s\n", relPath)
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  📝 %s\n", relPath)
 			} else {
 				// Remove .md extension for display
 				name := strings.TrimSuffix(relPath, ".md")
-				fmt.Fprintf(cmd.OutOrStdout(), "  📝 %s\n", name)
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  📝 %s\n", name)
 			}
 		}
 
@@ -143,6 +143,6 @@ func runPromptsShow(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to read prompt: %w", err)
 	}
 
-	fmt.Fprint(cmd.OutOrStdout(), string(content))
+	_, _ = fmt.Fprint(cmd.OutOrStdout(), string(content))
 	return nil
 }

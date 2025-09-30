@@ -101,14 +101,14 @@ func (h *TestHarness) WithEnv(key, value string) *TestHarness {
 	h.env[key] = origValue
 
 	// Set new value
-	os.Setenv(key, value)
+	_ = os.Setenv(key, value)
 
 	// Add cleanup
 	h.cleanup = append(h.cleanup, func() {
 		if exists {
-			os.Setenv(key, origValue)
+			_ = os.Setenv(key, origValue)
 		} else {
-			os.Unsetenv(key)
+			_ = os.Unsetenv(key)
 		}
 	})
 

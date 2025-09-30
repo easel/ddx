@@ -147,7 +147,7 @@ func downloadAndInstall(url, installPath string) error {
 	if err != nil {
 		return fmt.Errorf("failed to download: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("download failed: HTTP %d", resp.StatusCode)
@@ -168,8 +168,8 @@ func extractZip(r io.Reader, installPath string) error {
 	if err != nil {
 		return err
 	}
-	defer os.Remove(tempFile.Name())
-	defer tempFile.Close()
+	defer func() { _ = os.Remove(tempFile.Name()) }()
+	defer func() { _ = tempFile.Close() }()
 
 	if _, err := io.Copy(tempFile, r); err != nil {
 		return err
@@ -180,7 +180,7 @@ func extractZip(r io.Reader, installPath string) error {
 	if err != nil {
 		return err
 	}
-	defer zipReader.Close()
+	defer func() { _ = zipReader.Close() }()
 
 	for _, file := range zipReader.File {
 		if strings.Contains(file.Name, getBinaryName()) {
@@ -197,14 +197,14 @@ func extractZipFile(file *zip.File, installPath string) error {
 	if err != nil {
 		return err
 	}
-	defer rc.Close()
+	defer func() { _ = rc.Close() }()
 
 	outPath := filepath.Join(installPath, getBinaryName())
 	outFile, err := os.OpenFile(outPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0755)
 	if err != nil {
 		return err
 	}
-	defer outFile.Close()
+	defer func() { _ = outFile.Close() }()
 
 	_, err = io.Copy(outFile, rc)
 	return err
@@ -216,7 +216,7 @@ func extractTarGz(r io.Reader, installPath string) error {
 	if err != nil {
 		return err
 	}
-	defer gzr.Close()
+	defer func() { _ = gzr.Close() }()
 
 	tr := tar.NewReader(gzr)
 
@@ -235,7 +235,7 @@ func extractTarGz(r io.Reader, installPath string) error {
 			if err != nil {
 				return err
 			}
-			defer outFile.Close()
+			defer func() { _ = outFile.Close() }()
 
 			_, err = io.Copy(outFile, tr)
 			return err
@@ -297,7 +297,7 @@ func appendToFile(filename, content string) error {
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	_, err = file.WriteString(content)
 	return err

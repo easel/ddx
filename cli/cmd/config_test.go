@@ -91,7 +91,7 @@ persona_bindings:
 				data, err := os.ReadFile(filepath.Join(workDir, ".ddx", "config.yaml"))
 				if err == nil {
 					var config map[string]interface{}
-					yaml.Unmarshal(data, &config)
+					_ = yaml.Unmarshal(data, &config)
 
 					if vars, ok := config["variables"].(map[string]interface{}); ok {
 						assert.Equal(t, "new_value", vars["new_var"])

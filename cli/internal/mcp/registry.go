@@ -417,7 +417,7 @@ func (r *Registry) formatOutput(w io.Writer, servers []*ServerReference, opts Li
 
 // formatTable formats servers as a table
 func (r *Registry) formatTable(w io.Writer, servers []*ServerReference, opts ListOptions) error {
-	fmt.Fprintf(w, "📋 Available MCP Servers (%d total)\n\n", len(servers))
+	_, _ = fmt.Fprintf(w, "📋 Available MCP Servers (%d total)\n\n", len(servers))
 
 	// Group by category
 	categories := make(map[string][]*ServerReference)
@@ -446,29 +446,29 @@ func (r *Registry) formatTable(w io.Writer, servers []*ServerReference, opts Lis
 	}
 
 	for category, categoryServers := range categories {
-		fmt.Fprintf(w, "%s:\n", strings.Title(category))
+		_, _ = fmt.Fprintf(w, "%s:\n", strings.Title(category))
 		for _, server := range categoryServers {
 			status := "⬜"
 			if installedServers[server.Name] {
 				status = "✅"
 			}
-			fmt.Fprintf(w, "  %s %-15s - %s\n", status, server.Name, server.Description)
+			_, _ = fmt.Fprintf(w, "  %s %-15s - %s\n", status, server.Name, server.Description)
 
 			// Show additional details in verbose mode
 			if opts.Verbose {
 				// Load full server details
 				fullServer, err := r.GetServer(server.Name)
 				if err == nil && fullServer != nil {
-					fmt.Fprintf(w, "      Author: %s\n", fullServer.Author)
-					fmt.Fprintf(w, "      Version: %s\n", fullServer.Version)
-					fmt.Fprintf(w, "      Package: %s\n", fullServer.Command.Executable)
+					_, _ = fmt.Fprintf(w, "      Author: %s\n", fullServer.Author)
+					_, _ = fmt.Fprintf(w, "      Version: %s\n", fullServer.Version)
+					_, _ = fmt.Fprintf(w, "      Package: %s\n", fullServer.Command.Executable)
 					if len(fullServer.Environment) > 0 {
-						fmt.Fprintf(w, "      Environment: %d variables\n", len(fullServer.Environment))
+						_, _ = fmt.Fprintf(w, "      Environment: %d variables\n", len(fullServer.Environment))
 					}
 				}
 			}
 		}
-		fmt.Fprintln(w)
+		_, _ = fmt.Fprintln(w)
 	}
 
 	return nil

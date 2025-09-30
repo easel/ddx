@@ -19,8 +19,8 @@ func TestNoContamination(t *testing.T) {
 
 		// Ensure cleanup of any stray config files
 		defer func() {
-			os.Remove(".ddx.yml")
-			os.RemoveAll(".ddx")
+			_ = os.Remove(".ddx.yml")
+			_ = os.RemoveAll(".ddx")
 		}()
 
 		// Create first test environment
@@ -28,8 +28,8 @@ func TestNoContamination(t *testing.T) {
 		env1.CreateDefaultConfig()
 
 		// Clean up any stray files that might have been created
-		os.Remove(".ddx.yml")
-		os.RemoveAll(".ddx")
+		_ = os.Remove(".ddx.yml")
+		_ = os.RemoveAll(".ddx")
 
 		// Verify config was created in env1's directory, not current directory
 		assert.FileExists(t, env1.ConfigPath, "Config should exist in env1")

@@ -161,7 +161,7 @@ func TestAcceptance_US037_InstallMCPServer(t *testing.T) {
 		setupMockMCPRegistry(t, env)
 
 		// Create pnpm-lock.yaml to trigger pnpm detection
-		os.WriteFile(filepath.Join(env.Dir, "pnpm-lock.yaml"), []byte("lockfileVersion: 5.4"), 0644)
+		_ = os.WriteFile(filepath.Join(env.Dir, "pnpm-lock.yaml"), []byte("lockfileVersion: 5.4"), 0644)
 
 		// When: Installing
 		configPath := filepath.Join(env.Dir, ".claude", "settings.local.json")
@@ -241,7 +241,7 @@ func setupMockMCPRegistry(t *testing.T, env *TestEnvironment) {
 	// Create mock MCP server registry in the test environment's library
 	libPath := filepath.Join(env.Dir, ".ddx", "library")
 	mcpDir := filepath.Join(libPath, "mcp-servers")
-	os.MkdirAll(mcpDir, 0755)
+	_ = os.MkdirAll(mcpDir, 0755)
 
 	// Create a simple registry.yml
 	registry := `version: 1.0.0
@@ -256,11 +256,11 @@ servers:
     category: development
     description: Access GitHub repositories
 `
-	os.WriteFile(filepath.Join(mcpDir, "registry.yml"), []byte(registry), 0644)
+	_ = os.WriteFile(filepath.Join(mcpDir, "registry.yml"), []byte(registry), 0644)
 
 	// Create the server files referenced in the registry
 	serversDir := filepath.Join(mcpDir, "servers")
-	os.MkdirAll(serversDir, 0755)
+	_ = os.MkdirAll(serversDir, 0755)
 
 	// Create filesystem.yml
 	filesystemYaml := `name: filesystem
@@ -284,7 +284,7 @@ compatibility:
   platforms: ["linux", "macos", "windows"]
   claude_versions: ["*"]
 `
-	os.WriteFile(filepath.Join(serversDir, "filesystem.yml"), []byte(filesystemYaml), 0644)
+	_ = os.WriteFile(filepath.Join(serversDir, "filesystem.yml"), []byte(filesystemYaml), 0644)
 
 	// Create github.yml
 	githubYaml := `name: github
@@ -311,7 +311,7 @@ compatibility:
   platforms: ["linux", "macos", "windows"]
   claude_versions: ["*"]
 `
-	os.WriteFile(filepath.Join(serversDir, "github.yml"), []byte(githubYaml), 0644)
+	_ = os.WriteFile(filepath.Join(serversDir, "github.yml"), []byte(githubYaml), 0644)
 }
 
 // ensureValidWorkingDirectory ensures we're in a valid directory before tests

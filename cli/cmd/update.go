@@ -127,7 +127,7 @@ func performUpdate(workingDir string, opts *UpdateOptions) (*UpdateResult, error
 		if err := syncMetaPrompt(cfg, workingDir); err != nil {
 			// Warn but don't fail - only if prompts directory exists
 			if _, statErr := os.Stat(filepath.Join(workingDir, cfg.Library.Path, "prompts")); statErr == nil {
-				fmt.Fprintf(os.Stderr, "Warning: Failed to sync meta-prompt: %v\n", err)
+				_, _ = fmt.Fprintf(os.Stderr, "Warning: Failed to sync meta-prompt: %v\n", err)
 			}
 		}
 	}
@@ -267,7 +267,7 @@ func detectConflictsInDir(workingDir string) []ConflictInfo {
 	}
 
 	// Walk through .ddx directory looking for conflict markers
-	filepath.Walk(ddxPath, func(path string, info os.FileInfo, err error) error {
+	_ = filepath.Walk(ddxPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil || info.IsDir() {
 			return nil
 		}
@@ -358,8 +358,8 @@ func handleUpdateAbortInDir(workingDir string) (*UpdateResult, error) {
 	}
 
 	// Clean up backup directory
-	os.RemoveAll(backupDir)
-	os.Remove(updateStateFile)
+	_ = os.RemoveAll(backupDir)
+	_ = os.Remove(updateStateFile)
 
 	result.Success = true
 	result.Message = "Update operation aborted successfully! Project restored to pre-update state"
@@ -468,13 +468,13 @@ func copyDirForRestore(src, dst string) error {
 		if err != nil {
 			return err
 		}
-		defer srcFile.Close()
+		defer func() { _ = srcFile.Close() }()
 
 		dstFile, err := os.Create(dstPath)
 		if err != nil {
 			return err
 		}
-		defer dstFile.Close()
+		defer func() { _ = dstFile.Close() }()
 
 		_, err = io.Copy(dstFile, srcFile)
 		return err
@@ -494,34 +494,34 @@ func displayUpdateResult(cmd *cobra.Command, result *UpdateResult, opts *UpdateO
 	// Display initial message based on operation type
 	if opts.Resource != "" {
 		if opts.DryRun {
-			cyan.Fprintf(writer, "🔍 Preview update for DDx toolkit: %s...\n", opts.Resource)
+			_, _ = cyan.Fprintf(writer, "🔍 Preview update for DDx toolkit: %s...\n", opts.Resource)
 		} else {
-			cyan.Fprintf(writer, "🔄 Updating DDx toolkit: %s...\n", opts.Resource)
+			_, _ = cyan.Fprintf(writer, "🔄 Updating DDx toolkit: %s...\n", opts.Resource)
 		}
 	} else {
 		if opts.DryRun {
-			cyan.Fprintln(writer, "🔍 Preview update for DDx toolkit...")
+			_, _ = cyan.Fprintln(writer, "🔍 Preview update for DDx toolkit...")
 		} else {
-			cyan.Fprintln(writer, "🔄 Updating DDx toolkit...")
+			_, _ = cyan.Fprintln(writer, "🔄 Updating DDx toolkit...")
 		}
 	}
-	fmt.Fprintln(out)
+	_, _ = fmt.Fprintln(out)
 
 	// Handle error cases
 	if !result.Success {
 		if len(result.Conflicts) > 0 {
 			return handleConflictOutput(out, result.Conflicts, opts)
 		}
-		red.Fprintln(writer, "❌", result.Message)
+		_, _ = red.Fprintln(writer, "❌", result.Message)
 		return nil
 	}
 
 	// Handle check mode
 	if opts.Check {
-		fmt.Fprintln(writer, "Checking for updates...")
-		fmt.Fprintln(writer, "Fetching latest changes from master repository...")
-		fmt.Fprintln(writer, "Available updates:")
-		fmt.Fprintln(writer, "Changes since last update:")
+		_, _ = fmt.Fprintln(writer, "Checking for updates...")
+		_, _ = fmt.Fprintln(writer, "Fetching latest changes from master repository...")
+		_, _ = fmt.Fprintln(writer, "Available updates:")
+		_, _ = fmt.Fprintln(writer, "Changes since last update:")
 		return nil
 	}
 
@@ -531,30 +531,30 @@ func displayUpdateResult(cmd *cobra.Command, result *UpdateResult, opts *UpdateO
 	}
 
 	// Display success message
-	green.Fprintln(writer, "✅", result.Message)
-	fmt.Fprintln(out)
+	_, _ = green.Fprintln(writer, "✅", result.Message)
+	_, _ = fmt.Fprintln(out)
 
 	// Show updated files
 	if len(result.UpdatedFiles) > 0 {
-		green.Fprintln(writer, "📦 Updated resources:")
+		_, _ = green.Fprintln(writer, "📦 Updated resources:")
 		for _, file := range result.UpdatedFiles {
-			fmt.Fprintf(writer, "  • %s\n", file)
+			_, _ = fmt.Fprintf(writer, "  • %s\n", file)
 		}
-		fmt.Fprintln(out)
+		_, _ = fmt.Fprintln(out)
 	}
 
 	// Show backup info
 	if result.BackupPath != "" {
-		yellow.Fprintf(out, "💾 Backup created at: %s\n", result.BackupPath)
-		fmt.Fprintln(out)
+		_, _ = yellow.Fprintf(out, "💾 Backup created at: %s\n", result.BackupPath)
+		_, _ = fmt.Fprintln(out)
 	}
 
 	// Show next steps
-	fmt.Fprintln(out)
-	green.Fprintln(writer, "💡 Next steps:")
-	fmt.Fprintln(writer, "  • Review updated resources in .ddx/")
-	fmt.Fprintln(writer, "  • Run 'ddx diagnose' to check your project health")
-	fmt.Fprintln(writer, "  • Apply new patterns with 'ddx apply <pattern>'")
+	_, _ = fmt.Fprintln(out)
+	_, _ = green.Fprintln(writer, "💡 Next steps:")
+	_, _ = fmt.Fprintln(writer, "  • Review updated resources in .ddx/")
+	_, _ = fmt.Fprintln(writer, "  • Run 'ddx diagnose' to check your project health")
+	_, _ = fmt.Fprintln(writer, "  • Apply new patterns with 'ddx apply <pattern>'")
 
 	return nil
 }
@@ -565,44 +565,44 @@ func handleConflictOutput(out interface{}, conflicts []ConflictInfo, opts *Updat
 	cyan := color.New(color.FgCyan)
 	green := color.New(color.FgGreen)
 
-	red.Fprintln(writer, "⚠️  MERGE CONFLICTS DETECTED")
-	fmt.Fprintln(writer, "")
+	_, _ = red.Fprintln(writer, "⚠️  MERGE CONFLICTS DETECTED")
+	_, _ = fmt.Fprintln(writer, "")
 
-	fmt.Fprintf(writer, "Found %d conflict(s) that require resolution:\n", len(conflicts))
-	fmt.Fprintln(writer, "")
+	_, _ = fmt.Fprintf(writer, "Found %d conflict(s) that require resolution:\n", len(conflicts))
+	_, _ = fmt.Fprintln(writer, "")
 
 	// Display detailed conflict information
 	for i, conflict := range conflicts {
-		red.Fprintf(writer, "❌ Conflict %d: %s (line %d)\n", i+1, conflict.FilePath, conflict.LineNumber)
-		fmt.Fprintln(writer, "")
+		_, _ = red.Fprintf(writer, "❌ Conflict %d: %s (line %d)\n", i+1, conflict.FilePath, conflict.LineNumber)
+		_, _ = fmt.Fprintln(writer, "")
 	}
 
 	// Provide resolution guidance
-	fmt.Fprintln(writer, "")
-	cyan.Fprintln(writer, "🔧 RESOLUTION OPTIONS")
-	fmt.Fprintln(writer, "")
-	fmt.Fprintln(writer, "Choose one of the following resolution strategies:")
-	fmt.Fprintln(writer, "")
-	fmt.Fprintln(writer, "  📋 Automatic Resolution:")
-	fmt.Fprintln(writer, "    --strategy=ours    Keep your local changes")
-	fmt.Fprintln(writer, "    --strategy=theirs  Accept upstream changes")
-	fmt.Fprintln(writer, "    --mine             Same as --strategy=ours")
-	fmt.Fprintln(writer, "    --theirs           Same as --strategy=theirs")
-	fmt.Fprintln(writer, "")
-	fmt.Fprintln(writer, "  🔄 Interactive Resolution:")
-	fmt.Fprintln(writer, "    --interactive      Resolve conflicts one by one")
-	fmt.Fprintln(writer, "")
-	fmt.Fprintln(writer, "  ⚡ Force Resolution:")
-	fmt.Fprintln(writer, "    --force            Override all conflicts with upstream")
-	fmt.Fprintln(writer, "")
-	fmt.Fprintln(writer, "  🔙 Abort Update:")
-	fmt.Fprintln(writer, "    --abort            Cancel update and restore previous state")
+	_, _ = fmt.Fprintln(writer, "")
+	_, _ = cyan.Fprintln(writer, "🔧 RESOLUTION OPTIONS")
+	_, _ = fmt.Fprintln(writer, "")
+	_, _ = fmt.Fprintln(writer, "Choose one of the following resolution strategies:")
+	_, _ = fmt.Fprintln(writer, "")
+	_, _ = fmt.Fprintln(writer, "  📋 Automatic Resolution:")
+	_, _ = fmt.Fprintln(writer, "    --strategy=ours    Keep your local changes")
+	_, _ = fmt.Fprintln(writer, "    --strategy=theirs  Accept upstream changes")
+	_, _ = fmt.Fprintln(writer, "    --mine             Same as --strategy=ours")
+	_, _ = fmt.Fprintln(writer, "    --theirs           Same as --strategy=theirs")
+	_, _ = fmt.Fprintln(writer, "")
+	_, _ = fmt.Fprintln(writer, "  🔄 Interactive Resolution:")
+	_, _ = fmt.Fprintln(writer, "    --interactive      Resolve conflicts one by one")
+	_, _ = fmt.Fprintln(writer, "")
+	_, _ = fmt.Fprintln(writer, "  ⚡ Force Resolution:")
+	_, _ = fmt.Fprintln(writer, "    --force            Override all conflicts with upstream")
+	_, _ = fmt.Fprintln(writer, "")
+	_, _ = fmt.Fprintln(writer, "  🔙 Abort Update:")
+	_, _ = fmt.Fprintln(writer, "    --abort            Cancel update and restore previous state")
 
-	green.Fprintln(writer, "💡 Examples:")
-	fmt.Fprintln(writer, "  ddx update --strategy=theirs   # Accept all upstream changes")
-	fmt.Fprintln(writer, "  ddx update --mine              # Keep all local changes")
-	fmt.Fprintln(writer, "  ddx update --interactive       # Choose per conflict")
-	fmt.Fprintln(writer, "  ddx update --abort             # Cancel and restore")
+	_, _ = green.Fprintln(writer, "💡 Examples:")
+	_, _ = fmt.Fprintln(writer, "  ddx update --strategy=theirs   # Accept all upstream changes")
+	_, _ = fmt.Fprintln(writer, "  ddx update --mine              # Keep all local changes")
+	_, _ = fmt.Fprintln(writer, "  ddx update --interactive       # Choose per conflict")
+	_, _ = fmt.Fprintln(writer, "  ddx update --abort             # Cancel and restore")
 
 	return fmt.Errorf("conflicts require resolution")
 }
@@ -612,25 +612,25 @@ func displayDryRunResult(out interface{}, result *UpdateResult, opts *UpdateOpti
 	cyan := color.New(color.FgCyan)
 	green := color.New(color.FgGreen)
 
-	cyan.Fprintln(writer, "🔍 DRY-RUN MODE: Previewing update changes")
-	fmt.Fprintln(writer, "")
-	fmt.Fprintln(writer, "This is a preview of what would happen if you run 'ddx update'.")
-	fmt.Fprintln(writer, "No actual changes will be made to your project.")
-	fmt.Fprintln(writer, "")
+	_, _ = cyan.Fprintln(writer, "🔍 DRY-RUN MODE: Previewing update changes")
+	_, _ = fmt.Fprintln(writer, "")
+	_, _ = fmt.Fprintln(writer, "This is a preview of what would happen if you run 'ddx update'.")
+	_, _ = fmt.Fprintln(writer, "No actual changes will be made to your project.")
+	_, _ = fmt.Fprintln(writer, "")
 
-	green.Fprintln(writer, "📋 What would happen:")
-	fmt.Fprintln(writer, result.Message)
+	_, _ = green.Fprintln(writer, "📋 What would happen:")
+	_, _ = fmt.Fprintln(writer, result.Message)
 
-	fmt.Fprintln(writer, "")
-	green.Fprintln(writer, "💡 To proceed with the update, run:")
+	_, _ = fmt.Fprintln(writer, "")
+	_, _ = green.Fprintln(writer, "💡 To proceed with the update, run:")
 	if opts.Resource != "" {
-		fmt.Fprintf(writer, "   ddx update %s\n", opts.Resource)
+		_, _ = fmt.Fprintf(writer, "   ddx update %s\n", opts.Resource)
 	} else {
-		fmt.Fprintln(writer, "   ddx update")
+		_, _ = fmt.Fprintln(writer, "   ddx update")
 	}
 
-	fmt.Fprintln(writer, "")
-	green.Fprintln(writer, "✅ Dry-run preview completed successfully!")
+	_, _ = fmt.Fprintln(writer, "")
+	_, _ = green.Fprintln(writer, "✅ Dry-run preview completed successfully!")
 
 	return nil
 }

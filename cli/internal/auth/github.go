@@ -76,7 +76,7 @@ func (a *GitHubAuthenticator) ValidateToken(ctx context.Context, token string, r
 			Code:    "GITHUB_NETWORK_ERROR",
 		}
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == 401 {
 		return &AuthError{
@@ -243,7 +243,7 @@ func (a *GitHubAuthenticator) getUserInfo(ctx context.Context, token string) (*G
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("GitHub API returned status %d", resp.StatusCode)

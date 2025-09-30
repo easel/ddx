@@ -111,11 +111,11 @@ func setupTestEnvironment(t *testing.T, platform, arch string) *InstallationTest
 		t.Logf("Copying binary from %s to %s", srcBinary, destBinary)
 		srcFile, err := os.Open(srcBinary)
 		require.NoError(t, err)
-		defer srcFile.Close()
+		defer func() { _ = srcFile.Close() }()
 
 		destFile, err := os.Create(destBinary)
 		require.NoError(t, err)
-		defer destFile.Close()
+		defer func() { _ = destFile.Close() }()
 
 		_, err = io.Copy(destFile, srcFile)
 		require.NoError(t, err)
@@ -338,7 +338,7 @@ func (env *InstallationTestEnvironment) RunCommand(command string) InstallationR
 		configPath := filepath.Join(env.HomeDir, ".ddx.yml")
 		if _, err := os.Stat(configPath); os.IsNotExist(err) {
 			configContent := "# DDx configuration\nverbose: false\n"
-			os.WriteFile(configPath, []byte(configContent), 0644)
+			_ = os.WriteFile(configPath, []byte(configContent), 0644)
 		}
 
 		return InstallationResult{
@@ -359,8 +359,8 @@ func (env *InstallationTestEnvironment) RunCommand(command string) InstallationR
 		result := env.ExecuteInstallCommand("install")
 		// Create some library resources to simulate offline package content
 		libPath := filepath.Join(env.HomeDir, ".ddx", "library")
-		os.MkdirAll(libPath, 0755)
-		os.WriteFile(filepath.Join(libPath, "README.md"), []byte("# DDx Library"), 0644)
+		_ = os.MkdirAll(libPath, 0755)
+		_ = os.WriteFile(filepath.Join(libPath, "README.md"), []byte("# DDx Library"), 0644)
 		return result
 	}
 
@@ -547,7 +547,7 @@ func TestAcceptance_US030_InstallationVerification(t *testing.T) {
 			defer env.Cleanup()
 
 			// Setup installation state
-			env.setupInstallationState(tt.installationState)
+			_ = env.setupInstallationState(tt.installationState)
 
 			// When: I run DDX doctor command
 			result := env.RunCommand("ddx doctor")
@@ -1033,10 +1033,10 @@ func (env *InstallationTestEnvironment) setupInstallationState(state string) err
 		env.ExecuteInstallCommand("install")
 		// Create library directory for doctor check
 		libDir := filepath.Join(env.HomeDir, ".ddx", "library")
-		os.MkdirAll(libDir, 0755)
+		_ = os.MkdirAll(libDir, 0755)
 		// Create some sample resources so library appears valid
-		os.MkdirAll(filepath.Join(libDir, "workflows"), 0755)
-		os.WriteFile(filepath.Join(libDir, "workflows", "README.md"), []byte("# Workflows"), 0644)
+		_ = os.MkdirAll(filepath.Join(libDir, "workflows"), 0755)
+		_ = os.WriteFile(filepath.Join(libDir, "workflows", "README.md"), []byte("# Workflows"), 0644)
 		// Create configuration file
 		configContent := []byte(`version: "1.0"
 library:
@@ -1044,17 +1044,17 @@ library:
   repository:
     url: https://github.com/easel/ddx-library
     branch: main`)
-		os.WriteFile(filepath.Join(env.HomeDir, ".ddx", "config.yaml"), configContent, 0644)
+		_ = os.WriteFile(filepath.Join(env.HomeDir, ".ddx", "config.yaml"), configContent, 0644)
 		return nil
 	case "broken_path":
 		// Install DDX but without PATH configuration
 		env.ExecuteInstallCommand("install")
 		// Create library directory for doctor check
 		libDir := filepath.Join(env.HomeDir, ".ddx", "library")
-		os.MkdirAll(libDir, 0755)
+		_ = os.MkdirAll(libDir, 0755)
 		// Create some sample resources so library appears valid
-		os.MkdirAll(filepath.Join(libDir, "workflows"), 0755)
-		os.WriteFile(filepath.Join(libDir, "workflows", "README.md"), []byte("# Workflows"), 0644)
+		_ = os.MkdirAll(filepath.Join(libDir, "workflows"), 0755)
+		_ = os.WriteFile(filepath.Join(libDir, "workflows", "README.md"), []byte("# Workflows"), 0644)
 		// Create configuration file
 		configContent := []byte(`version: "1.0"
 library:
@@ -1062,7 +1062,7 @@ library:
   repository:
     url: https://github.com/easel/ddx-library
     branch: main`)
-		os.WriteFile(filepath.Join(env.HomeDir, ".ddx", "config.yaml"), configContent, 0644)
+		_ = os.WriteFile(filepath.Join(env.HomeDir, ".ddx", "config.yaml"), configContent, 0644)
 		// Remove PATH configuration from shell profiles
 		profileFiles := []string{"~/.bashrc", "~/.zshrc", "~/.profile"}
 		for _, profileFile := range profileFiles {
@@ -1089,7 +1089,7 @@ library:
 					}
 					newLines = append(newLines, line)
 				}
-				os.WriteFile(profileFile, []byte(strings.Join(newLines, "\n")), 0644)
+				_ = os.WriteFile(profileFile, []byte(strings.Join(newLines, "\n")), 0644)
 			}
 		}
 		return nil
@@ -1108,7 +1108,7 @@ func (env *InstallationTestEnvironment) simulateUninstall(command string) Instal
 
 	for _, binPath := range binaryPaths {
 		if _, err := os.Stat(binPath); err == nil {
-			os.Remove(binPath)
+			_ = os.Remove(binPath)
 		}
 	}
 
@@ -1134,7 +1134,7 @@ func (env *InstallationTestEnvironment) simulateUninstall(command string) Instal
 				}
 				newLines = append(newLines, line)
 			}
-			os.WriteFile(profileFile, []byte(strings.Join(newLines, "\n")), 0644)
+			_ = os.WriteFile(profileFile, []byte(strings.Join(newLines, "\n")), 0644)
 		}
 	}
 
@@ -1142,7 +1142,7 @@ func (env *InstallationTestEnvironment) simulateUninstall(command string) Instal
 	if strings.Contains(command, "--remove-all") {
 		// Remove user config
 		configPath := filepath.Join(env.HomeDir, ".ddx.yml")
-		os.Remove(configPath)
+		_ = os.Remove(configPath)
 	}
 	// If --preserve-data is specified or no specific flag, keep user config
 

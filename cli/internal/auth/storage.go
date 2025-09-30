@@ -130,7 +130,7 @@ func (s *KeychainStore) Clear(ctx context.Context) error {
 	}
 
 	for _, key := range keys {
-		s.deleteFromKeychain(key)
+		_ = s.deleteFromKeychain(key) // Best effort deletion
 	}
 
 	return nil
@@ -208,7 +208,7 @@ func (s *FileStore) IsAvailable() bool {
 	if err := os.WriteFile(testFile, []byte("test"), 0600); err != nil {
 		return false
 	}
-	os.Remove(testFile)
+	_ = os.Remove(testFile) // Best effort cleanup
 
 	return true
 }

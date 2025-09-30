@@ -224,7 +224,7 @@ func checkForSubtreeInDir(workingDir string) (bool, error) {
 		if err != nil {
 			return false, fmt.Errorf("failed to get current directory: %w", err)
 		}
-		defer os.Chdir(currentDir) // Restore after check
+		defer func() { _ = os.Chdir(currentDir) }() // Restore after check
 
 		if err := os.Chdir(workingDir); err != nil {
 			return false, fmt.Errorf("failed to change to working directory: %w", err)
@@ -269,7 +269,7 @@ func checkForChangesInDir(workingDir, fullPath string) (bool, error) {
 		if err != nil {
 			return false, fmt.Errorf("failed to get current directory: %w", err)
 		}
-		defer os.Chdir(currentDir) // Restore after check
+		defer func() { _ = os.Chdir(currentDir) }() // Restore after check
 
 		if err := os.Chdir(workingDir); err != nil {
 			return false, fmt.Errorf("failed to change to working directory: %w", err)
@@ -409,7 +409,7 @@ func executeContributionInDir(workingDir string, cfg *config.Config, opts *Contr
 		if err != nil {
 			return nil, fmt.Errorf("failed to get current directory: %w", err)
 		}
-		defer os.Chdir(currentDir)
+		defer func() { _ = os.Chdir(currentDir) }()
 
 		if err := os.Chdir(workingDir); err != nil {
 			return nil, fmt.Errorf("failed to change to working directory: %w", err)
@@ -588,14 +588,14 @@ func displayContributeResult(cmd *cobra.Command, result *ContributeResult, opts 
 
 	// Display initial message
 	if opts.DryRun {
-		cyan.Fprintf(out, "🔍 Dry run: Contributing %s\n\n", opts.ResourcePath)
+		_, _ = cyan.Fprintf(out, "🔍 Dry run: Contributing %s\n\n", opts.ResourcePath)
 	} else {
-		cyan.Fprintf(out, "🚀 Contributing: %s\n\n", opts.ResourcePath)
+		_, _ = cyan.Fprintf(out, "🚀 Contributing: %s\n\n", opts.ResourcePath)
 	}
 
 	// Handle error cases
 	if !result.Success {
-		red.Fprintln(out, "❌", result.Message)
+		_, _ = red.Fprintln(out, "❌", result.Message)
 		return nil
 	}
 
@@ -605,68 +605,68 @@ func displayContributeResult(cmd *cobra.Command, result *ContributeResult, opts 
 	}
 
 	// Display validation results
-	fmt.Fprintln(out, "🔍 Validating contribution...")
-	fmt.Fprintln(out, "")
+	_, _ = fmt.Fprintln(out, "🔍 Validating contribution...")
+	_, _ = fmt.Fprintln(out, "")
 	if len(result.ValidationResults) > 0 {
 
 		for _, validation := range result.ValidationResults {
 			switch validation.Status {
 			case "pass":
-				green.Fprintf(out, "✓ %s: %s\n", validation.Check, validation.Message)
+				_, _ = green.Fprintf(out, "✓ %s: %s\n", validation.Check, validation.Message)
 			case "warning":
-				yellow.Fprintf(out, "⚠️ %s: %s\n", validation.Check, validation.Message)
+				_, _ = yellow.Fprintf(out, "⚠️ %s: %s\n", validation.Check, validation.Message)
 			case "fail":
-				red.Fprintf(out, "❌ %s: %s\n", validation.Check, validation.Message)
+				_, _ = red.Fprintf(out, "❌ %s: %s\n", validation.Check, validation.Message)
 			}
 		}
-		fmt.Fprintln(out, "")
+		_, _ = fmt.Fprintln(out, "")
 	}
 
 	// Display success message
-	green.Fprintln(out, "✅", result.Message)
-	fmt.Fprintln(out)
+	_, _ = green.Fprintln(out, "✅", result.Message)
+	_, _ = fmt.Fprintln(out)
 
 	// Display branch information
-	fmt.Fprintf(out, "Branch: %s\n", yellow.Sprint(result.Branch))
-	fmt.Fprintf(out, "Resource: %s\n", yellow.Sprint(result.ResourcePath))
-	fmt.Fprintln(out)
+	_, _ = fmt.Fprintf(out, "Branch: %s\n", yellow.Sprint(result.Branch))
+	_, _ = fmt.Fprintf(out, "Resource: %s\n", yellow.Sprint(result.ResourcePath))
+	_, _ = fmt.Fprintln(out)
 
 	// Display pull request information
 	if result.PRInfo != nil {
-		fmt.Fprintln(out, "📝 Pull request information:")
-		fmt.Fprintf(out, "   URL: %s\n", result.PRInfo.URL)
-		fmt.Fprintf(out, "   Title: %s\n", result.PRInfo.Title)
-		fmt.Fprintf(out, "   Branch: %s\n", result.PRInfo.Branch)
-		fmt.Fprintln(out, "   Ready to push to your fork")
-		fmt.Fprintln(out)
+		_, _ = fmt.Fprintln(out, "📝 Pull request information:")
+		_, _ = fmt.Fprintf(out, "   URL: %s\n", result.PRInfo.URL)
+		_, _ = fmt.Fprintf(out, "   Title: %s\n", result.PRInfo.Title)
+		_, _ = fmt.Fprintf(out, "   Branch: %s\n", result.PRInfo.Branch)
+		_, _ = fmt.Fprintln(out, "   Ready to push to your fork")
+		_, _ = fmt.Fprintln(out)
 	}
 
 	// Show next steps
-	fmt.Fprintln(out, bold.Sprint("🎯 Next Steps:"))
-	fmt.Fprintln(out)
+	_, _ = fmt.Fprintln(out, bold.Sprint("🎯 Next Steps:"))
+	_, _ = fmt.Fprintln(out)
 
-	fmt.Fprintf(out, "1. %s\n", cyan.Sprint("Your changes have been pushed to a feature branch"))
-	fmt.Fprintf(out, "   Branch: %s\n", yellow.Sprint(result.Branch))
-	fmt.Fprintf(out, "   Resource: %s\n", yellow.Sprint(result.ResourcePath))
-	fmt.Fprintln(out)
+	_, _ = fmt.Fprintf(out, "1. %s\n", cyan.Sprint("Your changes have been pushed to a feature branch"))
+	_, _ = fmt.Fprintf(out, "   Branch: %s\n", yellow.Sprint(result.Branch))
+	_, _ = fmt.Fprintf(out, "   Resource: %s\n", yellow.Sprint(result.ResourcePath))
+	_, _ = fmt.Fprintln(out)
 
 	if result.PRInfo == nil {
-		fmt.Fprintf(out, "2. %s\n", cyan.Sprint("Push to your fork and create a pull request"))
-		fmt.Fprintln(out, "   Visit your repository to create a pull request")
-		fmt.Fprintln(out)
+		_, _ = fmt.Fprintf(out, "2. %s\n", cyan.Sprint("Push to your fork and create a pull request"))
+		_, _ = fmt.Fprintln(out, "   Visit your repository to create a pull request")
+		_, _ = fmt.Fprintln(out)
 
-		fmt.Fprintf(out, "3. %s\n", cyan.Sprint("Describe your contribution"))
-		fmt.Fprintf(out, "   Title: %s\n", opts.Message)
-		fmt.Fprintf(out, "   Description: Include details about the resource and its usage\n")
-		fmt.Fprintln(out)
+		_, _ = fmt.Fprintf(out, "3. %s\n", cyan.Sprint("Describe your contribution"))
+		_, _ = fmt.Fprintf(out, "   Title: %s\n", opts.Message)
+		_, _ = fmt.Fprintf(out, "   Description: Include details about the resource and its usage\n")
+		_, _ = fmt.Fprintln(out)
 	}
 
 	// Show contribution tips
-	fmt.Fprintln(out, bold.Sprint("💡 Contribution Tips:"))
-	fmt.Fprintln(out, "• Include a README.md for new patterns or templates")
-	fmt.Fprintln(out, "• Add examples and usage instructions")
-	fmt.Fprintln(out, "• Test your resource with 'ddx apply' before contributing")
-	fmt.Fprintln(out, "• Follow existing naming conventions")
+	_, _ = fmt.Fprintln(out, bold.Sprint("💡 Contribution Tips:"))
+	_, _ = fmt.Fprintln(out, "• Include a README.md for new patterns or templates")
+	_, _ = fmt.Fprintln(out, "• Add examples and usage instructions")
+	_, _ = fmt.Fprintln(out, "• Test your resource with 'ddx apply' before contributing")
+	_, _ = fmt.Fprintln(out, "• Follow existing naming conventions")
 
 	return nil
 }
@@ -678,42 +678,42 @@ func displayDryRunContributeResult(out interface{}, result *ContributeResult) er
 	yellow := color.New(color.FgYellow)
 	bold := color.New(color.Bold)
 
-	fmt.Fprintln(writer, bold.Sprint("🔍 Dry Run Results"))
-	fmt.Fprintln(writer)
+	_, _ = fmt.Fprintln(writer, bold.Sprint("🔍 Dry Run Results"))
+	_, _ = fmt.Fprintln(writer)
 
 	if result.DryRunPreview != nil {
 		preview := result.DryRunPreview
 
-		fmt.Fprintln(writer, "Would perform the following actions:")
-		fmt.Fprintf(writer, "%s", green.Sprintf("✓ Resource to contribute: %s\n", preview.WouldContribute))
-		fmt.Fprintf(writer, "%s", green.Sprintf("✓ Target branch: %s\n", preview.Branch))
-		fmt.Fprintf(writer, "%s", green.Sprintf("✓ Files to contribute: %d\n", preview.FilesCount))
+		_, _ = fmt.Fprintln(writer, "Would perform the following actions:")
+		_, _ = fmt.Fprintf(writer, "%s", green.Sprintf("✓ Resource to contribute: %s\n", preview.WouldContribute))
+		_, _ = fmt.Fprintf(writer, "%s", green.Sprintf("✓ Target branch: %s\n", preview.Branch))
+		_, _ = fmt.Fprintf(writer, "%s", green.Sprintf("✓ Files to contribute: %d\n", preview.FilesCount))
 
 		if preview.HasDocumentation {
-			fmt.Fprintln(writer, green.Sprint("✓ Documentation found (README.md)"))
+			_, _ = fmt.Fprintln(writer, green.Sprint("✓ Documentation found (README.md)"))
 		} else {
-			fmt.Fprintln(writer, yellow.Sprint("⚠️ No documentation found - consider adding README.md"))
+			_, _ = fmt.Fprintln(writer, yellow.Sprint("⚠️ No documentation found - consider adding README.md"))
 		}
 
 		// Show warnings
 		if len(preview.ValidationWarnings) > 0 {
-			fmt.Fprintln(writer)
-			yellow.Fprintln(writer, "⚠️ Warnings:")
+			_, _ = fmt.Fprintln(writer)
+			_, _ = yellow.Fprintln(writer, "⚠️ Warnings:")
 			for _, warning := range preview.ValidationWarnings {
-				fmt.Fprintf(writer, "  • %s\n", warning)
+				_, _ = fmt.Fprintf(writer, "  • %s\n", warning)
 			}
 		}
 
-		fmt.Fprintln(writer)
-		fmt.Fprintln(writer, bold.Sprint("🎯 What would happen:"))
-		fmt.Fprintf(writer, "1. Create feature branch: %s\n", preview.Branch)
-		fmt.Fprintf(writer, "2. Commit changes in .ddx/%s\n", preview.WouldContribute)
-		fmt.Fprintln(writer, "3. push branch to upstream repository")
-		fmt.Fprintln(writer, "4. Prepare pull request")
+		_, _ = fmt.Fprintln(writer)
+		_, _ = fmt.Fprintln(writer, bold.Sprint("🎯 What would happen:"))
+		_, _ = fmt.Fprintf(writer, "1. Create feature branch: %s\n", preview.Branch)
+		_, _ = fmt.Fprintf(writer, "2. Commit changes in .ddx/%s\n", preview.WouldContribute)
+		_, _ = fmt.Fprintln(writer, "3. push branch to upstream repository")
+		_, _ = fmt.Fprintln(writer, "4. Prepare pull request")
 	}
 
-	fmt.Fprintln(writer)
-	cyan.Fprintln(writer, "💡 To proceed with the contribution, run the command without --dry-run")
+	_, _ = fmt.Fprintln(writer)
+	_, _ = cyan.Fprintln(writer, "💡 To proceed with the contribution, run the command without --dry-run")
 
 	return nil
 }

@@ -115,32 +115,32 @@ func handleLogDisplay(stdout, stderr io.Writer, workingDir string, opts LogOptio
 	}
 
 	// Present log entries to user
-	fmt.Fprintln(stdout, "DDX Asset History")
-	fmt.Fprintln(stdout, "================")
-	fmt.Fprintln(stdout)
+	_, _ = fmt.Fprintln(stdout, "DDX Asset History")
+	_, _ = fmt.Fprintln(stdout, "================")
+	_, _ = fmt.Fprintln(stdout)
 
 	if len(entries) == 0 {
-		fmt.Fprintln(stdout, "No log entries found.")
+		_, _ = fmt.Fprintln(stdout, "No log entries found.")
 		return nil
 	}
 
 	if opts.Oneline {
 		// Compact format
 		for _, entry := range entries {
-			fmt.Fprintf(stdout, "%s %s %s\n", entry.Hash[:8], entry.Date, entry.Message)
+			_, _ = fmt.Fprintf(stdout, "%s %s %s\n", entry.Hash[:8], entry.Date, entry.Message)
 		}
 	} else {
 		// Detailed format
 		for i, entry := range entries {
 			if i > 0 {
-				fmt.Fprintln(stdout)
+				_, _ = fmt.Fprintln(stdout)
 			}
-			fmt.Fprintf(stdout, "commit %s\n", entry.Hash)
-			fmt.Fprintf(stdout, "Date: %s\n", entry.Date)
-			fmt.Fprintf(stdout, "Author: %s\n", entry.Author)
-			fmt.Fprintf(stdout, "\n    %s\n", entry.Message)
+			_, _ = fmt.Fprintf(stdout, "commit %s\n", entry.Hash)
+			_, _ = fmt.Fprintf(stdout, "Date: %s\n", entry.Date)
+			_, _ = fmt.Fprintf(stdout, "Author: %s\n", entry.Author)
+			_, _ = fmt.Fprintf(stdout, "\n    %s\n", entry.Message)
 			if opts.Diff && entry.Changes != "" {
-				fmt.Fprintf(stdout, "\n%s\n", entry.Changes)
+				_, _ = fmt.Fprintf(stdout, "\n%s\n", entry.Changes)
 			}
 		}
 	}
@@ -319,7 +319,7 @@ func exportLogEntries(entries []LogEntry, exportPath string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create export file: %v", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	// Export in requested format
 	switch format {

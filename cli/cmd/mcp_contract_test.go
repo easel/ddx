@@ -503,7 +503,7 @@ func TestConfigCommand_ContractExtended(t *testing.T) {
 			ddxDir := filepath.Join(workingDir, ".ddx")
 			require.NoError(t, os.MkdirAll(ddxDir, 0755))
 			configPath := filepath.Join(ddxDir, "config.yaml")
-			os.WriteFile(configPath, []byte("invalid: yaml: content:"), 0644)
+			_ = os.WriteFile(configPath, []byte("invalid: yaml: content:"), 0644)
 
 			// When: Validating using CommandFactory with proper working directory
 			cmd := GetCommandInDirectory(workingDir)
@@ -541,7 +541,7 @@ includes:
 		env.CreateConfig(configContent)
 
 		// Create local override
-		os.WriteFile(filepath.Join(tempDir, ".ddx.local.yml"), []byte("persona_bindings:\n  override: local"), 0644)
+		_ = os.WriteFile(filepath.Join(tempDir, ".ddx.local.yml"), []byte("persona_bindings:\n  override: local"), 0644)
 
 		// When: Showing effective config using CommandFactory with injected working directory
 		factory := NewCommandFactory(tempDir)

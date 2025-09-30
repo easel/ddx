@@ -82,7 +82,7 @@ func TestAcceptance_US004_UpdateAssetsFromMaster(t *testing.T) {
 
 			localFile := filepath.Join(tempDir, ".ddx", "custom.md")
 			localContent := "my local customization"
-			os.WriteFile(localFile, []byte(localContent), 0644)
+			_ = os.WriteFile(localFile, []byte(localContent), 0644)
 
 			// When: Running update
 			factory := NewCommandFactory(tempDir)
@@ -136,8 +136,8 @@ func TestAcceptance_US009_PullUpdatesFromUpstream(t *testing.T) {
 			// Simulate divergence
 			// This would normally require git operations
 			// In test mode, create a marker file
-			os.MkdirAll(".ddx", 0755)
-			os.WriteFile(".ddx/.diverged", []byte("diverged"), 0644)
+			_ = os.MkdirAll(".ddx", 0755)
+			_ = os.WriteFile(".ddx/.diverged", []byte("diverged"), 0644)
 
 			// When: Attempting to sync
 			factory := NewCommandFactory(tempDir)
@@ -165,7 +165,7 @@ func TestAcceptance_US010_HandleUpdateConflicts(t *testing.T) {
 
 			// Create conflicting file
 			conflictFile := filepath.Join(".ddx", "conflict.txt")
-			os.WriteFile(conflictFile, []byte("local version"), 0644)
+			_ = os.WriteFile(conflictFile, []byte("local version"), 0644)
 
 			// When: Updating
 			factory := NewCommandFactory(tempDir)
@@ -189,8 +189,8 @@ func TestAcceptance_US010_HandleUpdateConflicts(t *testing.T) {
 			setupTestProject(t, tempDir)
 
 			// Create conflict file
-			os.MkdirAll(".ddx", 0755)
-			os.WriteFile(".ddx/conflict.txt", []byte("conflict"), 0644)
+			_ = os.MkdirAll(".ddx", 0755)
+			_ = os.WriteFile(".ddx/conflict.txt", []byte("conflict"), 0644)
 
 			// When: Using interactive resolution
 			factory := NewCommandFactory(tempDir)
@@ -334,8 +334,8 @@ func TestAcceptance_US005_ContributeImprovements(t *testing.T) {
 		// Create template to contribute in library (path is library/templates/test)
 		// Leave UNCOMMITTED - contribute works with uncommitted changes
 		templatePath := filepath.Join(env.LibraryPath, "templates", "test", "README.md")
-		os.MkdirAll(filepath.Dir(templatePath), 0755)
-		os.WriteFile(templatePath, []byte("# Test Template\n\nDocumentation here."), 0644)
+		_ = os.MkdirAll(filepath.Dir(templatePath), 0755)
+		_ = os.WriteFile(templatePath, []byte("# Test Template\n\nDocumentation here."), 0644)
 
 		// When: Contributing with dry-run to validate (path relative to .ddx/)
 		output, _ := env.RunCommand("contribute", "library/templates/test", "--message", "Add test template", "--dry-run")
@@ -356,13 +356,13 @@ func TestAcceptance_US005_ContributeImprovements(t *testing.T) {
 
 		// Create initial commit in bare repo so it has a master branch
 		tempClone := filepath.Join(t.TempDir(), "temp-clone")
-		exec.Command("git", "clone", bareRepoPath, tempClone).Run()
-		os.WriteFile(filepath.Join(tempClone, "README.md"), []byte("# Upstream"), 0644)
-		exec.Command("git", "-C", tempClone, "add", ".").Run()
-		exec.Command("git", "-C", tempClone, "config", "user.email", "test@example.com").Run()
-		exec.Command("git", "-C", tempClone, "config", "user.name", "Test").Run()
-		exec.Command("git", "-C", tempClone, "commit", "-m", "Initial").Run()
-		exec.Command("git", "-C", tempClone, "push", "origin", "master").Run()
+		_ = exec.Command("git", "clone", bareRepoPath, tempClone).Run()
+		_ = os.WriteFile(filepath.Join(tempClone, "README.md"), []byte("# Upstream"), 0644)
+		_ = exec.Command("git", "-C", tempClone, "add", ".").Run()
+		_ = exec.Command("git", "-C", tempClone, "config", "user.email", "test@example.com").Run()
+		_ = exec.Command("git", "-C", tempClone, "config", "user.name", "Test").Run()
+		_ = exec.Command("git", "-C", tempClone, "commit", "-m", "Initial").Run()
+		_ = exec.Command("git", "-C", tempClone, "push", "origin", "master").Run()
 
 		// Initialize project with custom upstream
 		env.CreateConfigWithCustomURL("file://" + bareRepoPath)
@@ -370,8 +370,8 @@ func TestAcceptance_US005_ContributeImprovements(t *testing.T) {
 
 		// Create changes in library - leave UNCOMMITTED
 		contributionPath := filepath.Join(env.LibraryPath, "prompts", "test-prompt.md")
-		os.MkdirAll(filepath.Dir(contributionPath), 0755)
-		os.WriteFile(contributionPath, []byte("# Test Prompt\n\nTest content."), 0644)
+		_ = os.MkdirAll(filepath.Dir(contributionPath), 0755)
+		_ = os.WriteFile(contributionPath, []byte("# Test Prompt\n\nTest content."), 0644)
 
 		// When: Contributing WITHOUT dry-run (actual push)
 		output, err := env.RunCommand("contribute", "library/prompts/test-prompt.md", "--message", "Add test prompt")
@@ -403,13 +403,13 @@ func TestAcceptance_US005_ContributeImprovements(t *testing.T) {
 
 		// Create initial commit in bare repo so it has a master branch
 		tempClone := filepath.Join(t.TempDir(), "temp-clone")
-		exec.Command("git", "clone", bareRepoPath, tempClone).Run()
-		os.WriteFile(filepath.Join(tempClone, "README.md"), []byte("# Upstream"), 0644)
-		exec.Command("git", "-C", tempClone, "add", ".").Run()
-		exec.Command("git", "-C", tempClone, "config", "user.email", "test@example.com").Run()
-		exec.Command("git", "-C", tempClone, "config", "user.name", "Test").Run()
-		exec.Command("git", "-C", tempClone, "commit", "-m", "Initial").Run()
-		exec.Command("git", "-C", tempClone, "push", "origin", "master").Run()
+		_ = exec.Command("git", "clone", bareRepoPath, tempClone).Run()
+		_ = os.WriteFile(filepath.Join(tempClone, "README.md"), []byte("# Upstream"), 0644)
+		_ = exec.Command("git", "-C", tempClone, "add", ".").Run()
+		_ = exec.Command("git", "-C", tempClone, "config", "user.email", "test@example.com").Run()
+		_ = exec.Command("git", "-C", tempClone, "config", "user.name", "Test").Run()
+		_ = exec.Command("git", "-C", tempClone, "commit", "-m", "Initial").Run()
+		_ = exec.Command("git", "-C", tempClone, "push", "origin", "master").Run()
 
 		// Initialize project with custom upstream
 		env.CreateConfigWithCustomURL("file://" + bareRepoPath)
@@ -417,8 +417,8 @@ func TestAcceptance_US005_ContributeImprovements(t *testing.T) {
 
 		// Create prompt to contribute - leave UNCOMMITTED
 		promptPath := filepath.Join(env.LibraryPath, "prompts", "pr-test.md")
-		os.MkdirAll(filepath.Dir(promptPath), 0755)
-		os.WriteFile(promptPath, []byte("# PR Test"), 0644)
+		_ = os.MkdirAll(filepath.Dir(promptPath), 0755)
+		_ = os.WriteFile(promptPath, []byte("# PR Test"), 0644)
 
 		// When: Contributing with --create-pr flag and actual execution (not dry-run)
 		output, err := env.RunCommand("contribute", "library/prompts/pr-test.md",
@@ -474,14 +474,14 @@ persona_bindings:
   project_name: test-project
 `, "file://"+GetTestLibraryPath())
 	ddxConfigDir := filepath.Join(dir, ".ddx")
-	os.MkdirAll(ddxConfigDir, 0755)
+	_ = os.MkdirAll(ddxConfigDir, 0755)
 	configPath := filepath.Join(ddxConfigDir, "config.yaml")
 	err := os.WriteFile(configPath, []byte(config), 0644)
 	require.NoError(t, err, "Should create config file")
 
 	// Create initial commit (required for git subtree operations)
 	readmeFile := filepath.Join(dir, "README.md")
-	os.WriteFile(readmeFile, []byte("# Test Project"), 0644)
+	_ = os.WriteFile(readmeFile, []byte("# Test Project"), 0644)
 	gitAdd := exec.Command("git", "add", ".")
 	gitAdd.Dir = dir
 	require.NoError(t, gitAdd.Run())

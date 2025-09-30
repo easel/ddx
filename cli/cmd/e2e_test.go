@@ -27,8 +27,8 @@ func TestE2E_BasicWorkflow(t *testing.T) {
 	}
 
 	// Make sure it's executable
-	os.Chmod("ddx", 0755)
-	defer os.Remove("ddx")
+	_ = os.Chmod("ddx", 0755)
+	defer func() { _ = os.Remove("ddx") }()
 
 	// Create test workspace
 	workspace := t.TempDir()
@@ -60,16 +60,16 @@ func TestE2E_BasicWorkflow(t *testing.T) {
 		// Initialize git repository first
 		gitInit := exec.Command("git", "init")
 		gitInit.Dir = workspace
-		gitInit.Run()
+		_ = gitInit.Run()
 
 		// Configure git for the test
 		gitConfigEmail := exec.Command("git", "config", "user.email", "test@example.com")
 		gitConfigEmail.Dir = workspace
-		gitConfigEmail.Run()
+		_ = gitConfigEmail.Run()
 
 		gitConfigName := exec.Command("git", "config", "user.name", "Test User")
 		gitConfigName.Dir = workspace
-		gitConfigName.Run()
+		_ = gitConfigName.Run()
 
 		cmd := exec.Command(cliPath, "init", "--no-git")
 		cmd.Dir = workspace
@@ -184,8 +184,8 @@ persona_bindings:
 	if err := buildCmd.Run(); err != nil {
 		t.Skipf("Could not build CLI: %v", err)
 	}
-	os.Chmod(cliPath, 0755)
-	defer os.Remove(cliPath)
+	_ = os.Chmod(cliPath, 0755)
+	defer func() { _ = os.Remove(cliPath) }()
 
 	// Apply template
 	cmd := exec.Command(cliPath, "apply", "templates/test")
@@ -232,11 +232,11 @@ func TestE2E_GitIntegration(t *testing.T) {
 	// Configure git (required for commits)
 	gitConfigEmail := exec.Command("git", "config", "user.email", "test@example.com")
 	gitConfigEmail.Dir = workspace
-	gitConfigEmail.Run()
+	_ = gitConfigEmail.Run()
 
 	gitConfigName := exec.Command("git", "config", "user.name", "Test User")
 	gitConfigName.Dir = workspace
-	gitConfigName.Run()
+	_ = gitConfigName.Run()
 
 	// Build CLI
 	buildCmd := exec.Command("go", "build", "-o", cliPath, "..")
@@ -244,8 +244,8 @@ func TestE2E_GitIntegration(t *testing.T) {
 	if err := buildCmd.Run(); err != nil {
 		t.Skipf("Could not build CLI: %v", err)
 	}
-	os.Chmod(cliPath, 0755)
-	defer os.Remove(cliPath)
+	_ = os.Chmod(cliPath, 0755)
+	defer func() { _ = os.Remove(cliPath) }()
 
 	// Initialize DDx
 	initCmd := exec.Command(cliPath, "init")
@@ -323,8 +323,8 @@ This pattern provides error handling.
 	if err := buildCmd.Run(); err != nil {
 		t.Skipf("Could not build CLI: %v", err)
 	}
-	os.Chmod(cliPath, 0755)
-	defer os.Remove(cliPath)
+	_ = os.Chmod(cliPath, 0755)
+	defer func() { _ = os.Remove(cliPath) }()
 
 	// Test contribution command (would normally push to upstream)
 	contribCmd := exec.Command(cliPath, "contribute", "--dry-run")
@@ -366,8 +366,8 @@ sync:
 	if err := buildCmd.Run(); err != nil {
 		t.Skipf("Could not build CLI: %v", err)
 	}
-	os.Chmod(cliPath, 0755)
-	defer os.Remove(cliPath)
+	_ = os.Chmod(cliPath, 0755)
+	defer func() { _ = os.Remove(cliPath) }()
 
 	// Test update command
 	updateCmd := exec.Command(cliPath, "update", "--check")

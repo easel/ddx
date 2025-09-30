@@ -121,31 +121,31 @@ func handleMCPList(output io.Writer, workingDir string, opts MCPListOptions) err
 	}
 
 	// Present results to user
-	fmt.Fprintln(output, "Available MCP Servers")
-	fmt.Fprintln(output, "====================")
-	fmt.Fprintln(output)
+	_, _ = fmt.Fprintln(output, "Available MCP Servers")
+	_, _ = fmt.Fprintln(output, "====================")
+	_, _ = fmt.Fprintln(output)
 
 	// Show category filter if specified
 	if opts.Category != "" {
-		fmt.Fprintf(output, "Filtered by category: %s\n", strings.Title(opts.Category))
-		fmt.Fprintln(output)
+		_, _ = fmt.Fprintf(output, "Filtered by category: %s\n", strings.Title(opts.Category))
+		_, _ = fmt.Fprintln(output)
 	}
 
 	if opts.Verbose {
 		for _, server := range servers {
-			fmt.Fprintf(output, "%s (%s)\n", server.Name, server.Category)
-			fmt.Fprintf(output, "  Description: %s\n", server.Description)
-			fmt.Fprintf(output, "  Version: %s\n", server.Version)
+			_, _ = fmt.Fprintf(output, "%s (%s)\n", server.Name, server.Category)
+			_, _ = fmt.Fprintf(output, "  Description: %s\n", server.Description)
+			_, _ = fmt.Fprintf(output, "  Version: %s\n", server.Version)
 			// Add placeholder fields that tests expect
-			fmt.Fprintf(output, "  Author: DDx Team\n")
-			fmt.Fprintf(output, "  Package: @modelcontextprotocol/server-%s\n", server.Name)
-			fmt.Fprintf(output, "  Environment: [configurable]\n")
+			_, _ = fmt.Fprintf(output, "  Author: DDx Team\n")
+			_, _ = fmt.Fprintf(output, "  Package: @modelcontextprotocol/server-%s\n", server.Name)
+			_, _ = fmt.Fprintf(output, "  Environment: [configurable]\n")
 			if server.Installed {
-				fmt.Fprintf(output, "  Status: Installed (v%s)\n", server.Version)
+				_, _ = fmt.Fprintf(output, "  Status: Installed (v%s)\n", server.Version)
 			} else {
-				fmt.Fprintf(output, "  Status: Available\n")
+				_, _ = fmt.Fprintf(output, "  Status: Available\n")
 			}
-			fmt.Fprintln(output)
+			_, _ = fmt.Fprintln(output)
 		}
 	} else {
 		for _, server := range servers {
@@ -153,7 +153,7 @@ func handleMCPList(output io.Writer, workingDir string, opts MCPListOptions) err
 			if server.Installed {
 				icon = "✅"
 			}
-			fmt.Fprintf(output, "%s %s - %s\n", icon, server.Name, server.Description)
+			_, _ = fmt.Fprintf(output, "%s %s - %s\n", icon, server.Name, server.Description)
 		}
 	}
 
@@ -191,9 +191,9 @@ func handleMCPInstall(cmd *cobra.Command, serverName, workingDir string) error {
 
 	// Present success message
 	if dryRun {
-		fmt.Fprintf(cmd.OutOrStdout(), "Would install server: %s\n", serverName)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Would install server: %s\n", serverName)
 	} else {
-		fmt.Fprintf(cmd.OutOrStdout(), "Successfully installed server: %s\n", serverName)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Successfully installed server: %s\n", serverName)
 	}
 
 	return nil
@@ -206,18 +206,18 @@ func handleMCPStatus(output io.Writer, workingDir string) error {
 	}
 
 	// Present status to user
-	fmt.Fprintln(output, "MCP Server Status:")
-	fmt.Fprintln(output)
-	fmt.Fprintln(output, "Installed servers:")
+	_, _ = fmt.Fprintln(output, "MCP Server Status:")
+	_, _ = fmt.Fprintln(output)
+	_, _ = fmt.Fprintln(output, "Installed servers:")
 	for _, server := range status.InstalledServers {
 		status := "running"
 		if !server.Installed {
 			status = "stopped"
 		}
-		fmt.Fprintf(output, "  • %s (%s)\n", server.Name, status)
+		_, _ = fmt.Fprintf(output, "  • %s (%s)\n", server.Name, status)
 	}
-	fmt.Fprintln(output)
-	fmt.Fprintf(output, "Available updates: %d\n", status.AvailableUpdates)
+	_, _ = fmt.Fprintln(output)
+	_, _ = fmt.Fprintf(output, "Available updates: %d\n", status.AvailableUpdates)
 	return nil
 }
 

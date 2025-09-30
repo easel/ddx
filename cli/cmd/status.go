@@ -389,42 +389,42 @@ func getStatusResourcesFromDir(workingDir string) ([]StatusResourceInfo, error) 
 }
 
 func displayStatus(cmd *cobra.Command, status *StatusInfo, showChanges, showDiff bool) {
-	fmt.Fprintln(cmd.OutOrStdout(), "DDX Status Report")
-	fmt.Fprintln(cmd.OutOrStdout(), "================")
-	fmt.Fprintf(cmd.OutOrStdout(), "Current Version: %s (%s)\n", status.Version, status.CommitHash)
-	fmt.Fprintf(cmd.OutOrStdout(), "Last Updated: %s\n", status.LastUpdated.Format("2006-01-02 15:04:05"))
+	_, _ = fmt.Fprintln(cmd.OutOrStdout(), "DDX Status Report")
+	_, _ = fmt.Fprintln(cmd.OutOrStdout(), "================")
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Current Version: %s (%s)\n", status.Version, status.CommitHash)
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Last Updated: %s\n", status.LastUpdated.Format("2006-01-02 15:04:05"))
 
 	if status.UpstreamInfo != nil && status.UpstreamInfo.Available {
-		fmt.Fprintf(cmd.OutOrStdout(), "Upstream: %s available\n", status.UpstreamInfo.LatestVersion)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Upstream: %s available\n", status.UpstreamInfo.LatestVersion)
 	}
-	fmt.Fprintln(cmd.OutOrStdout())
+	_, _ = fmt.Fprintln(cmd.OutOrStdout())
 
 	// Show modifications
 	if len(status.Modifications) > 0 {
-		fmt.Fprintln(cmd.OutOrStdout(), "Modified Resources:")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Modified Resources:")
 		for _, mod := range status.Modifications {
-			fmt.Fprintf(cmd.OutOrStdout(), "- %s (%s)\n", mod.Path, mod.Type)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "- %s (%s)\n", mod.Path, mod.Type)
 		}
-		fmt.Fprintln(cmd.OutOrStdout())
+		_, _ = fmt.Fprintln(cmd.OutOrStdout())
 	}
 
 	// Show upstream updates
 	if status.UpstreamInfo != nil && len(status.UpstreamInfo.Updates) > 0 {
-		fmt.Fprintln(cmd.OutOrStdout(), "Updates Available:")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Updates Available:")
 		for _, update := range status.UpstreamInfo.Updates {
-			fmt.Fprintf(cmd.OutOrStdout(), "- %s (%s)\n", update.Path, update.Type)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "- %s (%s)\n", update.Path, update.Type)
 		}
-		fmt.Fprintln(cmd.OutOrStdout())
+		_, _ = fmt.Fprintln(cmd.OutOrStdout())
 	}
 
 	// Show verbose information
 	if viper.GetBool("verbose") {
-		fmt.Fprintf(cmd.OutOrStdout(), "Performance: Collection took %v\n", status.Performance.CollectionTime)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Performance: Collection took %v\n", status.Performance.CollectionTime)
 
 		if len(status.Resources) > 0 {
-			fmt.Fprintln(cmd.OutOrStdout(), "\nResource Details:")
+			_, _ = fmt.Fprintln(cmd.OutOrStdout(), "\nResource Details:")
 			for _, resource := range status.Resources {
-				fmt.Fprintf(cmd.OutOrStdout(), "- %s [%s] - %s\n",
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "- %s [%s] - %s\n",
 					resource.Path,
 					resource.Type,
 					resource.LastUpdated.Format("2006-01-02 15:04:05"))
@@ -434,9 +434,9 @@ func displayStatus(cmd *cobra.Command, status *StatusInfo, showChanges, showDiff
 
 	// Show changes if requested
 	if showChanges && len(status.Modifications) > 0 {
-		fmt.Fprintln(cmd.OutOrStdout(), "\nChanged Files:")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "\nChanged Files:")
 		for _, mod := range status.Modifications {
-			fmt.Fprintf(cmd.OutOrStdout(), "- %s (%s) - %s\n",
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "- %s (%s) - %s\n",
 				mod.Path,
 				mod.Type,
 				mod.LastModified.Format("2006-01-02 15:04:05"))
@@ -445,9 +445,9 @@ func displayStatus(cmd *cobra.Command, status *StatusInfo, showChanges, showDiff
 
 	// Show differences if requested
 	if showDiff {
-		fmt.Fprintln(cmd.OutOrStdout(), "\nDifferences:")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "\nDifferences:")
 		// This would show actual git diff output
-		fmt.Fprintln(cmd.OutOrStdout(), "(diff functionality would show detailed changes here)")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "(diff functionality would show detailed changes here)")
 	}
 }
 
@@ -474,7 +474,7 @@ func exportStatusManifest(cmd *cobra.Command, status *StatusInfo, path string) e
 		return fmt.Errorf("failed to write manifest file: %w", err)
 	}
 
-	fmt.Fprintf(cmd.OutOrStdout(), "Status manifest exported to: %s\n", path)
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Status manifest exported to: %s\n", path)
 	return nil
 }
 

@@ -27,7 +27,7 @@ func TestUpdateCommand_Contract(t *testing.T) {
 
 		// Create .ddx/config.yaml in test directory
 		ddxDir := filepath.Join(tempDir, ".ddx")
-		os.MkdirAll(ddxDir, 0755)
+		_ = os.MkdirAll(ddxDir, 0755)
 		configContent := `version: "1.0"
 library:
   path: .ddx/library
@@ -35,7 +35,7 @@ library:
     url: https://github.com/easel/ddx-library
     branch: main
 persona_bindings: {}`
-		os.WriteFile(filepath.Join(ddxDir, "config.yaml"), []byte(configContent), 0644)
+		_ = os.WriteFile(filepath.Join(ddxDir, "config.yaml"), []byte(configContent), 0644)
 
 		// When: Running update successfully
 		cmd := getFreshSyncCommands(tempDir)
@@ -77,7 +77,7 @@ persona_bindings: {}`
 
 		// Create .ddx/config.yaml with invalid URL in test directory
 		ddxDir := filepath.Join(tempDir, ".ddx")
-		os.MkdirAll(ddxDir, 0755)
+		_ = os.MkdirAll(ddxDir, 0755)
 		configContent := `version: "1.0"
 library:
   path: .ddx/library
@@ -86,7 +86,7 @@ library:
     branch: main
 persona_bindings:
   project_name: "test"`
-		os.WriteFile(filepath.Join(ddxDir, "config.yaml"), []byte(configContent), 0644)
+		_ = os.WriteFile(filepath.Join(ddxDir, "config.yaml"), []byte(configContent), 0644)
 
 		// When: Running update with network error
 		cmd := getFreshSyncCommands(tempDir)
@@ -109,7 +109,7 @@ persona_bindings:
 
 		// Create .ddx/config.yaml in test directory
 		ddxDir := filepath.Join(tempDir, ".ddx")
-		os.MkdirAll(ddxDir, 0755)
+		_ = os.MkdirAll(ddxDir, 0755)
 		configContent := `version: "1.0"
 library:
   path: .ddx/library
@@ -117,7 +117,7 @@ library:
     url: https://github.com/easel/ddx-library
     branch: main
 persona_bindings: {}`
-		os.WriteFile(filepath.Join(ddxDir, "config.yaml"), []byte(configContent), 0644)
+		_ = os.WriteFile(filepath.Join(ddxDir, "config.yaml"), []byte(configContent), 0644)
 
 		// When: Running with --check flag
 		cmd := getFreshSyncCommands(tempDir)
@@ -144,18 +144,18 @@ persona_bindings: {}`
 		tempDir := t.TempDir()
 
 		// Initialize git repo so the command runs fully
-		execCommand("git", "init")
-		execCommand("git", "config", "user.email", "test@example.com")
-		execCommand("git", "config", "user.name", "Test User")
+		_ = execCommand("git", "init")
+		_ = execCommand("git", "config", "user.email", "test@example.com")
+		_ = execCommand("git", "config", "user.name", "Test User")
 
 		createTestConfig(t, tempDir)
 
 		// Create local changes
-		os.MkdirAll(".ddx", 0755)
-		os.WriteFile(".ddx/local.txt", []byte("local changes"), 0644)
+		_ = os.MkdirAll(".ddx", 0755)
+		_ = os.WriteFile(".ddx/local.txt", []byte("local changes"), 0644)
 
-		execCommand("git", "add", ".")
-		execCommand("git", "commit", "-m", "Initial commit")
+		_ = execCommand("git", "add", ".")
+		_ = execCommand("git", "commit", "-m", "Initial commit")
 
 		// When: Running with --force flag
 		// Reset flags to avoid state from previous tests
@@ -184,7 +184,7 @@ persona_bindings: {}`
 		// Given: Update operation
 		tempDir := t.TempDir()
 		createTestConfig(t, tempDir)
-		os.MkdirAll(".ddx", 0755) // Create .ddx directory so isInitialized() passes
+		_ = os.MkdirAll(".ddx", 0755) // Create .ddx directory so isInitialized() passes
 
 		// Reset flags
 		// Create a fresh command for test isolation
@@ -198,7 +198,7 @@ persona_bindings: {}`
 		cmd.SetErr(buf)
 		cmd.SetArgs([]string{"update", "--check"})
 
-		cmd.Execute()
+		_ = cmd.Execute()
 
 		// Then: Output should follow format
 		output := buf.String()
@@ -220,7 +220,7 @@ persona_bindings: {}`
 		// Given: Valid project with DDx initialization
 		tempDir := t.TempDir()
 		createTestConfig(t, tempDir)
-		os.MkdirAll(".ddx", 0755) // Create .ddx directory so isInitialized() passes
+		_ = os.MkdirAll(".ddx", 0755) // Create .ddx directory so isInitialized() passes
 
 		// When: Running with --dry-run flag
 		cmd := getFreshSyncCommands(tempDir)
@@ -254,19 +254,19 @@ func TestContributeCommand_Contract(t *testing.T) {
 		// Flags are now local to commands - no reset needed
 
 		// Initialize git repo
-		execCommand("git", "init")
-		execCommand("git", "config", "user.email", "test@example.com")
-		execCommand("git", "config", "user.name", "Test User")
+		_ = execCommand("git", "init")
+		_ = execCommand("git", "config", "user.email", "test@example.com")
+		_ = execCommand("git", "config", "user.name", "Test User")
 
 		createTestConfig(t, tempDir)
 
 		// Create asset to contribute
-		os.MkdirAll(".ddx/templates/test", 0755)
-		os.WriteFile(".ddx/templates/test/README.md", []byte("# Test"), 0644)
+		_ = os.MkdirAll(".ddx/templates/test", 0755)
+		_ = os.WriteFile(".ddx/templates/test/README.md", []byte("# Test"), 0644)
 
 		// Commit initial state so HasSubtree can work
-		execCommand("git", "add", ".")
-		execCommand("git", "commit", "-m", "Initial commit")
+		_ = execCommand("git", "add", ".")
+		_ = execCommand("git", "commit", "-m", "Initial commit")
 
 		// When: Contributing successfully
 		cmd := getFreshSyncCommands(tempDir)
@@ -290,15 +290,15 @@ func TestContributeCommand_Contract(t *testing.T) {
 		// Flags are now local to commands - no reset needed
 
 		// Initialize git repo
-		execCommand("git", "init")
-		execCommand("git", "config", "user.email", "test@example.com")
-		execCommand("git", "config", "user.name", "Test User")
+		_ = execCommand("git", "init")
+		_ = execCommand("git", "config", "user.email", "test@example.com")
+		_ = execCommand("git", "config", "user.name", "Test User")
 
 		createTestConfig(t, tempDir)
-		os.MkdirAll(".ddx", 0755) // Create .ddx directory so isInitialized() passes
+		_ = os.MkdirAll(".ddx", 0755) // Create .ddx directory so isInitialized() passes
 
-		execCommand("git", "add", ".")
-		execCommand("git", "commit", "-m", "Initial commit")
+		_ = execCommand("git", "add", ".")
+		_ = execCommand("git", "commit", "-m", "Initial commit")
 
 		// When: Contributing non-existent asset
 		cmd := getFreshSyncCommands(tempDir)
@@ -322,17 +322,17 @@ func TestContributeCommand_Contract(t *testing.T) {
 		// Flags are now local to commands - no reset needed
 
 		// Initialize git repo
-		execCommand("git", "init")
-		execCommand("git", "config", "user.email", "test@example.com")
-		execCommand("git", "config", "user.name", "Test User")
+		_ = execCommand("git", "init")
+		_ = execCommand("git", "config", "user.email", "test@example.com")
+		_ = execCommand("git", "config", "user.name", "Test User")
 
 		createTestConfig(t, tempDir)
 
-		os.MkdirAll(".ddx/patterns", 0755)
-		os.WriteFile(".ddx/patterns/test.md", []byte("pattern"), 0644)
+		_ = os.MkdirAll(".ddx/patterns", 0755)
+		_ = os.WriteFile(".ddx/patterns/test.md", []byte("pattern"), 0644)
 
-		execCommand("git", "add", ".")
-		execCommand("git", "commit", "-m", "Initial commit")
+		_ = execCommand("git", "add", ".")
+		_ = execCommand("git", "commit", "-m", "Initial commit")
 
 		// When: Running with --dry-run
 		cmd := getFreshSyncCommands(tempDir)
@@ -360,17 +360,17 @@ func TestContributeCommand_Contract(t *testing.T) {
 		// Flags are now local to commands - no reset needed
 
 		// Initialize git repo
-		execCommand("git", "init")
-		execCommand("git", "config", "user.email", "test@example.com")
-		execCommand("git", "config", "user.name", "Test User")
+		_ = execCommand("git", "init")
+		_ = execCommand("git", "config", "user.email", "test@example.com")
+		_ = execCommand("git", "config", "user.name", "Test User")
 
 		createTestConfig(t, tempDir)
 
-		os.MkdirAll(".ddx/prompts", 0755)
-		os.WriteFile(".ddx/prompts/test.md", []byte("prompt"), 0644)
+		_ = os.MkdirAll(".ddx/prompts", 0755)
+		_ = os.WriteFile(".ddx/prompts/test.md", []byte("prompt"), 0644)
 
-		execCommand("git", "add", ".")
-		execCommand("git", "commit", "-m", "Initial commit")
+		_ = execCommand("git", "add", ".")
+		_ = execCommand("git", "commit", "-m", "Initial commit")
 
 		// When: Contributing without message
 		cmd := getFreshSyncCommands(tempDir)
@@ -405,8 +405,8 @@ func TestContributeCommand_Contract(t *testing.T) {
 		createTestConfig(t, tempDir)
 
 		// Create invalid asset (missing metadata)
-		os.MkdirAll(filepath.Join(tempDir, ".ddx/templates/invalid"), 0755)
-		os.WriteFile(filepath.Join(tempDir, ".ddx/templates/invalid/template.txt"), []byte("content"), 0644)
+		_ = os.MkdirAll(filepath.Join(tempDir, ".ddx/templates/invalid"), 0755)
+		_ = os.WriteFile(filepath.Join(tempDir, ".ddx/templates/invalid/template.txt"), []byte("content"), 0644)
 
 		execCommandInDir(tempDir, "git", "add", ".")
 		execCommandInDir(tempDir, "git", "commit", "-m", "Initial commit")
@@ -447,10 +447,10 @@ func TestUpdateCommand_ConflictHandling(t *testing.T) {
 		createTestConfig(t, tempDir)
 
 		// Simulate conflict scenario
-		os.MkdirAll(".ddx", 0755)
+		_ = os.MkdirAll(".ddx", 0755)
 		// Use escaped conflict marker to avoid pre-commit detection
 		conflictMarker := "<" + "<" + "<" + "<" + "<" + "<" + "< HEAD"
-		os.WriteFile(".ddx/CONFLICT.txt", []byte(conflictMarker), 0644)
+		_ = os.WriteFile(".ddx/CONFLICT.txt", []byte(conflictMarker), 0644)
 
 		// When: Updating with conflicts
 		cmd := getFreshSyncCommands(tempDir)
@@ -459,7 +459,7 @@ func TestUpdateCommand_ConflictHandling(t *testing.T) {
 		cmd.SetErr(buf)
 		cmd.SetArgs([]string{"update"})
 
-		cmd.Execute()
+		_ = cmd.Execute()
 
 		// Then: Should complete successfully (in test mode, conflicts aren't simulated)
 		output := buf.String()
@@ -476,7 +476,7 @@ func TestUpdateCommand_ConflictHandling(t *testing.T) {
 		// (command flags are reset by creating fresh commands)
 
 		createTestConfig(t, tempDir)
-		os.MkdirAll(".ddx", 0755) // Create .ddx directory so isInitialized() passes
+		_ = os.MkdirAll(".ddx", 0755) // Create .ddx directory so isInitialized() passes
 
 		// When: Using --strategy=theirs
 		cmd := getFreshSyncCommands(tempDir)
@@ -485,7 +485,7 @@ func TestUpdateCommand_ConflictHandling(t *testing.T) {
 		cmd.SetErr(buf)
 		cmd.SetArgs([]string{"update", "--strategy=theirs"})
 
-		cmd.Execute()
+		_ = cmd.Execute()
 
 		// Then: Should use upstream version
 		output := buf.String()
@@ -502,7 +502,7 @@ func TestUpdateCommand_ConflictHandling(t *testing.T) {
 		// (command flags are reset by creating fresh commands)
 
 		createTestConfig(t, tempDir)
-		os.MkdirAll(".ddx", 0755) // Create .ddx directory so isInitialized() passes
+		_ = os.MkdirAll(".ddx", 0755) // Create .ddx directory so isInitialized() passes
 
 		// When: Using --strategy=ours
 		cmd := getFreshSyncCommands(tempDir)
@@ -511,7 +511,7 @@ func TestUpdateCommand_ConflictHandling(t *testing.T) {
 		cmd.SetErr(buf)
 		cmd.SetArgs([]string{"update", "--strategy=ours"})
 
-		cmd.Execute()
+		_ = cmd.Execute()
 
 		// Then: Should keep local version
 		output := buf.String()
@@ -526,14 +526,14 @@ func TestSyncCommand_GitSubtree(t *testing.T) {
 		tempDir := t.TempDir()
 
 		// Initialize git repo
-		execCommand("git", "init")
-		execCommand("git", "config", "user.email", "test@example.com")
-		execCommand("git", "config", "user.name", "Test User")
+		_ = execCommand("git", "init")
+		_ = execCommand("git", "config", "user.email", "test@example.com")
+		_ = execCommand("git", "config", "user.name", "Test User")
 
 		createTestConfig(t, tempDir)
-		os.MkdirAll(".ddx", 0755) // Create .ddx directory so isInitialized() passes
-		execCommand("git", "add", ".")
-		execCommand("git", "commit", "-m", "Initial commit")
+		_ = os.MkdirAll(".ddx", 0755) // Create .ddx directory so isInitialized() passes
+		_ = execCommand("git", "add", ".")
+		_ = execCommand("git", "commit", "-m", "Initial commit")
 
 		// When: Pulling via subtree
 		cmd := getFreshSyncCommands(tempDir)
@@ -556,13 +556,13 @@ func TestSyncCommand_GitSubtree(t *testing.T) {
 		tempDir := t.TempDir()
 
 		// Initialize git repo
-		execCommand("git", "init")
-		execCommand("git", "config", "user.email", "test@example.com")
-		execCommand("git", "config", "user.name", "Test User")
+		_ = execCommand("git", "init")
+		_ = execCommand("git", "config", "user.email", "test@example.com")
+		_ = execCommand("git", "config", "user.name", "Test User")
 
 		createTestConfig(t, tempDir)
-		os.MkdirAll(".ddx/new", 0755) // Ensure .ddx directory exists
-		os.WriteFile(".ddx/new/file.txt", []byte("content"), 0644)
+		_ = os.MkdirAll(".ddx/new", 0755) // Ensure .ddx directory exists
+		_ = os.WriteFile(".ddx/new/file.txt", []byte("content"), 0644)
 
 		// When: Pushing via subtree
 		cmd := getFreshSyncCommands(tempDir)
@@ -584,7 +584,7 @@ func TestSyncCommand_GitSubtree(t *testing.T) {
 // Helper to create test configuration
 func createTestConfig(t *testing.T, workingDir string) {
 	ddxDir := filepath.Join(workingDir, ".ddx")
-	os.MkdirAll(ddxDir, 0755)
+	_ = os.MkdirAll(ddxDir, 0755)
 	configContent := `version: "1.0"
 library:
   path: .ddx/library
@@ -593,7 +593,7 @@ library:
     branch: main
 persona_bindings:
   project_name: "test-project"`
-	os.WriteFile(filepath.Join(ddxDir, "config.yaml"), []byte(configContent), 0644)
+	_ = os.WriteFile(filepath.Join(ddxDir, "config.yaml"), []byte(configContent), 0644)
 }
 
 // Helper to execute shell commands (for git operations)

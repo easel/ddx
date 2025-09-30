@@ -89,7 +89,7 @@ func TestIsRepository_Basic(t *testing.T) {
 func TestHasSubtree_Basic(t *testing.T) {
 	repoDir := setupTestGitRepo(t)
 	originalDir, _ := os.Getwd()
-	defer os.Chdir(originalDir)
+	defer func() { _ = os.Chdir(originalDir) }()
 
 	// Change to repo directory for git operations
 	require.NoError(t, os.Chdir(repoDir))
@@ -121,7 +121,7 @@ func TestHasSubtree_Basic(t *testing.T) {
 func TestGetCurrentBranch_Basic(t *testing.T) {
 	repoDir := setupTestGitRepo(t)
 	originalDir, _ := os.Getwd()
-	defer os.Chdir(originalDir)
+	defer func() { _ = os.Chdir(originalDir) }()
 
 	// Git operations require working in the repository directory
 	require.NoError(t, os.Chdir(repoDir))
@@ -146,7 +146,7 @@ func TestGetCurrentBranch_Basic(t *testing.T) {
 func TestHasUncommittedChanges_Basic(t *testing.T) {
 	repoDir := setupTestGitRepo(t)
 	originalDir, _ := os.Getwd()
-	defer os.Chdir(originalDir)
+	defer func() { _ = os.Chdir(originalDir) }()
 
 	// Git operations require working in the repository directory
 	require.NoError(t, os.Chdir(repoDir))
@@ -188,7 +188,7 @@ func TestHasUncommittedChanges_Basic(t *testing.T) {
 func TestCommitChanges_Basic(t *testing.T) {
 	repoDir := setupTestGitRepo(t)
 	originalDir, _ := os.Getwd()
-	defer os.Chdir(originalDir)
+	defer func() { _ = os.Chdir(originalDir) }()
 
 	// Git operations require working in the repository directory
 	require.NoError(t, os.Chdir(repoDir))
@@ -217,7 +217,7 @@ func TestCommitChanges_Basic(t *testing.T) {
 func TestCommitChanges_EdgeCases(t *testing.T) {
 	repoDir := setupTestGitRepo(t)
 	originalDir, _ := os.Getwd()
-	defer os.Chdir(originalDir)
+	defer func() { _ = os.Chdir(originalDir) }()
 
 	// Git operations require working in the repository directory
 	require.NoError(t, os.Chdir(repoDir))
@@ -244,7 +244,7 @@ func TestCommitChanges_EdgeCases(t *testing.T) {
 func TestHasSubtree_EdgeCases(t *testing.T) {
 	repoDir := setupTestGitRepo(t)
 	originalDir, _ := os.Getwd()
-	defer os.Chdir(originalDir)
+	defer func() { _ = os.Chdir(originalDir) }()
 
 	// Git operations require working in the repository directory
 	require.NoError(t, os.Chdir(repoDir))
@@ -268,7 +268,7 @@ func TestHasSubtree_EdgeCases(t *testing.T) {
 func TestHasUncommittedChanges_EdgeCases(t *testing.T) {
 	repoDir := setupTestGitRepo(t)
 	originalDir, _ := os.Getwd()
-	defer os.Chdir(originalDir)
+	defer func() { _ = os.Chdir(originalDir) }()
 
 	// Git operations require working in the repository directory
 	require.NoError(t, os.Chdir(repoDir))
@@ -290,7 +290,7 @@ func TestHasUncommittedChanges_EdgeCases(t *testing.T) {
 // TestGetCurrentBranch_EdgeCases tests edge cases for GetCurrentBranch
 func TestGetCurrentBranch_EdgeCases(t *testing.T) {
 	originalDir, _ := os.Getwd()
-	defer os.Chdir(originalDir)
+	defer func() { _ = os.Chdir(originalDir) }()
 
 	// Test from non-git directory
 	nonGitDir := t.TempDir()
@@ -306,7 +306,7 @@ func TestGetCurrentBranch_EdgeCases(t *testing.T) {
 func TestSubtreeOperations_EdgeCases(t *testing.T) {
 	repoDir := setupTestGitRepo(t)
 	originalDir, _ := os.Getwd()
-	defer os.Chdir(originalDir)
+	defer func() { _ = os.Chdir(originalDir) }()
 
 	// Git operations require working in the repository directory
 	require.NoError(t, os.Chdir(repoDir))

@@ -41,7 +41,7 @@ func (i *Installer) Install(serverName string, opts InstallOptions) error {
 // InstallWithLibraryPath installs an MCP server with a specific library path
 func (i *Installer) InstallWithLibraryPath(serverName string, opts InstallOptions, libraryPath string, workingDir string) error {
 	// Show installation start message
-	fmt.Fprintf(i.out, "🔧 Installing %s MCP Server...\n\n", serverName)
+	_, _ = fmt.Fprintf(i.out, "🔧 Installing %s MCP Server...\n\n", serverName)
 
 	// Load registry
 	if i.registry == nil {
@@ -62,20 +62,20 @@ func (i *Installer) InstallWithLibraryPath(serverName string, opts InstallOption
 	}
 
 	// Show server information
-	fmt.Fprintf(i.out, "📦 %s - %s\n", server.Name, server.Description)
+	_, _ = fmt.Fprintf(i.out, "📦 %s - %s\n", server.Name, server.Description)
 	if len(server.Environment) > 0 {
-		fmt.Fprintln(i.out, "\nℹ️ This server requires configuration:")
+		_, _ = fmt.Fprintln(i.out, "\nℹ️ This server requires configuration:")
 		for _, env := range server.Environment {
 			if env.Required {
-				fmt.Fprintf(i.out, "  - %s: %s\n", env.Name, env.Description)
+				_, _ = fmt.Fprintf(i.out, "  - %s: %s\n", env.Name, env.Description)
 			}
 		}
-		fmt.Fprintln(i.out)
+		_, _ = fmt.Fprintln(i.out)
 	}
 
 	// Validate and prompt for environment variables
 	if len(server.Environment) > 0 {
-		fmt.Fprintf(i.out, "🔧 Configuring server environment...\n")
+		_, _ = fmt.Fprintf(i.out, "🔧 Configuring server environment...\n")
 	}
 	if err := i.validateAndPromptEnvironment(server, opts.Environment, opts.Yes); err != nil {
 		return fmt.Errorf("configuring environment: %w", err)
@@ -83,13 +83,13 @@ func (i *Installer) InstallWithLibraryPath(serverName string, opts InstallOption
 
 	// Detect package manager and display
 	packageManager := i.detectPackageManager()
-	fmt.Fprintf(i.out, "Using package manager: %s\n", packageManager)
+	_, _ = fmt.Fprintf(i.out, "Using package manager: %s\n", packageManager)
 
 	// Check Claude CLI availability
 	if err := i.claude.IsAvailable(); err != nil {
 		return fmt.Errorf("Claude CLI not available: %w", err)
 	}
-	fmt.Fprintf(i.out, "📍 Detected Claude CLI available\n")
+	_, _ = fmt.Fprintf(i.out, "📍 Detected Claude CLI available\n")
 
 	// Check if already installed
 	isInstalled := false
@@ -104,39 +104,39 @@ func (i *Installer) InstallWithLibraryPath(serverName string, opts InstallOption
 	}
 
 	if isInstalled && !opts.DryRun {
-		fmt.Fprintf(i.out, "⚠️  %s is already installed.\n", serverName)
-		fmt.Fprintf(i.out, "💡 To upgrade or reinstall, use: ddx mcp upgrade %s\n", serverName)
+		_, _ = fmt.Fprintf(i.out, "⚠️  %s is already installed.\n", serverName)
+		_, _ = fmt.Fprintf(i.out, "💡 To upgrade or reinstall, use: ddx mcp upgrade %s\n", serverName)
 		return fmt.Errorf("%w: %s", ErrAlreadyInstalled, serverName)
 	}
 
 	if opts.DryRun {
-		fmt.Fprintf(i.out, "🔍 Dry run mode - showing what would be done:\n")
-		fmt.Fprintf(i.out, "   - Server: %s (%s)\n", serverName, server.Description)
-		fmt.Fprintf(i.out, "   - Command: %s %s\n", server.Command.Executable, strings.Join(server.Command.Args, " "))
+		_, _ = fmt.Fprintf(i.out, "🔍 Dry run mode - showing what would be done:\n")
+		_, _ = fmt.Fprintf(i.out, "   - Server: %s (%s)\n", serverName, server.Description)
+		_, _ = fmt.Fprintf(i.out, "   - Command: %s %s\n", server.Command.Executable, strings.Join(server.Command.Args, " "))
 		if len(opts.Environment) > 0 {
-			fmt.Fprintf(i.out, "   - Environment variables: %d configured\n", len(opts.Environment))
+			_, _ = fmt.Fprintf(i.out, "   - Environment variables: %d configured\n", len(opts.Environment))
 		}
-		fmt.Fprintf(i.out, "   - Claude CLI: claude mcp add %s\n", serverName)
+		_, _ = fmt.Fprintf(i.out, "   - Claude CLI: claude mcp add %s\n", serverName)
 		return nil
 	}
 
 	// Install server via Claude CLI
-	fmt.Fprintf(i.out, "📦 Installing server via Claude CLI...\n")
+	_, _ = fmt.Fprintf(i.out, "📦 Installing server via Claude CLI...\n")
 	if err := i.addServerWithConfig(serverName, server, opts); err != nil {
 		return fmt.Errorf("installing server: %w", err)
 	}
 
 	// Success message with next steps
-	fmt.Fprintf(i.out, "✅ %s MCP server installed Successfully!\n\n", serverName)
-	fmt.Fprintf(i.out, "🚀 Next steps:\n")
-	fmt.Fprintf(i.out, "  1. Restart Claude Code to load the server\n")
-	fmt.Fprintf(i.out, "  2. Look for %s in Claude Code's MCP section\n", serverName)
+	_, _ = fmt.Fprintf(i.out, "✅ %s MCP server installed Successfully!\n\n", serverName)
+	_, _ = fmt.Fprintf(i.out, "🚀 Next steps:\n")
+	_, _ = fmt.Fprintf(i.out, "  1. Restart Claude Code to load the server\n")
+	_, _ = fmt.Fprintf(i.out, "  2. Look for %s in Claude Code's MCP section\n", serverName)
 	if serverName == "github" {
-		fmt.Fprintf(i.out, "  3. Test with: \"Show my recent commits\"\n")
+		_, _ = fmt.Fprintf(i.out, "  3. Test with: \"Show my recent commits\"\n")
 	} else if serverName == "filesystem" {
-		fmt.Fprintf(i.out, "  3. Test with: \"List files in current directory\"\n")
+		_, _ = fmt.Fprintf(i.out, "  3. Test with: \"List files in current directory\"\n")
 	} else {
-		fmt.Fprintf(i.out, "  3. Test the server functionality\n")
+		_, _ = fmt.Fprintf(i.out, "  3. Test the server functionality\n")
 	}
 
 	return nil
@@ -159,7 +159,7 @@ func (i *Installer) validateAndPromptEnvironment(server *Server, env map[string]
 			}
 			prompt += ": "
 
-			fmt.Fprint(i.out, prompt)
+			_, _ = fmt.Fprint(i.out, prompt)
 
 			// For now, skip actual input reading in favor of clear error message
 			return fmt.Errorf("interactive prompting not yet implemented - please provide %s via --env %s=value", envVar.Name, envVar.Name)
@@ -183,7 +183,7 @@ func (i *Installer) validateAndPromptEnvironment(server *Server, env map[string]
 
 		// Show validation success for sensitive variables
 		if envVar.Sensitive && value != "" {
-			fmt.Fprintf(i.out, "✅ %s validated\n", envVar.Name)
+			_, _ = fmt.Fprintf(i.out, "✅ %s validated\n", envVar.Name)
 		}
 	}
 	return nil
@@ -457,36 +457,36 @@ func (sc *StatusChecker) Check(opts StatusOptions) error {
 
 // checkServer checks status of a specific server
 func (sc *StatusChecker) checkServer(serverName string, opts StatusOptions) error {
-	fmt.Fprintf(sc.out, "📊 Status for %s MCP server:\n", serverName)
+	_, _ = fmt.Fprintf(sc.out, "📊 Status for %s MCP server:\n", serverName)
 
 	// Check if Claude CLI is available
 	if err := sc.claude.IsAvailable(); err != nil {
-		fmt.Fprintf(sc.out, "⚠️  Claude CLI not available: %v\n", err)
+		_, _ = fmt.Fprintf(sc.out, "⚠️  Claude CLI not available: %v\n", err)
 		return nil
 	}
 
 	// Get server status from Claude CLI
 	status, err := sc.claude.GetServerStatus(serverName)
 	if err != nil {
-		fmt.Fprintf(sc.out, "⚠️  Error checking server status: %v\n", err)
+		_, _ = fmt.Fprintf(sc.out, "⚠️  Error checking server status: %v\n", err)
 		return nil
 	}
 
 	if status.Installed {
-		fmt.Fprintf(sc.out, "✅ %s - Installed\n", serverName)
+		_, _ = fmt.Fprintf(sc.out, "✅ %s - Installed\n", serverName)
 		if status.Running {
-			fmt.Fprintf(sc.out, "   Status: Running ✓\n")
+			_, _ = fmt.Fprintf(sc.out, "   Status: Running ✓\n")
 		} else {
-			fmt.Fprintf(sc.out, "   Status: Installed but not connected\n")
+			_, _ = fmt.Fprintf(sc.out, "   Status: Installed but not connected\n")
 		}
 		if status.Version != "unknown" {
-			fmt.Fprintf(sc.out, "   Version: %s\n", status.Version)
+			_, _ = fmt.Fprintf(sc.out, "   Version: %s\n", status.Version)
 		}
 		if len(status.Errors) > 0 {
-			fmt.Fprintf(sc.out, "   Errors: %s\n", strings.Join(status.Errors, ", "))
+			_, _ = fmt.Fprintf(sc.out, "   Errors: %s\n", strings.Join(status.Errors, ", "))
 		}
 	} else {
-		fmt.Fprintln(sc.out, "⚠️  Server not installed")
+		_, _ = fmt.Fprintln(sc.out, "⚠️  Server not installed")
 	}
 
 	return nil
@@ -494,36 +494,36 @@ func (sc *StatusChecker) checkServer(serverName string, opts StatusOptions) erro
 
 // checkAllServers checks status of all servers
 func (sc *StatusChecker) checkAllServers(opts StatusOptions) error {
-	fmt.Fprintln(sc.out, "📊 MCP Server Status")
-	fmt.Fprintln(sc.out)
+	_, _ = fmt.Fprintln(sc.out, "📊 MCP Server Status")
+	_, _ = fmt.Fprintln(sc.out)
 
 	// Check if Claude CLI is available
 	if err := sc.claude.IsAvailable(); err != nil {
-		fmt.Fprintf(sc.out, "⚠️  Claude CLI not available: %v\n", err)
+		_, _ = fmt.Fprintf(sc.out, "⚠️  Claude CLI not available: %v\n", err)
 		return nil
 	}
 
 	// List installed servers from Claude CLI
 	servers, err := sc.claude.ListServers()
 	if err != nil {
-		fmt.Fprintf(sc.out, "⚠️  Error listing servers: %v\n", err)
+		_, _ = fmt.Fprintf(sc.out, "⚠️  Error listing servers: %v\n", err)
 		return nil
 	}
 
 	if len(servers) == 0 {
-		fmt.Fprintln(sc.out, "⚠️  No servers installed")
+		_, _ = fmt.Fprintln(sc.out, "⚠️  No servers installed")
 		return nil
 	}
 
-	fmt.Fprintln(sc.out, "Installed servers:")
+	_, _ = fmt.Fprintln(sc.out, "Installed servers:")
 	for name, connected := range servers {
 		status := "Installed"
 		if connected {
 			status = "Running ✓"
 		}
-		fmt.Fprintf(sc.out, "  ✅ %-15s - %s\n", name, status)
+		_, _ = fmt.Fprintf(sc.out, "  ✅ %-15s - %s\n", name, status)
 	}
-	fmt.Fprintln(sc.out)
+	_, _ = fmt.Fprintln(sc.out)
 
 	return nil
 }

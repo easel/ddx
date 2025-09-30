@@ -178,9 +178,9 @@ func TestChecker_CheckForUpdate_RateLimited(t *testing.T) {
 func TestChecker_RespectEnvVar(t *testing.T) {
 	// Given: DDX_DISABLE_UPDATE_CHECK is set
 	originalEnv := os.Getenv("DDX_DISABLE_UPDATE_CHECK")
-	defer os.Setenv("DDX_DISABLE_UPDATE_CHECK", originalEnv)
+	defer func() { _ = os.Setenv("DDX_DISABLE_UPDATE_CHECK", originalEnv) }()
 
-	os.Setenv("DDX_DISABLE_UPDATE_CHECK", "1")
+	_ = os.Setenv("DDX_DISABLE_UPDATE_CHECK", "1")
 
 	cfg := config.DefaultNewConfig()
 	cfg.UpdateCheck.Enabled = true // Config says enabled

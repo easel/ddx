@@ -402,7 +402,7 @@ persona_bindings:
 			data, readErr := os.ReadFile(configPath)
 			if readErr == nil {
 				var updatedConfig map[string]interface{}
-				yaml.Unmarshal(data, &updatedConfig)
+				_ = yaml.Unmarshal(data, &updatedConfig)
 
 				if vars, ok := updatedConfig["persona_bindings"].(map[string]interface{}); ok {
 					assert.Equal(t, "updated", vars["new_value"],
@@ -490,15 +490,15 @@ func TestAcceptance_ErrorScenarios(t *testing.T) {
 					// Initialize git repository first
 					gitInit := exec.Command("git", "init")
 					gitInit.Dir = tempDir
-					gitInit.Run()
+					_ = gitInit.Run()
 
 					gitConfigEmail := exec.Command("git", "config", "user.email", "test@example.com")
 					gitConfigEmail.Dir = tempDir
-					gitConfigEmail.Run()
+					_ = gitConfigEmail.Run()
 
 					gitConfigName := exec.Command("git", "config", "user.name", "Test User")
 					gitConfigName.Dir = tempDir
-					gitConfigName.Run()
+					_ = gitConfigName.Run()
 
 					config := `version: "1.0"
 library:
@@ -508,8 +508,8 @@ library:
     branch: "main"
 persona_bindings: {}`
 					ddxDir := filepath.Join(tempDir, ".ddx")
-					os.MkdirAll(ddxDir, 0755)
-					os.WriteFile(filepath.Join(ddxDir, "config.yaml"), []byte(config), 0644)
+					_ = os.MkdirAll(ddxDir, 0755)
+					_ = os.WriteFile(filepath.Join(ddxDir, "config.yaml"), []byte(config), 0644)
 					return tempDir
 				},
 				command:       []string{"init"},

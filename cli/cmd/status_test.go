@@ -69,7 +69,7 @@ func TestAcceptance_US012_TrackAssetVersions(t *testing.T) {
 
 		testDir, cleanup := setupStatusTestDir(t)
 		defer cleanup()
-		defer os.RemoveAll(testDir)
+		defer func() { _ = os.RemoveAll(testDir) }()
 
 		// Execute status command
 		factory := NewCommandFactory(testDir)
@@ -91,11 +91,11 @@ func TestAcceptance_US012_TrackAssetVersions(t *testing.T) {
 
 		testDir, cleanup := setupStatusTestDir(t)
 		defer cleanup()
-		defer os.RemoveAll(testDir)
+		defer func() { _ = os.RemoveAll(testDir) }()
 
 		// Modify a DDX resource
 		promptsDir := filepath.Join(testDir, ".ddx", "prompts")
-		os.MkdirAll(promptsDir, 0755)
+		_ = os.MkdirAll(promptsDir, 0755)
 		modifiedFile := filepath.Join(promptsDir, "test-prompt.md")
 		err := os.WriteFile(modifiedFile, []byte("# Modified prompt\nThis is a local change"), 0644)
 		require.NoError(t, err)
@@ -116,7 +116,7 @@ func TestAcceptance_US012_TrackAssetVersions(t *testing.T) {
 
 		testDir, cleanup := setupStatusTestDir(t)
 		defer cleanup()
-		defer os.RemoveAll(testDir)
+		defer func() { _ = os.RemoveAll(testDir) }()
 
 		// Execute status command with upstream check
 		factory := NewCommandFactory(testDir)
@@ -133,7 +133,7 @@ func TestAcceptance_US012_TrackAssetVersions(t *testing.T) {
 
 		testDir, cleanup := setupStatusTestDir(t)
 		defer cleanup()
-		defer os.RemoveAll(testDir)
+		defer func() { _ = os.RemoveAll(testDir) }()
 
 		factory := NewCommandFactory(testDir)
 		rootCmd := factory.NewRootCommand()
@@ -152,13 +152,13 @@ func TestAcceptance_US012_TrackAssetVersions(t *testing.T) {
 
 		testDir, cleanup := setupStatusTestDir(t)
 		defer cleanup()
-		defer os.RemoveAll(testDir)
+		defer func() { _ = os.RemoveAll(testDir) }()
 
 		// Create some changes
 		changesDir := filepath.Join(testDir, ".ddx", "patterns")
-		os.MkdirAll(changesDir, 0755)
+		_ = os.MkdirAll(changesDir, 0755)
 		changeFile := filepath.Join(changesDir, "auth-pattern.go")
-		os.WriteFile(changeFile, []byte("modified content"), 0644)
+		_ = os.WriteFile(changeFile, []byte("modified content"), 0644)
 
 		factory := NewCommandFactory(testDir)
 		rootCmd := factory.NewRootCommand()
@@ -173,7 +173,7 @@ func TestAcceptance_US012_TrackAssetVersions(t *testing.T) {
 
 		testDir, cleanup := setupStatusTestDir(t)
 		defer cleanup()
-		defer os.RemoveAll(testDir)
+		defer func() { _ = os.RemoveAll(testDir) }()
 
 		factory := NewCommandFactory(testDir)
 		rootCmd := factory.NewRootCommand()
@@ -202,7 +202,7 @@ func TestAcceptance_US012_TrackAssetVersions(t *testing.T) {
 
 		testDir, cleanup := setupStatusTestDir(t)
 		defer cleanup()
-		defer os.RemoveAll(testDir)
+		defer func() { _ = os.RemoveAll(testDir) }()
 
 		factory := NewCommandFactory(testDir)
 		rootCmd := factory.NewRootCommand()
@@ -218,7 +218,7 @@ func TestAcceptance_US012_TrackAssetVersions(t *testing.T) {
 
 		testDir, cleanup := setupStatusTestDir(t)
 		defer cleanup()
-		defer os.RemoveAll(testDir)
+		defer func() { _ = os.RemoveAll(testDir) }()
 
 		manifestPath := filepath.Join(testDir, "manifest.yml")
 
@@ -256,7 +256,7 @@ func TestStatusCommand_Contract(t *testing.T) {
 	t.Run("accepts_standard_flags", func(t *testing.T) {
 		testDir, cleanup := setupStatusTestDir(t)
 		defer cleanup()
-		defer os.RemoveAll(testDir)
+		defer func() { _ = os.RemoveAll(testDir) }()
 
 		testCases := []struct {
 			flag string
@@ -297,7 +297,7 @@ func TestStatusCommand_Contract(t *testing.T) {
 		// Status check should complete within 2 seconds
 		testDir, cleanup := setupStatusTestDir(t)
 		defer cleanup()
-		defer os.RemoveAll(testDir)
+		defer func() { _ = os.RemoveAll(testDir) }()
 
 		start := time.Now()
 		factory := NewCommandFactory(testDir)
@@ -327,7 +327,7 @@ func TestLogCommand_Contract(t *testing.T) {
 		// History retrieval should complete within 3 seconds
 		testDir, cleanup := setupStatusTestDir(t)
 		defer cleanup()
-		defer os.RemoveAll(testDir)
+		defer func() { _ = os.RemoveAll(testDir) }()
 
 		start := time.Now()
 		factory := NewCommandFactory(testDir)

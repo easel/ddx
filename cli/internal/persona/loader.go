@@ -119,7 +119,7 @@ func (l *PersonaLoaderImpl) ListPersonas() ([]*Persona, error) {
 		persona, err := l.LoadPersona(personaName)
 		if err != nil {
 			// Log warning but continue processing other personas
-			fmt.Fprintf(os.Stderr, "Warning: Skipping invalid persona %s: %v\n", entry.Name(), err)
+			_, _ = fmt.Fprintf(os.Stderr, "Warning: Skipping invalid persona %s: %v\n", entry.Name(), err)
 			continue
 		}
 

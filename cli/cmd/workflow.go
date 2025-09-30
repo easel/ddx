@@ -69,7 +69,7 @@ func showWorkflowStatus(cmd *cobra.Command) error {
 	// Load config
 	cfg, err := loadConfig()
 	if err != nil || cfg == nil {
-		fmt.Fprintln(cmd.OutOrStdout(), "No active workflows")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "No active workflows")
 		return nil
 	}
 
@@ -77,13 +77,13 @@ func showWorkflowStatus(cmd *cobra.Command) error {
 
 	// Check if there are active workflows
 	if len(cfg.Workflows.Active) == 0 {
-		fmt.Fprintln(cmd.OutOrStdout(), "No active workflows")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "No active workflows")
 		return nil
 	}
 
 	// Display active workflows
-	fmt.Fprintln(cmd.OutOrStdout(), "Active workflows (in priority order):")
-	fmt.Fprintln(cmd.OutOrStdout())
+	_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Active workflows (in priority order):")
+	_, _ = fmt.Fprintln(cmd.OutOrStdout())
 
 	// Get library path
 	libraryPath := cfg.Library.Path
@@ -98,44 +98,44 @@ func showWorkflowStatus(cmd *cobra.Command) error {
 	loader := workflow.NewLoader(libraryPath)
 
 	for i, workflowName := range cfg.Workflows.Active {
-		fmt.Fprintf(cmd.OutOrStdout(), "%d. %s\n", i+1, workflowName)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "%d. %s\n", i+1, workflowName)
 
 		// Load workflow to show agent commands
 		def, err := loader.Load(workflowName)
 		if err != nil {
-			fmt.Fprintf(cmd.OutOrStdout(), "   (failed to load: %v)\n", err)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "   (failed to load: %v)\n", err)
 			continue
 		}
 
 		// Show agent commands
 		if len(def.AgentCommands) > 0 {
-			fmt.Fprintln(cmd.OutOrStdout(), "   Agent commands:")
+			_, _ = fmt.Fprintln(cmd.OutOrStdout(), "   Agent commands:")
 			for cmdName, agentCmd := range def.AgentCommands {
 				if agentCmd.Enabled {
-					fmt.Fprintf(cmd.OutOrStdout(), "   - %s -> %s\n", cmdName, agentCmd.Action)
+					_, _ = fmt.Fprintf(cmd.OutOrStdout(), "   - %s -> %s\n", cmdName, agentCmd.Action)
 					if agentCmd.Triggers != nil {
 						if len(agentCmd.Triggers.Keywords) > 0 {
-							fmt.Fprintf(cmd.OutOrStdout(), "     Keywords: %s\n", strings.Join(agentCmd.Triggers.Keywords, ", "))
+							_, _ = fmt.Fprintf(cmd.OutOrStdout(), "     Keywords: %s\n", strings.Join(agentCmd.Triggers.Keywords, ", "))
 						}
 						if len(agentCmd.Triggers.Patterns) > 0 {
-							fmt.Fprintf(cmd.OutOrStdout(), "     Patterns: %s\n", strings.Join(agentCmd.Triggers.Patterns, ", "))
+							_, _ = fmt.Fprintf(cmd.OutOrStdout(), "     Patterns: %s\n", strings.Join(agentCmd.Triggers.Patterns, ", "))
 						}
 					}
 				}
 			}
 		}
-		fmt.Fprintln(cmd.OutOrStdout())
+		_, _ = fmt.Fprintln(cmd.OutOrStdout())
 	}
 
-	fmt.Fprintf(cmd.OutOrStdout(), "Safe word: %s\n", cfg.Workflows.SafeWord)
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Safe word: %s\n", cfg.Workflows.SafeWord)
 	return nil
 }
 
 func listWorkflows(cmd *cobra.Command) error {
-	fmt.Fprintln(cmd.OutOrStdout(), "Available workflows:")
-	fmt.Fprintln(cmd.OutOrStdout(), "  • helix - HELIX development methodology")
-	fmt.Fprintln(cmd.OutOrStdout(), "  • agile - Agile/Scrum workflow")
-	fmt.Fprintln(cmd.OutOrStdout(), "  • kanban - Kanban board workflow")
+	_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Available workflows:")
+	_, _ = fmt.Fprintln(cmd.OutOrStdout(), "  • helix - HELIX development methodology")
+	_, _ = fmt.Fprintln(cmd.OutOrStdout(), "  • agile - Agile/Scrum workflow")
+	_, _ = fmt.Fprintln(cmd.OutOrStdout(), "  • kanban - Kanban board workflow")
 	return nil
 }
 
@@ -166,14 +166,14 @@ func activateWorkflow(cmd *cobra.Command, name string, force bool) error {
 	_, err = loader.Load(name)
 	if err != nil {
 		errMsg := fmt.Sprintf("workflow '%s' not found: %v", name, err)
-		fmt.Fprintln(cmd.ErrOrStderr(), errMsg)
+		_, _ = fmt.Fprintln(cmd.ErrOrStderr(), errMsg)
 		return fmt.Errorf("%s", errMsg)
 	}
 
 	// Check if already active
 	for _, active := range cfg.Workflows.Active {
 		if active == name {
-			fmt.Fprintf(cmd.OutOrStdout(), "Workflow %s is already active\n", name)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Workflow %s is already active\n", name)
 			return nil
 		}
 	}
@@ -187,8 +187,8 @@ func activateWorkflow(cmd *cobra.Command, name string, force bool) error {
 	}
 
 	priority := len(cfg.Workflows.Active)
-	fmt.Fprintf(cmd.OutOrStdout(), "✓ Activated %s workflow\n", name)
-	fmt.Fprintf(cmd.OutOrStdout(), "Priority: %d of %d\n", priority, priority)
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "✓ Activated %s workflow\n", name)
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Priority: %d of %d\n", priority, priority)
 	return nil
 }
 
@@ -216,7 +216,7 @@ func deactivateWorkflow(cmd *cobra.Command, name string) error {
 	}
 
 	if !found {
-		fmt.Fprintf(cmd.OutOrStdout(), "Workflow %s is not active\n", name)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Workflow %s is not active\n", name)
 		return nil
 	}
 
@@ -227,7 +227,7 @@ func deactivateWorkflow(cmd *cobra.Command, name string) error {
 		return fmt.Errorf("failed to save config: %w", err)
 	}
 
-	fmt.Fprintf(cmd.OutOrStdout(), "✓ Deactivated %s workflow\n", name)
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "✓ Deactivated %s workflow\n", name)
 	return nil
 }
 
@@ -247,7 +247,7 @@ func advanceWorkflow(cmd *cobra.Command) error {
 		return fmt.Errorf("no active workflow found")
 	}
 
-	fmt.Fprintln(cmd.OutOrStdout(), "Advanced to next phase")
+	_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Advanced to next phase")
 	return nil
 }
 
@@ -294,7 +294,7 @@ func listWorkflowCommands(cmd *cobra.Command, workflow string) error {
 		return fmt.Errorf("failed to read commands directory: %w", err)
 	}
 
-	fmt.Fprintf(cmd.OutOrStdout(), "Available commands for %s workflow:\n\n", workflow)
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Available commands for %s workflow:\n\n", workflow)
 
 	for _, entry := range entries {
 		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".md") {
@@ -303,7 +303,7 @@ func listWorkflowCommands(cmd *cobra.Command, workflow string) error {
 			// Try to read the first line for description
 			description := getCommandDescription(filepath.Join(commandsDir, entry.Name()))
 
-			fmt.Fprintf(cmd.OutOrStdout(), "  %-15s %s\n", commandName, description)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  %-15s %s\n", commandName, description)
 		}
 	}
 
@@ -344,13 +344,13 @@ func executeWorkflowCommand(cmd *cobra.Command, workflow, command string, args [
 	}
 
 	// Display command content
-	fmt.Fprintf(cmd.OutOrStdout(), "Executing %s workflow command: %s\n\n", workflow, command)
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Executing %s workflow command: %s\n\n", workflow, command)
 
 	if len(args) > 0 {
-		fmt.Fprintf(cmd.OutOrStdout(), "Command Arguments: %v\n\n", args)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Command Arguments: %v\n\n", args)
 	}
 
-	fmt.Fprintf(cmd.OutOrStdout(), "%s\n", string(content))
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "%s\n", string(content))
 
 	return nil
 }
@@ -384,7 +384,7 @@ func showWorkflowStatusWithDir(cmd *cobra.Command, workingDir string) error {
 	// Load config
 	cfg, err := loadConfigFrom(workingDir)
 	if err != nil || cfg == nil {
-		fmt.Fprintln(cmd.OutOrStdout(), "No active workflows")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "No active workflows")
 		return nil
 	}
 
@@ -392,11 +392,11 @@ func showWorkflowStatusWithDir(cmd *cobra.Command, workingDir string) error {
 
 	// Check if any workflows are active
 	if len(cfg.Workflows.Active) == 0 {
-		fmt.Fprintln(cmd.OutOrStdout(), "No active workflows")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "No active workflows")
 		return nil
 	}
 
-	fmt.Fprintln(cmd.OutOrStdout(), "Active workflows (in priority order):")
+	_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Active workflows (in priority order):")
 
 	// Get library path
 	libraryPath := cfg.Library.Path
@@ -407,21 +407,21 @@ func showWorkflowStatusWithDir(cmd *cobra.Command, workingDir string) error {
 	loader := workflow.NewLoader(libraryPath)
 
 	for i, name := range cfg.Workflows.Active {
-		fmt.Fprintf(cmd.OutOrStdout(), "%d. %s\n", i+1, name)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "%d. %s\n", i+1, name)
 
 		// Load workflow definition to show agent commands
 		def, err := loader.Load(name)
 		if err == nil && len(def.AgentCommands) > 0 {
-			fmt.Fprintln(cmd.OutOrStdout(), "   Agent commands:")
+			_, _ = fmt.Fprintln(cmd.OutOrStdout(), "   Agent commands:")
 			for cmdName, cmdDef := range def.AgentCommands {
 				if cmdDef.Enabled {
-					fmt.Fprintf(cmd.OutOrStdout(), "   • %s → %s\n", cmdName, cmdDef.Action)
+					_, _ = fmt.Fprintf(cmd.OutOrStdout(), "   • %s → %s\n", cmdName, cmdDef.Action)
 					if cmdDef.Triggers != nil {
 						if len(cmdDef.Triggers.Keywords) > 0 {
-							fmt.Fprintf(cmd.OutOrStdout(), "     Keywords: %s\n", strings.Join(cmdDef.Triggers.Keywords, ", "))
+							_, _ = fmt.Fprintf(cmd.OutOrStdout(), "     Keywords: %s\n", strings.Join(cmdDef.Triggers.Keywords, ", "))
 						}
 						if len(cmdDef.Triggers.Patterns) > 0 {
-							fmt.Fprintf(cmd.OutOrStdout(), "     Patterns: %s\n", strings.Join(cmdDef.Triggers.Patterns, ", "))
+							_, _ = fmt.Fprintf(cmd.OutOrStdout(), "     Patterns: %s\n", strings.Join(cmdDef.Triggers.Patterns, ", "))
 						}
 					}
 				}
@@ -429,7 +429,7 @@ func showWorkflowStatusWithDir(cmd *cobra.Command, workingDir string) error {
 		}
 	}
 
-	fmt.Fprintf(cmd.OutOrStdout(), "\nSafe word: %s\n", cfg.Workflows.SafeWord)
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "\nSafe word: %s\n", cfg.Workflows.SafeWord)
 	return nil
 }
 
@@ -456,14 +456,14 @@ func activateWorkflowWithDir(cmd *cobra.Command, name string, force bool, workin
 	_, err = loader.Load(name)
 	if err != nil {
 		errMsg := fmt.Sprintf("workflow '%s' not found: %v", name, err)
-		fmt.Fprintln(cmd.ErrOrStderr(), errMsg)
+		_, _ = fmt.Fprintln(cmd.ErrOrStderr(), errMsg)
 		return fmt.Errorf("%s", errMsg)
 	}
 
 	// Check if already active
 	for _, active := range cfg.Workflows.Active {
 		if active == name {
-			fmt.Fprintf(cmd.OutOrStdout(), "Workflow %s is already active\n", name)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Workflow %s is already active\n", name)
 			return nil
 		}
 	}
@@ -477,8 +477,8 @@ func activateWorkflowWithDir(cmd *cobra.Command, name string, force bool, workin
 	}
 
 	priority := len(cfg.Workflows.Active)
-	fmt.Fprintf(cmd.OutOrStdout(), "✓ Activated %s workflow\n", name)
-	fmt.Fprintf(cmd.OutOrStdout(), "Priority: %d of %d\n", priority, priority)
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "✓ Activated %s workflow\n", name)
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Priority: %d of %d\n", priority, priority)
 	return nil
 }
 
@@ -506,7 +506,7 @@ func deactivateWorkflowWithDir(cmd *cobra.Command, name string, workingDir strin
 	}
 
 	if !found {
-		fmt.Fprintf(cmd.OutOrStdout(), "Workflow %s is not active\n", name)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Workflow %s is not active\n", name)
 		return nil
 	}
 
@@ -517,7 +517,7 @@ func deactivateWorkflowWithDir(cmd *cobra.Command, name string, workingDir strin
 		return fmt.Errorf("failed to save config: %w", err)
 	}
 
-	fmt.Fprintf(cmd.OutOrStdout(), "✓ Deactivated %s workflow\n", name)
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "✓ Deactivated %s workflow\n", name)
 	return nil
 }
 

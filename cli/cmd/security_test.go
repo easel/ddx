@@ -194,7 +194,7 @@ func TestSecurity_FilePermissions(t *testing.T) {
 				// Commands already registered
 
 				// Try to initialize (may fail if DDx not installed)
-				executeCommand(rootCmd, "init")
+				_, _ = executeCommand(rootCmd, "init")
 
 				return workDir
 			},

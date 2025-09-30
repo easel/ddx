@@ -245,8 +245,8 @@ func checkPermissions() bool {
 	if err != nil {
 		return false
 	}
-	file.Close()
-	os.Remove(tempFile)
+	_ = file.Close()
+	_ = os.Remove(tempFile)
 	return true
 }
 
