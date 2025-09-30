@@ -145,12 +145,8 @@ func runPersonaWithWorkingDir(cmd *cobra.Command, args []string, workingDir stri
 		return nil
 	}
 
-	// Default to list
-	personas, err := personaList(workingDir, "", "")
-	if err != nil {
-		return err
-	}
-	return displayPersonaList(cmd, personas)
+	// Show help when no flags or args provided
+	return cmd.Help()
 }
 
 // displayPersonaList displays the list of personas to the user

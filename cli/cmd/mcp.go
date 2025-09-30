@@ -109,14 +109,8 @@ func runMCPWithWorkingDir(cmd *cobra.Command, args []string, workingDir string) 
 		return handleMCPStatus(cmd.OutOrStdout(), workingDir)
 	}
 
-	// Default to list
-	opts := MCPListOptions{
-		Category:   categoryFlag,
-		Search:     searchFlag,
-		Verbose:    verboseFlag,
-		ConfigPath: config,
-	}
-	return handleMCPList(cmd.OutOrStdout(), workingDir, opts)
+	// Show help when no flags or args provided
+	return cmd.Help()
 }
 
 // CLI handlers - handle presentation and user interaction

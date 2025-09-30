@@ -28,7 +28,7 @@ func runWorkflowWithDir(cmd *cobra.Command, args []string, workingDir string) er
 	workflowForce, _ := cmd.Flags().GetBool("force")
 
 	if len(args) == 0 {
-		return showWorkflowStatusWithDir(cmd, workingDir)
+		return cmd.Help()
 	}
 
 	firstArg := strings.ToLower(args[0])

@@ -301,9 +301,9 @@ Personas provide:
 • Project-specific persona bindings
 
 Examples:
-  ddx persona list              # List available personas
-  ddx persona show reviewer     # Show persona details
-  ddx persona bind code-reviewer strict-reviewer`,
+  ddx persona --list              # List available personas
+  ddx persona --show reviewer     # Show persona details
+  ddx persona --bind strict-reviewer --role code-reviewer`,
 		RunE: f.runPersona,
 	}
 
@@ -330,9 +330,9 @@ MCP servers provide:
 • Enhanced context awareness
 
 Examples:
-  ddx mcp list                  # List available MCP servers
-  ddx mcp install github        # Install GitHub MCP server
-  ddx mcp status                # Show installed servers`,
+  ddx mcp --list                  # List available MCP servers
+  ddx mcp --install github        # Install GitHub MCP server
+  ddx mcp --status                # Show installed servers`,
 		RunE: f.runMCP,
 	}
 
