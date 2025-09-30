@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -218,11 +219,14 @@ func TestInitCommand_US017_InitializeConfiguration(t *testing.T) {
 			name: "force_overwrites_without_backup",
 			args: []string{"init", "--force", "--silent"},
 			setup: func(t *testing.T, te *TestEnvironment) {
-				// Create existing config first, then create initial commit
-				existingConfig := `version: "0.9"
-repository:
-  url: "https://old.repo"
-`
+				// Create existing config with test library URL first, then create initial commit
+				existingConfig := fmt.Sprintf(`version: "0.9"
+library:
+  path: .ddx/library
+  repository:
+    url: %s
+    branch: master
+`, te.TestLibraryURL)
 				te.CreateConfig(existingConfig)
 				te.CreateFile("README.md", "# Test Project")
 
@@ -392,12 +396,14 @@ func TestInitCommand_US014_SynchronizationSetup(t *testing.T) {
 			name: "sync_initialization_with_custom_repository",
 			args: []string{"init", "--force", "--silent"},
 			setup: func(t *testing.T, te *TestEnvironment) {
-				// Create existing config with custom repo
-				existingConfig := `version: "1.0"
-repository:
-  url: "https://github.com/custom/repo"
-  branch: "develop"
-`
+				// Create existing config with test library URL
+				existingConfig := fmt.Sprintf(`version: "1.0"
+library:
+  path: .ddx/library
+  repository:
+    url: %s
+    branch: master
+`, te.TestLibraryURL)
 				te.CreateConfig(existingConfig)
 				te.CreateFile("README.md", "# Test")
 				gitAdd := exec.Command("git", "add", ".")

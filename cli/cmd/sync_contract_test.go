@@ -397,27 +397,31 @@ func TestContributeCommand_Contract(t *testing.T) {
 
 		// Flags are now local to commands - no reset needed
 
-		// Initialize git repo
-		execCommand("git", "init")
-		execCommand("git", "config", "user.email", "test@example.com")
-		execCommand("git", "config", "user.name", "Test User")
+		// Initialize git repo in tempDir
+		execCommandInDir(tempDir, "git", "init")
+		execCommandInDir(tempDir, "git", "config", "user.email", "test@example.com")
+		execCommandInDir(tempDir, "git", "config", "user.name", "Test User")
 
 		createTestConfig(t, tempDir)
 
 		// Create invalid asset (missing metadata)
-		os.MkdirAll(".ddx/templates/invalid", 0755)
-		os.WriteFile(".ddx/templates/invalid/template.txt", []byte("content"), 0644)
+		os.MkdirAll(filepath.Join(tempDir, ".ddx/templates/invalid"), 0755)
+		os.WriteFile(filepath.Join(tempDir, ".ddx/templates/invalid/template.txt"), []byte("content"), 0644)
 
-		execCommand("git", "add", ".")
-		execCommand("git", "commit", "-m", "Initial commit")
-		// Missing metadata.yml
+		execCommandInDir(tempDir, "git", "add", ".")
+		execCommandInDir(tempDir, "git", "commit", "-m", "Initial commit")
+
+		// Set up git subtree for library
+		execCommandInDir(tempDir, "git", "subtree", "add", "--prefix=.ddx/library", "file://"+GetTestLibraryPath(), "master", "--squash")
+
+		// Missing metadata.yml for the invalid asset
 
 		// When: Contributing invalid asset
 		cmd := getFreshSyncCommands(tempDir)
 		buf := new(bytes.Buffer)
 		cmd.SetOut(buf)
 		cmd.SetErr(buf)
-		cmd.SetArgs([]string{"contribute", "templates/invalid"})
+		cmd.SetArgs([]string{"contribute", "templates/invalid", "--message", "Add invalid template", "--dry-run"})
 
 		err := cmd.Execute()
 

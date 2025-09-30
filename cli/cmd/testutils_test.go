@@ -205,10 +205,18 @@ func (te *TestEnvironment) InitWithDDx(flags ...string) {
 	// Default flags if none provided
 	if len(flags) == 0 {
 		if te.GitInitialized {
-			// Use real git with file:// URL - DDX_TEST_MODE removed!
-			flags = []string{"--silent"}
-			// Create config with test library URL so init uses it
+			// Create initial commit (required for git subtree)
+			te.CreateFile("README.md", "# Test Project")
+			gitAdd := exec.Command("git", "add", ".")
+			gitAdd.Dir = te.Dir
+			require.NoError(te.t, gitAdd.Run())
+			gitCommit := exec.Command("git", "commit", "-m", "Initial commit")
+			gitCommit.Dir = te.Dir
+			require.NoError(te.t, gitCommit.Run())
+
+			// Create config with test library URL first, then use --force to initialize
 			te.CreateDefaultConfig()
+			flags = []string{"--force", "--silent"}
 		} else {
 			// No git repo, use --no-git
 			flags = []string{"--no-git", "--silent"}

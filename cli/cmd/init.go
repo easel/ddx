@@ -131,22 +131,20 @@ func initProject(workingDir string, opts InitOptions) (*InitResult, error) {
 		result.IsDDxRepo = true
 	}
 
-	// Try to load existing config for more accurate defaults
-	if libraryExists {
-		if cfg, err := config.LoadWithWorkingDir(workingDir); err == nil {
-			localConfig.Version = cfg.Version
-			// Copy library settings if they exist
-			if cfg.Library != nil && localConfig.Library != nil {
-				if cfg.Library.Path != "" {
-					localConfig.Library.Path = cfg.Library.Path
+	// Try to load existing config to preserve settings (even if library doesn't exist yet)
+	if cfg != nil && err == nil {
+		localConfig.Version = cfg.Version
+		// Copy library settings if they exist
+		if cfg.Library != nil && localConfig.Library != nil {
+			if cfg.Library.Path != "" {
+				localConfig.Library.Path = cfg.Library.Path
+			}
+			if cfg.Library.Repository != nil && localConfig.Library.Repository != nil {
+				if cfg.Library.Repository.URL != "" {
+					localConfig.Library.Repository.URL = cfg.Library.Repository.URL
 				}
-				if cfg.Library.Repository != nil && localConfig.Library.Repository != nil {
-					if cfg.Library.Repository.URL != "" {
-						localConfig.Library.Repository.URL = cfg.Library.Repository.URL
-					}
-					if cfg.Library.Repository.Branch != "" {
-						localConfig.Library.Repository.Branch = cfg.Library.Repository.Branch
-					}
+				if cfg.Library.Repository.Branch != "" {
+					localConfig.Library.Repository.Branch = cfg.Library.Repository.Branch
 				}
 			}
 		}
@@ -170,14 +168,14 @@ func initProject(workingDir string, opts InitOptions) (*InitResult, error) {
 
 	// Set up git subtree for library synchronization (adds .ddx/library)
 	if !opts.NoGit {
-		if err := setupGitSubtreeLibraryPure(localConfig, workingDir); err != nil {
-			return nil, NewExitError(1, fmt.Sprintf("Failed to setup library: %v", err))
-		}
-
-		// Commit the config file after subtree setup
+		// Commit the config file BEFORE git subtree (subtree requires clean working tree)
 		if err := commitConfigFile(workingDir); err != nil {
 			// Warn but don't fail - config is already created
 			// Error will be logged by caller if needed
+		}
+
+		if err := setupGitSubtreeLibraryPure(localConfig, workingDir); err != nil {
+			return nil, NewExitError(1, fmt.Sprintf("Failed to setup library: %v", err))
 		}
 	}
 

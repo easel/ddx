@@ -2,7 +2,9 @@ package cmd
 
 import (
 	"bytes"
+	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -340,7 +342,7 @@ func TestAcceptance_US011_ContributeChangesUpstream(t *testing.T) {
 			contributeBuf := new(bytes.Buffer)
 			contributeCmd.SetOut(contributeBuf)
 			contributeCmd.SetErr(contributeBuf)
-			contributeCmd.SetArgs([]string{"contribute", "patterns/new-pattern.md"})
+			contributeCmd.SetArgs([]string{"contribute", "patterns/new-pattern.md", "--message", "Add new pattern", "--dry-run"})
 
 			err := contributeCmd.Execute()
 
@@ -368,7 +370,7 @@ func TestAcceptance_US011_ContributeChangesUpstream(t *testing.T) {
 			contributeBuf := new(bytes.Buffer)
 			contributeCmd.SetOut(contributeBuf)
 			contributeCmd.SetErr(contributeBuf)
-			contributeCmd.SetArgs([]string{"contribute", "templates/test"})
+			contributeCmd.SetArgs([]string{"contribute", "templates/test", "--message", "Add test template", "--dry-run"})
 
 			_ = contributeCmd.Execute()
 
@@ -394,14 +396,14 @@ func TestAcceptance_US011_ContributeChangesUpstream(t *testing.T) {
 			contributeBuf := new(bytes.Buffer)
 			contributeCmd.SetOut(contributeBuf)
 			contributeCmd.SetErr(contributeBuf)
-			contributeCmd.SetArgs([]string{"contribute", "prompts/test.md", "--create-pr"})
+			contributeCmd.SetArgs([]string{"contribute", "prompts/test.md", "--create-pr", "--message", "Add test prompt", "--dry-run"})
 
 			_ = contributeCmd.Execute()
 
-			// Then: Changes are pushed to fork
+			// Then: Changes are pushed upstream
 			output := contributeBuf.String()
 			assert.Contains(t, output, "push", "Should push changes")
-			assert.Contains(t, output, "fork", "Should mention fork")
+			assert.Contains(t, output, "upstream", "Should mention upstream repository")
 		})
 	})
 }
@@ -415,25 +417,47 @@ func setupTestProject(t *testing.T, workingDir ...string) {
 		dir = "." // Current directory for backwards compatibility
 	}
 
-	// Create .ddx/config.yaml configuration (new format)
-	config := `version: "1.0"
+	// Initialize git repository (required for contribute command)
+	gitInit := exec.Command("git", "init")
+	gitInit.Dir = dir
+	require.NoError(t, gitInit.Run(), "git init should succeed")
+
+	gitEmail := exec.Command("git", "config", "user.email", "test@example.com")
+	gitEmail.Dir = dir
+	require.NoError(t, gitEmail.Run(), "git config user.email should succeed")
+
+	gitName := exec.Command("git", "config", "user.name", "Test User")
+	gitName.Dir = dir
+	require.NoError(t, gitName.Run(), "git config user.name should succeed")
+
+	// Create .ddx/config.yaml configuration with test library URL
+	config := fmt.Sprintf(`version: "1.0"
 library:
   path: .ddx/library
   repository:
-    url: https://github.com/easel/ddx-library
-    branch: main
+    url: %s
+    branch: master
 persona_bindings:
   project_name: test-project
-`
+`, "file://"+GetTestLibraryPath())
 	ddxConfigDir := filepath.Join(dir, ".ddx")
 	os.MkdirAll(ddxConfigDir, 0755)
 	configPath := filepath.Join(ddxConfigDir, "config.yaml")
 	err := os.WriteFile(configPath, []byte(config), 0644)
 	require.NoError(t, err, "Should create config file")
 
-	// Create .ddx directory structure
-	ddxDir := filepath.Join(dir, ".ddx")
-	os.MkdirAll(filepath.Join(ddxDir, "templates"), 0755)
-	os.MkdirAll(filepath.Join(ddxDir, "patterns"), 0755)
-	os.MkdirAll(filepath.Join(ddxDir, "prompts"), 0755)
+	// Create initial commit (required for git subtree operations)
+	readmeFile := filepath.Join(dir, "README.md")
+	os.WriteFile(readmeFile, []byte("# Test Project"), 0644)
+	gitAdd := exec.Command("git", "add", ".")
+	gitAdd.Dir = dir
+	require.NoError(t, gitAdd.Run())
+	gitCommit := exec.Command("git", "commit", "-m", "Initial commit")
+	gitCommit.Dir = dir
+	require.NoError(t, gitCommit.Run())
+
+	// Set up git subtree for library
+	gitSubtree := exec.Command("git", "subtree", "add", "--prefix=.ddx/library", "file://"+GetTestLibraryPath(), "master", "--squash")
+	gitSubtree.Dir = dir
+	require.NoError(t, gitSubtree.Run(), "git subtree should succeed")
 }
