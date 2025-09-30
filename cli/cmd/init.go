@@ -182,8 +182,9 @@ func initProject(workingDir string, opts InitOptions) (*InitResult, error) {
 			return nil, NewExitError(1, fmt.Sprintf("Failed to setup library: %v", err))
 		}
 
-		// Inject initial meta-prompt after library is set up (unless explicitly skipped)
-		if !opts.SkipClaudeInjection {
+		// Inject initial meta-prompt after library is set up (unless explicitly skipped or in test/CI mode)
+		skipInjection := opts.SkipClaudeInjection || os.Getenv("CI") != "" || os.Getenv("DDX_TEST_MODE") != ""
+		if !skipInjection {
 			if err := injectInitialMetaPrompt(localConfig, workingDir); err != nil {
 				// Don't fail - meta-prompt is optional enhancement
 				// Only warn if file actually exists but has issues

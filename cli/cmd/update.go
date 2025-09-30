@@ -122,10 +122,14 @@ func performUpdate(workingDir string, opts *UpdateOptions) (*UpdateResult, error
 		return nil, err
 	}
 
-	// Always sync meta-prompt after update (even if no library changes)
-	if err := syncMetaPrompt(cfg, workingDir); err != nil {
-		// Warn but don't fail
-		fmt.Fprintf(os.Stderr, "Warning: Failed to sync meta-prompt: %v\n", err)
+	// Always sync meta-prompt after update (even if no library changes), unless in test/CI mode
+	if os.Getenv("CI") == "" && os.Getenv("DDX_TEST_MODE") == "" {
+		if err := syncMetaPrompt(cfg, workingDir); err != nil {
+			// Warn but don't fail - only if prompts directory exists
+			if _, statErr := os.Stat(filepath.Join(workingDir, cfg.Library.Path, "prompts")); statErr == nil {
+				fmt.Fprintf(os.Stderr, "Warning: Failed to sync meta-prompt: %v\n", err)
+			}
+		}
 	}
 
 	return updateResult, nil
