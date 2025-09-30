@@ -78,7 +78,7 @@ jobs:
       working-directory: cli
       env:
         DDX_TEST_MODE: "1"
-        DDX_LIBRARY_BASE_PATH: "./library"
+        DDX_LIBRARY_BASE_PATH: "../library"
       run: |
         go test -v ./...
         echo "✅ All tests passed - release validated"
