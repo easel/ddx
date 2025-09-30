@@ -24,7 +24,6 @@ func TestUpdateCommand_Contract(t *testing.T) {
 	t.Run("contract_exit_code_0_success", func(t *testing.T) {
 		// Given: Valid project with updates available
 		tempDir := t.TempDir()
-		t.Setenv("DDX_TEST_MODE", "1")
 
 		// Create .ddx/config.yaml in test directory
 		ddxDir := filepath.Join(tempDir, ".ddx")
@@ -56,7 +55,6 @@ persona_bindings: {}`
 	t.Run("contract_exit_code_3_no_config", func(t *testing.T) {
 		// Given: No DDx configuration exists
 		tempDir := t.TempDir()
-		t.Setenv("DDX_TEST_MODE", "1")
 
 		// When: Running update without config
 		cmd := getFreshSyncCommands(tempDir)
@@ -76,7 +74,6 @@ persona_bindings: {}`
 	t.Run("contract_exit_code_5_network_error", func(t *testing.T) {
 		// Given: Network is unavailable
 		tempDir := t.TempDir()
-		t.Setenv("DDX_TEST_MODE", "1")
 
 		// Create .ddx/config.yaml with invalid URL in test directory
 		ddxDir := filepath.Join(tempDir, ".ddx")
@@ -109,7 +106,6 @@ persona_bindings:
 	t.Run("contract_check_flag", func(t *testing.T) {
 		// Given: Updates may be available
 		tempDir := t.TempDir()
-		t.Setenv("DDX_TEST_MODE", "1")
 
 		// Create .ddx/config.yaml in test directory
 		ddxDir := filepath.Join(tempDir, ".ddx")
@@ -146,7 +142,6 @@ persona_bindings: {}`
 	t.Run("contract_force_flag", func(t *testing.T) {
 		// Given: Local changes exist
 		tempDir := t.TempDir()
-		t.Setenv("DDX_TEST_MODE", "1")
 
 		// Initialize git repo so the command runs fully
 		execCommand("git", "init")
@@ -188,7 +183,6 @@ persona_bindings: {}`
 	t.Run("contract_output_format", func(t *testing.T) {
 		// Given: Update operation
 		tempDir := t.TempDir()
-		t.Setenv("DDX_TEST_MODE", "1")
 		createTestConfig(t, tempDir)
 		os.MkdirAll(".ddx", 0755) // Create .ddx directory so isInitialized() passes
 
@@ -225,7 +219,6 @@ persona_bindings: {}`
 	t.Run("contract_dry_run_flag", func(t *testing.T) {
 		// Given: Valid project with DDx initialization
 		tempDir := t.TempDir()
-		t.Setenv("DDX_TEST_MODE", "1")
 		createTestConfig(t, tempDir)
 		os.MkdirAll(".ddx", 0755) // Create .ddx directory so isInitialized() passes
 
@@ -257,7 +250,6 @@ func TestContributeCommand_Contract(t *testing.T) {
 	t.Run("contract_exit_code_0_success", func(t *testing.T) {
 		// Given: Valid contribution
 		tempDir := t.TempDir()
-		t.Setenv("DDX_TEST_MODE", "1")
 
 		// Flags are now local to commands - no reset needed
 
@@ -294,7 +286,6 @@ func TestContributeCommand_Contract(t *testing.T) {
 	t.Run("contract_exit_code_6_not_found", func(t *testing.T) {
 		// Given: Asset doesn't exist
 		tempDir := t.TempDir()
-		t.Setenv("DDX_TEST_MODE", "1")
 
 		// Flags are now local to commands - no reset needed
 
@@ -327,7 +318,6 @@ func TestContributeCommand_Contract(t *testing.T) {
 	t.Run("contract_dry_run_flag", func(t *testing.T) {
 		// Given: Valid contribution
 		tempDir := t.TempDir()
-		t.Setenv("DDX_TEST_MODE", "1")
 
 		// Flags are now local to commands - no reset needed
 
@@ -366,7 +356,6 @@ func TestContributeCommand_Contract(t *testing.T) {
 	t.Run("contract_message_required", func(t *testing.T) {
 		// Given: No message provided
 		tempDir := t.TempDir()
-		t.Setenv("DDX_TEST_MODE", "1")
 
 		// Flags are now local to commands - no reset needed
 
@@ -405,7 +394,6 @@ func TestContributeCommand_Contract(t *testing.T) {
 	t.Run("contract_validation", func(t *testing.T) {
 		// Given: Asset to contribute
 		tempDir := t.TempDir()
-		t.Setenv("DDX_TEST_MODE", "1")
 
 		// Flags are now local to commands - no reset needed
 
@@ -446,7 +434,6 @@ func TestUpdateCommand_ConflictHandling(t *testing.T) {
 	t.Run("contract_conflict_detection", func(t *testing.T) {
 		// Given: Conflicting changes
 		tempDir := t.TempDir()
-		t.Setenv("DDX_TEST_MODE", "1")
 
 		// Reset flags
 		// Create a fresh command for test isolation
@@ -478,7 +465,6 @@ func TestUpdateCommand_ConflictHandling(t *testing.T) {
 	t.Run("contract_strategy_theirs", func(t *testing.T) {
 		// Given: Conflicts exist
 		tempDir := t.TempDir()
-		t.Setenv("DDX_TEST_MODE", "1")
 
 		// Reset flags
 		// Create a fresh command for test isolation
@@ -505,7 +491,6 @@ func TestUpdateCommand_ConflictHandling(t *testing.T) {
 	t.Run("contract_strategy_ours", func(t *testing.T) {
 		// Given: Conflicts exist
 		tempDir := t.TempDir()
-		t.Setenv("DDX_TEST_MODE", "1")
 
 		// Reset flags
 		// Create a fresh command for test isolation
@@ -535,7 +520,6 @@ func TestSyncCommand_GitSubtree(t *testing.T) {
 	t.Run("contract_subtree_pull", func(t *testing.T) {
 		// Given: Git repository with subtree
 		tempDir := t.TempDir()
-		t.Setenv("DDX_TEST_MODE", "1")
 
 		// Initialize git repo
 		execCommand("git", "init")
@@ -566,7 +550,6 @@ func TestSyncCommand_GitSubtree(t *testing.T) {
 	t.Run("contract_subtree_push", func(t *testing.T) {
 		// Given: Changes to push
 		tempDir := t.TempDir()
-		t.Setenv("DDX_TEST_MODE", "1")
 
 		// Initialize git repo
 		execCommand("git", "init")
