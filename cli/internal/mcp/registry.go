@@ -446,7 +446,12 @@ func (r *Registry) formatTable(w io.Writer, servers []*ServerReference, opts Lis
 	}
 
 	for category, categoryServers := range categories {
-		_, _ = fmt.Fprintf(w, "%s:\n", strings.Title(category))
+		// Capitalize first letter manually (strings.Title is deprecated)
+		categoryDisplay := category
+		if len(categoryDisplay) > 0 {
+			categoryDisplay = strings.ToUpper(categoryDisplay[:1]) + categoryDisplay[1:]
+		}
+		_, _ = fmt.Fprintf(w, "%s:\n", categoryDisplay)
 		for _, server := range categoryServers {
 			status := "⬜"
 			if installedServers[server.Name] {

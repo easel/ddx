@@ -408,11 +408,11 @@ func TestContributeCommand_Contract(t *testing.T) {
 		_ = os.MkdirAll(filepath.Join(tempDir, ".ddx/templates/invalid"), 0755)
 		_ = os.WriteFile(filepath.Join(tempDir, ".ddx/templates/invalid/template.txt"), []byte("content"), 0644)
 
-		execCommandInDir(tempDir, "git", "add", ".")
-		execCommandInDir(tempDir, "git", "commit", "-m", "Initial commit")
+		_ = execCommandInDir(tempDir, "git", "add", ".")
+		_ = execCommandInDir(tempDir, "git", "commit", "-m", "Initial commit")
 
 		// Set up git subtree for library
-		execCommandInDir(tempDir, "git", "subtree", "add", "--prefix=.ddx/library", "file://"+GetTestLibraryPath(), "master", "--squash")
+		_ = execCommandInDir(tempDir, "git", "subtree", "add", "--prefix=.ddx/library", "file://"+GetTestLibraryPath(), "master", "--squash")
 
 		// Missing metadata.yml for the invalid asset
 
