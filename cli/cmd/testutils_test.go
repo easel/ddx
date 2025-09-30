@@ -20,25 +20,154 @@ var (
 	testLibraryOnce sync.Once
 )
 
-// GetTestLibraryPath returns the absolute path to the test library fixture
-// This is a real git repository that tests can use with file:// URLs
+// getTempDir returns the appropriate temporary directory
+func getTempDir() string {
+	// Check DDX_TEST_LIBRARY_PATH first (explicit override)
+	if path := os.Getenv("DDX_TEST_LIBRARY_PATH"); path != "" {
+		return path
+	}
+	// Check TMPDIR (standard on macOS/BSD)
+	if path := os.Getenv("TMPDIR"); path != "" {
+		return path
+	}
+	// Check TMP (Windows)
+	if path := os.Getenv("TMP"); path != "" {
+		return path
+	}
+	// Fall back to /tmp
+	return "/tmp"
+}
+
+// GetTestLibraryPath returns the absolute path to a temporary git repository
+// created from the test library fixture. This is a real git repository that
+// tests can use with file:// URLs.
 func GetTestLibraryPath() string {
 	testLibraryOnce.Do(func() {
 		// Find the test fixtures directory relative to this file
 		_, filename, _, _ := runtime.Caller(0)
 		cmdDir := filepath.Dir(filename)
-		testLibraryPath = filepath.Join(cmdDir, "..", "test", "fixtures", "ddx-library")
+		fixtureDir := filepath.Join(cmdDir, "..", "test", "fixtures", "ddx-library")
+		fixtureDir, _ = filepath.Abs(fixtureDir)
 
-		// Ensure it's an absolute path
-		testLibraryPath, _ = filepath.Abs(testLibraryPath)
+		// Create temp directory for git repository
+		tempDir := getTempDir()
+		testLibraryPath = filepath.Join(tempDir, ".test-ddx-library")
 
-		// Verify it's a git repository
+		// Check if temp repo already exists and is valid
 		gitDir := filepath.Join(testLibraryPath, ".git")
-		if _, err := os.Stat(gitDir); os.IsNotExist(err) {
-			panic(fmt.Sprintf("Test library fixture is not a git repository: %s", testLibraryPath))
+		repoExists := false
+		if stat, err := os.Stat(gitDir); err == nil && stat.IsDir() {
+			repoExists = true
+		}
+
+		if !repoExists {
+			// Create new temp directory and initialize git repo
+			if err := os.MkdirAll(testLibraryPath, 0755); err != nil {
+				panic(fmt.Sprintf("Failed to create temp library directory: %v", err))
+			}
+		}
+
+		// Sync files from fixture to temp repo
+		if err := syncDirectory(fixtureDir, testLibraryPath); err != nil {
+			panic(fmt.Sprintf("Failed to sync fixture files: %v", err))
+		}
+
+		if !repoExists {
+			// Initialize git repository
+			gitInit := exec.Command("git", "init")
+			gitInit.Dir = testLibraryPath
+			if err := gitInit.Run(); err != nil {
+				panic(fmt.Sprintf("Failed to initialize git repository: %v", err))
+			}
+
+			// Configure git user
+			gitConfigEmail := exec.Command("git", "config", "user.email", "test@example.com")
+			gitConfigEmail.Dir = testLibraryPath
+			if err := gitConfigEmail.Run(); err != nil {
+				panic(fmt.Sprintf("Failed to configure git user.email: %v", err))
+			}
+
+			gitConfigName := exec.Command("git", "config", "user.name", "Test User")
+			gitConfigName.Dir = testLibraryPath
+			if err := gitConfigName.Run(); err != nil {
+				panic(fmt.Sprintf("Failed to configure git user.name: %v", err))
+			}
+
+			// Create initial commit
+			gitAdd := exec.Command("git", "add", ".")
+			gitAdd.Dir = testLibraryPath
+			if err := gitAdd.Run(); err != nil {
+				panic(fmt.Sprintf("Failed to add files to git: %v", err))
+			}
+
+			gitCommit := exec.Command("git", "commit", "-m", "Test fixture")
+			gitCommit.Dir = testLibraryPath
+			if err := gitCommit.Run(); err != nil {
+				panic(fmt.Sprintf("Failed to commit files: %v", err))
+			}
+		} else {
+			// Check if there are changes and commit them
+			gitStatus := exec.Command("git", "status", "--porcelain")
+			gitStatus.Dir = testLibraryPath
+			output, _ := gitStatus.Output()
+			if len(output) > 0 {
+				// There are changes, commit them
+				gitAdd := exec.Command("git", "add", ".")
+				gitAdd.Dir = testLibraryPath
+				_ = gitAdd.Run() // Best effort
+
+				gitCommit := exec.Command("git", "commit", "-m", "Update test fixture")
+				gitCommit.Dir = testLibraryPath
+				_ = gitCommit.Run() // Best effort
+			}
 		}
 	})
 	return testLibraryPath
+}
+
+// syncDirectory copies files from src to dst, preserving directory structure
+func syncDirectory(src, dst string) error {
+	return filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Skip .git directories from source
+		if info.IsDir() && info.Name() == ".git" {
+			return filepath.SkipDir
+		}
+
+		// Calculate relative path
+		relPath, err := filepath.Rel(src, path)
+		if err != nil {
+			return err
+		}
+
+		dstPath := filepath.Join(dst, relPath)
+
+		if info.IsDir() {
+			return os.MkdirAll(dstPath, info.Mode())
+		}
+
+		// Copy file
+		srcFile, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		defer func() { _ = srcFile.Close() }()
+
+		dstFile, err := os.Create(dstPath)
+		if err != nil {
+			return err
+		}
+		defer func() { _ = dstFile.Close() }()
+
+		if _, err := dstFile.ReadFrom(srcFile); err != nil {
+			return err
+		}
+
+		return os.Chmod(dstPath, info.Mode())
+	})
 }
 
 // TestEnvironment provides isolated testing environment for .ddx/config.yaml
