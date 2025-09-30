@@ -129,6 +129,11 @@ func TestAcceptance_US036_ListMCPServers(t *testing.T) {
 
 // TestAcceptance_US037_InstallMCPServer tests US-037: Install MCP Server
 func TestAcceptance_US037_InstallMCPServer(t *testing.T) {
+	// Skip in CI - requires Claude CLI to be installed
+	if os.Getenv("CI") != "" {
+		t.Skip("Skipping MCP install tests in CI - requires Claude CLI")
+	}
+
 	// Ensure we're in a valid directory first
 	ensureValidWorkingDirectory(t)
 

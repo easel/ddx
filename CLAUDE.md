@@ -97,14 +97,14 @@ The CLI uses git subtree for managing the relationship between individual projec
 
 ## Testing and Quality
 
-**CRITICAL**: Always run release tests before committing:
+**CRITICAL**: All tests are release-critical and must pass before committing:
 
 ```bash
-# Run the same tests that the release workflow requires
-cd cli && go test -v -run "TestAcceptance_US001|TestAcceptance_US002|TestConfigCommand|TestInitCommand_Contract|TestListCommand_Contract" ./cmd
+# Run full test suite - all tests must pass
+cd cli && go test -v ./cmd
 ```
 
-These tests validate core functionality and must pass before any release.
+Every test validates critical functionality and must pass before any release.
 
 - Go tests are in `*_test.go` files alongside source code
 - Linting uses golangci-lint (fallback to go vet)
