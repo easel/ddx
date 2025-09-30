@@ -217,7 +217,7 @@ func TestInitCommand_US017_InitializeConfiguration(t *testing.T) {
 		},
 		{
 			name: "force_overwrites_without_backup",
-			args: []string{"init", "--force", "--silent"},
+			args: []string{"init", "--force"},
 			setup: func(t *testing.T, te *TestEnvironment) {
 				// Create existing config with test library URL first, then create initial commit
 				existingConfig := fmt.Sprintf(`version: "0.9"

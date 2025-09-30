@@ -262,10 +262,18 @@ func prepareContributionDetails(opts *ContributeOptions) error {
 func checkForChangesInDir(workingDir, fullPath string) (bool, error) {
 	// Check git for uncommitted changes
 	ddxPath := ".ddx"
+
+	// Change to working directory if specified (git commands need to run in the repo)
 	if workingDir != "" {
-		// For real git operations, we'd need to be in the working directory
-		// For now, use the current directory approach
-		ddxPath = ".ddx"
+		currentDir, err := os.Getwd()
+		if err != nil {
+			return false, fmt.Errorf("failed to get current directory: %w", err)
+		}
+		defer os.Chdir(currentDir) // Restore after check
+
+		if err := os.Chdir(workingDir); err != nil {
+			return false, fmt.Errorf("failed to change to working directory: %w", err)
+		}
 	}
 
 	hasChanges, err := git.HasUncommittedChanges(ddxPath)

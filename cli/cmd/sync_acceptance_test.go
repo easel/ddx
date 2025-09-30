@@ -374,9 +374,10 @@ func TestAcceptance_US011_ContributeChangesUpstream(t *testing.T) {
 
 			_ = contributeCmd.Execute()
 
-			// Then: Standards are validated
+			// Then: Contribution is validated (dry run output shown)
 			output := contributeBuf.String()
-			assert.Contains(t, output, "Validating contribution", "Should validate standards")
+			assert.Contains(t, output, "🔍 Dry Run Results", "Should show validation results")
+			assert.Contains(t, output, "Documentation found", "Should check for documentation")
 		})
 	})
 

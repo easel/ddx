@@ -133,7 +133,7 @@ func initProject(workingDir string, opts InitOptions) (*InitResult, error) {
 
 	// Try to load existing config to preserve settings (even if library doesn't exist yet)
 	if cfg != nil && err == nil {
-		localConfig.Version = cfg.Version
+		// Note: Version is NOT copied - always upgrade to current version via ApplyDefaults
 		// Copy library settings if they exist
 		if cfg.Library != nil && localConfig.Library != nil {
 			if cfg.Library.Path != "" {
