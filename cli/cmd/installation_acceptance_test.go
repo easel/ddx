@@ -84,7 +84,6 @@ func setupTestEnvironment(t *testing.T, platform, arch string) *InstallationTest
 
 	// Set environment variables for testing
 	t.Setenv("HOME", homeDir)
-	t.Setenv("DDX_TEST_MODE", "1")
 	t.Setenv("DDX_TEST_PLATFORM", platform)
 	t.Setenv("DDX_TEST_ARCH", arch)
 

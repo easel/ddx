@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"os"
 	"testing"
 
 	"github.com/easel/ddx/internal/config"
@@ -9,24 +8,15 @@ import (
 
 // Test that demonstrates the functional design principles
 func TestInitProject_FunctionalDesign(t *testing.T) {
-	// Setup: Create a temporary directory
-	tempDir, err := os.MkdirTemp("", "ddx-init-test")
-	if err != nil {
-		t.Fatalf("Failed to create temp dir: %v", err)
-	}
-	defer os.RemoveAll(tempDir)
-
-	// Set test mode to avoid interactive prompts and network calls
-	os.Setenv("DDX_TEST_MODE", "1")
-	defer os.Unsetenv("DDX_TEST_MODE")
-
 	// Test 1: Test with git validation (should fail in non-git directory)
+	te := NewTestEnvironment(t, WithGitInit(false))
+
 	opts := InitOptions{
 		Force: false,
 		NoGit: false, // Enable git validation for test
 	}
 
-	result, err := initProject(tempDir, opts)
+	result, err := initProject(te.Dir, opts)
 	// Should fail because tempDir is not a git repository
 	if err == nil {
 		t.Error("Expected error for non-git directory, but got none")
@@ -37,7 +27,7 @@ func TestInitProject_FunctionalDesign(t *testing.T) {
 
 	// Test 2: Test with NoGit option (should succeed)
 	opts.NoGit = true
-	result, err = initProject(tempDir, opts)
+	result, err = initProject(te.Dir, opts)
 
 	// Should work now that we skip git validation
 	if err != nil {
@@ -51,14 +41,10 @@ func TestInitProject_FunctionalDesign(t *testing.T) {
 // Test the pure git validation function
 func TestValidateGitRepo_Pure(t *testing.T) {
 	// Test with non-git directory
-	tempDir, err := os.MkdirTemp("", "ddx-git-test")
-	if err != nil {
-		t.Fatalf("Failed to create temp dir: %v", err)
-	}
-	defer os.RemoveAll(tempDir)
+	te := NewTestEnvironment(t, WithGitInit(false))
 
 	// Should return error for non-git directory
-	err = validateGitRepo(tempDir)
+	err := validateGitRepo(te.Dir)
 	if err == nil {
 		t.Error("Expected error for non-git directory, but got none")
 	}
@@ -105,10 +91,9 @@ func TestBusinessLogicIndependence(t *testing.T) {
 	// These functions should work without cobra.Command
 
 	// Test validateGitRepo - pure function
-	tempDir, _ := os.MkdirTemp("", "test")
-	defer os.RemoveAll(tempDir)
+	te := NewTestEnvironment(t, WithGitInit(false))
 
-	err := validateGitRepo(tempDir)
+	err := validateGitRepo(te.Dir)
 	if err == nil {
 		t.Error("validateGitRepo should work without cobra.Command")
 	}

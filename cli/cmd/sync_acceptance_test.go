@@ -22,19 +22,8 @@ func newRootCommand() *cobra.Command {
 func withTempDir(t *testing.T, fn func(tempDir string)) {
 	t.Helper()
 
-	// No need to track original directory - use temp directory exclusively
-
 	// Create temp directory
 	tempDir := t.TempDir()
-
-	// Change to temp directory
-	// err = os.Chdir(tempDir) // REMOVED: Using CommandFactory injection
-	// require.NoError(t, err)
-
-	// No directory restoration needed - tests use CommandFactory injection
-
-	// Set test mode environment
-	t.Setenv("DDX_TEST_MODE", "1")
 
 	// Run the test function
 	fn(tempDir)
@@ -46,7 +35,6 @@ func TestAcceptance_US004_UpdateAssetsFromMaster(t *testing.T) {
 		// Create test harness with complete isolation
 		harness := NewTestHarness(t)
 		harness.WithTempDir()
-		harness.WithEnv("DDX_TEST_MODE", "1")
 
 		// Given: A project with DDx initialized and updates available
 		// Initialize DDx first
