@@ -73,8 +73,8 @@ func GetTestLibraryPath() string {
 		}
 
 		if !repoExists {
-			// Initialize git repository
-			gitInit := exec.Command("git", "init")
+			// Initialize git repository with master branch (for compatibility with tests)
+			gitInit := exec.Command("git", "init", "-b", "master")
 			gitInit.Dir = testLibraryPath
 			if output, err := gitInit.CombinedOutput(); err != nil {
 				panic(fmt.Sprintf("Failed to initialize git repository: %v\nOutput: %s", err, output))
