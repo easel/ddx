@@ -92,8 +92,8 @@ func performContribution(workingDir string, opts *ContributeOptions) (*Contribut
 		return nil, fmt.Errorf("not in a DDx project - run 'ddx init' first")
 	}
 
-	// Check if it's a git repository (skip in test mode)
-	if os.Getenv("DDX_TEST_MODE") != "1" && !isGitRepositoryInDir(workingDir) {
+	// Check if it's a git repository
+	if !isGitRepositoryInDir(workingDir) {
 		return nil, fmt.Errorf("not in a Git repository - contributions require Git")
 	}
 
@@ -215,19 +215,7 @@ func getResourcePath(workingDir, resourcePath string) string {
 }
 
 func checkForSubtreeInDir(workingDir string) (bool, error) {
-	// In test mode, assume subtree exists if .ddx directory exists
-	if os.Getenv("DDX_TEST_MODE") == "1" {
-		ddxPath := ".ddx"
-		if workingDir != "" {
-			ddxPath = filepath.Join(workingDir, ".ddx")
-		}
-		if _, err := os.Stat(ddxPath); err == nil {
-			return true, nil
-		}
-		return false, nil
-	}
-
-	// In real mode, check actual git subtree
+	// Check actual git subtree
 	ddxPath := ".ddx"
 	if workingDir != "" {
 		// For real git operations, we'd need to be in the working directory
@@ -242,17 +230,12 @@ func checkForSubtreeInDir(workingDir string) (bool, error) {
 func prepareContributionDetails(opts *ContributeOptions) error {
 	// Get contribution message if not provided
 	if opts.Message == "" {
-		// In test mode, use default message
-		if os.Getenv("DDX_TEST_MODE") == "1" {
-			opts.Message = "Contributing test asset"
-		} else {
-			prompt := &survey.Input{
-				Message: "Describe your contribution:",
-				Help:    "A brief description of what you're contributing",
-			}
-			if err := survey.AskOne(prompt, &opts.Message); err != nil {
-				return err
-			}
+		prompt := &survey.Input{
+			Message: "Describe your contribution:",
+			Help:    "A brief description of what you're contributing",
+		}
+		if err := survey.AskOne(prompt, &opts.Message); err != nil {
+			return err
 		}
 	}
 
@@ -269,15 +252,7 @@ func prepareContributionDetails(opts *ContributeOptions) error {
 }
 
 func checkForChangesInDir(workingDir, fullPath string) (bool, error) {
-	// In test mode, assume there are changes if the resource exists
-	if os.Getenv("DDX_TEST_MODE") == "1" {
-		if _, err := os.Stat(fullPath); err == nil {
-			return true, nil
-		}
-		return false, nil
-	}
-
-	// In real mode, check git for uncommitted changes
+	// Check git for uncommitted changes
 	ddxPath := ".ddx"
 	if workingDir != "" {
 		// For real git operations, we'd need to be in the working directory
@@ -412,20 +387,7 @@ func executeContributionInDir(workingDir string, cfg *config.Config, opts *Contr
 		ResourcePath: opts.ResourcePath,
 	}
 
-	// In test mode, simulate contribution
-	if os.Getenv("DDX_TEST_MODE") == "1" {
-		if opts.CreatePR {
-			result.PRInfo = &PRInfo{
-				URL:         "https://github.com/ddx-tools/ddx/pull/123",
-				Title:       opts.Message,
-				Branch:      opts.Branch,
-				Description: "Pull request created successfully!",
-			}
-		}
-		return result, nil
-	}
-
-	// In real mode, perform actual git operations
+	// Perform actual git operations
 	// This would include:
 	// 1. Create and push branch
 	// 2. Optionally create pull request

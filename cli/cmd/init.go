@@ -174,12 +174,10 @@ func initProject(workingDir string, opts InitOptions) (*InitResult, error) {
 			return nil, NewExitError(1, fmt.Sprintf("Failed to setup library: %v", err))
 		}
 
-		// Commit the config file after subtree setup (unless in test mode)
-		if os.Getenv("DDX_TEST_MODE") != "1" {
-			if err := commitConfigFile(workingDir); err != nil {
-				// Warn but don't fail - config is already created
-				// Error will be logged by caller if needed
-			}
+		// Commit the config file after subtree setup
+		if err := commitConfigFile(workingDir); err != nil {
+			// Warn but don't fail - config is already created
+			// Error will be logged by caller if needed
 		}
 	}
 
@@ -255,14 +253,7 @@ func initializeSynchronizationPure(cfg *config.Config) error {
 		cfg.Library.Repository.Branch = "main" // Default branch
 	}
 
-	// In test mode, skip actual network validation
-	if os.Getenv("DDX_TEST_MODE") == "1" {
-		return nil
-	}
-
-	// In real mode, validate the repository URL accessibility
-	// For now, we'll do basic URL validation and assume the repository is accessible
-	// In a full implementation, we would make an HTTP request to validate
+	// Validate the repository URL - accepts file:// URLs for local testing
 	if !isValidRepositoryURL(cfg.Library.Repository.URL) {
 		return fmt.Errorf("invalid repository URL: %s", cfg.Library.Repository.URL)
 	}
@@ -280,16 +271,10 @@ func initializeSynchronization(cfg *config.Config, cmd *cobra.Command) error {
 		return err
 	}
 
-	// In test mode, show test messages
-	if os.Getenv("DDX_TEST_MODE") == "1" {
-		fmt.Fprint(cmd.OutOrStdout(), "  ✓ Upstream repository connection verified (test mode)\n")
-		fmt.Fprint(cmd.OutOrStdout(), "  ✓ Synchronization configuration validated\n")
-		fmt.Fprint(cmd.OutOrStdout(), "  ✓ Change tracking initialized\n")
-	} else {
-		fmt.Fprint(cmd.OutOrStdout(), "  ✓ Upstream repository connection verified\n")
-		fmt.Fprint(cmd.OutOrStdout(), "  ✓ Synchronization configuration validated\n")
-		fmt.Fprint(cmd.OutOrStdout(), "  ✓ Change tracking initialized\n")
-	}
+	// Show sync setup messages
+	fmt.Fprint(cmd.OutOrStdout(), "  ✓ Upstream repository connection verified\n")
+	fmt.Fprint(cmd.OutOrStdout(), "  ✓ Synchronization configuration validated\n")
+	fmt.Fprint(cmd.OutOrStdout(), "  ✓ Change tracking initialized\n")
 
 	return nil
 }
@@ -299,6 +284,11 @@ func isValidRepositoryURL(url string) bool {
 	// Basic validation - check for common git repository patterns
 	if url == "" {
 		return false
+	}
+
+	// Accept file:// URLs for local testing
+	if strings.HasPrefix(url, "file://") {
+		return true
 	}
 
 	// Accept common git URL patterns
@@ -317,7 +307,7 @@ func isValidRepositoryURL(url string) bool {
 		}
 	}
 
-	// For testing, accept any https URL
+	// Accept any https URL
 	return strings.HasPrefix(url, "https://")
 }
 
@@ -386,18 +376,8 @@ func setupGitSubtreeLibraryPure(cfg *config.Config, workingDir string) error {
 		return nil
 	}
 
-	// In test mode, simulate git-subtree setup by creating library structure
-	if os.Getenv("DDX_TEST_MODE") == "1" {
-		testDirs := []string{"prompts", "templates", "patterns", "personas", "mcp-servers", "configs", "workflows"}
-		for _, dir := range testDirs {
-			if err := os.MkdirAll(filepath.Join(libraryPath, dir), 0755); err != nil {
-				return fmt.Errorf("failed to create test directory %s: %v", dir, err)
-			}
-		}
-		return nil
-	}
-
 	// Execute git subtree add command for the library repository
+	// This works with both remote URLs (https://) and local file:// URLs
 	repoURL := cfg.Library.Repository.URL
 	branch := cfg.Library.Repository.Branch
 	if branch == "" {
@@ -453,18 +433,15 @@ func setupGitSubtreeLibrary(cfg *config.Config, cmd *cobra.Command, workingDir s
 		return err
 	}
 
-	if os.Getenv("DDX_TEST_MODE") == "1" {
-		fmt.Fprint(cmd.OutOrStdout(), "  ✓ Git-subtree library setup simulated (test mode)\n")
-	} else {
-		repoURL := cfg.Library.Repository.URL
-		branch := cfg.Library.Repository.Branch
-		if branch == "" {
-			branch = "main"
-		}
-		fmt.Fprint(cmd.OutOrStdout(), "  ✓ Library synchronized via git-subtree\n")
-		fmt.Fprintf(cmd.OutOrStdout(), "  ℹ️  To update library: git subtree pull --prefix=.ddx/library %s %s --squash\n", repoURL, branch)
-		fmt.Fprintf(cmd.OutOrStdout(), "  ℹ️  To contribute changes: git subtree push --prefix=.ddx/library %s %s\n", repoURL, branch)
+	// Show success message with git subtree hints
+	repoURL := cfg.Library.Repository.URL
+	branch := cfg.Library.Repository.Branch
+	if branch == "" {
+		branch = "main"
 	}
+	fmt.Fprint(cmd.OutOrStdout(), "  ✓ Library synchronized via git-subtree\n")
+	fmt.Fprintf(cmd.OutOrStdout(), "  ℹ️  To update library: git subtree pull --prefix=.ddx/library %s %s --squash\n", repoURL, branch)
+	fmt.Fprintf(cmd.OutOrStdout(), "  ℹ️  To contribute changes: git subtree push --prefix=.ddx/library %s %s\n", repoURL, branch)
 
 	return nil
 }
