@@ -6,7 +6,6 @@ toolchain go1.24.7
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.7
-	github.com/briandowns/spinner v1.23.2
 	github.com/fatih/color v1.18.0
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1
 	github.com/spf13/cobra v1.8.0

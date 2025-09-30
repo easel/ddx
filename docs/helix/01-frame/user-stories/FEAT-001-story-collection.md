@@ -53,8 +53,7 @@ Each story follows the format:
 1. **US-004**: Update Assets from Master - Keep local assets current
 2. **US-005**: Contribute Improvements - Share enhancements back to community
 3. **US-009**: Pull Updates from Upstream - Synchronize with latest changes
-4. **US-011**: Contribute Changes Upstream - Submit improvements to master
-5. **US-014**: Initialize Synchronization - Set up connection to master repo
+4. **US-014**: Initialize Synchronization - Set up connection to master repo
 
 #### Epic-Level Acceptance Criteria:
 - [ ] Bidirectional synchronization with master repository working

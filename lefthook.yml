@@ -86,21 +86,22 @@ pre-commit:
         - merge
         - rebase
 
-    # Go linting - prefer golangci-lint over go vet
+    # Go linting - golangci-lint required
     go-lint:
       <<: *go_checks
       name: "Go Lint"
       glob: "cli/**/*.go"
       run: |
-        if command -v golangci-lint >/dev/null 2>&1; then
-          golangci-lint run --timeout=60s --new-from-rev=HEAD~1 {staged_files}
-        else
-          # Get unique packages from staged files and vet them
-          packages=$(echo {staged_files} | xargs -n1 dirname | sort -u | sed 's|^cli/|./|')
-          for pkg in $packages; do
-            go vet "$pkg"
-          done
+        if ! command -v golangci-lint >/dev/null 2>&1; then
+          echo "❌ golangci-lint is required but not installed"
+          echo "Run: scripts/dev-setup.sh"
+          exit 1
         fi
+        # Run on packages containing staged files, not individual files
+        packages=$(echo {staged_files} | xargs -n1 dirname | sort -u | sed 's|^cli/|./|')
+        for pkg in $packages; do
+          golangci-lint run --timeout=60s --new-from-rev=HEAD~1 "$pkg"
+        done
       skip:
         - merge
         - rebase
@@ -264,11 +265,12 @@ ci:
       name: "Lint all Go files"
       root: "cli/"
       run: |
-        if command -v golangci-lint >/dev/null 2>&1; then
-          golangci-lint run --timeout=5m
-        else
-          go vet ./...
+        if ! command -v golangci-lint >/dev/null 2>&1; then
+          echo "❌ golangci-lint is required but not installed"
+          echo "Run: scripts/dev-setup.sh"
+          exit 1
         fi
+        golangci-lint run --timeout=5m
 
     # Go build all targets
     go-build-all:

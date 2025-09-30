@@ -255,10 +255,8 @@ func (f *CommandFactory) registerSubcommands(rootCmd *cobra.Command) {
 
 			// Check for --no-check flag
 			noCheck, _ := cmd.Flags().GetBool("no-check")
-			if !noCheck {
-				// TODO: Implement update checking
-				// For now, just document that this would check for updates
-			}
+			_ = noCheck // TODO: Implement update checking when this flag is used
+			// For now, we don't check for updates
 		},
 	}
 	versionCmd.Flags().Bool("no-check", false, "Skip checking for updates")

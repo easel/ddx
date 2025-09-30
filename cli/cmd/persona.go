@@ -9,6 +9,8 @@ import (
 
 	"github.com/easel/ddx/internal/config"
 	"github.com/spf13/cobra"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	"gopkg.in/yaml.v3"
 )
 
@@ -634,7 +636,8 @@ func personaLoad(workingDir string, personas ...string) ([]string, error) {
 						return nil, err
 					}
 					// Add role header with proper capitalization
-					capitalizedRole := strings.Title(strings.ReplaceAll(role, "-", " "))
+					caser := cases.Title(language.English)
+					capitalizedRole := caser.String(strings.ReplaceAll(role, "-", " "))
 					personaSection.WriteString(fmt.Sprintf("### %s: %s\n", capitalizedRole, personaName))
 					personaSection.WriteString(string(content) + "\n")
 					loadedPersonas = append(loadedPersonas, personaName)

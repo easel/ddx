@@ -2,10 +2,10 @@
 
 **Story ID**: US-005
 **Feature**: FEAT-001 - Core CLI Framework
-**Priority**: P1
-**Status**: Future
+**Priority**: P0
+**Status**: Approved
 **Created**: 2025-01-14
-**Updated**: 2025-01-14
+**Updated**: 2025-01-15
 
 ## Story
 
@@ -16,43 +16,29 @@
 ## Acceptance Criteria
 
 - [ ] **Given** I have improvements to share, **when** I run `ddx contribute`, **then** the contribution workflow is initiated with clear steps
-- [ ] **Given** I'm contributing an asset, **when** the process starts, **then** asset quality and format are validated against standards
-- [ ] **Given** validation passes, **when** I contribute, **then** a pull request is created to the master repository
-- [ ] **Given** contribution guidelines exist, **when** I contribute, **then** my submission is checked against these guidelines
-- [ ] **Given** authentication is required, **when** I contribute, **then** git handles authentication seamlessly
-- [ ] **Given** I've initiated contribution, **when** I check status, **then** I can see the current state of my contribution
+- [ ] **Given** I'm contributing changes, **when** the system packages them, **then** changes are formatted appropriately for submission
+- [ ] **Given** my contribution is ready, **when** validation runs, **then** the system checks that it meets contribution standards
+- [ ] **Given** validation passes, **when** I submit, **then** the contribution is sent to the upstream repository
+- [ ] **Given** submission is complete, **when** I check status, **then** I see clear submission status and next steps
+- [ ] **Given** I'm contributing, **when** I need guidance, **then** contribution guidelines are readily available
+- [ ] **Given** authentication is required, **when** I contribute, **then** credentials are handled securely
 - [ ] **Given** I have multiple improvements, **when** I run `ddx contribute <asset>`, **then** I can contribute specific assets selectively
-- [ ] **Given** I'm contributing, **when** the PR is created, **then** metadata (author, description, rationale) is included
 
 ## Definition of Done
 
 - [ ] Contribute command implemented with workflow
-- [ ] Asset validation against quality standards
-- [ ] Pull request creation automated
-- [ ] Guidelines checking integrated
-- [ ] Status tracking implemented
+- [ ] Change packaging system built
+- [ ] Validation framework for contributions
+- [ ] Submission mechanism to upstream
+- [ ] Status tracking for submissions
+- [ ] Guidelines integration in workflow
+- [ ] Authentication handling secure
 - [ ] Selective contribution working
 - [ ] Metadata collection and inclusion
-- [ ] Unit tests written and passing (>80% coverage)
-- [ ] Integration tests for contribution flow
+- [ ] Unit tests for contribution flow (>80% coverage)
+- [ ] Integration tests with platforms
 - [ ] Documentation updated with contribution guide
-
-## Technical Notes
-
-### Implementation Considerations
-- Must integrate with git and GitHub/GitLab APIs
-- Should validate asset structure and documentation
-- Need to handle different contribution types (new vs. update)
-- Consider requiring tests for code contributions
-- Should check for breaking changes
-
-### Error Scenarios
-- Not authenticated with remote repository
-- Asset fails quality validation
-- Network issues during PR creation
-- Contribution conflicts with existing PR
-- Missing required metadata
-- Repository permissions insufficient
+- [ ] Error handling for common issues
 
 ## Validation Scenarios
 
@@ -60,36 +46,42 @@
 1. Create or improve an asset
 2. Run `ddx contribute`
 3. Follow prompts to describe contribution
-4. **Expected**: PR created with asset and description
+4. **Expected**: Contribution submitted successfully with PR/MR created
 
-### Scenario 2: Failed Validation
-1. Create asset with poor documentation
-2. Run `ddx contribute`
-3. **Expected**: Validation fails with specific feedback on what to fix
+### Scenario 2: Validation Failure
+1. Create changes with issues (e.g., secrets, poor documentation)
+2. Attempt to contribute
+3. **Expected**: Clear validation errors with specific feedback on what to fix
 
 ### Scenario 3: Selective Contribution
 1. Modify multiple assets
 2. Run `ddx contribute templates/my-template`
-3. **Expected**: Only specified template is included in PR
+3. **Expected**: Only specified template is included in submission
 
-### Scenario 4: Update Existing Asset
-1. Improve an existing community asset
+### Scenario 4: Multi-file Contribution
+1. Modify multiple related resources
 2. Run `ddx contribute`
-3. **Expected**: PR shows diff of improvements with clear description
+3. **Expected**: All related changes packaged together
 
 ## User Persona
 
-### Primary: Active Contributor
-- **Role**: Developer who improves and shares solutions
-- **Goals**: Give back to community, establish reputation
-- **Pain Points**: Complex contribution process, unclear standards
-- **Technical Level**: Intermediate to advanced
+### Primary: Open Source Contributor
+- **Role**: Active community member
+- **Goals**: Share improvements with community, establish reputation
+- **Pain Points**: Complex contribution process, unclear requirements
+- **Technical Level**: Comfortable with git and PRs
 
 ### Secondary: First-Time Contributor
 - **Role**: Developer making first contribution
 - **Goals**: Share a useful solution they've created
 - **Pain Points**: Intimidating process, fear of rejection
 - **Technical Level**: Beginner to intermediate
+
+### Tertiary: Enterprise Developer
+- **Role**: Developer in corporate environment
+- **Goals**: Contribute back improvements while following company policies
+- **Pain Points**: Legal/compliance requirements, approval processes
+- **Technical Level**: Varies, may need guidance
 
 ## Dependencies
 
@@ -98,12 +90,29 @@
 - Authentication to remote repository
 - Network connectivity
 - Asset must pass validation checks
+- **FEAT-002**: Git subtree primitives for push operations (internal/git/git.go)
 
 ## Related Stories
 
 - US-004: Update Assets from Master (opposite flow)
-- US-011: Contribute Changes Upstream (detailed contribution story)
 - US-007: Configure DDX Settings (for contributor info)
+- US-016: Manage Authentication (for secure submission)
+
+## Success Metrics
+
+- Time from change to submission < 5 minutes
+- Validation catches 95% of issues before submission
+- Successful submission rate > 90%
+- Clear error messages for failures
+
+## Contribution Guidelines Integration
+
+The system should automatically:
+- Check for CONTRIBUTING.md
+- Validate against .ddx-contribution rules
+- Format commits according to standards
+- Generate PR/MR descriptions
+- Include required metadata
 
 ---
 *This user story is part of FEAT-001: Core CLI Framework*

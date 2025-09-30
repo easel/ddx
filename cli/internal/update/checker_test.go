@@ -189,14 +189,12 @@ func TestChecker_RespectEnvVar(t *testing.T) {
 
 	// When: CheckForUpdate is called
 	ctx := context.Background()
-	result, err := checker.CheckForUpdate(ctx)
+	_, _ = checker.CheckForUpdate(ctx) // Result and error not used in skipped test
 
 	// Then: Should skip check (respect env var over config)
 	// Implementation detail: may return nil or empty result
 	// This test documents the expected behavior
 	t.Skip("Implementation detail to be determined in BUILD phase")
-	_ = result
-	_ = err
 }
 
 func TestChecker_Integration_FullFlow(t *testing.T) {

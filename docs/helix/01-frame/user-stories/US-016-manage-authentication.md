@@ -94,7 +94,7 @@
 
 ## Related Stories
 
-- US-011: Contribute Changes Upstream
+- US-005: Contribute Improvements
 - US-014: Initialize Synchronization
 
 ## Security Considerations

@@ -26,7 +26,7 @@ func TestInitCommand(t *testing.T) {
 			name:       "basic initialization",
 			args:       []string{"init", "--no-git"},
 			envOptions: []TestEnvOption{WithGitInit(false)},
-			validate: func(t *testing.T, te *TestEnvironment, output string, err error) {
+			validate: func(t *testing.T, te *TestEnvironment, output string, cmdErr error) {
 				// Check .ddx/config.yaml was created
 				assert.FileExists(t, te.ConfigPath)
 
@@ -63,7 +63,7 @@ persona_bindings: {}
 `
 				te.CreateConfig(existingConfig)
 			},
-			validate: func(t *testing.T, te *TestEnvironment, output string, err error) {
+			validate: func(t *testing.T, te *TestEnvironment, output string, cmdErr error) {
 				// Config should be overwritten
 				data, err := os.ReadFile(te.ConfigPath)
 				require.NoError(t, err)

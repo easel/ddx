@@ -7,17 +7,16 @@
 
 ## Overview
 
-This document specifies the test requirements for the DDx synchronization system, covering user stories US-004, US-005, US-009, US-010, and US-011. These tests follow Test-Driven Development (TDD) principles and are currently in the "Red" phase - written but failing, awaiting implementation.
+This document specifies the test requirements for the DDx synchronization system, covering user stories US-004, US-005, US-009, and US-010. These tests follow Test-Driven Development (TDD) principles and are currently in the "Red" phase - written but failing, awaiting implementation.
 
 ## Test Coverage Matrix
 
 | User Story | Acceptance Tests | Contract Tests | Status |
 |------------|-----------------|----------------|--------|
 | US-004: Update Assets from Master | 7 scenarios | 6 scenarios | ❌ Failing |
-| US-005: Contribute Improvements | 3 scenarios | 5 scenarios | ❌ Failing |
+| US-005: Contribute Improvements | 6 scenarios | 7 scenarios | ❌ Failing |
 | US-009: Pull Updates from Upstream | 2 scenarios | 2 scenarios | ❌ Failing |
 | US-010: Handle Update Conflicts | 3 scenarios | 3 scenarios | ❌ Failing |
-| US-011: Contribute Changes Upstream | 3 scenarios | 2 scenarios | ❌ Failing |
 
 ## US-004: Update Assets from Master
 
@@ -101,6 +100,24 @@ This document specifies the test requirements for the DDx synchronization system
 - **Then**: Pull request instructions are provided
 - **Status**: ❌ Failing - PR creation not implemented
 
+#### Test: prepare_contribution_branch
+- **Given**: User has changes to contribute
+- **When**: Preparing contribution
+- **Then**: Feature branch is created with proper naming
+- **Status**: ❌ Failing - branch creation not implemented
+
+#### Test: validate_contribution_standards
+- **Given**: Contribution needs validation
+- **When**: Contributing
+- **Then**: Standards are checked (metadata, format, etc.)
+- **Status**: ❌ Failing - standards validation not implemented
+
+#### Test: push_to_fork
+- **Given**: Contribution is ready
+- **When**: Using `--push` flag
+- **Then**: Changes are pushed to user's fork
+- **Status**: ❌ Failing - fork workflow not implemented
+
 ### Contract Tests
 
 #### Exit Codes
@@ -112,6 +129,8 @@ This document specifies the test requirements for the DDx synchronization system
 - Message (prompt or flag)
 - Validation before submission
 - Dry-run capability
+- Branch creation support
+- Push to upstream support
 - **Status**: ❌ Not implemented
 
 ## US-009: Pull Updates from Upstream
@@ -151,28 +170,6 @@ This document specifies the test requirements for the DDx synchronization system
 - **When**: Using `--strategy=ours` or `--strategy=theirs`
 - **Then**: Conflicts are resolved automatically
 - **Status**: ❌ Failing - strategy system not implemented
-
-## US-011: Contribute Changes Upstream
-
-### Acceptance Tests
-
-#### Test: prepare_contribution_branch
-- **Given**: User has changes to contribute
-- **When**: Preparing contribution
-- **Then**: Feature branch is created with proper naming
-- **Status**: ❌ Failing - branch creation not implemented
-
-#### Test: validate_contribution_standards
-- **Given**: Contribution needs validation
-- **When**: Contributing
-- **Then**: Standards are checked (metadata, format, etc.)
-- **Status**: ❌ Failing - standards validation not implemented
-
-#### Test: push_to_fork
-- **Given**: Contribution is ready
-- **When**: Using `--push` flag
-- **Then**: Changes are pushed to user's fork
-- **Status**: ❌ Failing - fork workflow not implemented
 
 ## Git Subtree Integration Tests
 

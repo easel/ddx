@@ -68,7 +68,7 @@ The following user stories define the detailed requirements for the Upstream Syn
 
 - **[US-009](../user-stories/US-009-pull-updates-from-upstream.md)**: Pull updates from upstream repository while preserving local work
 - **[US-010](../user-stories/US-010-handle-update-conflicts.md)**: Handle conflicts when updates clash with local changes
-- **[US-011](../user-stories/US-011-contribute-changes-upstream.md)**: Contribute improvements back to upstream repository
+- **[US-005](../user-stories/US-005-contribute-improvements.md)**: Contribute improvements back to upstream repository (see FEAT-001)
 - **[US-012](../user-stories/US-012-track-asset-versions.md)**: Track and manage resource versions effectively
 - **[US-013](../user-stories/US-013-rollback-problematic-updates.md)**: Rollback updates that cause issues
 - **[US-014](../user-stories/US-014-initialize-synchronization.md)**: Initialize connection to upstream repository
@@ -80,7 +80,7 @@ The following user stories define the detailed requirements for the Upstream Syn
 **P0 - Must Have:**
 - US-009: Pull Updates (core functionality)
 - US-010: Handle Conflicts (essential for updates)
-- US-011: Contribute Changes (bidirectional flow)
+- US-005: Contribute Changes (bidirectional flow - see FEAT-001)
 - US-013: Rollback Updates (safety mechanism)
 - US-014: Initialize Sync (setup requirement)
 - US-016: Authentication (security requirement)

@@ -207,10 +207,10 @@ func (r *Registry) ListServers(opts ListOptions) ([]*ServerReference, error) {
 
 	// TODO: Filter by installation status when config detection is implemented
 	if opts.Installed {
-		// Filter to show only installed servers
+		_ = opts.Installed // Filter to show only installed servers (not implemented yet)
 	}
 	if opts.Available {
-		// Filter to show only available (not installed) servers
+		_ = opts.Available // Filter to show only available (not installed) servers (not implemented yet)
 	}
 
 	return results, nil

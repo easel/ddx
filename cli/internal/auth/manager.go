@@ -87,7 +87,7 @@ func (m *DefaultManager) Authenticate(ctx context.Context, req *AuthRequest) (*A
 			if err := authenticator.ValidateToken(ctx, cred.Token, req.Scopes); err == nil {
 				// Store in primary store for future use
 				if err := m.StoreCredential(ctx, cred); err != nil {
-					// Log warning but continue
+					_ = err // Log warning but continue (logging not implemented yet)
 				}
 				return &AuthResult{
 					Success:    true,
@@ -108,7 +108,7 @@ func (m *DefaultManager) Authenticate(ctx context.Context, req *AuthRequest) (*A
 	if result.Success && result.Credential != nil {
 		// Store the new credential
 		if err := m.StoreCredential(ctx, result.Credential); err != nil {
-			// Log warning but don't fail authentication
+			_ = err // Log warning but don't fail authentication (logging not implemented yet)
 		}
 	}
 

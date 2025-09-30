@@ -117,7 +117,7 @@
 ## Related Stories
 
 - US-009: Pull Updates from Upstream
-- US-011: Contribute Changes Upstream
+- US-005: Contribute Improvements
 - US-016: Manage Authentication
 
 ## Setup Wizard Flow

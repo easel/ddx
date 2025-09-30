@@ -30,7 +30,7 @@ The fundamental capability to synchronize resources between local projects and u
 Enabling users to share their improvements with the community.
 
 ### Stories in this Epic:
-1. **US-011**: Contribute Changes Upstream - Submit improvements
+1. **US-005**: Contribute Improvements - Submit improvements (see FEAT-001)
 2. **US-016**: Manage Authentication - Secure access for contributions
 
 ### Epic-Level Acceptance Criteria:
@@ -63,7 +63,7 @@ graph TD
     US009 --> US012[US-012: Track Versions]
     US012 --> US015[US-015: View History]
     US009 --> US013[US-013: Rollback]
-    US016[US-016: Authentication] --> US011[US-011: Contribute]
+    US016[US-016: Authentication] --> US005[US-005: Contribute]
     US014 --> US016
 ```
 
@@ -81,14 +81,14 @@ graph TD
 - **Goals**: Maintain consistency, enable contributions
 - **Pain Points**: Version drift, onboarding complexity
 - **Technical Level**: Expert
-- **Primary Stories**: US-011, US-012, US-014
+- **Primary Stories**: US-005, US-012, US-014
 
 ### Persona 3: Open Source Contributor
 - **Role**: Active community member
 - **Goals**: Share improvements, stay synchronized
 - **Pain Points**: Complex contribution process
 - **Technical Level**: Advanced
-- **Primary Stories**: US-011, US-015, US-016
+- **Primary Stories**: US-005, US-015, US-016
 
 ### Persona 4: Enterprise Developer
 - **Role**: Developer in regulated environment
@@ -109,7 +109,7 @@ graph TD
 2. US-013: Rollback Problematic Updates
 
 ### Phase 3: Contribution (P0 Story)
-1. US-011: Contribute Changes Upstream
+1. US-005: Contribute Improvements (see FEAT-001)
 
 ### Phase 4: Visibility (P1 Stories)
 1. US-012: Track Asset Versions
@@ -120,14 +120,14 @@ graph TD
 ### Integration Testing
 Test complete workflows across stories:
 1. **Update Flow**: US-014 → US-009 → US-010
-2. **Contribution Flow**: US-016 → US-011
+2. **Contribution Flow**: US-016 → US-005
 3. **Recovery Flow**: US-009 → US-013
 4. **Visibility Flow**: US-012 → US-015
 
 ### User Acceptance Testing
 1. New user onboarding (US-014, US-009)
 2. Conflict resolution scenarios (US-010)
-3. Contribution submission (US-011, US-016)
+3. Contribution submission (US-005, US-016)
 4. Emergency rollback (US-013)
 
 ## Success Metrics
@@ -136,7 +136,7 @@ Test complete workflows across stories:
 - Setup time < 2 minutes (US-014)
 - Update success rate > 95% (US-009)
 - Conflict resolution time < 5 minutes average (US-010)
-- Contribution submission < 3 minutes (US-011)
+- Contribution submission < 3 minutes (US-005)
 - Rollback execution < 30 seconds (US-013)
 
 ### Qualitative Metrics

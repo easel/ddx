@@ -86,7 +86,7 @@ persona_bindings:
 				require.NoError(t, os.WriteFile(filepath.Join(ddxDir, "config.yaml"), []byte(config), 0644))
 				return workDir
 			},
-			validate: func(t *testing.T, workDir string, output string, err error) {
+			validate: func(t *testing.T, workDir string, output string, cmdErr error) {
 				// Read config to verify change
 				data, err := os.ReadFile(filepath.Join(workDir, ".ddx", "config.yaml"))
 				if err == nil {
