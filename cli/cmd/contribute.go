@@ -396,29 +396,87 @@ func validateContributionInDir(workingDir string, cfg *config.Config, opts *Cont
 }
 
 func executeContributionInDir(workingDir string, cfg *config.Config, opts *ContributeOptions) (*ContributeResult, error) {
-	result := &ContributeResult{
-		Success:      true,
-		Message:      "Contribution prepared successfully!",
-		Branch:       opts.Branch,
-		ResourcePath: opts.ResourcePath,
+	// Determine contribution branch
+	contributionBranch := opts.Branch
+	if contributionBranch == "" {
+		// Default to "contributions" branch for community contributions
+		contributionBranch = "contributions"
 	}
 
-	// Perform actual git operations
-	// This would include:
-	// 1. Create and push branch
-	// 2. Optionally create pull request
-	// For now, simulate success
+	// Change to working directory for git operations
+	if workingDir != "" {
+		currentDir, err := os.Getwd()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get current directory: %w", err)
+		}
+		defer os.Chdir(currentDir)
 
-	if opts.CreatePR {
-		result.PRInfo = &PRInfo{
-			URL:         fmt.Sprintf("%s/compare/%s...%s", strings.TrimSuffix(cfg.Library.Repository.URL, ".git"), cfg.Library.Repository.Branch, opts.Branch),
-			Title:       opts.Message,
-			Branch:      opts.Branch,
-			Description: "Ready to create pull request",
+		if err := os.Chdir(workingDir); err != nil {
+			return nil, fmt.Errorf("failed to change to working directory: %w", err)
 		}
 	}
 
+	// Execute git subtree push to contribute changes
+	prefix := ".ddx/library"
+	repoURL := cfg.Library.Repository.URL
+
+	err := git.SubtreePush(prefix, repoURL, contributionBranch)
+	if err != nil {
+		// Wrap git error with user-friendly message
+		return nil, wrapContributionError(err)
+	}
+
+	// Build success result
+	result := &ContributeResult{
+		Success:      true,
+		Message:      "Contribution submitted successfully!",
+		Branch:       contributionBranch,
+		ResourcePath: opts.ResourcePath,
+	}
+
+	// Generate PR instructions if requested
+	if opts.CreatePR {
+		result.PRInfo = generatePRInstructions(cfg, contributionBranch, opts)
+	}
+
 	return result, nil
+}
+
+// generatePRInstructions creates PR information for the user
+func generatePRInstructions(cfg *config.Config, branch string, opts *ContributeOptions) *PRInfo {
+	repoURL := strings.TrimSuffix(cfg.Library.Repository.URL, ".git")
+	baseBranch := cfg.Library.Repository.Branch
+	if baseBranch == "" {
+		baseBranch = "master"
+	}
+
+	compareURL := fmt.Sprintf("%s/compare/%s...%s", repoURL, baseBranch, branch)
+
+	return &PRInfo{
+		URL:         compareURL,
+		Title:       opts.Message,
+		Branch:      branch,
+		Description: "Visit the URL above to create a pull request",
+	}
+}
+
+// wrapContributionError wraps git errors with user-friendly messages
+func wrapContributionError(err error) error {
+	errMsg := err.Error()
+
+	if strings.Contains(errMsg, "authentication") || strings.Contains(errMsg, "Authentication") {
+		return fmt.Errorf("authentication required: %w\n\nConfigure git credentials with your GitHub token", err)
+	}
+
+	if strings.Contains(errMsg, "rejected") {
+		return fmt.Errorf("push rejected: %w\n\nYour contribution conflicts with recent changes. Pull latest and retry", err)
+	}
+
+	if strings.Contains(errMsg, "no subtree found") {
+		return fmt.Errorf("DDx library not found: %w\n\nRun 'ddx update' to setup the library first", err)
+	}
+
+	return fmt.Errorf("failed to push contribution: %w", err)
 }
 
 // Helper functions for validation

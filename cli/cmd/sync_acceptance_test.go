@@ -346,9 +346,27 @@ func TestAcceptance_US005_ContributeImprovements(t *testing.T) {
 	})
 
 	t.Run("push_contribution_upstream", func(t *testing.T) {
-		// Given: Project with DDx initialized
+		// Given: Project with DDx initialized and a bare remote to push to
 		env := NewTestEnvironment(t)
-		env.InitWithDDx()
+
+		// Create a bare repo to act as upstream
+		bareRepoPath := filepath.Join(t.TempDir(), "upstream.git")
+		initCmd := exec.Command("git", "init", "--bare", bareRepoPath)
+		require.NoError(t, initCmd.Run(), "Failed to create bare repo")
+
+		// Create initial commit in bare repo so it has a master branch
+		tempClone := filepath.Join(t.TempDir(), "temp-clone")
+		exec.Command("git", "clone", bareRepoPath, tempClone).Run()
+		os.WriteFile(filepath.Join(tempClone, "README.md"), []byte("# Upstream"), 0644)
+		exec.Command("git", "-C", tempClone, "add", ".").Run()
+		exec.Command("git", "-C", tempClone, "config", "user.email", "test@example.com").Run()
+		exec.Command("git", "-C", tempClone, "config", "user.name", "Test").Run()
+		exec.Command("git", "-C", tempClone, "commit", "-m", "Initial").Run()
+		exec.Command("git", "-C", tempClone, "push", "origin", "master").Run()
+
+		// Initialize project with custom upstream
+		env.CreateConfigWithCustomURL("file://" + bareRepoPath)
+		env.InitWithDDx("--force", "--silent")
 
 		// Create changes in library - leave UNCOMMITTED
 		contributionPath := filepath.Join(env.LibraryPath, "prompts", "test-prompt.md")
@@ -358,25 +376,44 @@ func TestAcceptance_US005_ContributeImprovements(t *testing.T) {
 		// When: Contributing WITHOUT dry-run (actual push)
 		output, err := env.RunCommand("contribute", "library/prompts/test-prompt.md", "--message", "Add test prompt")
 
-		// Then: Push should execute (will fail because executeContributionInDir is a stub)
-		// This test is expected to FAIL until implementation is complete
-		// The stub currently returns success without actually pushing
+		// Then: Push should succeed
 		assert.NoError(t, err, "Contribution should succeed")
 		assert.Contains(t, output, "success", "Should show success message")
 
-		// Verify that the contribution would have pushed to the configured repo
-		cfg, _ := env.LoadConfig()
-		assert.NotNil(t, cfg, "Should have valid config")
-		assert.NotEmpty(t, cfg.Library.Repository.URL, "Should have repository URL configured")
+		// Verify push actually occurred by checking remote refs
+		checkRemote := exec.Command("git", "ls-remote", "file://"+bareRepoPath)
+		remoteOutput, err := checkRemote.CombinedOutput()
+		require.NoError(t, err, "Should be able to check remote")
 
-		// This test passes with the stub but will REALLY test the push once implemented
-		// The real validation will be that the remote has the changes
+		// Verify that push created a new branch (beyond just master/HEAD)
+		remoteRefs := string(remoteOutput)
+		refLines := strings.Split(remoteRefs, "\n")
+		// Should have at least 3 refs: HEAD, master, and the contribution branch
+		assert.GreaterOrEqual(t, len(refLines), 3, "Remote should have contribution branch after push (more than just HEAD and master)")
 	})
 
 	t.Run("create_pr_instructions", func(t *testing.T) {
-		// Given: Project with DDx and uncommitted changes
+		// Given: Project with DDx and bare remote with initial commit
 		env := NewTestEnvironment(t)
-		env.InitWithDDx()
+
+		// Create a bare repo to act as upstream
+		bareRepoPath := filepath.Join(t.TempDir(), "upstream.git")
+		initCmd := exec.Command("git", "init", "--bare", bareRepoPath)
+		require.NoError(t, initCmd.Run())
+
+		// Create initial commit in bare repo so it has a master branch
+		tempClone := filepath.Join(t.TempDir(), "temp-clone")
+		exec.Command("git", "clone", bareRepoPath, tempClone).Run()
+		os.WriteFile(filepath.Join(tempClone, "README.md"), []byte("# Upstream"), 0644)
+		exec.Command("git", "-C", tempClone, "add", ".").Run()
+		exec.Command("git", "-C", tempClone, "config", "user.email", "test@example.com").Run()
+		exec.Command("git", "-C", tempClone, "config", "user.name", "Test").Run()
+		exec.Command("git", "-C", tempClone, "commit", "-m", "Initial").Run()
+		exec.Command("git", "-C", tempClone, "push", "origin", "master").Run()
+
+		// Initialize project with custom upstream
+		env.CreateConfigWithCustomURL("file://" + bareRepoPath)
+		env.InitWithDDx("--force", "--silent")
 
 		// Create prompt to contribute - leave UNCOMMITTED
 		promptPath := filepath.Join(env.LibraryPath, "prompts", "pr-test.md")
@@ -384,14 +421,23 @@ func TestAcceptance_US005_ContributeImprovements(t *testing.T) {
 		os.WriteFile(promptPath, []byte("# PR Test"), 0644)
 
 		// When: Contributing with --create-pr flag and actual execution (not dry-run)
-		// This tests that PR instructions are generated
 		output, err := env.RunCommand("contribute", "library/prompts/pr-test.md",
 			"--message", "Add PR test", "--create-pr")
 
-		// Then: PR instructions should be provided (from stub implementation)
+		// Then: Should succeed with PR instructions
 		assert.NoError(t, err)
-		// The stub implementation should include PR info when --create-pr is used
 		assert.Contains(t, output, "compare", "Should provide compare URL for PR")
+
+		// Verify actual push happened by checking for new branch (this will FAIL with stub)
+		checkRemote := exec.Command("git", "ls-remote", "file://"+bareRepoPath)
+		remoteOutput, err := checkRemote.CombinedOutput()
+		require.NoError(t, err, "Should be able to check remote")
+
+		// Verify that push created a new branch (beyond just master/HEAD)
+		remoteRefs := string(remoteOutput)
+		refLines := strings.Split(remoteRefs, "\n")
+		// Should have at least 3 refs: HEAD, master, and the contribution branch
+		assert.GreaterOrEqual(t, len(refLines), 3, "Remote should have contribution branch after push with --create-pr (more than just HEAD and master)")
 	})
 }
 
