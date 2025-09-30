@@ -289,7 +289,7 @@ func TestInitCommand_US017_InitializeConfiguration(t *testing.T) {
 			expectError: false,
 		},
 		{
-			name: "creates_backup_when_config_exists",
+			name: "force_overwrites_without_backup",
 			args: []string{"init", "--force"},
 			setup: func(t *testing.T, dir string) {
 				t.Setenv("DDX_TEST_MODE", "1")
@@ -304,12 +304,16 @@ repository:
 				require.NoError(t, os.WriteFile(configPath, []byte(existingConfig), 0644))
 			},
 			validateOutput: func(t *testing.T, dir, output string, err error) {
-				// Should create backup and show message
-				assert.Contains(t, output, "💾 Created backup of existing config")
+				// Should NOT create backup or show backup message
+				assert.NotContains(t, output, "💾 Created backup of existing config")
+				assert.NotContains(t, output, "backup")
 
-				// Should have backup file
+				// Should NOT have backup file
 				backupFiles, _ := filepath.Glob(filepath.Join(dir, ".ddx", "config.yaml.backup.*"))
-				assert.Greater(t, len(backupFiles), 0, "Should create backup file")
+				assert.Equal(t, 0, len(backupFiles), "Should not create backup file")
+
+				// Should successfully overwrite config
+				assert.Contains(t, output, "✅ DDx initialized successfully!")
 			},
 			expectError: false,
 		},
@@ -498,9 +502,9 @@ repository:
 				require.NoError(t, os.WriteFile(configPath, []byte(existingConfig), 0644))
 			},
 			validateOutput: func(t *testing.T, dir, output string, err error) {
-				// Should handle custom repository with backup
-				assert.Contains(t, output, "backup")
+				// Should handle custom repository successfully
 				assert.Contains(t, output, "DDx initialized successfully")
+				assert.NotContains(t, output, "backup", "Should not create or mention backup")
 			},
 			expectError: false,
 		},

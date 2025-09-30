@@ -94,7 +94,7 @@ func TestInitCommand_Contract(t *testing.T) {
 		},
 		{
 			name:        "contract_force_flag",
-			description: "--force flag overwrites existing config",
+			description: "--force flag overwrites existing config without backup",
 			args:        []string{"init", "--force", "--no-git"},
 			setup: func(t *testing.T) string {
 				workDir := t.TempDir()
@@ -122,7 +122,8 @@ func TestInitCommand_Contract(t *testing.T) {
 			},
 			expectCode: 0,
 			validateOutput: func(t *testing.T, output string) {
-				// Should succeed with force
+				// Should succeed with force and not mention backup
+				assert.NotContains(t, output, "backup", "Should not create or mention backup")
 			},
 		},
 	}

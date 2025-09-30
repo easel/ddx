@@ -84,7 +84,6 @@ func TestInitOptions_Structure(t *testing.T) {
 func TestInitResult_Structure(t *testing.T) {
 	result := &InitResult{
 		ConfigCreated: true,
-		BackupPath:    "/tmp/backup",
 		LibraryExists: false,
 		IsDDxRepo:     true,
 	}
@@ -92,9 +91,6 @@ func TestInitResult_Structure(t *testing.T) {
 	// Verify all fields are accessible
 	if !result.ConfigCreated {
 		t.Error("ConfigCreated field not set correctly")
-	}
-	if result.BackupPath != "/tmp/backup" {
-		t.Error("BackupPath field not set correctly")
 	}
 	if result.LibraryExists {
 		t.Error("LibraryExists field not set correctly")

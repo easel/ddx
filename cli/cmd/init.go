@@ -6,7 +6,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/easel/ddx/internal/config"
 	"github.com/spf13/cobra"
@@ -25,7 +24,6 @@ type InitOptions struct {
 // InitResult contains the result of an initialization operation
 type InitResult struct {
 	ConfigCreated bool
-	BackupPath    string
 	LibraryExists bool
 	IsDDxRepo     bool
 	Config        *config.Config
@@ -60,10 +58,6 @@ func (f *CommandFactory) runInit(cmd *cobra.Command, args []string) error {
 
 	// Handle user output based on results
 	if !opts.Silent {
-		if result.BackupPath != "" {
-			fmt.Fprintf(cmd.OutOrStdout(), "💾 Created backup of existing config: %s\n", result.BackupPath)
-		}
-
 		if result.IsDDxRepo {
 			fmt.Fprint(cmd.OutOrStdout(), "📚 Detected DDx repository - configuring library_path to use ../library\n")
 		}
@@ -99,22 +93,14 @@ func initProject(workingDir string, opts InitOptions) (*InitResult, error) {
 		}
 	}
 
-	// Check if config already exists and handle backup
+	// Check if config already exists
 	configPath := filepath.Join(workingDir, ".ddx", "config.yaml")
 	if _, err := os.Stat(configPath); err == nil {
 		if !opts.Force {
 			// Config exists and --force not used - exit code 2 per contract
 			return nil, NewExitError(2, ".ddx/config.yaml already exists. Use --force to overwrite.")
 		}
-
-		// Create backup of existing configuration
-		backupPath := filepath.Join(workingDir, fmt.Sprintf(".ddx/config.yaml.backup.%d", time.Now().Unix()))
-		if err := copyFile(configPath, backupPath); err != nil {
-			// Continue with warning, don't fail the operation
-			// Warning will be shown by CLI layer if BackupPath is empty
-		} else {
-			result.BackupPath = backupPath
-		}
+		// With --force flag, we proceed to overwrite without backup
 	}
 
 	// Check if library path exists using working directory

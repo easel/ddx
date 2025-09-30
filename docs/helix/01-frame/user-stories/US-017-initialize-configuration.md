@@ -21,7 +21,7 @@ This story covers the initial setup of DDX configuration in a project. When a de
 - [ ] **Given** configuration values, **when** created, **then** validation occurs using JSON schema
 - [ ] **Given** a new config, **when** created, **then** library structure is properly configured
 - [ ] **Given** configuration file, **when** generated, **then** it uses the new nested library structure
-- [ ] **Given** existing configuration, **when** present and `--force` used, **then** backup is created before overwriting
+- [ ] **Given** existing configuration, **when** present and `--force` used, **then** configuration is overwritten without creating backup
 - [ ] **Given** git repository, **when** initializing, **then** git subtree is set up for library synchronization
 
 ## Business Value
@@ -37,7 +37,7 @@ This story covers the initial setup of DDX configuration in a project. When a de
 - [ ] Configuration validation during creation works
 - [ ] Generated config includes helpful comments
 - [ ] Template flag functionality is working
-- [ ] Backup mechanism for existing configs is implemented
+- [ ] Force flag overwrites without creating backup files
 - [ ] Unit tests cover all scenarios
 - [ ] Integration tests verify end-to-end flow
 - [ ] Documentation updated with initialization guide

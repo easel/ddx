@@ -21,13 +21,14 @@
 - `--repo, -r <url>`: Master repository URL (default: https://github.com/ddx-tools/ddx)
 - `--branch, -b <name>`: Repository branch (default: main)
 - `--path, -p <path>`: Project path (default: current directory)
-- `--force, -f`: Overwrite existing .ddx.yml configuration
+- `--force, -f`: Overwrite existing .ddx.yml configuration without creating backup
 - `--no-git`: Skip git subtree setup
 - `--minimal`: Create minimal configuration without subtree
 
 ### Input
 - Interactive prompts if configuration values not provided
 - Reads existing .ddx.yml if present (unless --force)
+- Users should manually backup existing config before using --force if desired
 
 ### Output Format
 ```
