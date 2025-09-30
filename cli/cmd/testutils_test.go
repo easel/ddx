@@ -76,34 +76,34 @@ func GetTestLibraryPath() string {
 			// Initialize git repository
 			gitInit := exec.Command("git", "init")
 			gitInit.Dir = testLibraryPath
-			if err := gitInit.Run(); err != nil {
-				panic(fmt.Sprintf("Failed to initialize git repository: %v", err))
+			if output, err := gitInit.CombinedOutput(); err != nil {
+				panic(fmt.Sprintf("Failed to initialize git repository: %v\nOutput: %s", err, output))
 			}
 
 			// Configure git user
 			gitConfigEmail := exec.Command("git", "config", "user.email", "test@example.com")
 			gitConfigEmail.Dir = testLibraryPath
-			if err := gitConfigEmail.Run(); err != nil {
-				panic(fmt.Sprintf("Failed to configure git user.email: %v", err))
+			if output, err := gitConfigEmail.CombinedOutput(); err != nil {
+				panic(fmt.Sprintf("Failed to configure git user.email: %v\nOutput: %s", err, output))
 			}
 
 			gitConfigName := exec.Command("git", "config", "user.name", "Test User")
 			gitConfigName.Dir = testLibraryPath
-			if err := gitConfigName.Run(); err != nil {
-				panic(fmt.Sprintf("Failed to configure git user.name: %v", err))
+			if output, err := gitConfigName.CombinedOutput(); err != nil {
+				panic(fmt.Sprintf("Failed to configure git user.name: %v\nOutput: %s", err, output))
 			}
 
-			// Create initial commit
+			// Create initial commit (allow empty if no files)
 			gitAdd := exec.Command("git", "add", ".")
 			gitAdd.Dir = testLibraryPath
-			if err := gitAdd.Run(); err != nil {
-				panic(fmt.Sprintf("Failed to add files to git: %v", err))
+			if output, err := gitAdd.CombinedOutput(); err != nil {
+				panic(fmt.Sprintf("Failed to add files to git: %v\nOutput: %s", err, output))
 			}
 
-			gitCommit := exec.Command("git", "commit", "-m", "Test fixture")
+			gitCommit := exec.Command("git", "commit", "--allow-empty", "-m", "Test fixture")
 			gitCommit.Dir = testLibraryPath
-			if err := gitCommit.Run(); err != nil {
-				panic(fmt.Sprintf("Failed to commit files: %v", err))
+			if output, err := gitCommit.CombinedOutput(); err != nil {
+				panic(fmt.Sprintf("Failed to commit files: %v\nOutput: %s\nPath: %s", err, output, testLibraryPath))
 			}
 		} else {
 			// Check if there are changes and commit them
