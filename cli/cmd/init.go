@@ -417,9 +417,10 @@ func setupGitSubtreeLibraryPure(cfg *config.Config, workingDir string) error {
 		return nil
 	}
 
-	// Check if .ddx exists in git (would conflict with subtree add)
-	// Git subtree requires the entire prefix path to not exist in the git tree
-	gitLsCmd := exec.Command("git", "ls-tree", "HEAD", ".ddx")
+	// Check if .ddx/library exists in git (would conflict with subtree add)
+	// Git subtree requires the prefix path (.ddx/library) to not exist in the git tree
+	// Note: .ddx itself can exist (for config.yaml), we only care about .ddx/library
+	gitLsCmd := exec.Command("git", "ls-tree", "HEAD", ".ddx/library")
 	gitLsCmd.Dir = workingDir
 	ddxInGit := false
 	if output, err := gitLsCmd.Output(); err == nil && len(output) > 0 {
