@@ -124,13 +124,17 @@ func SubtreeAdd(prefix, repoURL, branch string) error {
 	}
 	fetchCommit := strings.TrimSpace(string(output))
 
-	// Step 3: Get current HEAD commit
+	// Step 3: Get current HEAD commit (if it exists)
 	cmd = exec.CommandContext(ctx, "git", "rev-parse", "HEAD")
 	output, err = cmd.Output()
+	var headCommit string
+	hasHead := true
 	if err != nil {
-		return fmt.Errorf("failed to get HEAD: %w", err)
+		// No HEAD means this is a fresh repository with no commits
+		hasHead = false
+	} else {
+		headCommit = strings.TrimSpace(string(output))
 	}
-	headCommit := strings.TrimSpace(string(output))
 
 	// Step 4: Read the fetched tree into the index at the prefix
 	cmd = exec.CommandContext(ctx, "git", "read-tree", "--prefix="+sanitizedPrefix+"/", "-u", fetchCommit)
@@ -151,13 +155,25 @@ func SubtreeAdd(prefix, repoURL, branch string) error {
 	commitMsg := fmt.Sprintf("Squashed '%s' content from commit %s\n\ngit-subtree-dir: %s\ngit-subtree-split: %s",
 		sanitizedPrefix, fetchCommit[:7], sanitizedPrefix, fetchCommit)
 
-	// Step 7: Create the merge commit with two parents
-	cmd = exec.CommandContext(ctx, "git", "commit-tree", newTree, "-p", headCommit, "-p", fetchCommit, "-m", commitMsg)
-	output, err = cmd.Output()
-	if err != nil {
-		return fmt.Errorf("failed to create commit: %w", err)
+	// Step 7: Create the commit (merge commit if HEAD exists, otherwise single-parent)
+	var newCommit string
+	if hasHead {
+		// Create merge commit with two parents: HEAD and FETCH_HEAD
+		cmd = exec.CommandContext(ctx, "git", "commit-tree", newTree, "-p", headCommit, "-p", fetchCommit, "-m", commitMsg)
+		output, err = cmd.Output()
+		if err != nil {
+			return fmt.Errorf("failed to create commit: %w", err)
+		}
+		newCommit = strings.TrimSpace(string(output))
+	} else {
+		// Create initial commit with one parent: FETCH_HEAD
+		cmd = exec.CommandContext(ctx, "git", "commit-tree", newTree, "-p", fetchCommit, "-m", commitMsg)
+		output, err = cmd.Output()
+		if err != nil {
+			return fmt.Errorf("failed to create commit: %w", err)
+		}
+		newCommit = strings.TrimSpace(string(output))
 	}
-	newCommit := strings.TrimSpace(string(output))
 
 	// Step 8: Update HEAD to point to the new commit
 	cmd = exec.CommandContext(ctx, "git", "reset", "--hard", newCommit)
