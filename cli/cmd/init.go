@@ -390,6 +390,12 @@ func setupGitSubtreeLibraryPure(cfg *config.Config, workingDir string) error {
 		return nil
 	}
 
+	// Ensure .ddx directory exists (git subtree needs the parent)
+	ddxDir := filepath.Join(workingDir, ".ddx")
+	if err := os.MkdirAll(ddxDir, 0755); err != nil {
+		return fmt.Errorf("failed to create .ddx directory: %w", err)
+	}
+
 	// Execute git subtree add command for the library repository
 	// This works with both remote URLs (https://) and local file:// URLs
 	repoURL := cfg.Library.Repository.URL
