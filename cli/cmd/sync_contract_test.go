@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/easel/ddx/internal/git"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 )
@@ -411,8 +412,11 @@ func TestContributeCommand_Contract(t *testing.T) {
 		_ = execCommandInDir(tempDir, "git", "add", ".")
 		_ = execCommandInDir(tempDir, "git", "commit", "-m", "Initial commit")
 
-		// Set up git subtree for library
-		_ = execCommandInDir(tempDir, "git", "subtree", "add", "--prefix=.ddx/library", "file://"+GetTestLibraryPath(), "master", "--squash")
+		// Set up git subtree for library using pure-Go implementation
+		origDir, _ := os.Getwd()
+		_ = os.Chdir(tempDir)
+		_ = git.SubtreeAdd(".ddx/library", "file://"+GetTestLibraryPath(), "master")
+		_ = os.Chdir(origDir)
 
 		// Missing metadata.yml for the invalid asset
 
