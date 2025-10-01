@@ -64,6 +64,11 @@ func HasSubtree(prefix string) (bool, error) {
 	cmd := exec.CommandContext(ctx, "git", "log", "--grep=git-subtree-dir: "+sanitizedPrefix, "--oneline")
 	output, err := cmd.Output()
 	if err != nil {
+		// git log returns exit code 128 when there are no commits in the repository
+		// In this case, there's no subtree (return false, not an error)
+		if exitErr, ok := err.(*exec.ExitError); ok && exitErr.ExitCode() == 128 {
+			return false, nil
+		}
 		return false, fmt.Errorf("failed to check subtree: %w", err)
 	}
 
