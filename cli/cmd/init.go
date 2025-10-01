@@ -400,10 +400,14 @@ func setupGitSubtreeLibraryPure(cfg *config.Config, workingDir string) error {
 
 	gitCmd := exec.Command("git", "subtree", "add", "--prefix=.ddx/library", repoURL, branch, "--squash")
 	gitCmd.Dir = workingDir
-	gitCmd.Stdout = nil // Suppress verbose git output
-	gitCmd.Stderr = nil
 
-	if err := gitCmd.Run(); err != nil {
+	// Capture output for debugging but don't show verbose git output on success
+	output, err := gitCmd.CombinedOutput()
+	if err != nil {
+		errOutput := strings.TrimSpace(string(output))
+		if errOutput != "" {
+			return fmt.Errorf("git subtree command failed: %v\nOutput: %s\nYou may need to run 'git subtree add --prefix=.ddx/library %s %s --squash' manually", err, errOutput, repoURL, branch)
+		}
 		return fmt.Errorf("git subtree command failed: %v. You may need to run 'git subtree add --prefix=.ddx/library %s %s --squash' manually", err, repoURL, branch)
 	}
 
