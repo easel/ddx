@@ -20,24 +20,6 @@ var (
 	testLibraryOnce sync.Once
 )
 
-// getTempDir returns the appropriate temporary directory
-func getTempDir() string {
-	// Check DDX_TEST_LIBRARY_PATH first (explicit override)
-	if path := os.Getenv("DDX_TEST_LIBRARY_PATH"); path != "" {
-		return path
-	}
-	// Check TMPDIR (standard on macOS/BSD)
-	if path := os.Getenv("TMPDIR"); path != "" {
-		return path
-	}
-	// Check TMP (Windows)
-	if path := os.Getenv("TMP"); path != "" {
-		return path
-	}
-	// Fall back to /tmp
-	return "/tmp"
-}
-
 // GetTestLibraryPath returns the absolute path to a temporary git repository
 // created from the test library fixture. This is a real git repository that
 // tests can use with file:// URLs.
@@ -49,9 +31,8 @@ func GetTestLibraryPath() string {
 		fixtureDir := filepath.Join(cmdDir, "..", "test", "fixtures", "ddx-library")
 		fixtureDir, _ = filepath.Abs(fixtureDir)
 
-		// Create temp directory for git repository
-		tempDir := getTempDir()
-		testLibraryPath = filepath.Join(tempDir, ".test-ddx-library")
+		// Create temp directory for git repository in /tmp
+		testLibraryPath = filepath.Join(os.TempDir(), ".test-ddx-library")
 
 		// Check if temp repo already exists and is valid
 		gitDir := filepath.Join(testLibraryPath, ".git")
