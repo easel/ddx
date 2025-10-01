@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"sort"
 	"strings"
 )
 
@@ -177,6 +178,7 @@ func (c *ClaudeInjectorImpl) buildPersonasSection(personas map[string]*Persona) 
 	for role := range personas {
 		roles = append(roles, role)
 	}
+	sort.Strings(roles)
 
 	for _, role := range roles {
 		persona := personas[role]

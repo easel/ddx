@@ -183,7 +183,7 @@ Critical domain logic to implement:
 - **Technical Notes**:
   - Init command creates two commits: one for `.ddx/config.yaml` (via `commitConfigFile()`), and one for `.ddx/library` (via git subtree)
   - Config commit uses message: "chore: initialize DDx configuration"
-  - Config commit skipped in test mode (`DDX_TEST_MODE=1`) or with `--no-git` flag
+  - Config commit skipped with `--no-git` flag
 
 #### Component 3: Asset Management (internal/assets/)
 - **Purpose**: Discover and manage DDX resources

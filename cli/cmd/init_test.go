@@ -308,14 +308,21 @@ library:
 				// Config file should be created
 				assert.FileExists(t, te.ConfigPath, "Config file should exist")
 
-				// Check git log for config commit
-				gitLog := exec.Command("git", "log", "--oneline", "--all")
+				// Check that config file is tracked in git (part of subtree merge commit)
+				gitLsFiles := exec.Command("git", "ls-files", ".ddx/config.yaml")
+				gitLsFiles.Dir = te.Dir
+				lsOutput, err := gitLsFiles.CombinedOutput()
+				require.NoError(t, err, "Should be able to check git ls-files")
+
+				assert.Contains(t, string(lsOutput), ".ddx/config.yaml", "Config file should be tracked in git")
+
+				// Verify subtree commit exists
+				gitLog := exec.Command("git", "log", "--grep=git-subtree-dir:", "--oneline")
 				gitLog.Dir = te.Dir
 				logOutput, err := gitLog.CombinedOutput()
 				require.NoError(t, err, "Should be able to read git log")
 
-				logStr := string(logOutput)
-				assert.Contains(t, logStr, "chore: initialize DDx configuration", "Should have config commit")
+				assert.NotEmpty(t, string(logOutput), "Should have subtree commit")
 			},
 			expectError: false,
 		},

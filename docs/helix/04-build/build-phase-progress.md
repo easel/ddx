@@ -18,9 +18,7 @@ We've successfully transitioned from the Test phase (Red) to the Build phase (Gr
    - Fixed `isInitialized()` check to work consistently
 
 2. **Update Command Basic Functionality**
-   - Added test mode support via `DDX_TEST_MODE` environment variable
    - Implemented basic output for "Checking for updates" and "Fetching latest changes"
-   - Allows update command to work without git in test environments
 
 ### Test Results
 
@@ -97,6 +95,5 @@ Following TDD Green phase principles:
 
 ## Notes
 
-- Using environment variable `DDX_TEST_MODE=1` for test execution
 - Tests are properly isolated and can run without git
 - Following minimal implementation strategy per TDD

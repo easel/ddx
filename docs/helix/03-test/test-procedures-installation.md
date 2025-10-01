@@ -364,10 +364,6 @@ mkdir -p "$TEST_DIR"
 # Copy test fixtures
 cp -r cli/test/fixtures/installation/* "$TEST_DIR/"
 
-# Set environment variables
-export DDX_TEST_MODE=1
-export DDX_TEST_DIR="$TEST_DIR"
-
 echo "Test environment ready at: $TEST_DIR"
 EOF
 
@@ -479,10 +475,6 @@ EOF
 
 2. **Platform detection failures:**
    ```bash
-   # Verify test environment variables
-   echo $DDX_TEST_MODE
-   echo $DDX_TEST_DIR
-
    # Check platform simulation
    uname -s
    uname -m
@@ -491,10 +483,10 @@ EOF
 3. **Permission-related failures:**
    ```bash
    # Ensure test directories are writable
-   ls -la $DDX_TEST_DIR
+   ls -la /tmp/ddx-test-*
 
    # Fix permissions if needed
-   chmod -R 755 $DDX_TEST_DIR
+   chmod -R 755 /tmp/ddx-test-*
    ```
 
 ### Debug Mode Testing
