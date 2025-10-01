@@ -81,7 +81,7 @@ func GetTestLibraryPath() string {
 				{[]string{"git", "config", "user.email", "test@example.com"}, workingRepo},
 				{[]string{"git", "config", "user.name", "Test User"}, workingRepo},
 				{[]string{"git", "add", "."}, workingRepo},
-				{[]string{"git", "commit", "-m", "Test fixture"}, workingRepo},
+				{[]string{"git", "commit", "--allow-empty", "-m", "Test fixture"}, workingRepo},
 				{[]string{"git", "init", "--bare", bareRepo}, ""},
 				{[]string{"git", "remote", "add", "origin", bareRepo}, workingRepo},
 				{[]string{"git", "push", "origin", "master"}, workingRepo},
