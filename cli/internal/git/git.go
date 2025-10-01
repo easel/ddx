@@ -70,7 +70,7 @@ func HasSubtree(prefix string) (bool, error) {
 	return len(strings.TrimSpace(string(output))) > 0, nil
 }
 
-// SubtreeAdd adds a subtree
+// SubtreeAdd adds a subtree using pure Git plumbing commands
 func SubtreeAdd(prefix, repoURL, branch string) error {
 	// Validate inputs
 	if !IsRepository(".") {
@@ -104,23 +104,67 @@ func SubtreeAdd(prefix, repoURL, branch string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second) // 5 minutes for network operations
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, "git", "subtree", "add",
-		"--prefix="+sanitizedPrefix,
-		repoURL, // Already validated, no need to sanitize URL
-		sanitizedBranch,
-		"--squash")
-
+	// Step 1: Fetch the remote branch
+	cmd := exec.CommandContext(ctx, "git", "fetch", repoURL, sanitizedBranch)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		// Include error output for debugging, but sanitize it
-		errOutput := strings.TrimSpace(string(output))
-		return fmt.Errorf("git subtree add failed for prefix %s: %w\nOutput: %s", sanitizedPrefix, err, errOutput)
+		return fmt.Errorf("failed to fetch remote: %w\nOutput: %s", err, string(output))
+	}
+
+	// Step 2: Get the commit hash of FETCH_HEAD
+	cmd = exec.CommandContext(ctx, "git", "rev-parse", "FETCH_HEAD")
+	output, err = cmd.Output()
+	if err != nil {
+		return fmt.Errorf("failed to get FETCH_HEAD: %w", err)
+	}
+	fetchCommit := strings.TrimSpace(string(output))
+
+	// Step 3: Get current HEAD commit
+	cmd = exec.CommandContext(ctx, "git", "rev-parse", "HEAD")
+	output, err = cmd.Output()
+	if err != nil {
+		return fmt.Errorf("failed to get HEAD: %w", err)
+	}
+	headCommit := strings.TrimSpace(string(output))
+
+	// Step 4: Read the fetched tree into the index at the prefix
+	cmd = exec.CommandContext(ctx, "git", "read-tree", "--prefix="+sanitizedPrefix+"/", "-u", fetchCommit)
+	output, err = cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to read tree: %w\nOutput: %s", err, string(output))
+	}
+
+	// Step 5: Write the tree to get the new tree object
+	cmd = exec.CommandContext(ctx, "git", "write-tree")
+	output, err = cmd.Output()
+	if err != nil {
+		return fmt.Errorf("failed to write tree: %w", err)
+	}
+	newTree := strings.TrimSpace(string(output))
+
+	// Step 6: Create commit message with subtree metadata (matches git subtree format)
+	commitMsg := fmt.Sprintf("Squashed '%s' content from commit %s\n\ngit-subtree-dir: %s\ngit-subtree-split: %s",
+		sanitizedPrefix, fetchCommit[:7], sanitizedPrefix, fetchCommit)
+
+	// Step 7: Create the merge commit with two parents
+	cmd = exec.CommandContext(ctx, "git", "commit-tree", newTree, "-p", headCommit, "-p", fetchCommit, "-m", commitMsg)
+	output, err = cmd.Output()
+	if err != nil {
+		return fmt.Errorf("failed to create commit: %w", err)
+	}
+	newCommit := strings.TrimSpace(string(output))
+
+	// Step 8: Update HEAD to point to the new commit
+	cmd = exec.CommandContext(ctx, "git", "reset", "--hard", newCommit)
+	output, err = cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to update HEAD: %w\nOutput: %s", err, string(output))
 	}
 
 	return nil
 }
 
-// SubtreePull pulls updates for a subtree
+// SubtreePull pulls updates for a subtree using pure Git plumbing commands
 func SubtreePull(prefix, repoURL, branch string) error {
 	// Validate inputs
 	if !IsRepository(".") {
@@ -154,22 +198,71 @@ func SubtreePull(prefix, repoURL, branch string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second) // 5 minutes for network operations
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, "git", "subtree", "pull",
-		"--prefix="+sanitizedPrefix,
-		repoURL, // Already validated
-		sanitizedBranch,
-		"--squash")
-
-	_, err = cmd.CombinedOutput()
+	// Step 1: Fetch the remote branch
+	cmd := exec.CommandContext(ctx, "git", "fetch", repoURL, sanitizedBranch)
+	output, err := cmd.CombinedOutput()
 	if err != nil {
-		// Don't expose potentially sensitive command output in error messages
-		return fmt.Errorf("git subtree pull failed for prefix %s", sanitizedPrefix)
+		return fmt.Errorf("failed to fetch remote: %w\nOutput: %s", err, string(output))
+	}
+
+	// Step 2: Get the commit hash of FETCH_HEAD
+	cmd = exec.CommandContext(ctx, "git", "rev-parse", "FETCH_HEAD")
+	output, err = cmd.Output()
+	if err != nil {
+		return fmt.Errorf("failed to get FETCH_HEAD: %w", err)
+	}
+	fetchCommit := strings.TrimSpace(string(output))
+
+	// Step 3: Get current HEAD commit
+	cmd = exec.CommandContext(ctx, "git", "rev-parse", "HEAD")
+	output, err = cmd.Output()
+	if err != nil {
+		return fmt.Errorf("failed to get HEAD: %w", err)
+	}
+	headCommit := strings.TrimSpace(string(output))
+
+	// Step 4: Remove existing subtree directory from index
+	cmd = exec.CommandContext(ctx, "git", "rm", "-rf", "--cached", sanitizedPrefix)
+	_, _ = cmd.CombinedOutput() // Ignore errors - directory might not exist in index
+
+	// Step 5: Read the fetched tree into the index at the prefix
+	cmd = exec.CommandContext(ctx, "git", "read-tree", "--prefix="+sanitizedPrefix+"/", "-u", fetchCommit)
+	output, err = cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to read tree: %w\nOutput: %s", err, string(output))
+	}
+
+	// Step 6: Write the tree
+	cmd = exec.CommandContext(ctx, "git", "write-tree")
+	output, err = cmd.Output()
+	if err != nil {
+		return fmt.Errorf("failed to write tree: %w", err)
+	}
+	newTree := strings.TrimSpace(string(output))
+
+	// Step 7: Create commit message with subtree metadata (matches git subtree format)
+	commitMsg := fmt.Sprintf("Squashed '%s' changes from %s\n\ngit-subtree-dir: %s\ngit-subtree-split: %s",
+		sanitizedPrefix, fetchCommit[:7], sanitizedPrefix, fetchCommit)
+
+	// Step 8: Create the merge commit
+	cmd = exec.CommandContext(ctx, "git", "commit-tree", newTree, "-p", headCommit, "-p", fetchCommit, "-m", commitMsg)
+	output, err = cmd.Output()
+	if err != nil {
+		return fmt.Errorf("failed to create commit: %w", err)
+	}
+	newCommit := strings.TrimSpace(string(output))
+
+	// Step 9: Update HEAD
+	cmd = exec.CommandContext(ctx, "git", "reset", "--hard", newCommit)
+	output, err = cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to update HEAD: %w\nOutput: %s", err, string(output))
 	}
 
 	return nil
 }
 
-// SubtreePush pushes subtree changes to a branch
+// SubtreePush pushes subtree changes to a branch using pure Git plumbing commands
 func SubtreePush(prefix, repoURL, branch string) error {
 	// Validate inputs
 	if !IsRepository(".") {
@@ -203,15 +296,22 @@ func SubtreePush(prefix, repoURL, branch string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second) // 5 minutes for network operations
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, "git", "subtree", "push",
-		"--prefix="+sanitizedPrefix,
-		repoURL, // Already validated
-		sanitizedBranch)
-
-	_, err = cmd.CombinedOutput()
+	// Use git subtree split for now - this is the complex part that would require
+	// significant additional implementation to do in pure plumbing commands.
+	// The split operation walks through the entire git history and reconstructs
+	// a new history with only the subtree commits.
+	cmd := exec.CommandContext(ctx, "git", "subtree", "split", "--prefix="+sanitizedPrefix, "--rejoin")
+	output, err := cmd.Output()
 	if err != nil {
-		// Don't expose potentially sensitive command output in error messages
-		return fmt.Errorf("git subtree push failed for prefix %s", sanitizedPrefix)
+		return fmt.Errorf("failed to split subtree: %w", err)
+	}
+	splitCommit := strings.TrimSpace(string(output))
+
+	// Push the split commit to the remote branch
+	cmd = exec.CommandContext(ctx, "git", "push", repoURL, splitCommit+":refs/heads/"+sanitizedBranch)
+	output, err = cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to push: %w\nOutput: %s", err, string(output))
 	}
 
 	return nil

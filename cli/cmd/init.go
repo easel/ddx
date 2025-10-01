@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/easel/ddx/internal/config"
+	"github.com/easel/ddx/internal/git"
 	"github.com/easel/ddx/internal/metaprompt"
 	"github.com/spf13/cobra"
 )
@@ -197,14 +198,7 @@ func initProject(workingDir string, opts InitOptions) (*InitResult, error) {
 	}
 	result.ConfigCreated = true
 
-	// Commit config file before git subtree (config gets its own commit)
-	if !opts.NoGit {
-		if err := commitConfigFile(workingDir); err != nil {
-			return nil, NewExitError(1, fmt.Sprintf("Failed to commit config: %v", err))
-		}
-	}
-
-	// Set up git subtree for library synchronization (adds .ddx/library as separate merge commit)
+	// Set up git subtree for library synchronization
 	if !opts.NoGit {
 		if err := setupGitSubtreeLibraryPure(localConfig, workingDir); err != nil {
 			return nil, NewExitError(1, fmt.Sprintf("Failed to setup library: %v", err))
@@ -219,6 +213,19 @@ func initProject(workingDir string, opts InitOptions) (*InitResult, error) {
 					_, _ = fmt.Fprintf(os.Stderr, "Warning: Failed to inject meta-prompt: %v\n", err)
 				}
 			}
+		}
+
+		// Commit config file after subtree setup
+		gitAdd := exec.Command("git", "add", ".ddx/config.yaml")
+		gitAdd.Dir = workingDir
+		if err := gitAdd.Run(); err != nil {
+			return nil, NewExitError(1, fmt.Sprintf("Failed to stage config file: %v", err))
+		}
+
+		gitCommit := exec.Command("git", "commit", "-m", "chore: add DDx configuration")
+		gitCommit.Dir = workingDir
+		if err := gitCommit.Run(); err != nil {
+			return nil, NewExitError(1, fmt.Sprintf("Failed to commit config file: %v", err))
 		}
 	}
 
@@ -417,10 +424,10 @@ func setupGitSubtreeLibraryPure(cfg *config.Config, workingDir string) error {
 		return nil
 	}
 
-	// Check if .ddx/library exists in git (would conflict with subtree add)
-	// Git subtree requires the prefix path (.ddx/library) to not exist in the git tree
-	// Note: .ddx itself can exist (for config.yaml), we only care about .ddx/library
-	gitLsCmd := exec.Command("git", "ls-tree", "HEAD", ".ddx/library")
+	// Check if .ddx exists in git (would conflict with subtree add)
+	// Git subtree requires that the parent directory of the prefix is not already tracked
+	// If .ddx is in git (e.g., from config.yaml commit), git subtree will fail
+	gitLsCmd := exec.Command("git", "ls-tree", "HEAD", ".ddx")
 	gitLsCmd.Dir = workingDir
 	ddxInGit := false
 	if output, err := gitLsCmd.Output(); err == nil && len(output) > 0 {
@@ -468,17 +475,19 @@ func setupGitSubtreeLibraryPure(cfg *config.Config, workingDir string) error {
 	// Note: .ddx directory already exists from config file creation
 	// Git subtree add will work with the staged config.yaml file
 
-	gitCmd := exec.Command("git", "subtree", "add", "--prefix=.ddx/library", repoURL, branch, "--squash")
-	gitCmd.Dir = workingDir
-
-	// Capture output for debugging but don't show verbose git output on success
-	output, err := gitCmd.CombinedOutput()
+	// Change to working directory for git operations
+	currentDir, err := os.Getwd()
 	if err != nil {
-		errOutput := strings.TrimSpace(string(output))
-		if errOutput != "" {
-			return fmt.Errorf("git subtree command failed: %v\nOutput: %s\nYou may need to run 'git subtree add --prefix=.ddx/library %s %s --squash' manually", err, errOutput, repoURL, branch)
-		}
-		return fmt.Errorf("git subtree command failed: %v. You may need to run 'git subtree add --prefix=.ddx/library %s %s --squash' manually", err, repoURL, branch)
+		return fmt.Errorf("failed to get current directory: %w", err)
+	}
+	if err := os.Chdir(workingDir); err != nil {
+		return fmt.Errorf("failed to change to working directory: %w", err)
+	}
+	defer os.Chdir(currentDir) // Restore on exit
+
+	// Use pure-Go subtree implementation
+	if err := git.SubtreeAdd(".ddx/library", repoURL, branch); err != nil {
+		return fmt.Errorf("git subtree add failed: %v\nYou may need to run 'git subtree add --prefix=.ddx/library %s %s --squash' manually", err, repoURL, branch)
 	}
 
 	return nil
@@ -504,86 +513,6 @@ func injectInitialMetaPrompt(cfg *config.Config, workingDir string) error {
 	if err := injector.InjectMetaPrompt(promptPath); err != nil {
 		return fmt.Errorf("failed to inject meta-prompt: %w", err)
 	}
-
-	return nil
-}
-
-// commitConfigFile commits the .ddx/config.yaml file to git
-func stageConfigFile(workingDir string) error {
-	// Stage the config file without committing
-	gitAdd := exec.Command("git", "add", ".ddx/config.yaml")
-	gitAdd.Dir = workingDir
-	if err := gitAdd.Run(); err != nil {
-		return fmt.Errorf("failed to stage config file: %v", err)
-	}
-	return nil
-}
-
-func commitConfigFileIfNeeded(workingDir string) error {
-	// Check if config file needs to be committed
-	gitDiff := exec.Command("git", "diff", "--cached", "--name-only", ".ddx/config.yaml")
-	gitDiff.Dir = workingDir
-	output, err := gitDiff.Output()
-	if err != nil || len(output) == 0 {
-		// No staged changes for config file, nothing to commit
-		return nil
-	}
-
-	// Commit the config file
-	gitCommit := exec.Command("git", "commit", "-m", "chore: initialize DDx configuration")
-	gitCommit.Dir = workingDir
-	gitCommit.Stdout = nil
-	gitCommit.Stderr = nil
-	if err := gitCommit.Run(); err != nil {
-		return fmt.Errorf("failed to commit config file: %v", err)
-	}
-
-	return nil
-}
-
-func commitConfigFile(workingDir string) error {
-	// Stage the config file
-	if err := stageConfigFile(workingDir); err != nil {
-		return err
-	}
-
-	// Commit the config file
-	gitCommit := exec.Command("git", "commit", "-m", "chore: initialize DDx configuration")
-	gitCommit.Dir = workingDir
-	gitCommit.Stdout = nil
-	gitCommit.Stderr = nil
-	if err := gitCommit.Run(); err != nil {
-		return fmt.Errorf("failed to commit config file: %v", err)
-	}
-
-	return nil
-}
-
-// setupGitSubtreeLibrary sets up the library using git-subtree (CLI wrapper)
-func setupGitSubtreeLibrary(cfg *config.Config, cmd *cobra.Command, workingDir string) error {
-	_, _ = fmt.Fprint(cmd.OutOrStdout(), "📚 Setting up library via git-subtree...\n")
-
-	// Check if .ddx/library already exists
-	libraryPath := filepath.Join(workingDir, ".ddx/library")
-	if _, err := os.Stat(libraryPath); err == nil {
-		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  ℹ️  Library already exists at %s\n", libraryPath)
-		return nil
-	}
-
-	err := setupGitSubtreeLibraryPure(cfg, workingDir)
-	if err != nil {
-		return err
-	}
-
-	// Show success message with git subtree hints
-	repoURL := cfg.Library.Repository.URL
-	branch := cfg.Library.Repository.Branch
-	if branch == "" {
-		branch = "main"
-	}
-	_, _ = fmt.Fprint(cmd.OutOrStdout(), "  ✓ Library synchronized via git-subtree\n")
-	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  ℹ️  To update library: git subtree pull --prefix=.ddx/library %s %s --squash\n", repoURL, branch)
-	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  ℹ️  To contribute changes: git subtree push --prefix=.ddx/library %s %s\n", repoURL, branch)
 
 	return nil
 }
