@@ -14,10 +14,12 @@ import (
 
 // InitOptions contains all configuration options for project initialization
 type InitOptions struct {
-	Force               bool // Force initialization even if config exists
-	NoGit               bool // Skip git-related operations
-	Silent              bool // Suppress all output except errors
-	SkipClaudeInjection bool // Skip injecting meta-prompts into CLAUDE.md
+	Force               bool   // Force initialization even if config exists
+	NoGit               bool   // Skip git-related operations
+	Silent              bool   // Suppress all output except errors
+	SkipClaudeInjection bool   // Skip injecting meta-prompts into CLAUDE.md
+	Repository          string // Custom repository URL (overrides default)
+	Branch              string // Custom repository branch (overrides default)
 }
 
 // Command registration is now handled by command_factory.go
@@ -38,6 +40,8 @@ func (f *CommandFactory) runInit(cmd *cobra.Command, args []string) error {
 	initNoGit, _ := cmd.Flags().GetBool("no-git")
 	initSilent, _ := cmd.Flags().GetBool("silent")
 	initSkipClaude, _ := cmd.Flags().GetBool("skip-claude-injection")
+	initRepository, _ := cmd.Flags().GetString("repository")
+	initBranch, _ := cmd.Flags().GetString("branch")
 
 	// Create options struct for business logic
 	opts := InitOptions{
@@ -45,6 +49,8 @@ func (f *CommandFactory) runInit(cmd *cobra.Command, args []string) error {
 		NoGit:               initNoGit,
 		Silent:              initSilent,
 		SkipClaudeInjection: initSkipClaude,
+		Repository:          initRepository,
+		Branch:              initBranch,
 	}
 
 	// Handle user output
@@ -138,20 +144,41 @@ func initProject(workingDir string, opts InitOptions) (*InitResult, error) {
 	// Try to load existing config to preserve settings (even if library doesn't exist yet)
 	if cfg != nil && err == nil {
 		// Note: Version is NOT copied - always upgrade to current version via ApplyDefaults
-		// Copy library settings if they exist
+		// Copy library settings if they exist (unless overridden by flags)
 		if cfg.Library != nil && localConfig.Library != nil {
 			if cfg.Library.Path != "" {
 				localConfig.Library.Path = cfg.Library.Path
 			}
 			if cfg.Library.Repository != nil && localConfig.Library.Repository != nil {
-				if cfg.Library.Repository.URL != "" {
+				// Only copy existing values if not overridden by flags
+				if opts.Repository == "" && cfg.Library.Repository.URL != "" {
 					localConfig.Library.Repository.URL = cfg.Library.Repository.URL
 				}
-				if cfg.Library.Repository.Branch != "" {
+				if opts.Branch == "" && cfg.Library.Repository.Branch != "" {
 					localConfig.Library.Repository.Branch = cfg.Library.Repository.Branch
 				}
 			}
 		}
+	}
+
+	// Apply flag overrides AFTER loading existing config (flags have highest priority)
+	if opts.Repository != "" {
+		if localConfig.Library == nil {
+			localConfig.Library = &config.LibraryConfig{}
+		}
+		if localConfig.Library.Repository == nil {
+			localConfig.Library.Repository = &config.RepositoryConfig{}
+		}
+		localConfig.Library.Repository.URL = opts.Repository
+	}
+	if opts.Branch != "" {
+		if localConfig.Library == nil {
+			localConfig.Library = &config.LibraryConfig{}
+		}
+		if localConfig.Library.Repository == nil {
+			localConfig.Library.Repository = &config.RepositoryConfig{}
+		}
+		localConfig.Library.Repository.Branch = opts.Branch
 	}
 
 	// Create .ddx directory first
@@ -170,21 +197,21 @@ func initProject(workingDir string, opts InitOptions) (*InitResult, error) {
 	}
 	result.ConfigCreated = true
 
-	// Set up git subtree for library synchronization (adds .ddx/library)
+	// Commit config file before git subtree (config gets its own commit)
 	if !opts.NoGit {
-		// Commit the config file BEFORE git subtree (subtree requires clean working tree)
 		if err := commitConfigFile(workingDir); err != nil {
-			// Warn but don't fail - config is already created
-			// Error will be logged by caller if needed
+			return nil, NewExitError(1, fmt.Sprintf("Failed to commit config: %v", err))
 		}
+	}
 
+	// Set up git subtree for library synchronization (adds .ddx/library as separate merge commit)
+	if !opts.NoGit {
 		if err := setupGitSubtreeLibraryPure(localConfig, workingDir); err != nil {
 			return nil, NewExitError(1, fmt.Sprintf("Failed to setup library: %v", err))
 		}
 
-		// Inject initial meta-prompt after library is set up (unless explicitly skipped or in test/CI mode)
-		skipInjection := opts.SkipClaudeInjection || os.Getenv("CI") != "" || os.Getenv("DDX_TEST_MODE") != ""
-		if !skipInjection {
+		// Inject initial meta-prompt after library is set up (unless explicitly skipped)
+		if !opts.SkipClaudeInjection {
 			if err := injectInitialMetaPrompt(localConfig, workingDir); err != nil {
 				// Don't fail - meta-prompt is optional enhancement
 				// Only warn if file actually exists but has issues
@@ -390,19 +417,55 @@ func setupGitSubtreeLibraryPure(cfg *config.Config, workingDir string) error {
 		return nil
 	}
 
-	// Ensure .ddx directory exists (git subtree needs the parent)
-	ddxDir := filepath.Join(workingDir, ".ddx")
-	if err := os.MkdirAll(ddxDir, 0755); err != nil {
-		return fmt.Errorf("failed to create .ddx directory: %w", err)
+	// Check if .ddx exists in git (would conflict with subtree add)
+	// Git subtree requires the entire prefix path to not exist in the git tree
+	gitLsCmd := exec.Command("git", "ls-tree", "HEAD", ".ddx")
+	gitLsCmd.Dir = workingDir
+	ddxInGit := false
+	if output, err := gitLsCmd.Output(); err == nil && len(output) > 0 {
+		ddxInGit = true
 	}
 
-	// Execute git subtree add command for the library repository
-	// This works with both remote URLs (https://) and local file:// URLs
 	repoURL := cfg.Library.Repository.URL
 	branch := cfg.Library.Repository.Branch
 	if branch == "" {
 		branch = "main"
 	}
+
+	// If .ddx exists in git, we can't use git subtree add (it will fail)
+	// Instead, clone the library directly
+	if ddxInGit {
+		// Clone to temp dir then copy
+		tempDir, err := os.MkdirTemp("", "ddx-library-*")
+		if err != nil {
+			return fmt.Errorf("failed to create temp directory: %w", err)
+		}
+		defer os.RemoveAll(tempDir)
+
+		cloneCmd := exec.Command("git", "clone", "--depth=1", "--branch", branch, repoURL, tempDir)
+		if output, err := cloneCmd.CombinedOutput(); err != nil {
+			return fmt.Errorf("failed to clone library: %v\nOutput: %s", err, string(output))
+		}
+
+		// Remove .git directory from cloned repo
+		os.RemoveAll(filepath.Join(tempDir, ".git"))
+
+		// Copy to .ddx/library
+		if err := os.MkdirAll(libraryPath, 0755); err != nil {
+			return fmt.Errorf("failed to create library directory: %w", err)
+		}
+
+		cpCmd := exec.Command("cp", "-r", tempDir+"/.", libraryPath)
+		if output, err := cpCmd.CombinedOutput(); err != nil {
+			return fmt.Errorf("failed to copy library files: %v\nOutput: %s", err, string(output))
+		}
+
+		return nil
+	}
+
+	// .ddx doesn't exist in git, safe to use git subtree
+	// Note: .ddx directory already exists from config file creation
+	// Git subtree add will work with the staged config.yaml file
 
 	gitCmd := exec.Command("git", "subtree", "add", "--prefix=.ddx/library", repoURL, branch, "--squash")
 	gitCmd.Dir = workingDir
@@ -445,12 +508,42 @@ func injectInitialMetaPrompt(cfg *config.Config, workingDir string) error {
 }
 
 // commitConfigFile commits the .ddx/config.yaml file to git
-func commitConfigFile(workingDir string) error {
-	// Stage the config file
+func stageConfigFile(workingDir string) error {
+	// Stage the config file without committing
 	gitAdd := exec.Command("git", "add", ".ddx/config.yaml")
 	gitAdd.Dir = workingDir
 	if err := gitAdd.Run(); err != nil {
 		return fmt.Errorf("failed to stage config file: %v", err)
+	}
+	return nil
+}
+
+func commitConfigFileIfNeeded(workingDir string) error {
+	// Check if config file needs to be committed
+	gitDiff := exec.Command("git", "diff", "--cached", "--name-only", ".ddx/config.yaml")
+	gitDiff.Dir = workingDir
+	output, err := gitDiff.Output()
+	if err != nil || len(output) == 0 {
+		// No staged changes for config file, nothing to commit
+		return nil
+	}
+
+	// Commit the config file
+	gitCommit := exec.Command("git", "commit", "-m", "chore: initialize DDx configuration")
+	gitCommit.Dir = workingDir
+	gitCommit.Stdout = nil
+	gitCommit.Stderr = nil
+	if err := gitCommit.Run(); err != nil {
+		return fmt.Errorf("failed to commit config file: %v", err)
+	}
+
+	return nil
+}
+
+func commitConfigFile(workingDir string) error {
+	// Stage the config file
+	if err := stageConfigFile(workingDir); err != nil {
+		return err
 	}
 
 	// Commit the config file

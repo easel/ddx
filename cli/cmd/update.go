@@ -122,8 +122,8 @@ func performUpdate(workingDir string, opts *UpdateOptions) (*UpdateResult, error
 		return nil, err
 	}
 
-	// Always sync meta-prompt after update (even if no library changes), unless in test/CI mode
-	if os.Getenv("CI") == "" && os.Getenv("DDX_TEST_MODE") == "" {
+	// Always sync meta-prompt after update (even if no library changes), unless in CI mode
+	if os.Getenv("CI") == "" {
 		if err := syncMetaPrompt(cfg, workingDir); err != nil {
 			// Warn but don't fail - only if prompts directory exists
 			if _, statErr := os.Stat(filepath.Join(workingDir, cfg.Library.Path, "prompts")); statErr == nil {

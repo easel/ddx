@@ -364,9 +364,8 @@ func TestAcceptance_US005_ContributeImprovements(t *testing.T) {
 		_ = exec.Command("git", "-C", tempClone, "commit", "-m", "Initial").Run()
 		_ = exec.Command("git", "-C", tempClone, "push", "origin", "master").Run()
 
-		// Initialize project with custom upstream
-		env.CreateConfigWithCustomURL("file://" + bareRepoPath)
-		env.InitWithDDx("--force", "--silent")
+		// Initialize project with custom upstream using --repository flag
+		env.InitWithDDx("--repository", "file://"+bareRepoPath, "--branch", "master", "--silent", "--skip-claude-injection")
 
 		// Create changes in library - leave UNCOMMITTED
 		contributionPath := filepath.Join(env.LibraryPath, "prompts", "test-prompt.md")
@@ -411,9 +410,8 @@ func TestAcceptance_US005_ContributeImprovements(t *testing.T) {
 		_ = exec.Command("git", "-C", tempClone, "commit", "-m", "Initial").Run()
 		_ = exec.Command("git", "-C", tempClone, "push", "origin", "master").Run()
 
-		// Initialize project with custom upstream
-		env.CreateConfigWithCustomURL("file://" + bareRepoPath)
-		env.InitWithDDx("--force", "--silent")
+		// Initialize project with custom upstream using --repository flag
+		env.InitWithDDx("--repository", "file://"+bareRepoPath, "--branch", "master", "--silent", "--skip-claude-injection")
 
 		// Create prompt to contribute - leave UNCOMMITTED
 		promptPath := filepath.Join(env.LibraryPath, "prompts", "pr-test.md")

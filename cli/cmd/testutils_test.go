@@ -331,26 +331,35 @@ func (te *TestEnvironment) RunCommand(args ...string) (string, error) {
 func (te *TestEnvironment) InitWithDDx(flags ...string) {
 	te.t.Helper()
 
+	// Check if we should skip git operations
+	hasNoGitFlag := false
+	for _, flag := range flags {
+		if flag == "--no-git" {
+			hasNoGitFlag = true
+			break
+		}
+	}
+
+	// If git is initialized and we're not using --no-git, create initial commit
+	// This must happen BEFORE ddx init for git subtree to work
+	if te.GitInitialized && !hasNoGitFlag {
+		te.CreateFile("README.md", "# Test Project")
+		gitAdd := exec.Command("git", "add", ".")
+		gitAdd.Dir = te.Dir
+		require.NoError(te.t, gitAdd.Run())
+		gitCommit := exec.Command("git", "commit", "-m", "Initial commit")
+		gitCommit.Dir = te.Dir
+		require.NoError(te.t, gitCommit.Run())
+	}
+
 	// Default flags if none provided
 	if len(flags) == 0 {
-		// In CI environments or if git isn't initialized, use --no-git
-		if os.Getenv("CI") != "" || !te.GitInitialized {
-			// No git repo or CI environment, use --no-git and skip CLAUDE.md injection
-			flags = []string{"--no-git", "--silent", "--skip-claude-injection"}
+		if te.GitInitialized {
+			// Use --repository and --branch flags to specify test library
+			flags = []string{"--repository", te.TestLibraryURL, "--branch", "master", "--silent", "--skip-claude-injection"}
 		} else {
-			// Local development with git
-			// Create initial commit (required for git subtree)
-			te.CreateFile("README.md", "# Test Project")
-			gitAdd := exec.Command("git", "add", ".")
-			gitAdd.Dir = te.Dir
-			require.NoError(te.t, gitAdd.Run())
-			gitCommit := exec.Command("git", "commit", "-m", "Initial commit")
-			gitCommit.Dir = te.Dir
-			require.NoError(te.t, gitCommit.Run())
-
-			// Create config with test library URL first, then use --force to initialize
-			te.CreateDefaultConfig()
-			flags = []string{"--force", "--silent", "--skip-claude-injection"}
+			// No git, use --no-git flag
+			flags = []string{"--no-git", "--silent", "--skip-claude-injection"}
 		}
 	}
 
