@@ -564,9 +564,7 @@ Phase is inferred from artifacts, not state files:
 
 ### Environment Variables
 ```bash
-DDX_TEST_MODE=1                  # Enable test mode
 DDX_VERBOSE=true                 # Verbose logging
-DDX_LIBRARY_PATH=.ddx/library    # Override path for testing
 ```
 
 **Note**: Phase detection is artifact-based, not state-file-based. Tests should manipulate actual artifacts (docs, tests) to change phases, not state files.

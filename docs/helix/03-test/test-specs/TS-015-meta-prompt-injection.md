@@ -907,9 +907,7 @@ system:
 
 ### Environment Variables
 ```bash
-DDX_TEST_MODE=1                  # Enable test mode
 DDX_VERBOSE=true                 # Verbose logging
-DDX_LIBRARY_PATH=.ddx/library    # Override path for testing
 ```
 
 ### Test Helpers

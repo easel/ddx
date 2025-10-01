@@ -20,86 +20,81 @@ var (
 	testLibraryOnce sync.Once
 )
 
-// GetTestLibraryPath returns the absolute path to a temporary git repository
-// created from the test library fixture. This is a real git repository that
-// tests can use with file:// URLs.
+// GetTestLibraryPath returns the absolute path to a bare git repository
+// that mimics a real upstream library (like GitHub). This is the ONLY way
+// tests should get the test library path.
 func GetTestLibraryPath() string {
 	testLibraryOnce.Do(func() {
-		// Find the test fixtures directory relative to this file
+		// Find the test fixtures directory
 		_, filename, _, _ := runtime.Caller(0)
 		cmdDir := filepath.Dir(filename)
 		fixtureDir := filepath.Join(cmdDir, "..", "test", "fixtures", "ddx-library")
 		fixtureDir, _ = filepath.Abs(fixtureDir)
 
-		// Create temp directory for git repository in /tmp
-		testLibraryPath = filepath.Join(os.TempDir(), ".test-ddx-library")
-
-		// Check if temp repo already exists and is valid
-		gitDir := filepath.Join(testLibraryPath, ".git")
-		repoExists := false
-		if stat, err := os.Stat(gitDir); err == nil && stat.IsDir() {
-			repoExists = true
+		// Determine base temp directory: TMP -> TMPDIR -> /tmp
+		tempBase := "/tmp"
+		if tmp := os.Getenv("TMP"); tmp != "" {
+			tempBase = tmp
+		} else if tmpdir := os.Getenv("TMPDIR"); tmpdir != "" {
+			tempBase = tmpdir
 		}
 
-		if !repoExists {
-			// Create new temp directory and initialize git repo
-			if err := os.MkdirAll(testLibraryPath, 0755); err != nil {
-				panic(fmt.Sprintf("Failed to create temp library directory: %v", err))
-			}
+		workingRepo := filepath.Join(tempBase, ".test-library")
+		bareRepo := filepath.Join(tempBase, ".test-library.git")
+		testLibraryPath = bareRepo
+
+		// Check if we need to recreate (fixtures changed or doesn't exist)
+		needsRecreate := false
+		if stat, err := os.Stat(bareRepo); err != nil || !stat.IsDir() {
+			needsRecreate = true
+		} else if os.Getenv("CI") == "" {
+			// In local dev, check if any fixture is newer than the repo
+			repoModTime := stat.ModTime()
+			filepath.Walk(fixtureDir, func(path string, info os.FileInfo, err error) error {
+				if err == nil && !info.IsDir() && info.ModTime().After(repoModTime) {
+					needsRecreate = true
+				}
+				return nil
+			})
 		}
 
-		// Sync files from fixture to temp repo
-		if err := syncDirectory(fixtureDir, testLibraryPath); err != nil {
-			panic(fmt.Sprintf("Failed to sync fixture files: %v", err))
-		}
+		if needsRecreate {
+			// Clean up old repos
+			os.RemoveAll(workingRepo)
+			os.RemoveAll(bareRepo)
 
-		if !repoExists {
-			// Initialize git repository with master branch (for compatibility with tests)
-			gitInit := exec.Command("git", "init", "-b", "master")
-			gitInit.Dir = testLibraryPath
-			if output, err := gitInit.CombinedOutput(); err != nil {
-				panic(fmt.Sprintf("Failed to initialize git repository: %v\nOutput: %s", err, output))
+			// Create working repo and copy fixtures
+			if err := os.MkdirAll(workingRepo, 0755); err != nil {
+				panic(fmt.Sprintf("Failed to create working repo: %v", err))
 			}
 
-			// Configure git user
-			gitConfigEmail := exec.Command("git", "config", "user.email", "test@example.com")
-			gitConfigEmail.Dir = testLibraryPath
-			if output, err := gitConfigEmail.CombinedOutput(); err != nil {
-				panic(fmt.Sprintf("Failed to configure git user.email: %v\nOutput: %s", err, output))
+			if err := syncDirectory(fixtureDir, workingRepo); err != nil {
+				panic(fmt.Sprintf("Failed to copy fixtures: %v", err))
 			}
 
-			gitConfigName := exec.Command("git", "config", "user.name", "Test User")
-			gitConfigName.Dir = testLibraryPath
-			if output, err := gitConfigName.CombinedOutput(); err != nil {
-				panic(fmt.Sprintf("Failed to configure git user.name: %v\nOutput: %s", err, output))
+			// Initialize git repo
+			cmds := []struct {
+				args []string
+				dir  string
+			}{
+				{[]string{"git", "init", "-b", "master"}, workingRepo},
+				{[]string{"git", "config", "user.email", "test@example.com"}, workingRepo},
+				{[]string{"git", "config", "user.name", "Test User"}, workingRepo},
+				{[]string{"git", "add", "."}, workingRepo},
+				{[]string{"git", "commit", "-m", "Test fixture"}, workingRepo},
+				{[]string{"git", "init", "--bare", bareRepo}, ""},
+				{[]string{"git", "remote", "add", "origin", bareRepo}, workingRepo},
+				{[]string{"git", "push", "origin", "master"}, workingRepo},
 			}
 
-			// Create initial commit (allow empty if no files)
-			gitAdd := exec.Command("git", "add", ".")
-			gitAdd.Dir = testLibraryPath
-			if output, err := gitAdd.CombinedOutput(); err != nil {
-				panic(fmt.Sprintf("Failed to add files to git: %v\nOutput: %s", err, output))
-			}
-
-			gitCommit := exec.Command("git", "commit", "--allow-empty", "-m", "Test fixture")
-			gitCommit.Dir = testLibraryPath
-			if output, err := gitCommit.CombinedOutput(); err != nil {
-				panic(fmt.Sprintf("Failed to commit files: %v\nOutput: %s\nPath: %s", err, output, testLibraryPath))
-			}
-		} else {
-			// Check if there are changes and commit them
-			gitStatus := exec.Command("git", "status", "--porcelain")
-			gitStatus.Dir = testLibraryPath
-			output, _ := gitStatus.Output()
-			if len(output) > 0 {
-				// There are changes, commit them
-				gitAdd := exec.Command("git", "add", ".")
-				gitAdd.Dir = testLibraryPath
-				_ = gitAdd.Run() // Best effort
-
-				gitCommit := exec.Command("git", "commit", "-m", "Update test fixture")
-				gitCommit.Dir = testLibraryPath
-				_ = gitCommit.Run() // Best effort
+			for _, c := range cmds {
+				cmd := exec.Command(c.args[0], c.args[1:]...)
+				if c.dir != "" {
+					cmd.Dir = c.dir
+				}
+				if output, err := cmd.CombinedOutput(); err != nil {
+					panic(fmt.Sprintf("Failed to run %v: %v\nOutput: %s", c.args, err, output))
+				}
 			}
 		}
 	})
