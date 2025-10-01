@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/easel/ddx/internal/git"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -487,8 +488,20 @@ persona_bindings:
 	gitCommit.Dir = dir
 	require.NoError(t, gitCommit.Run())
 
-	// Set up git subtree for library
-	gitSubtree := exec.Command("git", "subtree", "add", "--prefix=.ddx/library", "file://"+GetTestLibraryPath(), "master", "--squash")
-	gitSubtree.Dir = dir
-	require.NoError(t, gitSubtree.Run(), "git subtree should succeed")
+	// Set up git subtree for library using pure-Go implementation
+	// Save current directory and change to test directory
+	origDir, err := os.Getwd()
+	require.NoError(t, err, "Should get current directory")
+	err = os.Chdir(dir)
+	require.NoError(t, err, "Should change to test directory")
+
+	// Call pure-Go SubtreeAdd
+	err = git.SubtreeAdd(".ddx/library", "file://"+GetTestLibraryPath(), "master")
+
+	// Change back to original directory
+	chdirErr := os.Chdir(origDir)
+	require.NoError(t, chdirErr, "Should change back to original directory")
+
+	// Check SubtreeAdd result
+	require.NoError(t, err, "git subtree add should succeed")
 }
