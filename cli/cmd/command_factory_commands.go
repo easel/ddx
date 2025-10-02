@@ -162,21 +162,23 @@ Examples:
 // newContributeCommand creates a fresh contribute command
 func (f *CommandFactory) newContributeCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "contribute <path>",
+		Use:   "contribute",
 		Short: "Contribute improvements back to master repository",
 		Long: `Contribute local improvements back to the master DDx repository.
 
-This command:
+This command pushes all changes in .ddx/library to the upstream repository.
+
+The command:
 • Creates a feature branch in the DDx subtree
 • Commits your changes with a descriptive message
-• Pushes to your fork (if configured)
+• Pushes to the upstream repository
 • Provides instructions for creating a pull request
 
 Examples:
-  ddx contribute patterns/my-pattern
-  ddx contribute prompts/claude/new-prompt.md
-  ddx contribute scripts/setup/my-script.sh`,
-		Args: cobra.ExactArgs(1),
+  ddx contribute -m "Add new authentication patterns"
+  ddx contribute --branch my-feature -m "New TypeScript templates"
+  ddx contribute --dry-run`,
+		Args: cobra.NoArgs,
 		RunE: f.runContribute,
 	}
 

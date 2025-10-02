@@ -61,12 +61,8 @@ type DryRunInfo struct {
 
 // CommandFactory method - CLI interface layer
 func (f *CommandFactory) runContribute(cmd *cobra.Command, args []string) error {
-	if len(args) == 0 {
-		return fmt.Errorf("resource path is required")
-	}
-
 	// Extract flags to options struct
-	opts, err := extractContributeOptions(cmd, args)
+	opts, err := extractContributeOptions(cmd)
 	if err != nil {
 		return err
 	}
@@ -103,12 +99,6 @@ func performContribution(workingDir string, opts *ContributeOptions) (*Contribut
 		return nil, fmt.Errorf("failed to load configuration: %w", err)
 	}
 
-	// Validate the resource path exists
-	fullPath := getResourcePath(workingDir, opts.ResourcePath)
-	if _, err := os.Stat(fullPath); os.IsNotExist(err) {
-		return nil, fmt.Errorf("resource not found: %s", opts.ResourcePath)
-	}
-
 	// Check if DDx subtree exists
 	hasSubtree, err := checkForSubtreeInDir(workingDir)
 	if err != nil {
@@ -125,15 +115,16 @@ func performContribution(workingDir string, opts *ContributeOptions) (*Contribut
 		return nil, err
 	}
 
-	// Check if there are uncommitted changes in the DDx directory
-	hasChanges, err := checkForChangesInDir(workingDir, fullPath)
+	// Check if there are uncommitted changes in the DDx library
+	libraryPath := getResourcePath(workingDir, opts.ResourcePath)
+	hasChanges, err := checkForChangesInDir(workingDir, libraryPath)
 	if err != nil {
 		return nil, err
 	}
 
 	if !hasChanges {
 		result.Success = false
-		result.Message = fmt.Sprintf("No changes detected in %s", opts.ResourcePath)
+		result.Message = "No changes detected in .ddx/library"
 		return result, nil
 	}
 
@@ -162,9 +153,9 @@ func performContribution(workingDir string, opts *ContributeOptions) (*Contribut
 }
 
 // Helper functions for working directory-based operations
-func extractContributeOptions(cmd *cobra.Command, args []string) (*ContributeOptions, error) {
+func extractContributeOptions(cmd *cobra.Command) (*ContributeOptions, error) {
 	opts := &ContributeOptions{
-		ResourcePath: args[0],
+		ResourcePath: "library", // Always contribute from .ddx/library
 	}
 
 	// Extract flags
@@ -249,11 +240,8 @@ func prepareContributionDetails(opts *ContributeOptions) error {
 
 	// Generate branch name if not provided
 	if opts.Branch == "" {
-		// Convert path to branch-friendly name
-		branchBase := strings.ReplaceAll(opts.ResourcePath, "/", "-")
-		branchBase = strings.ReplaceAll(branchBase, " ", "-")
-		branchBase = strings.ToLower(branchBase)
-		opts.Branch = fmt.Sprintf("contrib-%s-%d", branchBase, time.Now().Unix())
+		// Use timestamp-based branch name
+		opts.Branch = fmt.Sprintf("contrib-%d", time.Now().Unix())
 	}
 
 	return nil
@@ -588,10 +576,11 @@ func displayContributeResult(cmd *cobra.Command, result *ContributeResult, opts 
 
 	// Display initial message
 	if opts.DryRun {
-		_, _ = cyan.Fprintf(out, "🔍 Dry run: Contributing %s\n\n", opts.ResourcePath)
+		_, _ = cyan.Fprintln(out, "🔍 Dry run: Contributing changes from .ddx/library")
 	} else {
-		_, _ = cyan.Fprintf(out, "🚀 Contributing: %s\n\n", opts.ResourcePath)
+		_, _ = cyan.Fprintln(out, "🚀 Contributing changes from .ddx/library")
 	}
+	_, _ = fmt.Fprintln(out)
 
 	// Handle error cases
 	if !result.Success {
@@ -647,7 +636,6 @@ func displayContributeResult(cmd *cobra.Command, result *ContributeResult, opts 
 
 	_, _ = fmt.Fprintf(out, "1. %s\n", cyan.Sprint("Your changes have been pushed to a feature branch"))
 	_, _ = fmt.Fprintf(out, "   Branch: %s\n", yellow.Sprint(result.Branch))
-	_, _ = fmt.Fprintf(out, "   Resource: %s\n", yellow.Sprint(result.ResourcePath))
 	_, _ = fmt.Fprintln(out)
 
 	if result.PRInfo == nil {
@@ -720,12 +708,8 @@ func displayDryRunContributeResult(out interface{}, result *ContributeResult) er
 
 // Legacy function for compatibility
 func runContribute(cmd *cobra.Command, args []string) error {
-	if len(args) == 0 {
-		return fmt.Errorf("resource path is required")
-	}
-
 	// Extract flags to options struct
-	opts, err := extractContributeOptions(cmd, args)
+	opts, err := extractContributeOptions(cmd)
 	if err != nil {
 		return err
 	}

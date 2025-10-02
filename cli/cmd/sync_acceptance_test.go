@@ -338,12 +338,12 @@ func TestAcceptance_US005_ContributeImprovements(t *testing.T) {
 		_ = os.MkdirAll(filepath.Dir(templatePath), 0755)
 		_ = os.WriteFile(templatePath, []byte("# Test Template\n\nDocumentation here."), 0644)
 
-		// When: Contributing with dry-run to validate (path relative to .ddx/)
-		output, _ := env.RunCommand("contribute", "library/templates/test", "--message", "Add test template", "--dry-run")
+		// When: Contributing with dry-run to validate
+		output, _ := env.RunCommand("contribute", "--message", "Add test template", "--dry-run")
 
 		// Then: Validation results shown
 		assert.Contains(t, output, "Dry", "Should show dry run mode")
-		assert.Contains(t, output, "library/templates/test", "Should show path being contributed")
+		assert.Contains(t, output, ".ddx/library", "Should show library being contributed")
 	})
 
 	t.Run("push_contribution_upstream", func(t *testing.T) {
@@ -374,7 +374,7 @@ func TestAcceptance_US005_ContributeImprovements(t *testing.T) {
 		_ = os.WriteFile(contributionPath, []byte("# Test Prompt\n\nTest content."), 0644)
 
 		// When: Contributing WITHOUT dry-run (actual push)
-		output, err := env.RunCommand("contribute", "library/prompts/test-prompt.md", "--message", "Add test prompt")
+		output, err := env.RunCommand("contribute", "--message", "Add test prompt")
 
 		// Then: Push should succeed
 		assert.NoError(t, err, "Contribution should succeed")
@@ -420,7 +420,7 @@ func TestAcceptance_US005_ContributeImprovements(t *testing.T) {
 		_ = os.WriteFile(promptPath, []byte("# PR Test"), 0644)
 
 		// When: Contributing with --create-pr flag and actual execution (not dry-run)
-		output, err := env.RunCommand("contribute", "library/prompts/pr-test.md",
+		output, err := env.RunCommand("contribute",
 			"--message", "Add PR test", "--create-pr")
 
 		// Then: Should succeed with PR instructions
