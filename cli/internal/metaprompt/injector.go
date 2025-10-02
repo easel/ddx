@@ -254,11 +254,13 @@ func (m *MetaPromptInjectorImpl) extractCurrentMetaPrompt(content string) (strin
 	sourcePath := strings.TrimSpace(matches[1])
 
 	// Extract content (between source comment and end marker)
-	sourceCommentIdx := strings.Index(section, "-->")
+	// Find the source comment specifically (not the start marker's -->)
+	sourceComment := fmt.Sprintf("<!-- Source: %s -->", sourcePath)
+	sourceCommentIdx := strings.Index(section, sourceComment)
 	if sourceCommentIdx == -1 {
-		return "", "", fmt.Errorf("malformed source comment")
+		return "", "", fmt.Errorf("source comment not found in section")
 	}
-	contentStart := sourceCommentIdx + len("-->")
+	contentStart := sourceCommentIdx + len(sourceComment)
 	promptContent := strings.TrimSpace(section[contentStart:])
 
 	return promptContent, sourcePath, nil
