@@ -314,6 +314,11 @@ func SubtreePush(prefix, repoURL, branch string) error {
 		return fmt.Errorf("no subtree found at prefix: %s", sanitizedPrefix)
 	}
 
+	// Check if git-subtree is available before attempting split
+	if err := checkGitSubtreeAvailable(); err != nil {
+		return err
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second) // 5 minutes for network operations
 	defer cancel()
 
@@ -747,4 +752,31 @@ func sanitizeCommitMessage(message string) string {
 	}
 
 	return result.String()
+}
+
+// checkGitSubtreeAvailable checks if git-subtree command is available
+func checkGitSubtreeAvailable() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Try to run git subtree --help to check availability
+	cmd := exec.CommandContext(ctx, "git", "subtree", "--help")
+	cmd.Stderr = nil // Suppress error output
+	cmd.Stdout = nil // Suppress help output
+
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf(`git-subtree not found
+
+git-subtree is required for contribution workflow but is not installed.
+
+Please install git-subtree:
+  • macOS:         brew install git
+  • Ubuntu/Debian: sudo apt-get install git-subtree
+  • Fedora/RHEL:   sudo dnf install git-subtree
+  • Arch Linux:    (included with git package)
+
+Or run 'ddx doctor' to check your installation.`)
+	}
+
+	return nil
 }

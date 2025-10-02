@@ -90,7 +90,32 @@ func (f *CommandFactory) runDoctor(cmd *cobra.Command, args []string) error {
 		allGood = false
 	}
 
-	// Check 5: Network Connectivity
+	// Check 5: Git Subtree
+	fmt.Print("✓ Checking Git Subtree... ")
+	if checkGitSubtree() {
+		fmt.Println("✅ Git Subtree Available")
+	} else {
+		fmt.Println("⚠️  Git Subtree Not Found")
+		fmt.Println("   Git subtree is required for contribution workflow (ddx contribute)")
+
+		if verbose {
+			issues = append(issues, DiagnosticIssue{
+				Type:        "git_subtree_missing",
+				Description: "git-subtree command not available",
+				Remediation: []string{
+					"macOS: brew install git",
+					"Ubuntu/Debian: sudo apt-get install git-subtree",
+					"Fedora/RHEL: sudo dnf install git-subtree",
+					"Arch Linux: (included with git package)",
+				},
+				SystemInfo: map[string]string{
+					"required_for": "ddx contribute command",
+				},
+			})
+		}
+	}
+
+	// Check 6: Network Connectivity
 	fmt.Print("✓ Checking Network... ")
 	if checkNetwork() {
 		fmt.Println("✅ Network Connectivity")
@@ -116,7 +141,7 @@ func (f *CommandFactory) runDoctor(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Check 6: Permissions
+	// Check 7: Permissions
 	fmt.Print("✓ Checking Permissions... ")
 	problemState := os.Getenv("DDX_PROBLEM_STATE")
 	if checkPermissions() && problemState != "permission_issue" {
@@ -144,7 +169,7 @@ func (f *CommandFactory) runDoctor(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Check 7: Library Path
+	// Check 8: Library Path
 	fmt.Print("✓ Checking Library Path... ")
 	if checkLibraryPathFromWorkingDir(f.WorkingDir) {
 		fmt.Println("✅ Library Path Accessible")
@@ -173,7 +198,7 @@ func (f *CommandFactory) runDoctor(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Check 8: Meta-Prompt Sync Status
+	// Check 9: Meta-Prompt Sync Status
 	fmt.Print("✓ Checking Meta-Prompt Sync... ")
 	if metaPromptCheck := checkMetaPromptSync(f.WorkingDir); metaPromptCheck == nil {
 		fmt.Println("✅ Meta-Prompt In Sync")
@@ -228,6 +253,14 @@ func checkConfiguration() bool {
 func checkGit() bool {
 	_, err := exec.LookPath("git")
 	return err == nil
+}
+
+// checkGitSubtree verifies git-subtree command is available
+func checkGitSubtree() bool {
+	cmd := exec.Command("git", "subtree", "--help")
+	cmd.Stderr = nil // Suppress error output
+	cmd.Stdout = nil // Suppress help output
+	return cmd.Run() == nil
 }
 
 // checkNetwork tests basic network connectivity
